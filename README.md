@@ -1,2 +1,3 @@
-# ojg
+# OjG
+
 Optimized JSON for Go
