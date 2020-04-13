@@ -1,3 +1,21 @@
 
-- AlterNative
-- FromNative
+	// Empty() bool
+	// AsBool() (v Bool, ok bool)
+	// AsInt() (v Int, ok bool)
+	// AsFloat() (v Float, ok bool)
+	// AsTime() (v Time, ok bool)
+	// AsString() (v String, ok bool)
+	// AsArray() (v Array, ok bool)
+	// AsObject() (v Object, ok bool)
+	// JSON(indent ...int) string
+	// BuildJSON(b *strings.Builder, indent, depth int)
+
+       	// Equal(other Node, ignore ...string) bool
+	// Diff(other Node, ignore ...string) (diffs []string)
+
+	// Get(key string) []Node
+	// GetFirst(key string) Node
+	// Set(path string, val Node) error
+	// SetFirst(path string, val Node) error
+	// Remove(key string) []Node
+	// RemoveFirst(key string) Node

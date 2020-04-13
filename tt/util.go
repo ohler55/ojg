@@ -19,7 +19,7 @@ type call struct {
 
 func stackFill(b *strings.Builder) {
 	pc := make([]uintptr, 40)
-	cnt := runtime.Callers(2, pc) - 2
+	cnt := runtime.Callers(3, pc) - 2
 	stack := make([]call, cnt)
 
 	var fn *runtime.Func

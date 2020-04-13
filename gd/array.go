@@ -59,3 +59,19 @@ func (n Array) Dup() Node {
 	}
 	return a
 }
+
+func (n Array) Empty() bool {
+	return len(n) == 0
+}
+
+func (n Array) AsBool() (Bool, bool) {
+	return Bool(len(n) == 0), false
+}
+
+func (n Array) AsInt() (Int, bool) {
+	return 0, false
+}
+
+func (n Array) AsFloat() (Float, bool) {
+	return Float(0.0), false
+}

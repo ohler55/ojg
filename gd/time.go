@@ -33,6 +33,22 @@ func (n Time) Dup() Node {
 	return n
 }
 
+func (n Time) Empty() bool {
+	return false
+}
+
+func (n Time) AsBool() (Bool, bool) {
+	return Bool(false), false
+}
+
+func (n Time) AsInt() (Int, bool) {
+	return Int(time.Time(n).UnixNano()), true
+}
+
+func (n Time) AsFloat() (Float, bool) {
+	return Float(float64(time.Time(n).UnixNano()) / float64(time.Second)), true
+}
+
 func (n Time) JSON(_ ...int) string {
 	var b strings.Builder
 

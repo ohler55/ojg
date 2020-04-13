@@ -4,6 +4,7 @@ package gd
 
 import (
 	"fmt"
+	"time"
 	"unsafe"
 )
 
@@ -45,6 +46,10 @@ func FromNative(v interface{}) (n Node, err error) {
 		case string:
 			n = String(tv)
 		case String:
+			n = tv
+		case time.Time:
+			n = Time(tv)
+		case Time:
 			n = tv
 		case []interface{}:
 			a := make(Array, len(tv))
@@ -108,6 +113,10 @@ func AlterNative(v interface{}) (n Node, err error) {
 			n = String(tv)
 		case String:
 			n = tv
+		case time.Time:
+			n = Time(tv)
+		case Time:
+			n = tv
 		case []interface{}:
 			a := *(*Array)(unsafe.Pointer(&tv))
 			for i, m := range tv {
@@ -116,6 +125,8 @@ func AlterNative(v interface{}) (n Node, err error) {
 				}
 			}
 			n = a
+		case Array:
+			n = tv
 		case map[string]interface{}:
 			o := *(*Object)(unsafe.Pointer(&tv))
 			for k, m := range tv {
@@ -124,6 +135,8 @@ func AlterNative(v interface{}) (n Node, err error) {
 				}
 			}
 			n = o
+		case Object:
+			n = tv
 		default:
 			err = fmt.Errorf("can not convert a %T to a Node", v)
 		}
