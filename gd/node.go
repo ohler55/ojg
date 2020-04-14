@@ -4,6 +4,7 @@ package gd
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Node interface {
@@ -40,15 +41,10 @@ type Node interface {
 	// AsArray() (v Array, ok bool)
 	// AsObject() (v Object, ok bool)
 
-	// Equal(other Node, ignore ...string) bool
-	// Diff(other Node, ignore ...string) (diffs []string)
-	// Get(key string) []Node
-	// GetFirst(key string) Node
-	// Set(path string, val Node) error
-	// SetFirst(path string, val Node) error
-	// Remove(key string) []Node
-	// RemoveFirst(key string) Node
-	// JSON(indent ...int) string
-	// BuildJSON(b *strings.Builder, indent, depth int)
+	// JSON returns a JSON encoded version of the instance.
+	JSON(_ ...int) string
 
+	// BuildJSON appends a JSON encoded version of the instance to the
+	// provided builder.
+	BuildJSON(b *strings.Builder, indent, depth int)
 }

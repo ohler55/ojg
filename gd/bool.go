@@ -2,6 +2,8 @@
 
 package gd
 
+import "strings"
+
 type Bool bool
 
 func (n Bool) String() (s string) {
@@ -51,4 +53,12 @@ func (n Bool) AsFloat() (Float, bool) {
 
 func (n Bool) JSON(_ ...int) string {
 	return n.String()
+}
+
+func (n Bool) BuildJSON(b *strings.Builder, _, _ int) {
+	if n {
+		b.WriteString("true")
+	} else {
+		b.WriteString("false")
+	}
 }

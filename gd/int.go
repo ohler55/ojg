@@ -2,7 +2,10 @@
 
 package gd
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 type Int int64
 
@@ -41,4 +44,8 @@ func (n Int) AsFloat() (Float, bool) {
 
 func (n Int) JSON(_ ...int) string {
 	return strconv.FormatInt(int64(n), 10)
+}
+
+func (n Int) BuildJSON(b *strings.Builder, _, _ int) {
+	b.WriteString(strconv.FormatInt(int64(n), 10))
 }

@@ -101,3 +101,16 @@ func (n Object) AsInt() (Int, bool) {
 func (n Object) AsFloat() (Float, bool) {
 	return Float(0.0), false
 }
+
+func (n Object) JSON(_ ...int) string {
+	var b strings.Builder
+
+	n.BuildJSON(&b, 0, 0)
+
+	return b.String()
+}
+
+func (n Object) BuildJSON(b *strings.Builder, indent, depth int) {
+
+	// TBD
+}

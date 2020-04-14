@@ -50,3 +50,18 @@ func (n String) AsFloat() (Float, bool) {
 	f, err := strconv.ParseFloat(string(n), 64)
 	return Float(f), err == nil
 }
+
+func (n String) JSON(_ ...int) string {
+	var b strings.Builder
+
+	n.BuildJSON(&b, 0, 0)
+
+	return b.String()
+}
+
+func (n String) BuildJSON(b *strings.Builder, _, _ int) {
+	b.WriteString(`"`)
+	// TBD convert special
+	b.WriteString(string(n))
+	b.WriteString(`"`)
+}

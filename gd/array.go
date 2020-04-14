@@ -75,3 +75,16 @@ func (n Array) AsInt() (Int, bool) {
 func (n Array) AsFloat() (Float, bool) {
 	return Float(0.0), false
 }
+
+func (n Array) JSON(_ ...int) string {
+	var b strings.Builder
+
+	n.BuildJSON(&b, 0, 0)
+
+	return b.String()
+}
+
+func (n Array) BuildJSON(b *strings.Builder, indent, depth int) {
+
+	// TBD
+}

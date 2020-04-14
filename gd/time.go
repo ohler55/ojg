@@ -9,14 +9,22 @@ import (
 	"time"
 )
 
+// TimeFormat defines how time is encoded. Options are to use a time. layout
+// string format, "second" for a decimal representation, "nano" for a an
+// integer.
 var TimeFormat = time.RFC3339Nano
+
+// TimeWrap if not empty encoded time as an object with a single member. For
+// example if set to "@" then and TimeFormat is RFC3339Nano then the encoded
+// time will look like '{"@":"2020-04-12T16:34:04.123456789Z"}'
+var TimeWrap = ""
 
 type Time time.Time
 
 func (n Time) String() string {
 	var b strings.Builder
 
-	n.BuildJSON(&b)
+	n.BuildJSON(&b, 0, 0)
 
 	return b.String()
 }
@@ -52,12 +60,17 @@ func (n Time) AsFloat() (Float, bool) {
 func (n Time) JSON(_ ...int) string {
 	var b strings.Builder
 
-	n.BuildJSON(&b)
+	n.BuildJSON(&b, 0, 0)
 
 	return b.String()
 }
 
-func (n Time) BuildJSON(b *strings.Builder) {
+func (n Time) BuildJSON(b *strings.Builder, _, _ int) {
+	if 0 < len(TimeWrap) {
+		b.WriteString(`{"`)
+		b.WriteString(TimeWrap)
+		b.WriteString(`":`)
+	}
 	switch TimeFormat {
 	case "", "nano":
 		b.WriteString(strconv.FormatInt(time.Time(n).UnixNano(), 10))
@@ -75,5 +88,8 @@ func (n Time) BuildJSON(b *strings.Builder) {
 		b.WriteString(`"`)
 		b.WriteString(time.Time(n).Format(TimeFormat))
 		b.WriteString(`"`)
+	}
+	if 0 < len(TimeWrap) {
+		b.WriteString("}")
 	}
 }

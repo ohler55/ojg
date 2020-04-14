@@ -13,9 +13,46 @@
        	// Equal(other Node, ignore ...string) bool
 	// Diff(other Node, ignore ...string) (diffs []string)
 
+- jp - https://goessner.net/articles/JsonPath
+ - jp.Str(n gd.Node, path string, defVal string) string
+  - same on path expression or element or *fragment*
 	// Get(key string) []Node
 	// GetFirst(key string) Node
 	// Set(path string, val Node) error
 	// SetFirst(path string, val Node) error
 	// Remove(key string) []Node
 	// RemoveFirst(key string) Node
+ - current - @
+ - child - .foo
+ - wildcard - .* or in array/subscript [*]
+ - decendent (recursive) - ..
+ - filter - [?()]
+  - include || and &&, ==, !=, <=, >= <, >, (=~ for regex)
+  - strings can be "" or ''
+ - slice - [start:end:step]
+ - union - [,]
+
+Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)] matches items whose description starts with cat (case-insensitive).
+
+Use to negate a filter: [?(!@.isbn)] matches items that do not have the isbn property.
+
+- how to handle things in []
+ - maybe [] is a check for an array/subscript
+  - then things to do on the array elements after that
+   - so ArrayStart expr followed by filter, slice, etc then terminated with an arrayEnd
+
+- jp.Expr
+ - has all top level funcs
+ - []Frag
+ - bracketed bool
+ - Get
+  - calls get() on first frag with array of rest
+   - goes to next in array
+
+- jp.Frag
+ - get
+ - first
+ - set
+ - setOne
+ - remove
+ - removeFirst
