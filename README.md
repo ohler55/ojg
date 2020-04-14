@@ -1,4 +1,4 @@
-# [![{}j](http://www.ohler.com/dev/images/ojg_comet.jpg)](http://www.ohler.com/ojg)
+# [![{}j](http://www.ohler.com/dev/images/ojg_comet.jpg)](https://github.com/ohler55/ojg)
 
 # OjG
 
