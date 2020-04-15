@@ -16,6 +16,24 @@ func TestArrayString(t *testing.T) {
 	tt.Equal(t, "[3,[5],7]", a.String())
 }
 
+func TestArrayJSON(t *testing.T) {
+	a := gd.Array{gd.Int(3), gd.Array{gd.Int(5)}, gd.Int(7)}
+
+	tt.Equal(t, "[3,[5],7]", a.JSON())
+}
+
+func TestArrayJSONIndent(t *testing.T) {
+	a := gd.Array{gd.Int(3), gd.Array{gd.Int(5)}, gd.Int(7)}
+
+	tt.Equal(t, `[
+  3,
+  [
+    5
+  ],
+  7
+]`, a.JSON(2))
+}
+
 func TestArrayNative(t *testing.T) {
 	a := gd.Array{gd.Int(3), gd.Int(7)}
 	native := a.Native()

@@ -2,7 +2,9 @@
 
 package gd
 
-import "strings"
+import (
+	"strings"
+)
 
 type Bool bool
 

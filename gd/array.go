@@ -7,19 +7,25 @@ import (
 	"unsafe"
 )
 
+const spaces = "\n                                                                                                                                "
+
 type Array []Node
 
 func (n Array) String() string {
 	var b strings.Builder
 
-	b.WriteString("[")
+	b.WriteByte('[')
 	for i, m := range n {
 		if 0 < i {
-			b.WriteString(",")
+			b.WriteByte(',')
 		}
-		b.WriteString(m.String())
+		if m == nil {
+			b.WriteString("null")
+		} else {
+			b.WriteString(m.String())
+		}
 	}
-	b.WriteString("]")
+	b.WriteByte(']')
 
 	return b.String()
 }
@@ -76,15 +82,55 @@ func (n Array) AsFloat() (Float, bool) {
 	return Float(0.0), false
 }
 
-func (n Array) JSON(_ ...int) string {
+func (n Array) JSON(indent ...int) string {
 	var b strings.Builder
 
-	n.BuildJSON(&b, 0, 0)
-
+	if 0 < len(indent) {
+		n.BuildJSON(&b, indent[0], 0)
+	} else {
+		n.BuildJSON(&b, 0, 0)
+	}
 	return b.String()
 }
 
 func (n Array) BuildJSON(b *strings.Builder, indent, depth int) {
+	b.WriteByte('[')
+	if 0 < indent {
+		x := depth*indent + 1
+		if len(spaces) < x {
+			x = depth*indent + 1
+		}
+		is := spaces[0:x]
+		d2 := depth + 1
+		x = d2*indent + 1
+		if len(spaces) < x {
+			x = depth*indent + 1
+		}
+		cs := spaces[0:x]
 
-	// TBD
+		for j, m := range n {
+			if 0 < j {
+				b.WriteByte(',')
+			}
+			b.WriteString(cs)
+			if m == nil {
+				b.WriteString("null")
+			} else {
+				m.BuildJSON(b, indent, d2)
+			}
+		}
+		b.WriteString(is)
+	} else {
+		for j, m := range n {
+			if 0 < j {
+				b.WriteByte(',')
+			}
+			if m == nil {
+				b.WriteString("null")
+			} else {
+				m.BuildJSON(b, 0, 0)
+			}
+		}
+	}
+	b.WriteByte(']')
 }

@@ -42,7 +42,7 @@ type Node interface {
 	// AsObject() (v Object, ok bool)
 
 	// JSON returns a JSON encoded version of the instance.
-	JSON(_ ...int) string
+	JSON(indent ...int) string
 
 	// BuildJSON appends a JSON encoded version of the instance to the
 	// provided builder.

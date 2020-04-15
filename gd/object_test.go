@@ -17,6 +17,26 @@ func TestObjectString(t *testing.T) {
 	tt.Equal(t, `{"a":3,"b":{"c":5},"d":7}`, o.String())
 }
 
+func TestObjectJSON(t *testing.T) {
+	gd.Sort = true
+	o := gd.Object{"a": gd.Int(3), "b": gd.Object{"c": gd.Int(5)}, "d": gd.Int(7)}
+
+	tt.Equal(t, `{"a":3,"b":{"c":5},"d":7}`, o.JSON())
+}
+
+func TestObjectJSONIndent(t *testing.T) {
+	gd.Sort = true
+	o := gd.Object{"a": gd.Int(3), "b": gd.Object{"c": gd.Int(5)}, "d": gd.Int(7)}
+
+	tt.Equal(t, `{
+  "a":3,
+  "b":{
+    "c":5
+  },
+  "d":7
+}`, o.JSON(2))
+}
+
 func TestObjectNative(t *testing.T) {
 	o := gd.Object{"a": gd.Int(3), "b": gd.Int(7)}
 	native := o.Native()

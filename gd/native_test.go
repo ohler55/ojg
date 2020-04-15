@@ -19,8 +19,9 @@ func TestAlterNative(t *testing.T) {
 		"c": map[string]interface{}{
 			"x": "xxx",
 		},
+		"d": nil,
 	}
 	n, err := gd.AlterNative(native)
 	tt.Nil(t, err)
-	tt.Equal(t, `{"a":[1,2,true,"2020-04-12T16:34:04.123456789Z"],"b":2.3,"c":{"x":"xxx"}}`, n.String())
+	tt.Equal(t, `{"a":[1,2,true,"2020-04-12T16:34:04.123456789Z"],"b":2.3,"c":{"x":"xxx"},"d":null}`, n.String())
 }
