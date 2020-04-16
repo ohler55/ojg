@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gd"
 
 	"gitlab.com/uhn/core/pkg/tree"
@@ -30,20 +31,20 @@ func main() {
 	fmt.Printf("tree.FromNative:  %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
 		treeNs, 1.0, treeBytes, 1.0, treeAllocs, 1.0)
 
-	gdFrom := testing.Benchmark(convFromNative)
+	gdFrom := testing.Benchmark(convFromSimple)
 	fromNs := gdFrom.NsPerOp() - base.NsPerOp()
 	fromBytes := gdFrom.AllocedBytesPerOp() - base.AllocedBytesPerOp()
 	fromAllocs := gdFrom.AllocsPerOp() - base.AllocsPerOp()
-	fmt.Printf("  gd.FromNative:  %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
+	fmt.Printf("  gd.FromSimple:  %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
 		fromNs, float64(treeNs)/float64(fromNs),
 		fromBytes, float64(treeBytes)/float64(fromBytes),
 		fromAllocs, float64(treeAllocs)/float64(fromAllocs))
 
-	gdAlter := testing.Benchmark(convAlterNative)
+	gdAlter := testing.Benchmark(convAlterSimple)
 	alterNs := gdAlter.NsPerOp() - base.NsPerOp()
 	alterBytes := gdAlter.AllocedBytesPerOp() - base.AllocedBytesPerOp()
 	alterAllocs := gdAlter.AllocsPerOp() - base.AllocsPerOp()
-	fmt.Printf("  gd.AlterNative: %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
+	fmt.Printf("  gd.AlterSimple: %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
 		alterNs, float64(treeNs)/float64(alterNs),
 		alterBytes, float64(treeBytes)/float64(alterBytes),
 		alterAllocs, float64(treeAllocs)/float64(alterAllocs))
@@ -55,14 +56,15 @@ func main() {
 	treeNs = treeJSON.NsPerOp()
 	treeBytes = treeJSON.AllocedBytesPerOp()
 	treeAllocs = treeJSON.AllocsPerOp()
-	fmt.Printf("tree.JSON:  %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
+	fmt.Printf("tree.JSON:   %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
 		treeNs, 1.0, treeBytes, 1.0, treeAllocs, 1.0)
 
-	gdJSON := testing.Benchmark(jsonGd)
+	gdJSON := testing.Benchmark(jsonOjg)
 	gdNs := gdJSON.NsPerOp()
 	gdBytes := gdJSON.AllocedBytesPerOp()
 	gdAllocs := gdJSON.AllocsPerOp()
-	fmt.Printf("  gd.JSON:  %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
+
+	fmt.Printf(" ojg.String: %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
 		gdNs, float64(treeNs)/float64(gdNs),
 		gdBytes, float64(treeBytes)/float64(gdBytes),
 		gdAllocs, float64(treeAllocs)/float64(gdAllocs))
@@ -74,14 +76,14 @@ func main() {
 	treeNs = treeJSON.NsPerOp()
 	treeBytes = treeJSON.AllocedBytesPerOp()
 	treeAllocs = treeJSON.AllocsPerOp()
-	fmt.Printf("tree.JSON:  %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
+	fmt.Printf("tree.JSON:   %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
 		treeNs, 1.0, treeBytes, 1.0, treeAllocs, 1.0)
 
-	gdJSON = testing.Benchmark(json2Gd)
+	gdJSON = testing.Benchmark(jsonOjg2)
 	gdNs = gdJSON.NsPerOp()
 	gdBytes = gdJSON.AllocedBytesPerOp()
 	gdAllocs = gdJSON.AllocsPerOp()
-	fmt.Printf("  gd.JSON:  %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
+	fmt.Printf(" ojg.String: %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
 		gdNs, float64(treeNs)/float64(gdNs),
 		gdBytes, float64(treeBytes)/float64(gdBytes),
 		gdAllocs, float64(treeAllocs)/float64(gdAllocs))
@@ -95,14 +97,14 @@ func main() {
 	treeNs = treeJSON.NsPerOp()
 	treeBytes = treeJSON.AllocedBytesPerOp()
 	treeAllocs = treeJSON.AllocsPerOp()
-	fmt.Printf("tree.JSON:  %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
+	fmt.Printf("tree.JSON:   %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
 		treeNs, 1.0, treeBytes, 1.0, treeAllocs, 1.0)
 
-	gdJSON = testing.Benchmark(json2Gd)
+	gdJSON = testing.Benchmark(jsonOjgSort)
 	gdNs = gdJSON.NsPerOp()
 	gdBytes = gdJSON.AllocedBytesPerOp()
 	gdAllocs = gdJSON.AllocsPerOp()
-	fmt.Printf("  gd.JSON:  %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
+	fmt.Printf(" ojg.String: %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
 		gdNs, float64(treeNs)/float64(gdNs),
 		gdBytes, float64(treeBytes)/float64(gdBytes),
 		gdAllocs, float64(treeAllocs)/float64(gdAllocs))
@@ -117,19 +119,19 @@ func convBase(b *testing.B) {
 	}
 }
 
-func convAlterNative(b *testing.B) {
+func convAlterSimple(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	for n := 0; n < b.N; n++ {
 		native := benchmarkData(tm)
-		_, _ = gd.AlterNative(native)
+		_, _ = gd.AlterSimple(native)
 	}
 }
 
-func convFromNative(b *testing.B) {
+func convFromSimple(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	for n := 0; n < b.N; n++ {
 		native := benchmarkData(tm)
-		_, _ = gd.FromNative(native)
+		_, _ = gd.FromSimple(native)
 	}
 }
 
@@ -150,12 +152,13 @@ func jsonTree(b *testing.B) {
 	}
 }
 
-func jsonGd(b *testing.B) {
+func jsonOjg(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data, _ := gd.AlterNative(benchmarkData(tm))
+	data, _ := gd.AlterSimple(benchmarkData(tm))
+	opt := ojg.Options{SkipNil: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = data.JSON()
+		_ = ojg.String(data, &opt)
 	}
 }
 
@@ -168,12 +171,23 @@ func json2Tree(b *testing.B) {
 	}
 }
 
-func json2Gd(b *testing.B) {
+func jsonOjg2(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data, _ := gd.AlterNative(benchmarkData(tm))
+	data, _ := gd.AlterSimple(benchmarkData(tm))
+	opt := ojg.Options{SkipNil: true, Indent: 2}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = data.JSON(2)
+		_ = ojg.String(data, &opt)
+	}
+}
+
+func jsonOjgSort(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data, _ := gd.AlterSimple(benchmarkData(tm))
+	opt := ojg.Options{SkipNil: true, Indent: 2, Sort: true}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_ = ojg.String(data, &opt)
 	}
 }
 

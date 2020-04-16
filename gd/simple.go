@@ -8,7 +8,7 @@ import (
 	"unsafe"
 )
 
-func FromNative(v interface{}) (n Node, err error) {
+func FromSimple(v interface{}) (n Node, err error) {
 	if v != nil {
 		switch tv := v.(type) {
 		case bool:
@@ -54,7 +54,7 @@ func FromNative(v interface{}) (n Node, err error) {
 		case []interface{}:
 			a := make(Array, len(tv))
 			for i, m := range tv {
-				if a[i], err = FromNative(m); err != nil {
+				if a[i], err = FromSimple(m); err != nil {
 					break
 				}
 			}
@@ -62,7 +62,7 @@ func FromNative(v interface{}) (n Node, err error) {
 		case map[string]interface{}:
 			o := Object{}
 			for k, m := range tv {
-				if o[k], err = FromNative(m); err != nil {
+				if o[k], err = FromSimple(m); err != nil {
 					break
 				}
 			}
@@ -74,7 +74,7 @@ func FromNative(v interface{}) (n Node, err error) {
 	return nil, nil
 }
 
-func AlterNative(v interface{}) (n Node, err error) {
+func AlterSimple(v interface{}) (n Node, err error) {
 	if v != nil {
 		switch tv := v.(type) {
 		case bool:
@@ -120,7 +120,7 @@ func AlterNative(v interface{}) (n Node, err error) {
 		case []interface{}:
 			a := *(*Array)(unsafe.Pointer(&tv))
 			for i, m := range tv {
-				if a[i], err = AlterNative(m); err != nil {
+				if a[i], err = AlterSimple(m); err != nil {
 					break
 				}
 			}
@@ -130,7 +130,7 @@ func AlterNative(v interface{}) (n Node, err error) {
 		case map[string]interface{}:
 			o := *(*Object)(unsafe.Pointer(&tv))
 			for k, m := range tv {
-				if o[k], err = AlterNative(m); err != nil {
+				if o[k], err = AlterSimple(m); err != nil {
 					break
 				}
 			}

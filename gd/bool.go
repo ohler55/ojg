@@ -2,10 +2,6 @@
 
 package gd
 
-import (
-	"strings"
-)
-
 type Bool bool
 
 func (n Bool) String() (s string) {
@@ -21,7 +17,7 @@ func (n Bool) Alter() interface{} {
 	return bool(n)
 }
 
-func (n Bool) Native() interface{} {
+func (n Bool) Simplify() interface{} {
 	return bool(n)
 }
 
@@ -51,16 +47,4 @@ func (n Bool) AsFloat() (Float, bool) {
 		f = 1.0
 	}
 	return Float(f), false
-}
-
-func (n Bool) JSON(_ ...int) string {
-	return n.String()
-}
-
-func (n Bool) BuildJSON(b *strings.Builder, _, _ int) {
-	if n {
-		b.WriteString("true")
-	} else {
-		b.WriteString("false")
-	}
 }

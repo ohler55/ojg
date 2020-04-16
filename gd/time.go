@@ -24,7 +24,7 @@ type Time time.Time
 func (n Time) String() string {
 	var b strings.Builder
 
-	n.BuildJSON(&b, 0, 0)
+	n.buildString(&b)
 
 	return b.String()
 }
@@ -33,7 +33,7 @@ func (n Time) Alter() interface{} {
 	return time.Time(n)
 }
 
-func (n Time) Native() interface{} {
+func (n Time) Simplify() interface{} {
 	return time.Time(n)
 }
 
@@ -57,15 +57,7 @@ func (n Time) AsFloat() (Float, bool) {
 	return Float(float64(time.Time(n).UnixNano()) / float64(time.Second)), true
 }
 
-func (n Time) JSON(_ ...int) string {
-	var b strings.Builder
-
-	n.BuildJSON(&b, 0, 0)
-
-	return b.String()
-}
-
-func (n Time) BuildJSON(b *strings.Builder, _, _ int) {
+func (n Time) buildString(b *strings.Builder) {
 	if 0 < len(TimeWrap) {
 		b.WriteString(`{"`)
 		b.WriteString(TimeWrap)

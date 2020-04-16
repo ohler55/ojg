@@ -4,7 +4,6 @@ package gd
 
 import (
 	"fmt"
-	"strings"
 )
 
 type Node interface {
@@ -15,8 +14,8 @@ type Node interface {
 	// original type. Use with care!
 	Alter() interface{}
 
-	// Native makes a copy of the node but as native types.
-	Native() interface{}
+	// Simplify makes a copy of the node but as simple types.
+	Simplify() interface{}
 
 	// Dup returns a deep duplicate of the node.
 	Dup() Node
@@ -40,11 +39,4 @@ type Node interface {
 	// AsString() (v String, ok bool)
 	// AsArray() (v Array, ok bool)
 	// AsObject() (v Object, ok bool)
-
-	// JSON returns a JSON encoded version of the instance.
-	JSON(indent ...int) string
-
-	// BuildJSON appends a JSON encoded version of the instance to the
-	// provided builder.
-	BuildJSON(b *strings.Builder, indent, depth int)
 }

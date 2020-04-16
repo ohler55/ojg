@@ -19,7 +19,7 @@ func (n String) Alter() interface{} {
 	return string(n)
 }
 
-func (n String) Native() interface{} {
+func (n String) Simplify() interface{} {
 	return string(n)
 }
 

@@ -4,7 +4,6 @@ package gd
 
 import (
 	"strconv"
-	"strings"
 )
 
 type Int int64
@@ -17,7 +16,7 @@ func (n Int) Alter() interface{} {
 	return int64(n)
 }
 
-func (n Int) Native() interface{} {
+func (n Int) Simplify() interface{} {
 	return int64(n)
 }
 
@@ -40,12 +39,4 @@ func (n Int) AsInt() (Int, bool) {
 
 func (n Int) AsFloat() (Float, bool) {
 	return Float(int64(n)), true
-}
-
-func (n Int) JSON(_ ...int) string {
-	return strconv.FormatInt(int64(n), 10)
-}
-
-func (n Int) BuildJSON(b *strings.Builder, _, _ int) {
-	b.WriteString(strconv.FormatInt(int64(n), 10))
 }

@@ -10,10 +10,11 @@ import (
 	"github.com/ohler55/ojg/tt"
 )
 
-func TestAlterNative(t *testing.T) {
+func TestAlterSimple(t *testing.T) {
 	gd.Sort = true
+	gd.TimeFormat = time.RFC3339Nano
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	native := map[string]interface{}{
+	simple := map[string]interface{}{
 		"a": []interface{}{1, 2, true, tm},
 		"b": 2.3,
 		"c": map[string]interface{}{
@@ -21,7 +22,7 @@ func TestAlterNative(t *testing.T) {
 		},
 		"d": nil,
 	}
-	n, err := gd.AlterNative(native)
+	n, err := gd.AlterSimple(simple)
 	tt.Nil(t, err)
 	tt.Equal(t, `{"a":[1,2,true,"2020-04-12T16:34:04.123456789Z"],"b":2.3,"c":{"x":"xxx"},"d":null}`, n.String())
 }
