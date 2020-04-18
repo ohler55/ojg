@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -51,7 +52,7 @@ func main() {
 
 	fmt.Println()
 	fmt.Println("JSON() benchmarks")
-	treeJSON := testing.Benchmark(jsonTree)
+	treeJSON := testing.Benchmark(treeJSON)
 
 	treeNs = treeJSON.NsPerOp()
 	treeBytes = treeJSON.AllocedBytesPerOp()
@@ -59,12 +60,20 @@ func main() {
 	fmt.Printf("tree.JSON:   %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
 		treeNs, 1.0, treeBytes, 1.0, treeAllocs, 1.0)
 
-	gdJSON := testing.Benchmark(jsonOjg)
+	gdJSON := testing.Benchmark(ojgString)
 	gdNs := gdJSON.NsPerOp()
 	gdBytes := gdJSON.AllocedBytesPerOp()
 	gdAllocs := gdJSON.AllocsPerOp()
-
 	fmt.Printf(" ojg.String: %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
+		gdNs, float64(treeNs)/float64(gdNs),
+		gdBytes, float64(treeBytes)/float64(gdBytes),
+		gdAllocs, float64(treeAllocs)/float64(gdAllocs))
+
+	gdJSON = testing.Benchmark(ojgWrite)
+	gdNs = gdJSON.NsPerOp()
+	gdBytes = gdJSON.AllocedBytesPerOp()
+	gdAllocs = gdJSON.AllocsPerOp()
+	fmt.Printf(" ojg.Write:  %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
 		gdNs, float64(treeNs)/float64(gdNs),
 		gdBytes, float64(treeBytes)/float64(gdBytes),
 		gdAllocs, float64(treeAllocs)/float64(gdAllocs))
@@ -79,7 +88,7 @@ func main() {
 	fmt.Printf("tree.JSON:   %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
 		treeNs, 1.0, treeBytes, 1.0, treeAllocs, 1.0)
 
-	gdJSON = testing.Benchmark(jsonOjg2)
+	gdJSON = testing.Benchmark(ojgString2)
 	gdNs = gdJSON.NsPerOp()
 	gdBytes = gdJSON.AllocedBytesPerOp()
 	gdAllocs = gdJSON.AllocsPerOp()
@@ -100,7 +109,7 @@ func main() {
 	fmt.Printf("tree.JSON:   %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
 		treeNs, 1.0, treeBytes, 1.0, treeAllocs, 1.0)
 
-	gdJSON = testing.Benchmark(jsonOjgSort)
+	gdJSON = testing.Benchmark(ojgStringSort)
 	gdNs = gdJSON.NsPerOp()
 	gdBytes = gdJSON.AllocedBytesPerOp()
 	gdAllocs = gdJSON.AllocsPerOp()
@@ -143,7 +152,7 @@ func convTree(b *testing.B) {
 	}
 }
 
-func jsonTree(b *testing.B) {
+func treeJSON(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data, _ := tree.FromNative(benchmarkData(tm))
 	b.ResetTimer()
@@ -152,13 +161,26 @@ func jsonTree(b *testing.B) {
 	}
 }
 
-func jsonOjg(b *testing.B) {
+func ojgString(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data, _ := gd.AlterSimple(benchmarkData(tm))
 	opt := ojg.Options{SkipNil: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		_ = ojg.String(data, &opt)
+	}
+}
+
+func ojgWrite(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data, _ := gd.AlterSimple(benchmarkData(tm))
+	opt := ojg.Options{SkipNil: true}
+	var buf strings.Builder
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		buf.Reset()
+		_ = ojg.Write(&buf, data, &opt)
+		_ = buf.String()
 	}
 }
 
@@ -171,7 +193,7 @@ func json2Tree(b *testing.B) {
 	}
 }
 
-func jsonOjg2(b *testing.B) {
+func ojgString2(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data, _ := gd.AlterSimple(benchmarkData(tm))
 	opt := ojg.Options{SkipNil: true, Indent: 2}
@@ -181,7 +203,7 @@ func jsonOjg2(b *testing.B) {
 	}
 }
 
-func jsonOjgSort(b *testing.B) {
+func ojgStringSort(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data, _ := gd.AlterSimple(benchmarkData(tm))
 	opt := ojg.Options{SkipNil: true, Indent: 2, Sort: true}
