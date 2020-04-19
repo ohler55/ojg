@@ -168,14 +168,14 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 		o.buildTime(time.Time(td))
 
 	case []interface{}:
-		o.buildSimpleArray(td, depth)
+		err = o.buildSimpleArray(td, depth)
 	case gd.Array:
-		o.buildArray(td, depth)
+		err = o.buildArray(td, depth)
 
 	case map[string]interface{}:
-		o.buildSimpleObject(td, depth)
+		err = o.buildSimpleObject(td, depth)
 	case gd.Object:
-		o.buildObject(td, depth)
+		err = o.buildObject(td, depth)
 
 	default:
 		o.buildString(fmt.Sprintf("%v", td))
@@ -261,7 +261,7 @@ func (o *Options) buildTime(t time.Time) {
 	}
 }
 
-func (o *Options) buildArray(n gd.Array, depth int) {
+func (o *Options) buildArray(n gd.Array, depth int) (err error) {
 	o.buf = append(o.buf, '[')
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
@@ -283,8 +283,8 @@ func (o *Options) buildArray(n gd.Array, depth int) {
 			o.buf = append(o.buf, []byte(cs)...)
 			if m == nil {
 				o.buf = append(o.buf, []byte("null")...)
-			} else {
-				o.buildJSON(m, d2)
+			} else if err = o.buildJSON(m, d2); err != nil {
+				return
 			}
 		}
 		o.buf = append(o.buf, []byte(is)...)
@@ -295,15 +295,17 @@ func (o *Options) buildArray(n gd.Array, depth int) {
 			}
 			if m == nil {
 				o.buf = append(o.buf, []byte("null")...)
-			} else {
-				o.buildJSON(m, depth)
+			} else if err = o.buildJSON(m, depth); err != nil {
+				return
 			}
 		}
 	}
 	o.buf = append(o.buf, ']')
+
+	return
 }
 
-func (o *Options) buildSimpleArray(n []interface{}, depth int) {
+func (o *Options) buildSimpleArray(n []interface{}, depth int) (err error) {
 	o.buf = append(o.buf, '[')
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
@@ -325,8 +327,8 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) {
 			o.buf = append(o.buf, []byte(cs)...)
 			if m == nil {
 				o.buf = append(o.buf, []byte("null")...)
-			} else {
-				o.buildJSON(m, d2)
+			} else if err = o.buildJSON(m, d2); err != nil {
+				return
 			}
 		}
 		o.buf = append(o.buf, []byte(is)...)
@@ -337,15 +339,16 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) {
 			}
 			if m == nil {
 				o.buf = append(o.buf, []byte("null")...)
-			} else {
-				o.buildJSON(m, depth)
+			} else if err = o.buildJSON(m, depth); err != nil {
+				return
 			}
 		}
 	}
 	o.buf = append(o.buf, ']')
+	return
 }
 
-func (o *Options) buildObject(n gd.Object, depth int) {
+func (o *Options) buildObject(n gd.Object, depth int) (err error) {
 	o.buf = append(o.buf, '{')
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
@@ -378,8 +381,8 @@ func (o *Options) buildObject(n gd.Object, depth int) {
 				o.buf = append(o.buf, ':')
 				if m := n[k]; m == nil {
 					o.buf = append(o.buf, []byte("null")...)
-				} else {
-					o.buildJSON(m, d2)
+				} else if err = o.buildJSON(m, d2); err != nil {
+					return
 				}
 			}
 		} else {
@@ -398,8 +401,8 @@ func (o *Options) buildObject(n gd.Object, depth int) {
 				o.buf = append(o.buf, ':')
 				if m == nil {
 					o.buf = append(o.buf, []byte("null")...)
-				} else {
-					o.buildJSON(m, d2)
+				} else if err = o.buildJSON(m, d2); err != nil {
+					return
 				}
 			}
 		}
@@ -423,8 +426,8 @@ func (o *Options) buildObject(n gd.Object, depth int) {
 				o.buf = append(o.buf, ':')
 				if m == nil {
 					o.buf = append(o.buf, []byte("null")...)
-				} else {
-					o.buildJSON(m, 0)
+				} else if err = o.buildJSON(m, 0); err != nil {
+					return
 				}
 			}
 		} else {
@@ -442,16 +445,18 @@ func (o *Options) buildObject(n gd.Object, depth int) {
 				o.buf = append(o.buf, ':')
 				if m == nil {
 					o.buf = append(o.buf, []byte("null")...)
-				} else {
-					o.buildJSON(m, 0)
+				} else if err = o.buildJSON(m, 0); err != nil {
+					return
 				}
 			}
 		}
 	}
 	o.buf = append(o.buf, '}')
+
+	return
 }
 
-func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
+func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err error) {
 	o.buf = append(o.buf, '{')
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
@@ -484,8 +489,8 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 				o.buf = append(o.buf, ':')
 				if m := n[k]; m == nil {
 					o.buf = append(o.buf, []byte("null")...)
-				} else {
-					o.buildJSON(m, d2)
+				} else if err = o.buildJSON(m, d2); err != nil {
+					return
 				}
 			}
 		} else {
@@ -504,8 +509,8 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 				o.buf = append(o.buf, ':')
 				if m == nil {
 					o.buf = append(o.buf, []byte("null")...)
-				} else {
-					o.buildJSON(m, d2)
+				} else if err = o.buildJSON(m, d2); err != nil {
+					return
 				}
 			}
 		}
@@ -529,8 +534,8 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 				o.buf = append(o.buf, ':')
 				if m == nil {
 					o.buf = append(o.buf, []byte("null")...)
-				} else {
-					o.buildJSON(m, 0)
+				} else if err = o.buildJSON(m, 0); err != nil {
+					return
 				}
 			}
 		} else {
@@ -548,11 +553,13 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 				o.buf = append(o.buf, ':')
 				if m == nil {
 					o.buf = append(o.buf, []byte("null")...)
-				} else {
-					o.buildJSON(m, 0)
+				} else if err = o.buildJSON(m, 0); err != nil {
+					return
 				}
 			}
 		}
 	}
 	o.buf = append(o.buf, '}')
+
+	return
 }

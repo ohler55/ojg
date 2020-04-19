@@ -71,7 +71,7 @@ func FromSimple(v interface{}) (n Node, err error) {
 			err = fmt.Errorf("can not convert a %T to a Node", v)
 		}
 	}
-	return nil, nil
+	return
 }
 
 func AlterSimple(v interface{}) (n Node, err error) {

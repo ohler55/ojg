@@ -7,8 +7,6 @@ import (
 	"unsafe"
 )
 
-const spaces = "\n                                                                                                                                "
-
 type Array []Node
 
 func (n Array) String() string {
