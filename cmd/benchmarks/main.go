@@ -3,6 +3,8 @@
 package main
 
 import (
+	"encoding/json"
+	"flag"
 	"fmt"
 	"strings"
 	"testing"
@@ -17,6 +19,8 @@ import (
 // TBD remove tree before going public.
 
 func main() {
+	testing.Init()
+	flag.Parse()
 	tree.Sort = false
 	gd.TimeFormat = "nano"
 
@@ -260,22 +264,30 @@ func validateBenchmarks() {
 	fmt.Println()
 	fmt.Println("validate JSON")
 
-	treeRes := testing.Benchmark(treeParse)
+	goRes := testing.Benchmark(goValidate)
+	goNs := goRes.NsPerOp()
+	goBytes := goRes.AllocedBytesPerOp()
+	goAllocs := goRes.AllocsPerOp()
+	fmt.Printf("json.Decode:       %10d ns/op (%3.1fx)  %10d B/op (%4.1fx)  %10d allocs/op (%4.1fx)\n",
+		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
 
+	treeRes := testing.Benchmark(treeParse)
 	treeNs := treeRes.NsPerOp()
 	treeBytes := treeRes.AllocedBytesPerOp()
 	treeAllocs := treeRes.AllocsPerOp()
-	fmt.Printf("tree.ParseString:  %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
-		treeNs, 1.0, treeBytes, 1.0, treeAllocs, 1.0)
+	fmt.Printf("tree.ParseString:  %10d ns/op (%3.1fx)  %10d B/op (%4.1fx)  %10d allocs/op (%4.1fx)\n",
+		treeNs, float64(goNs)/float64(treeNs),
+		treeBytes, float64(goBytes)/float64(treeBytes),
+		treeAllocs, float64(goAllocs)/float64(treeAllocs))
 
 	ojgRes := testing.Benchmark(ojgValidate)
 	ojgNs := ojgRes.NsPerOp()
 	ojgBytes := ojgRes.AllocedBytesPerOp()
 	ojgAllocs := ojgRes.AllocsPerOp()
-	fmt.Printf("  gd.FromSimple:  %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
-		ojgNs, float64(treeNs)/float64(ojgNs),
-		ojgBytes, float64(treeBytes)/float64(ojgBytes),
-		ojgAllocs, float64(treeAllocs)/float64(ojgAllocs))
+	fmt.Printf(" ojg.Validate:     %10d ns/op (%3.1fx)  %10d B/op (%4.1fx)  %10d allocs/op (%4.1fx)\n",
+		ojgNs, float64(goNs)/float64(ojgNs),
+		ojgBytes, float64(goBytes)/float64(ojgBytes),
+		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
 }
 
 const sampleJSON = `[
@@ -283,9 +295,11 @@ const sampleJSON = `[
   null,
   true,
   false,
-  []
+  [null,false,true]
 ]
 `
+
+//  [1, 1.23, -44, 66]
 
 func treeParse(b *testing.B) {
 	for n := 0; n < b.N; n++ {
@@ -295,6 +309,13 @@ func treeParse(b *testing.B) {
 
 func ojgValidate(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		_ = ojg.Validate(sampleJSON)
+		//_ = ojg.Validate(sampleJSON)
+		_ = ojg.Valid([]byte(sampleJSON))
+	}
+}
+
+func goValidate(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		json.Valid([]byte(sampleJSON))
 	}
 }

@@ -2,6 +2,24 @@
 - ojg.Write and String tests
 
 - Parse
+ - range over buf is way faster than one byte at a time
+  - range over buf
+  - when at end fetch another and continue with a range
+  - space, open clase can all be part of main loop
+  - token
+   - track handler and value or maybe func wrapper
+  - num
+   - stateful
+    - state in function or int?
+    - collect in reuseable buffer if there is a handler
+  - string
+   - escaped need state
+
+
+ - different tolerant options
+  - comma tolerant (optional)
+  - key quote optional
+ - function map for creating objects from maps { "^O": "My-Type", "attr1": 123 }
 
 - Path
  - use S prefix instead of I
