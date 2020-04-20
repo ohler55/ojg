@@ -296,10 +296,9 @@ const sampleJSON = `[
   true,
   false,
   [null,false,true]
+  [1, 1.23, -44, 66]
 ]
 `
-
-//  [1, 1.23, -44, 66]
 
 func treeParse(b *testing.B) {
 	for n := 0; n < b.N; n++ {
@@ -309,13 +308,13 @@ func treeParse(b *testing.B) {
 
 func ojgValidate(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		//_ = ojg.Validate(sampleJSON)
-		_ = ojg.Valid([]byte(sampleJSON))
+		_ = ojg.Validate(sampleJSON)
+		//_ = ojg.Valid([]byte(sampleJSON))
 	}
 }
 
 func goValidate(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		json.Valid([]byte(sampleJSON))
+		_ = json.Valid([]byte(sampleJSON))
 	}
 }

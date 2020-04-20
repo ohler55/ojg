@@ -10,27 +10,20 @@ import (
 )
 
 // Parse a string into a gd.Node. Arguments are optional and can be a bool,
-// int, or func(gd.Node) bool.
+// a *ParseOptions, or func(gd.Node) bool.
 //
-// A bool is used to indicated if the parsing should be strict or tolerant. If tolerant then
-// C style // comments are allowed. That is the default.
+// A bool is used to indicated if the parsing should be limited to one JSON only.
 //
-// An int indicates the parsing should be limited to that number of top level
-// JSON elements and return and error if more than that limit is encountered.
-//
-// If the input includes multiple JSON documents then a callback function of
-// the form func(gd.Node) bool can be provided. The bool return if true will
-// abort processing.
 func Parse(s string, args ...interface{}) (n gd.Node, err error) {
 	p := parser{buf: []byte(s)} // TBD add handler
 	for _, a := range args {
 		switch ta := a.(type) {
 		case bool:
-			p.strict = ta
-		case int:
-			p.limit = ta
-		case string:
-			// TBD timeformat
+			p.onlyOne = ta
+		case *ParseOptions:
+			p.noComment = ta.NoComment
+			p.onlyOne = ta.OnlyOne
+			// TBD timeformat?
 		case func(gd.Node) bool:
 			// TBD set in handler
 		default:
@@ -67,13 +60,15 @@ func LoadSimple(r io.Reader, args ...interface{}) (interface{}, error) {
 }
 
 func Validate(s string, args ...interface{}) error {
-	p := parser{buf: []byte(s)}
+	p := parser{}
+	p.prepStr(s, nil)
 	for _, a := range args {
 		switch ta := a.(type) {
 		case bool:
-			p.strict = ta
-		case int:
-			p.limit = ta
+			p.onlyOne = ta
+		case *ParseOptions:
+			p.noComment = ta.NoComment
+			p.onlyOne = ta.OnlyOne
 		default:
 			return fmt.Errorf("%T is not a valid argument type", a)
 		}

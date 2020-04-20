@@ -8,10 +8,36 @@ import (
 	"strconv"
 )
 
+const (
+	tmpMinSize = 32 // for tokens and numbers
+	keyMinSize = 64 // for object keys
+
+	bomMode = iota
+	valueMode
+	nullMode
+	trueMode
+	falseMode
+	numMode
+	strMode
+	spaceMode
+	commentMode
+	commentStartMode
+)
+
+const (
+	// comma modes are expected modes
+	noComma      = iota // expect a value
+	closeOrComma        // close, ] or } or a comma
+	closeOrValue        // close, ] or } or a value
+	closeOrKey
+	colonOnly
+)
+
 type parser struct {
-	r      io.Reader
-	buf    []byte
-	strict bool
+	r         io.Reader
+	buf       []byte
+	noComment bool
+	onlyOne   bool
 
 	// TBD use separate handles for each callback type
 	objHand   ObjectHandler
@@ -23,199 +49,317 @@ type parser struct {
 	errHand   ErrorHandler
 	caller    Caller
 
-	expect func(*parser) bool
+	key    []byte
+	hasKey bool
+	tmp    []byte
+	ti     int // tmp index
+	numDot bool
+	numE   bool
 
-	next     int // next byte to read in the buf
-	markBuf  int // mark set for start of some value
-	markLine int
-	markCol  int
-	line     int
-	col      int
-	limit    int
-	depth    int
-	cnt      int
-	Err      error
+	line int
+	col  int
+
+	Err error
 }
 
-const (
-	bomMode = iota
-	tokenMode
-)
-
-func (p *parser) mark() {
-	p.markBuf = p.next
-	p.markLine = p.line
-	p.markCol = p.col
-}
-
-func (p *parser) unmark() {
-	p.markBuf = -1
-	p.markLine = -1
-	p.markCol = -1
-}
-
-func (p *parser) parsex() error {
-	if p.skipBOM() == nil {
-		p.depth = 0
-		p.line = 1
-		p.col = 1
-		p.unmark()
-		p.expect = value
+// TBD ** collecrtion modes
+//  collection buffer (where? parser or stack of parse()
+func (p *parser) prepStr(s string, handler interface{}) {
+	p.buf = []byte(s)
+	p.r = nil
+	if len(p.tmp) < tmpMinSize {
+		p.tmp = make([]byte, 0, tmpMinSize)
+	} else {
+		p.tmp = p.tmp[0:0]
 	}
-	for {
-		if p.skipSpace() != nil {
-			break
+	if len(p.key) < keyMinSize {
+		p.key = make([]byte, 0, keyMinSize)
+	} else {
+		p.key = p.key[0:0]
+	}
+	p.line = 1
+	p.col = 0
+	// TBD set up handlers
+}
+
+func (p *parser) parse() error {
+	// TBD skip over bom if present
+	mode := valueMode
+	comma := noComma // expected comma mode
+	depth := 0
+	for _, b := range p.buf {
+		p.col++
+		switch mode {
+		case bomMode:
+			// TBD check first byte, if 0xEF
+			// TBD index into bom, same as token?
+		case spaceMode:
+			switch b {
+			case 0:
+				return nil
+			case ' ', '\t', '\r':
+				continue
+			case '\n':
+				p.line++
+				p.col = 0
+			default:
+				return p.newError("extra characters after close, '%c'", b)
+			}
+		case valueMode:
+			switch b {
+			case 0:
+				if 0 < depth {
+					return p.newError("element not closed")
+				}
+				return nil
+			case ' ', '\t', '\r':
+				// ignore and continue
+			case '\n':
+				p.line++
+				p.col = 0
+			case ',':
+				if comma == noComma {
+					return p.newError("unexpected comma")
+				}
+				comma = noComma
+			case 'n':
+				if comma != noComma && comma != closeOrValue {
+					return p.newError("expected a comma or close, not 'n'")
+				}
+				mode = nullMode
+				p.ti = 4
+				p.tmp = p.tmp[0:0]
+				comma = closeOrComma
+			case 'f':
+				if comma != noComma && comma != closeOrValue {
+					return p.newError("expected a comma or close, not 'f'")
+				}
+				mode = falseMode
+				p.ti = 5
+				p.tmp = p.tmp[0:0]
+				comma = closeOrComma
+			case 't':
+				if comma != noComma && comma != closeOrValue {
+					return p.newError("expected a comma or close, not 't'")
+				}
+				mode = trueMode
+				p.ti = 4
+				p.tmp = p.tmp[0:0]
+				comma = closeOrComma
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
+				if comma != noComma && comma != closeOrValue {
+					return p.newError("expected a comma or close, not '%c'", b)
+				}
+				mode = numMode
+				p.tmp = p.tmp[0:0]
+				p.numDot = false
+				p.numE = false
+				_, _ = p.numByte(b)
+				comma = closeOrComma
+			case '"':
+				// TBD value or key
+			case '[':
+				if comma != noComma && comma != closeOrValue {
+					return p.newError("expected a comma or close, not '['")
+				}
+				depth++
+				comma = closeOrValue
+			case ']':
+				if comma != closeOrComma && comma != closeOrValue {
+					return p.newError("unexpected close")
+				}
+				depth--
+				// TBD arrayClose handler
+				if depth <= 0 {
+					if depth < 0 {
+						return p.newError("too many array closes")
+					}
+					// TBD caller handler
+				}
+				comma = closeOrComma
+			case '{':
+				// TBD need a comma mode for key and :
+			case '}':
+				// TBD
+			default:
+				return p.newError("unexpected character '%c'", b)
+			}
+		case nullMode:
+			p.tmp = append(p.tmp, b)
+			p.ti--
+			if p.ti == 1 {
+				if string(p.tmp) != "ull" {
+					return p.newError("n%s is not a valid JSON token", p.tmp)
+				}
+				mode = valueMode
+				if p.nullHand != nil {
+					if p.hasKey {
+						p.nullHand.KeyNull(string(p.key))
+						p.key = p.key[0:0]
+						p.hasKey = false
+					} else {
+						p.nullHand.Null()
+					}
+				}
+			}
+		case falseMode:
+			p.tmp = append(p.tmp, b)
+			p.ti--
+			if p.ti == 1 {
+				if string(p.tmp) != "alse" {
+					return p.newError("f%s is not a valid JSON token", p.tmp)
+				}
+				mode = valueMode
+				if p.boolHand != nil {
+					if p.hasKey {
+						p.boolHand.KeyBool(string(p.key), false)
+						p.key = p.key[0:0]
+						p.hasKey = false
+					} else {
+						p.boolHand.Bool(false)
+					}
+				}
+			}
+		case trueMode:
+			p.tmp = append(p.tmp, b)
+			p.ti--
+			if p.ti == 1 {
+				if string(p.tmp) != "rue" {
+					return p.newError("t%s is not a valid JSON token", p.tmp)
+				}
+				mode = valueMode
+				if p.boolHand != nil {
+					if p.hasKey {
+						p.boolHand.KeyBool(string(p.key), true)
+						p.key = p.key[0:0]
+						p.hasKey = false
+					} else {
+						p.boolHand.Bool(true)
+					}
+				}
+			}
+		case numMode:
+			done, err := p.numByte(b)
+			if err != nil {
+				return err
+			}
+			if done {
+				if p.numDot || p.numE {
+					if p.floatHand != nil {
+						f, err := strconv.ParseFloat(string(p.tmp), 64)
+						if err != nil {
+							return p.wrapError(err)
+						}
+						if p.hasKey {
+							p.floatHand.KeyFloat(string(p.key), f)
+							p.key = p.key[0:0]
+							p.hasKey = false
+						} else {
+							p.floatHand.Float(f)
+						}
+					}
+				} else if p.intHand != nil {
+					i, err := strconv.ParseInt(string(p.tmp), 10, 64)
+					if err != nil {
+						return p.wrapError(err)
+					}
+					if p.hasKey {
+						p.intHand.KeyInt(string(p.key), i)
+						p.key = p.key[0:0]
+						p.hasKey = false
+					} else {
+						p.intHand.Int(i)
+					}
+				}
+				mode = valueMode
+			}
+		case strMode:
+			// TBD
 		}
-		if p.depth == 0 && 0 < p.cnt && 0 < p.limit && p.limit <= p.cnt && p.peek() != 0 {
-			_ = p.newError("extra characters")
-			break
+		if depth == 0 && mode == valueMode && comma == closeOrComma {
+			comma = noComma
+			if p.onlyOne {
+				mode = spaceMode
+			} else {
+				mode = valueMode
+			}
 		}
-		if !p.expect(p) {
-			break
+	}
+	return nil
+}
+
+func (p *parser) numByte(b byte) (done bool, err error) {
+	if len(p.tmp) == 0 {
+		p.numDot = false
+		p.numE = false
+	}
+	p.tmp = append(p.tmp, b)
+	switch b {
+	case '-':
+		if len(p.tmp) == 1 {
+			// okay
+		} else {
+			prev := p.tmp[len(p.tmp)-2]
+			if prev != 'e' && prev != 'E' {
+				err = p.newError("invalid number '%s'", p.tmp)
+			}
 		}
-		if p.Err != nil {
-			break
+	case '+':
+		if len(p.tmp) == 1 {
+			err = p.newError("invalid number '%s'", p.tmp)
+		} else {
+			prev := p.tmp[len(p.tmp)-2]
+			if prev != 'e' && prev != 'E' {
+				err = p.newError("invalid number '%s'", p.tmp)
+			}
 		}
+	case '.':
+		if p.numDot {
+			err = p.newError("invalid number '%s'", p.tmp)
+		}
+		p.numDot = true
+	case 'e', 'E':
+		if p.numE {
+			err = p.newError("invalid number '%s'", p.tmp)
+		}
+		p.numE = true
+	case '0':
+		// ok as first if no other after
+	case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+		if len(p.tmp) == 2 && p.tmp[0] == '0' {
+			err = p.newError("invalid number '%s'", p.tmp)
+		}
+	case 0, ',', ']', '}':
+		prev := p.tmp[len(p.tmp)-1]
+		if prev < '0' || '9' < prev {
+			err = p.newError("invalid number '%s'", p.tmp)
+		}
+		done = true
+	default:
+		err = p.newError("invalid number '%s'", p.tmp)
+	}
+	return
+}
+
+func (p *parser) newError(format string, args ...interface{}) error {
+	p.Err = &ParseError{
+		Message: fmt.Sprintf(format, args...),
+		Line:    p.line,
+		Column:  p.col,
 	}
 	return p.Err
 }
 
-func value(p *parser) bool {
-	//fmt.Printf("*** value() - %c\n", p.peek())
-	switch p.peek() {
-	case 0:
-		return false
-	case '{':
-		p.depth++
-		if p.objHand != nil {
-			p.objHand.ObjectStart()
-		} else {
-			_ = p.read()
-		}
-		// TBD keep track of container {} or []
-		p.expect = valueOrClose
-	case '[':
-		p.depth++
-		if p.arrayHand != nil {
-			p.arrayHand.ArrayStart()
-		} else {
-			_ = p.read()
-		}
-		// TBD keep track of container {} or []
-		p.expect = valueOrClose
-	case 'n':
-		if p.readToken("null") == nil && p.nullHand != nil {
-			p.nullHand.Null(nil)
-		}
-		if 0 < p.depth {
-			p.expect = commaOrClose
-		} else {
-			p.expect = value
-			p.cnt++
-		}
-	case 't':
-		if p.readToken("true") == nil && p.boolHand != nil {
-			p.boolHand.Bool(nil, true)
-		}
-		if 0 < p.depth {
-			p.expect = commaOrClose
-		} else {
-			p.expect = value
-			p.cnt++
-		}
-	case 'f':
-		if p.readToken("false") == nil && p.boolHand != nil {
-			p.boolHand.Bool(nil, false)
-		}
-		if 0 < p.depth {
-			p.expect = commaOrClose
-		} else {
-			p.expect = value
-			p.cnt++
-		}
-	case '"':
-		p.readString()
-		if 0 < p.depth {
-			p.expect = commaOrClose
-		} else {
-			p.expect = value
-			p.cnt++
-		}
-	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '+':
-		p.readNum()
-		if 0 < p.depth {
-			p.expect = commaOrClose
-		} else {
-			p.expect = value
-			p.cnt++
-		}
-	default:
-		_ = p.newError("did not expect '%c'", p.peek())
+func (p *parser) wrapError(err error) error {
+	p.Err = &ParseError{
+		Message: err.Error(),
+		Line:    p.line,
+		Column:  p.col,
 	}
-	return true
+	return p.Err
 }
 
-func valueOrClose(p *parser) bool {
-	//fmt.Printf("*** valueOrClose() - %c\n", p.peek())
-	switch p.peek() {
-	case '}':
-		// TBD verify container type
-		p.depth--
-		_ = p.read()
-		if 0 < p.depth {
-			p.expect = commaOrClose
-		} else {
-			p.expect = value
-			p.cnt++
-		}
-	case ']':
-		// TBD verify container type
-		p.depth--
-		_ = p.read()
-		if 0 < p.depth {
-			p.expect = commaOrClose
-		} else {
-			p.expect = value
-			p.cnt++
-		}
-	default:
-		return value(p)
-	}
-	return true
-}
-
-func commaOrClose(p *parser) bool {
-	//fmt.Printf("*** commaOrClose() - %c\n", p.peek())
-	switch p.peek() {
-	case '}':
-		// TBD verify container type
-		p.depth--
-		_ = p.read()
-		if 0 < p.depth {
-			p.expect = commaOrClose
-		} else {
-			p.expect = value
-			p.cnt++
-		}
-	case ']':
-		// TBD verify container type
-		p.depth--
-		_ = p.read()
-		if 0 < p.depth {
-			p.expect = commaOrClose
-		} else {
-			p.expect = value
-			p.cnt++
-		}
-	case ',':
-		_ = p.read()
-		p.expect = value
-	default:
-		_ = p.newError("expected a comma or close, not '%c'", p.peek())
-	}
-	return true
-}
-
+/*
 func (p *parser) parse() error {
 	if p.skipBOM() == nil {
 		cnt := 0
@@ -443,37 +587,6 @@ func (p *parser) peek() (b byte) {
 
 	return
 }
-
-func (p *parser) newError(format string, args ...interface{}) error {
-	line := p.line
-	col := p.col
-	if 0 <= p.markLine {
-		line = p.markLine
-		col = p.markCol
-	}
-	p.Err = &ParseError{
-		Message: fmt.Sprintf(format, args...),
-		Line:    line,
-		Column:  col,
-	}
-	return p.Err
-}
-
-func (p *parser) wrapError(err error) error {
-	line := p.line
-	col := p.col
-	if 0 <= p.markLine {
-		line = p.markLine
-		col = p.markCol
-	}
-	p.Err = &ParseError{
-		Message: err.Error(),
-		Line:    line,
-		Column:  col,
-	}
-	return p.Err
-}
-
 func (p *parser) skipBOM() (err error) {
 	// Only a UTF-8 BOM is allowed for JSON.
 	if b := p.peek(); b == 0xEF {
@@ -533,3 +646,4 @@ func (p *parser) readToken(token string) error {
 	}
 	return nil
 }
+*/

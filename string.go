@@ -82,7 +82,7 @@ func (p *sparser) parse() error {
 			}
 			started = false
 			expComma = true
-			token = "null"
+			token = "ull"
 			tcnt = 0
 		case 't':
 			if expComma {
@@ -90,14 +90,16 @@ func (p *sparser) parse() error {
 			}
 			started = false
 			expComma = true
-			token = "true"
+			token = "rue"
+			tcnt = 0
 		case 'f':
 			if expComma {
 				_ = p.newError("expected a comma")
 			}
 			started = false
 			expComma = true
-			token = "false"
+			token = "alse"
+			tcnt = 0
 		case '"':
 			if expComma {
 				return p.newError("expected a comma")

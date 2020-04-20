@@ -19,29 +19,35 @@ type ErrorHandler interface {
 }
 
 type ObjectHandler interface {
+	KeyObjectStart(key string)
 	ObjectStart()
 	ObjectEnd()
 }
 
 type ArrayHandler interface {
+	KeyArrayStart(string)
 	ArrayStart()
 	ArrayEnd()
 }
 
 type NullHandler interface {
-	Null(key *string)
+	KeyNull(key string)
+	Null()
 }
 
 type IntHandler interface {
-	Int(key *string, value int64)
+	KeyInt(key string, value int64)
+	Int(value int64)
 }
 
 type FloatHandler interface {
-	Float(key *string, value float64)
+	KeyFloat(key string, value float64)
+	Float(value float64)
 }
 
 type BoolHandler interface {
-	Bool(key *string, value bool)
+	KeyBool(key string, value bool)
+	Bool(value bool)
 }
 
 type Caller interface {
