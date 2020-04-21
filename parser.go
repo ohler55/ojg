@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	tmpMinSize = 32 // for tokens and numbers
-	keyMinSize = 64 // for object keys
+	tmpMinSize  = 32 // for tokens and numbers
+	keyMinSize  = 64 // for object keys
+	readBufSize = 4096
 
 	bomMode = iota
 	valueMode
@@ -20,8 +21,8 @@ const (
 	numMode
 	strMode
 	spaceMode
-	commentMode
 	commentStartMode
+	commentMode
 )
 
 const (
@@ -34,12 +35,11 @@ const (
 )
 
 type parser struct {
-	r         io.Reader
-	buf       []byte
-	noComment bool
-	onlyOne   bool
+	r   io.Reader
+	buf []byte
 
-	// TBD use separate handles for each callback type
+	Err error
+
 	objHand   ObjectHandler
 	arrayHand ArrayHandler
 	nullHand  NullHandler
@@ -53,46 +53,67 @@ type parser struct {
 	hasKey bool
 	tmp    []byte
 	ti     int // tmp index
+	line   int
+	col    int
+
 	numDot bool
 	numE   bool
 
-	line int
-	col  int
-
-	Err error
+	noComment bool
+	onlyOne   bool
 }
 
-// TBD ** collecrtion modes
-//  collection buffer (where? parser or stack of parse()
 func (p *parser) prepStr(s string, handler interface{}) {
+	p.prep(handler)
 	p.buf = []byte(s)
-	p.r = nil
-	if len(p.tmp) < tmpMinSize {
-		p.tmp = make([]byte, 0, tmpMinSize)
-	} else {
-		p.tmp = p.tmp[0:0]
-	}
-	if len(p.key) < keyMinSize {
-		p.key = make([]byte, 0, keyMinSize)
-	} else {
-		p.key = p.key[0:0]
-	}
+}
+
+func (p *parser) prepReader(r io.Reader, handler interface{}) {
+	p.prep(handler)
+	p.r = r
+	p.buf = make([]byte, 0, readBufSize)
+}
+
+func (p *parser) prep(handler interface{}) {
+	p.tmp = make([]byte, 0, tmpMinSize)
+	p.key = make([]byte, 0, keyMinSize)
 	p.line = 1
-	p.col = 0
-	// TBD set up handlers
+	p.objHand, _ = handler.(ObjectHandler)
+	p.arrayHand, _ = handler.(ArrayHandler)
+	p.nullHand, _ = handler.(NullHandler)
+	p.boolHand, _ = handler.(BoolHandler)
+	p.intHand, _ = handler.(IntHandler)
+	p.floatHand, _ = handler.(FloatHandler)
+	p.errHand, _ = handler.(ErrorHandler)
+	p.caller, _ = handler.(Caller)
 }
 
 func (p *parser) parse() error {
-	// TBD skip over bom if present
 	mode := valueMode
 	comma := noComma // expected comma mode
 	depth := 0
+	if p.r != nil {
+		fmt.Printf("*** fill buf\n")
+		// TBD read first batch
+	}
+	// Skip BOM if present.
+	if 0 < len(p.buf) && p.buf[0] == 0xEF {
+		mode = bomMode
+		p.ti = 3
+		p.tmp = p.tmp[0:0]
+	}
 	for _, b := range p.buf {
 		p.col++
 		switch mode {
 		case bomMode:
-			// TBD check first byte, if 0xEF
-			// TBD index into bom, same as token?
+			if 0 < p.ti {
+				p.tmp = append(p.tmp, b)
+				p.ti--
+			} else if p.tmp[0] != 0xEF || p.tmp[1] != 0xBB || p.tmp[2] != 0xBF {
+				return p.newError("invalid BOM, not UTF-8")
+			} else {
+				mode = valueMode
+			}
 		case spaceMode:
 			switch b {
 			case 0:
@@ -104,6 +125,20 @@ func (p *parser) parse() error {
 				p.col = 0
 			default:
 				return p.newError("extra characters after close, '%c'", b)
+			}
+		case commentStartMode:
+			if b != '/' {
+				return p.newError("unexpected character '%c'", b)
+			}
+			mode = commentMode
+		case commentMode:
+			switch b {
+			case 0:
+				return nil
+			case '\n':
+				p.line++
+				p.col = 0
+				mode = valueMode
 			}
 		case valueMode:
 			switch b {
@@ -117,6 +152,11 @@ func (p *parser) parse() error {
 			case '\n':
 				p.line++
 				p.col = 0
+			case '/':
+				if p.noComment {
+					return p.newError("comments not allowed")
+				}
+				mode = commentStartMode
 			case ',':
 				if comma == noComma {
 					return p.newError("unexpected comma")

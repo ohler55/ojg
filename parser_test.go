@@ -42,11 +42,13 @@ func TestValidateString(t *testing.T) {
 		{src: "1.2e3e3", expect: "invalid number '1.2e3e' at 1:6"},
 		{src: "0.3", expect: ""},
 		{src: "03", expect: "invalid number '03' at 1:2"},
+		{src: "[\n  // a comment\n]", expect: ""},
+		{src: "[\n  // a comment\n]", expect: "comments not allowed at 2:3", options: &ojg.ParseOptions{NoComment: true}},
+		{src: "[\n  / a comment\n]", expect: "unexpected character ' ' at 2:4"},
+
 		/*
 			{src: "{}", expect: ""},
 			{src: " { \t }  ", expect: ""},
-			{src: "{\n  // a comment\n}", expect: ""},
-			{src: "{\n  // a comment\n}", expect: "did not expect '/' at 2:3", strict: true},
 			{src: `{x}`, expect: "did not expect 'x' at 1:2"},
 		*/
 	} {
