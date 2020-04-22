@@ -2,8 +2,10 @@
 - ojg.Write and String tests
 
 - Parse
+ - need stack for obj vs array for no-handler
  - string
  - object (need string for key)
+ - try func instead of mode enum
 
 
  - different tolerant options

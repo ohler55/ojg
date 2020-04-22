@@ -15,7 +15,7 @@ import (
 // A bool is used to indicated if the parsing should be limited to one JSON only.
 //
 func Parse(s string, args ...interface{}) (n gd.Node, err error) {
-	p := parser{buf: []byte(s)} // TBD add handler
+	p := Parser{buf: []byte(s)} // TBD add handler
 	for _, a := range args {
 		switch ta := a.(type) {
 		case bool:
@@ -60,22 +60,8 @@ func LoadSimple(r io.Reader, args ...interface{}) (interface{}, error) {
 }
 
 func Validate(s string, args ...interface{}) error {
-	p := parser{}
-	p.prepStr(s, nil)
-	for _, a := range args {
-		switch ta := a.(type) {
-		case bool:
-			p.onlyOne = ta
-		case *ParseOptions:
-			p.noComment = ta.NoComment
-			p.onlyOne = ta.OnlyOne
-		default:
-			return fmt.Errorf("%T is not a valid argument type", a)
-		}
-	}
-	err := p.parse()
-
-	return err
+	p := Parser{}
+	return p.Validate(s, args...)
 }
 
 func ValidateReader(r io.Reader, args ...interface{}) (interface{}, error) {

@@ -10,6 +10,7 @@ type Handler interface {
 	BoolHandler
 	IntHandler
 	FloatHandler
+	KeyHandler
 	ErrorHandler
 	Caller
 }
@@ -19,35 +20,33 @@ type ErrorHandler interface {
 }
 
 type ObjectHandler interface {
-	KeyObjectStart(key string)
 	ObjectStart()
 	ObjectEnd()
 }
 
 type ArrayHandler interface {
-	KeyArrayStart(string)
 	ArrayStart()
 	ArrayEnd()
 }
 
 type NullHandler interface {
-	KeyNull(key string)
 	Null()
 }
 
 type IntHandler interface {
-	KeyInt(key string, value int64)
 	Int(value int64)
 }
 
 type FloatHandler interface {
-	KeyFloat(key string, value float64)
 	Float(value float64)
 }
 
 type BoolHandler interface {
-	KeyBool(key string, value bool)
 	Bool(value bool)
+}
+
+type KeyHandler interface {
+	KeyO(key string)
 }
 
 type Caller interface {

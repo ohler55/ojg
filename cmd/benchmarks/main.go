@@ -296,10 +296,12 @@ const sampleJSON = `[
   true,
   false,
   [null,false,true],
-  [1, 1.23, -44, 66],
-  [[null,[true,[false,[123,[4.56e7,[]]]]]]]
+  [null,[false,[true],false],null]
 ]
 `
+
+//  [1, 1.23, -44, 66],
+//  [[null,[true,[false,[123,[4.56e7,[]]]]]]]
 
 func goValidate(b *testing.B) {
 	for n := 0; n < b.N; n++ {
@@ -308,8 +310,9 @@ func goValidate(b *testing.B) {
 }
 
 func ojgValidate(b *testing.B) {
+	p := ojg.Parser{}
 	for n := 0; n < b.N; n++ {
-		_ = ojg.Validate(sampleJSON)
+		_ = p.Validate(sampleJSON)
 	}
 }
 
