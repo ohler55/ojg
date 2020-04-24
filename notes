@@ -1,12 +1,19 @@
 
-- ojg.Write and String tests
-
 - Parse
+ - make comma modes part of top level mode
+  - commaOrClose
+  - value or close (just value?)
+
  - need stack for obj vs array for no-handler
+  - stack []byte with { or [ in it
+  - check types
  - string
  - object (need string for key)
  - try func instead of mode enum
 
+
+
+- ojg.Write and String tests
 
  - different tolerant options
   - comma tolerant (optional)
@@ -75,3 +82,9 @@ Use to negate a filter: [?(!@.isbn)] matches items that do not have the isbn pro
  - setOne
  - remove
  - removeFirst
+
+- parse methods
+ - tried functions instead of switch, slower
+  - tried array of 256 functions for value switching
+ - all in one function is fastest
+ - col++ created overhead as well

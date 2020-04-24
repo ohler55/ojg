@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	tmpMinSize  = 32 // for tokens and numbers
-	keyMinSize  = 64 // for object keys
-	readBufSize = 4096
+	tmpMinSize   = 32 // for tokens and numbers
+	keyMinSize   = 64 // for object keys
+	stackMinSize = 64 // for container stack { or [
+	readBufSize  = 4096
 
 	bomMode = iota
 	valueMode
@@ -50,18 +51,18 @@ type Parser struct {
 	errHand   ErrorHandler
 	caller    Caller
 
-	key  []byte
-	tmp  []byte
-	ti   int // tmp index
-	line int
-	col  int
-
-	depth int
-	mode  int
-	comma int
-
-	numDot bool
-	numE   bool
+	key     []byte
+	tmp     []byte
+	stack   []byte // { or [
+	ri      int    // read index for null, false, and true
+	line    int
+	noff    int // Offset of last newline from start of buf. Can be negative when using a reader.
+	off     int
+	mode    int
+	comma   int
+	modeFun func(*Parser, byte) error
+	numDot  bool
+	numE    bool
 
 	noComment bool
 	onlyOne   bool
@@ -107,7 +108,12 @@ func (p *Parser) prep(handler interface{}) {
 	} else {
 		p.key = p.key[0:0]
 	}
-	p.col = 0
+	if cap(p.stack) < stackMinSize {
+		p.stack = make([]byte, 0, stackMinSize)
+	} else {
+		p.stack = p.stack[0:0]
+	}
+	p.noff = -1
 	p.line = 1
 	p.Err = nil
 	p.objHand, _ = handler.(ObjectHandler)
@@ -124,7 +130,6 @@ func (p *Parser) prep(handler interface{}) {
 func (p *Parser) parse() error {
 	p.mode = valueMode
 	p.comma = noComma // expected comma mode
-	p.depth = 0
 	if p.r != nil {
 		fmt.Printf("*** fill buf\n")
 		// TBD read first batch
@@ -132,30 +137,26 @@ func (p *Parser) parse() error {
 	// Skip BOM if present.
 	if 0 < len(p.buf) && p.buf[0] == 0xEF {
 		p.mode = bomMode
-		p.ti = 3
-		p.tmp = p.tmp[0:0]
+		p.ri = 0
 	}
-	for _, b := range p.buf {
-		p.col++
+	var b byte
+	for p.off, b = range p.buf {
 		switch p.mode {
 		case bomMode:
-			if 0 < p.ti {
-				p.tmp = append(p.tmp, b)
-				p.ti--
-			} else if p.tmp[0] != 0xEF || p.tmp[1] != 0xBB || p.tmp[2] != 0xBF {
-				return p.newError("invalid BOM, not UTF-8")
-			} else {
+			p.ri++
+			if []byte{0xEF, 0xBB, 0xBF}[p.ri] != b {
+				return p.newError("expected BOM")
+			}
+			if 2 <= p.ri {
 				p.mode = valueMode
 			}
 		case spaceMode:
 			switch b {
-			case 0:
-				return nil
 			case ' ', '\t', '\r':
 				continue
 			case '\n':
 				p.line++
-				p.col = 0
+				p.noff = p.off
 			default:
 				return p.newError("extra characters after close, '%c'", b)
 			}
@@ -165,138 +166,207 @@ func (p *Parser) parse() error {
 			}
 			p.mode = commentMode
 		case commentMode:
-			switch b {
-			case 0:
-				return nil
-			case '\n':
+			if b == '\n' {
 				p.line++
-				p.col = 0
+				p.noff = p.off
 				p.mode = valueMode
 			}
 		case valueMode:
 			switch b {
-			case 0:
-				if 0 < p.depth {
-					return p.newError("element not closed")
-				}
-				return nil
 			case ' ', '\t', '\r':
 				// ignore and continue
 			case '\n':
 				p.line++
-				p.col = 0
-			case '/':
-				if p.noComment {
-					return p.newError("comments not allowed")
-				}
-				p.mode = commentStartMode
+				p.noff = p.off
 			case ',':
-				if p.comma == noComma {
-					return p.newError("unexpected comma")
-				}
+				/*
+					if p.comma == noComma {
+						return p.newError("unexpected comma")
+					}
+				*/
 				p.comma = noComma
 			case 'n':
-				if p.comma != noComma && p.comma != closeOrValue {
-					return p.newError("expected a comma or close, not 'n'")
-				}
+				/*
+					if p.comma != noComma && p.comma != closeOrValue {
+						return p.newError("expected a comma or close, not 'n'")
+					}
+				*/
 				p.mode = nullMode
-				p.ti = 4
-				p.tmp = p.tmp[0:0]
+				p.ri = 0
 				p.comma = closeOrComma
 			case 'f':
-				if p.comma != noComma && p.comma != closeOrValue {
-					return p.newError("expected a comma or close, not 'f'")
-				}
+				/*
+					if p.comma != noComma && p.comma != closeOrValue {
+						return p.newError("expected a comma or close, not 'f'")
+					}
+				*/
 				p.mode = falseMode
-				p.ti = 5
-				p.tmp = p.tmp[0:0]
+				p.ri = 0
 				p.comma = closeOrComma
 			case 't':
-				if p.comma != noComma && p.comma != closeOrValue {
-					return p.newError("expected a comma or close, not 't'")
-				}
+				/*
+					if p.comma != noComma && p.comma != closeOrValue {
+						return p.newError("expected a comma or close, not 't'")
+					}
+				*/
 				p.mode = trueMode
-				p.ti = 4
-				p.tmp = p.tmp[0:0]
+				p.ri = 0
 				p.comma = closeOrComma
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-				if p.comma != noComma && p.comma != closeOrValue {
-					return p.newError("expected a comma or close, not '%c'", b)
-				}
+				/*
+					if p.comma != noComma && p.comma != closeOrValue {
+						return p.newError("expected a comma or close, not '%c'", b)
+					}
+				*/
 				p.mode = numMode
 				p.tmp = p.tmp[0:0]
 				p.numDot = false
 				p.numE = false
-				_, _ = p.numByte(b)
+				p.tmp = append(p.tmp, b)
 				p.comma = closeOrComma
 			case '"':
 				// TBD value or key
 			case '[':
-				if p.comma != noComma && p.comma != closeOrValue {
-					return p.newError("expected a comma or close, not '['")
-				}
-				p.depth++
+				/*
+					if p.comma != noComma && p.comma != closeOrValue {
+						return p.newError("expected a comma or close, not '['")
+					}
+				*/
+				p.stack = append(p.stack, '[')
+				// TBD arrayOpen handler
 				p.comma = closeOrValue
 			case ']':
-				if p.comma != closeOrComma && p.comma != closeOrValue {
-					return p.newError("unexpected close")
-				}
-				p.depth--
-				// TBD arrayClose handler
-				if p.depth <= 0 {
-					if p.depth < 0 {
-						return p.newError("too many array closes")
+				/*
+					if p.comma != closeOrComma && p.comma != closeOrValue {
+						return p.newError("unexpected close")
 					}
-					// TBD caller handler
+				*/
+				depth := len(p.stack)
+				if depth == 0 {
+					return p.newError("too many closes")
 				}
+				depth--
+				if p.stack[depth] != '[' {
+					return p.newError("expected an array close")
+				}
+				p.stack = p.stack[0:depth]
+				// TBD arrayClose handler
 				p.comma = closeOrComma
 			case '{':
 				// TBD need a comma mode for key and :
 			case '}':
 				// TBD
+			case '/':
+				if p.noComment {
+					return p.newError("comments not allowed")
+				}
+				p.mode = commentStartMode
 			default:
 				return p.newError("unexpected character '%c'", b)
 			}
 		case nullMode:
-			p.tmp = append(p.tmp, b)
-			p.ti--
-			if p.ti == 1 {
-				if string(p.tmp) != "ull" {
-					return p.newError("n%s is not a valid JSON token", p.tmp)
-				}
+			p.ri++
+			if "null"[p.ri] != b {
+				return p.newError("expected null")
+			}
+			if 3 <= p.ri {
 				p.mode = valueMode
 				if p.nullHand != nil {
 					p.nullHand.Null()
 				}
 			}
 		case falseMode:
-			p.tmp = append(p.tmp, b)
-			p.ti--
-			if p.ti == 1 {
-				if string(p.tmp) != "alse" {
-					return p.newError("f%s is not a valid JSON token", p.tmp)
-				}
+			p.ri++
+			if "false"[p.ri] != b {
+				return p.newError("expected false")
+			}
+			if 4 <= p.ri {
 				p.mode = valueMode
 				if p.boolHand != nil {
 					p.boolHand.Bool(false)
 				}
 			}
 		case trueMode:
-			p.tmp = append(p.tmp, b)
-			p.ti--
-			if p.ti == 1 {
-				if string(p.tmp) != "rue" {
-					return p.newError("t%s is not a valid JSON token", p.tmp)
-				}
+			p.ri++
+			if "true"[p.ri] != b {
+				return p.newError("expected false")
+			}
+			if 3 <= p.ri {
 				p.mode = valueMode
 				if p.boolHand != nil {
 					p.boolHand.Bool(true)
 				}
 			}
 		case numMode:
-			done, err := p.numByte(b)
-			if err != nil {
-				return err
+			done := false
+			p.tmp = append(p.tmp, b)
+			switch b {
+			case '0':
+				// ok as first if no other after
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				if len(p.tmp) == 2 && p.tmp[0] == '0' {
+					return p.newError("invalid number '%s'", p.tmp)
+				}
+			case ' ', '\t', '\r':
+				done = true
+			case '\n':
+				done = true
+				p.line++
+				p.noff = p.off
+			case ',':
+				done = true
+				/*
+					if p.comma == noComma {
+						return p.newError("unexpected comma")
+					}
+				*/
+				p.comma = noComma
+			case ']':
+				done = true
+				/*
+					if p.comma != closeOrComma && p.comma != closeOrValue {
+						return p.newError("unexpected close")
+					}
+				*/
+				depth := len(p.stack)
+				if depth == 0 {
+					return p.newError("too many closes")
+				}
+				depth--
+				if p.stack[depth] != '[' {
+					return p.newError("expected an array close")
+				}
+				p.stack = p.stack[0:depth]
+				// TBD arrayClose handler
+				p.comma = closeOrComma
+			case '-':
+				if 1 < len(p.tmp) {
+					prev := p.tmp[len(p.tmp)-2]
+					if prev != 'e' && prev != 'E' {
+						return p.newError("invalid number '%s'", p.tmp)
+					}
+				}
+			case '.':
+				if p.numDot || p.numE {
+					return p.newError("invalid number '%s'", p.tmp)
+				}
+				p.numDot = true
+			case 'e', 'E':
+				if p.numE {
+					return p.newError("invalid number '%s'", p.tmp)
+				}
+				p.numE = true
+			case '+':
+				if len(p.tmp) == 1 {
+					return p.newError("invalid number '%s'", p.tmp)
+				} else {
+					prev := p.tmp[len(p.tmp)-2]
+					if prev != 'e' && prev != 'E' {
+						return p.newError("invalid number '%s'", p.tmp)
+					}
+				}
+			default:
+				return p.newError("invalid number '%s'", p.tmp)
 			}
 			if done {
 				if p.numDot || p.numE {
@@ -315,15 +385,11 @@ func (p *Parser) parse() error {
 					p.intHand.Int(i)
 				}
 				p.mode = valueMode
-				if err := p.valueByte(b); err != nil {
-					return err
-				}
-				// TBD have to redo b
 			}
 		case strMode:
 			// TBD
 		}
-		if p.depth == 0 && p.mode == valueMode && p.comma == closeOrComma {
+		if len(p.stack) == 0 && p.mode == valueMode && p.comma == closeOrComma {
 			p.comma = noComma
 			if p.onlyOne {
 				p.mode = spaceMode
@@ -335,71 +401,11 @@ func (p *Parser) parse() error {
 	return nil
 }
 
-func (p *Parser) numByte(b byte) (done bool, err error) {
-	if len(p.tmp) == 0 {
-		p.numDot = false
-		p.numE = false
-	}
-	p.tmp = append(p.tmp, b)
-	switch b {
-	case '-':
-		if len(p.tmp) == 1 {
-			// okay
-		} else {
-			prev := p.tmp[len(p.tmp)-2]
-			if prev != 'e' && prev != 'E' {
-				err = p.newError("invalid number '%s'", p.tmp)
-			}
-		}
-	case '+':
-		if len(p.tmp) == 1 {
-			err = p.newError("invalid number '%s'", p.tmp)
-		} else {
-			prev := p.tmp[len(p.tmp)-2]
-			if prev != 'e' && prev != 'E' {
-				err = p.newError("invalid number '%s'", p.tmp)
-			}
-		}
-	case '.':
-		if p.numDot || p.numE {
-			err = p.newError("invalid number '%s'", p.tmp)
-		}
-		p.numDot = true
-	case 'e', 'E':
-		if p.numE {
-			err = p.newError("invalid number '%s'", p.tmp)
-		}
-		p.numE = true
-	case '0':
-		// ok as first if no other after
-	case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-		if len(p.tmp) == 2 && p.tmp[0] == '0' {
-			err = p.newError("invalid number '%s'", p.tmp)
-		}
-	case 0, ',', ']', '}', ' ', '\n':
-		if len(p.tmp) < 2 {
-			err = p.newError("invalid number '%s'", p.tmp)
-		} else {
-			prev := p.tmp[len(p.tmp)-2]
-			if prev < '0' || '9' < prev {
-				err = p.newError("invalid number '%s'", p.tmp)
-			}
-		}
-		done = true
-	default:
-		err = p.newError("invalid number '%s'", p.tmp)
-	}
-	// TBD include other byte checkd for 0, ], }, ...
-	// try inline
-
-	return
-}
-
 func (p *Parser) newError(format string, args ...interface{}) error {
 	p.Err = &ParseError{
 		Message: fmt.Sprintf(format, args...),
 		Line:    p.line,
-		Column:  p.col,
+		Column:  p.off - p.noff,
 	}
 	return p.Err
 }
@@ -408,94 +414,7 @@ func (p *Parser) wrapError(err error) error {
 	p.Err = &ParseError{
 		Message: err.Error(),
 		Line:    p.line,
-		Column:  p.col,
+		Column:  p.off - p.noff,
 	}
 	return p.Err
-}
-
-func (p *Parser) valueByte(b byte) error {
-	switch b {
-	case 0:
-		if 0 < p.depth {
-			return p.newError("element not closed")
-		}
-		return nil
-	case ' ', '\t', '\r':
-		// ignore and continue
-	case '\n':
-		p.line++
-		p.col = 0
-	case '/':
-		if p.noComment {
-			return p.newError("comments not allowed")
-		}
-		p.mode = commentStartMode
-	case ',':
-		if p.comma == noComma {
-			return p.newError("unexpected comma")
-		}
-		p.comma = noComma
-	case 'n':
-		if p.comma != noComma && p.comma != closeOrValue {
-			return p.newError("expected a comma or close, not 'n'")
-		}
-		p.mode = nullMode
-		p.ti = 4
-		p.tmp = p.tmp[0:0]
-		p.comma = closeOrComma
-	case 'f':
-		if p.comma != noComma && p.comma != closeOrValue {
-			return p.newError("expected a comma or close, not 'f'")
-		}
-		p.mode = falseMode
-		p.ti = 5
-		p.tmp = p.tmp[0:0]
-		p.comma = closeOrComma
-	case 't':
-		if p.comma != noComma && p.comma != closeOrValue {
-			return p.newError("expected a comma or close, not 't'")
-		}
-		p.mode = trueMode
-		p.ti = 4
-		p.tmp = p.tmp[0:0]
-		p.comma = closeOrComma
-	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-		if p.comma != noComma && p.comma != closeOrValue {
-			return p.newError("expected a comma or close, not '%c'", b)
-		}
-		p.mode = numMode
-		p.tmp = p.tmp[0:0]
-		p.numDot = false
-		p.numE = false
-		_, _ = p.numByte(b)
-		p.comma = closeOrComma
-	case '"':
-		// TBD value or key
-	case '[':
-		if p.comma != noComma && p.comma != closeOrValue {
-			return p.newError("expected a comma or close, not '['")
-		}
-		p.depth++
-		p.comma = closeOrValue
-	case ']':
-		if p.comma != closeOrComma && p.comma != closeOrValue {
-			return p.newError("unexpected close")
-		}
-		p.depth--
-		// TBD arrayClose handler
-		if p.depth <= 0 {
-			if p.depth < 0 {
-				return p.newError("too many array closes")
-			}
-			// TBD caller handler
-		}
-		p.comma = closeOrComma
-	case '{':
-		// TBD need a comma mode for key and :
-	case '}':
-		// TBD
-	default:
-		return p.newError("unexpected character '%c'", b)
-	}
-	return nil
 }

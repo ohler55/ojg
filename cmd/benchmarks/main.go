@@ -290,13 +290,23 @@ func validateBenchmarks() {
 		treeAllocs, float64(goAllocs)/float64(treeAllocs))
 }
 
-const sampleJSON = `[
+const sampleJSONx = `[
   [],
   null,
   true,
   false,
   [null,false,true],
+  [null,false,true],
   [null,[false,[true],false],null]
+]
+`
+const sampleJSON = `[
+  [],
+  null,
+  true,
+  false,
+  [1, 1.23, -44, 66],
+  [[null,[true,[false,[123,[4.56e7,[]]]]]]]
 ]
 `
 
@@ -313,6 +323,8 @@ func ojgValidate(b *testing.B) {
 	p := ojg.Parser{}
 	for n := 0; n < b.N; n++ {
 		_ = p.Validate(sampleJSON)
+		//err := p.Validate(sampleJSON)
+		//fmt.Println(err)
 	}
 }
 
