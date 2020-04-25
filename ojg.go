@@ -59,11 +59,13 @@ func LoadSimple(r io.Reader, args ...interface{}) (interface{}, error) {
 	return nil, nil
 }
 
+// Validate a JSON string. An error is returned if not valid JSON.
 func Validate(s string, args ...interface{}) error {
 	p := Parser{}
 	return p.Validate(s, args...)
 }
 
+// ValidateReader a JSON stream. An error is returned if not valid JSON.
 func ValidateReader(r io.Reader, args ...interface{}) error {
 	p := Parser{}
 	return p.ValidateReader(r, args...)

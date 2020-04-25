@@ -54,11 +54,12 @@ func TestValidateString(t *testing.T) {
 		{src: "[\n  // a comment\n]", expect: ""},
 		{src: "[\n  // a comment\n]", expect: "comments not allowed at 2:3", options: &ojg.ParseOptions{NoComment: true}},
 		{src: "[\n  / a comment\n]", expect: "unexpected character ' ' at 2:4"},
-		/*
-			{src: "{}", expect: ""},
-			{src: " { \t }  ", expect: ""},
-			{src: `{x}`, expect: "did not expect 'x' at 1:2"},
-		*/
+
+		{src: "{}", expect: ""},
+		{src: `{"a":3}`, expect: ""},
+		{src: `{"a": 3, "b": true}`, expect: ""},
+		{src: `{"a":{"b":{"c":true}}}`, expect: ""},
+		{src: `{x}`, expect: "expected a string start or object close, not 'x' at 1:2"},
 	} {
 		var err error
 		if d.options != nil {

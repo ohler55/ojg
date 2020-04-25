@@ -262,7 +262,7 @@ func ojgWriteSort(b *testing.B) {
 
 func validateBenchmarks() {
 	fmt.Println()
-	fmt.Println("validate JSON")
+	fmt.Println("Validate JSON")
 
 	goRes := testing.Benchmark(goValidate)
 	goNs := goRes.NsPerOp()
@@ -300,12 +300,16 @@ const sampleJSON = `[
   "",
   "a string",
   [1, 1.23, -44, "six"],
-  [[null,[true,[false,[123,[4.56e7,["abcdef"]]]]]]]
+  [[null,[true,[false,[123,[4.56e7,["abcdef"]]]]]]],
+  {
+    "abc": 3,
+    "def": {
+      "ghi": true
+    },
+    "xyz": "another string"
+  }
 ]
 `
-
-//  [1, 1.23, -44, 66],
-//  [[null,[true,[false,[123,[4.56e7,[]]]]]]]
 
 func goValidate(b *testing.B) {
 	for n := 0; n < b.N; n++ {

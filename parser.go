@@ -14,21 +14,26 @@ const (
 	stackMinSize = 64 // for container stack { or [
 	readBufSize  = 4096
 
-	bomMode = iota
-	valueMode
-	afterMode
-	nullMode
-	trueMode
-	falseMode
-	numMode
-	strMode
-	escMode
-	runeMode
-	spaceMode
-	commentStartMode
-	commentMode
+	bomMode          = 'b'
+	valueMode        = 'v'
+	afterMode        = 'a'
+	nullMode         = 'n'
+	trueMode         = 't'
+	falseMode        = 'f'
+	numMode          = 'N'
+	strMode          = 's'
+	escMode          = 'e'
+	uMode            = 'u'
+	keyMode          = 'k'
+	colonMode        = ':'
+	spaceMode        = ' '
+	commentStartMode = '/'
+	commentMode      = 'c'
 )
 
+// Parser is the core of validation and parsing. It can be reused for multiple
+// validations or parsings which allows buffer reuse for a performance
+// advantage.
 type Parser struct {
 	r   io.Reader
 	buf []byte
@@ -63,6 +68,7 @@ type Parser struct {
 	onlyOne   bool
 }
 
+// Validate a JSON string. An error is returned if not valid JSON.
 func (p *Parser) Validate(s string, args ...interface{}) error {
 	p.prepStr(s, nil)
 	for _, a := range args {
@@ -81,6 +87,7 @@ func (p *Parser) Validate(s string, args ...interface{}) error {
 	return err
 }
 
+// ValidateReader a JSON stream. An error is returned if not valid JSON.
 func (p *Parser) ValidateReader(r io.Reader, args ...interface{}) error {
 	p.prepReader(r, nil)
 	for _, a := range args {
@@ -141,6 +148,10 @@ func (p *Parser) prep(handler interface{}) {
 	p.caller, _ = handler.(Caller)
 }
 
+// This is a huge function only because there was a significant performance
+// improvement by reducing function calls. The code is predominantly switch
+// statements with the first layer being the various parsing modes and the
+// second level deciding what to do with a byte read while in that mode.
 func (p *Parser) parse() error {
 	p.mode = valueMode
 	if p.r != nil {
@@ -179,6 +190,7 @@ func (p *Parser) parse() error {
 				p.tmp = append(p.tmp, b)
 			case '"':
 				p.mode = strMode
+				p.nextMode = afterMode
 			case '[':
 				p.stack = append(p.stack, '[')
 				// TBD arrayOpen handler
@@ -195,9 +207,21 @@ func (p *Parser) parse() error {
 				p.mode = afterMode
 				// TBD arrayClose handler
 			case '{':
-				// TBD need a mode for key and :
+				p.stack = append(p.stack, '{')
+				p.mode = keyMode
+				// TBD objHand.ObjectStart
 			case '}':
-				// TBD
+				depth := len(p.stack)
+				if depth == 0 {
+					return p.newError("too many closes")
+				}
+				depth--
+				if p.stack[depth] != '{' {
+					return p.newError("expected an object close")
+				}
+				p.stack = p.stack[0:depth]
+				p.mode = afterMode
+				// TBD objClose handler
 			case '/':
 				if p.noComment {
 					return p.newError("comments not allowed")
@@ -215,7 +239,11 @@ func (p *Parser) parse() error {
 				p.line++
 				p.noff = p.off
 			case ',':
-				p.mode = valueMode
+				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+					p.mode = keyMode
+				} else {
+					p.mode = valueMode
+				}
 			case ']':
 				depth := len(p.stack)
 				if depth == 0 {
@@ -227,8 +255,55 @@ func (p *Parser) parse() error {
 				}
 				p.stack = p.stack[0:depth]
 				// TBD arrayClose handler
+			case '}':
+				depth := len(p.stack)
+				if depth == 0 {
+					return p.newError("too many closes")
+				}
+				depth--
+				if p.stack[depth] != '{' {
+					return p.newError("expected an object close")
+				}
+				p.stack = p.stack[0:depth]
+				// TBD p.objHand.ObjectEnd
 			default:
 				return p.newError("expected a comma or close, not '%c'", b)
+			}
+		case keyMode:
+			switch b {
+			case ' ', '\t', '\r':
+				continue
+			case '\n':
+				p.line++
+				p.noff = p.off
+			case '"':
+				p.mode = strMode
+				p.nextMode = colonMode
+			case '}':
+				depth := len(p.stack)
+				if depth == 0 {
+					return p.newError("too many closes")
+				}
+				depth--
+				if p.stack[depth] != '{' {
+					return p.newError("expected an object close")
+				}
+				p.stack = p.stack[0:depth]
+				// TBD p.obj.Hand.ObjectClose()
+			default:
+				return p.newError("expected a string start or object close, not '%c'", b)
+			}
+		case colonMode:
+			switch b {
+			case ' ', '\t', '\r':
+				continue
+			case '\n':
+				p.line++
+				p.noff = p.off
+			case ':':
+				p.mode = valueMode
+			default:
+				return p.newError("expected a colon, not '%c'", b)
 			}
 		case nullMode:
 			p.ri++
@@ -283,7 +358,11 @@ func (p *Parser) parse() error {
 				p.mode = afterMode
 			case ',':
 				done = true
-				p.mode = valueMode
+				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+					p.mode = keyMode
+				} else {
+					p.mode = valueMode
+				}
 			case ']':
 				done = true
 				depth := len(p.stack)
@@ -297,6 +376,19 @@ func (p *Parser) parse() error {
 				p.stack = p.stack[0:depth]
 				p.mode = afterMode
 				// TBD arrayClose handler
+			case '}':
+				done = true
+				depth := len(p.stack)
+				if depth == 0 {
+					return p.newError("too many closes")
+				}
+				depth--
+				if p.stack[depth] != '{' {
+					return p.newError("expected an object close")
+				}
+				p.stack = p.stack[0:depth]
+				p.mode = afterMode
+				// TBD objClose handler
 			case '-':
 				if 1 < len(p.tmp) {
 					prev := p.tmp[len(p.tmp)-2]
@@ -392,7 +484,7 @@ func (p *Parser) parse() error {
 					p.tmp = append(p.tmp, '\t')
 				}
 			case 'u':
-				p.mode = runeMode
+				p.mode = uMode
 				if 0 < cap(p.runeHex) {
 					p.runeHex = p.runeHex[0:0]
 				} else {
@@ -401,7 +493,7 @@ func (p *Parser) parse() error {
 			default:
 				return p.newError("invalid JSON escape character '\\%c'", b)
 			}
-		case runeMode:
+		case uMode:
 			switch b {
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.runeHex = append(p.runeHex, uint32(b-'0'))
