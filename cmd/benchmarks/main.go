@@ -290,23 +290,17 @@ func validateBenchmarks() {
 		treeAllocs, float64(goAllocs)/float64(treeAllocs))
 }
 
-const sampleJSONx = `[
-  [],
-  null,
-  true,
-  false,
-  [null,false,true],
-  [null,false,true],
-  [null,[false,[true],false],null]
-]
-`
 const sampleJSON = `[
   [],
   null,
   true,
   false,
-  [1, 1.23, -44, 66],
-  [[null,[true,[false,[123,[4.56e7,[]]]]]]]
+  77,
+  123.456e7,
+  "",
+  "a string",
+  [1, 1.23, -44, "six"],
+  [[null,[true,[false,[123,[4.56e7,["abcdef"]]]]]]]
 ]
 `
 

@@ -43,6 +43,14 @@ func TestValidateString(t *testing.T) {
 		{src: "1.2e3e3", expect: "invalid number '1.2e3e' at 1:6"},
 		{src: "0.3", expect: ""},
 		{src: "03", expect: "invalid number '03' at 1:2"},
+
+		{src: `""`, expect: ""},
+		{src: `"abc"`, expect: ""},
+		{src: `"a\tb\nc\b\"\\d\f\r"`, expect: ""},
+		{src: "\"bass \U0001D122\"", expect: ""},
+		{src: `"a \u2669"`, expect: ""},
+		{src: `"bad \uabcz"`, expect: "invalid JSON unicode character 'z' at 1:11"},
+
 		{src: "[\n  // a comment\n]", expect: ""},
 		{src: "[\n  // a comment\n]", expect: "comments not allowed at 2:3", options: &ojg.ParseOptions{NoComment: true}},
 		{src: "[\n  / a comment\n]", expect: "unexpected character ' ' at 2:4"},

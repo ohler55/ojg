@@ -10,6 +10,7 @@ type Handler interface {
 	BoolHandler
 	IntHandler
 	FloatHandler
+	StrHandler
 	KeyHandler
 	ErrorHandler
 	Caller
@@ -45,8 +46,12 @@ type BoolHandler interface {
 	Bool(value bool)
 }
 
+type StrHandler interface {
+	Str(key string)
+}
+
 type KeyHandler interface {
-	KeyO(key string)
+	Key(key string)
 }
 
 type Caller interface {

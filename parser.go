@@ -22,6 +22,8 @@ const (
 	falseMode
 	numMode
 	strMode
+	escMode
+	runeMode
 	spaceMode
 	commentStartMode
 	commentMode
@@ -39,21 +41,23 @@ type Parser struct {
 	boolHand  BoolHandler
 	intHand   IntHandler
 	floatHand FloatHandler
+	strHand   StrHandler
 	keyHand   KeyHandler
 	errHand   ErrorHandler
 	caller    Caller
 
-	key            []byte
-	tmp            []byte
-	stack          []byte // { or [
-	ri             int    // read index for null, false, and true
-	line           int
-	noff           int // Offset of last newline from start of buf. Can be negative when using a reader.
-	off            int
-	mode           int
-	preCommentMode int
-	numDot         bool
-	numE           bool
+	key      []byte
+	tmp      []byte
+	stack    []byte // { or [
+	runeHex  []uint32
+	ri       int // read index for null, false, and true
+	line     int
+	noff     int // Offset of last newline from start of buf. Can be negative when using a reader.
+	off      int
+	mode     int
+	nextMode int
+	numDot   bool
+	numE     bool
 
 	noComment bool
 	onlyOne   bool
@@ -61,6 +65,24 @@ type Parser struct {
 
 func (p *Parser) Validate(s string, args ...interface{}) error {
 	p.prepStr(s, nil)
+	for _, a := range args {
+		switch ta := a.(type) {
+		case bool:
+			p.onlyOne = ta
+		case *ParseOptions:
+			p.noComment = ta.NoComment
+			p.onlyOne = ta.OnlyOne
+		default:
+			return fmt.Errorf("%T is not a valid argument type", a)
+		}
+	}
+	err := p.parse()
+
+	return err
+}
+
+func (p *Parser) ValidateReader(r io.Reader, args ...interface{}) error {
+	p.prepReader(r, nil)
 	for _, a := range args {
 		switch ta := a.(type) {
 		case bool:
@@ -113,6 +135,7 @@ func (p *Parser) prep(handler interface{}) {
 	p.boolHand, _ = handler.(BoolHandler)
 	p.intHand, _ = handler.(IntHandler)
 	p.floatHand, _ = handler.(FloatHandler)
+	p.strHand, _ = handler.(StrHandler)
 	p.keyHand, _ = handler.(KeyHandler)
 	p.errHand, _ = handler.(ErrorHandler)
 	p.caller, _ = handler.(Caller)
@@ -155,7 +178,7 @@ func (p *Parser) parse() error {
 				p.numE = false
 				p.tmp = append(p.tmp, b)
 			case '"':
-				// TBD value or key
+				p.mode = strMode
 			case '[':
 				p.stack = append(p.stack, '[')
 				// TBD arrayOpen handler
@@ -179,7 +202,7 @@ func (p *Parser) parse() error {
 				if p.noComment {
 					return p.newError("comments not allowed")
 				}
-				p.preCommentMode = p.mode
+				p.nextMode = p.mode
 				p.mode = commentStartMode
 			default:
 				return p.newError("unexpected character '%c'", b)
@@ -321,7 +344,80 @@ func (p *Parser) parse() error {
 				}
 			}
 		case strMode:
-			// TBD
+			if b < 0x20 {
+				return p.newError("invalid JSON character 0x%02x", b)
+			}
+			switch b {
+			case '\\':
+				p.mode = escMode
+			case '"':
+				p.mode = p.nextMode
+				// TBD if strHand then p.strHand.Str(string(p.tmp))
+			default:
+				// TBD if strHand then append to p.tmp
+			}
+		case escMode:
+			p.mode = strMode
+			switch b {
+			case 'n':
+				if p.strHand != nil {
+					p.tmp = append(p.tmp, '\n')
+				}
+			case '"':
+				if p.strHand != nil {
+					p.tmp = append(p.tmp, '"')
+				}
+			case '\\':
+				if p.strHand != nil {
+					p.tmp = append(p.tmp, '\\')
+				}
+			case '/':
+				if p.strHand != nil {
+					p.tmp = append(p.tmp, '/')
+				}
+			case 'b':
+				if p.strHand != nil {
+					p.tmp = append(p.tmp, '\b')
+				}
+			case 'f':
+				if p.strHand != nil {
+					p.tmp = append(p.tmp, '\f')
+				}
+			case 'r':
+				if p.strHand != nil {
+					p.tmp = append(p.tmp, '\r')
+				}
+			case 't':
+				if p.strHand != nil {
+					p.tmp = append(p.tmp, '\t')
+				}
+			case 'u':
+				p.mode = runeMode
+				if 0 < cap(p.runeHex) {
+					p.runeHex = p.runeHex[0:0]
+				} else {
+					p.runeHex = make([]uint32, 0, 4)
+				}
+			default:
+				return p.newError("invalid JSON escape character '\\%c'", b)
+			}
+		case runeMode:
+			switch b {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				p.runeHex = append(p.runeHex, uint32(b-'0'))
+			case 'a', 'b', 'c', 'd', 'e', 'f':
+				p.runeHex = append(p.runeHex, uint32(b-'a'+10))
+			case 'A', 'B', 'C', 'D', 'E', 'F':
+				p.runeHex = append(p.runeHex, uint32(b-'A'+10))
+			default:
+				return p.newError("invalid JSON unicode character '%c'", b)
+			}
+			if len(p.runeHex) == 4 {
+				if p.strHand != nil {
+					// TBD build rune then append to p.tmp as bytes
+				}
+				p.mode = strMode
+			}
 		case spaceMode:
 			switch b {
 			case ' ', '\t', '\r':
@@ -341,7 +437,7 @@ func (p *Parser) parse() error {
 			if b == '\n' {
 				p.line++
 				p.noff = p.off
-				p.mode = p.preCommentMode
+				p.mode = p.nextMode
 			}
 		case bomMode:
 			p.ri++

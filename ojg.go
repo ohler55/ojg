@@ -64,9 +64,7 @@ func Validate(s string, args ...interface{}) error {
 	return p.Validate(s, args...)
 }
 
-func ValidateReader(r io.Reader, args ...interface{}) (interface{}, error) {
-
-	// TBD
-
-	return nil, nil
+func ValidateReader(r io.Reader, args ...interface{}) error {
+	p := Parser{}
+	return p.ValidateReader(r, args...)
 }

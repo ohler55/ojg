@@ -1,16 +1,5 @@
 
 - Parse
- - string
-  - when there is a handler, push onto tmp
-  - is normal push
-  - if \ then \x or \uhhhh
-   - escMode
-   - escUMode
-  - if < space then error
-  - if > 0x80 then ???
-   - just copy or decode form utf-8?
-    - looks like UTF-8 encoded already for jsut copy
-
  - object (need string for key)
 
 
