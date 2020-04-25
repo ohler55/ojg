@@ -16,6 +16,7 @@ const (
 
 	bomMode = iota
 	valueMode
+	afterMode
 	nullMode
 	trueMode
 	falseMode
@@ -24,15 +25,6 @@ const (
 	spaceMode
 	commentStartMode
 	commentMode
-)
-
-const (
-	// comma modes are expected modes
-	noComma      = iota // expect a value
-	closeOrComma        // close, ] or } or a comma
-	closeOrValue        // close, ] or } or a value
-	closeOrKey
-	colonOnly
 )
 
 type Parser struct {
@@ -51,18 +43,17 @@ type Parser struct {
 	errHand   ErrorHandler
 	caller    Caller
 
-	key     []byte
-	tmp     []byte
-	stack   []byte // { or [
-	ri      int    // read index for null, false, and true
-	line    int
-	noff    int // Offset of last newline from start of buf. Can be negative when using a reader.
-	off     int
-	mode    int
-	comma   int
-	modeFun func(*Parser, byte) error
-	numDot  bool
-	numE    bool
+	key            []byte
+	tmp            []byte
+	stack          []byte // { or [
+	ri             int    // read index for null, false, and true
+	line           int
+	noff           int // Offset of last newline from start of buf. Can be negative when using a reader.
+	off            int
+	mode           int
+	preCommentMode int
+	numDot         bool
+	numE           bool
 
 	noComment bool
 	onlyOne   bool
@@ -129,7 +120,6 @@ func (p *Parser) prep(handler interface{}) {
 
 func (p *Parser) parse() error {
 	p.mode = valueMode
-	p.comma = noComma // expected comma mode
 	if p.r != nil {
 		fmt.Printf("*** fill buf\n")
 		// TBD read first batch
@@ -142,35 +132,6 @@ func (p *Parser) parse() error {
 	var b byte
 	for p.off, b = range p.buf {
 		switch p.mode {
-		case bomMode:
-			p.ri++
-			if []byte{0xEF, 0xBB, 0xBF}[p.ri] != b {
-				return p.newError("expected BOM")
-			}
-			if 2 <= p.ri {
-				p.mode = valueMode
-			}
-		case spaceMode:
-			switch b {
-			case ' ', '\t', '\r':
-				continue
-			case '\n':
-				p.line++
-				p.noff = p.off
-			default:
-				return p.newError("extra characters after close, '%c'", b)
-			}
-		case commentStartMode:
-			if b != '/' {
-				return p.newError("unexpected character '%c'", b)
-			}
-			p.mode = commentMode
-		case commentMode:
-			if b == '\n' {
-				p.line++
-				p.noff = p.off
-				p.mode = valueMode
-			}
 		case valueMode:
 			switch b {
 			case ' ', '\t', '\r':
@@ -178,69 +139,61 @@ func (p *Parser) parse() error {
 			case '\n':
 				p.line++
 				p.noff = p.off
-			case ',':
-				/*
-					if p.comma == noComma {
-						return p.newError("unexpected comma")
-					}
-				*/
-				p.comma = noComma
 			case 'n':
-				/*
-					if p.comma != noComma && p.comma != closeOrValue {
-						return p.newError("expected a comma or close, not 'n'")
-					}
-				*/
 				p.mode = nullMode
 				p.ri = 0
-				p.comma = closeOrComma
 			case 'f':
-				/*
-					if p.comma != noComma && p.comma != closeOrValue {
-						return p.newError("expected a comma or close, not 'f'")
-					}
-				*/
 				p.mode = falseMode
 				p.ri = 0
-				p.comma = closeOrComma
 			case 't':
-				/*
-					if p.comma != noComma && p.comma != closeOrValue {
-						return p.newError("expected a comma or close, not 't'")
-					}
-				*/
 				p.mode = trueMode
 				p.ri = 0
-				p.comma = closeOrComma
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-				/*
-					if p.comma != noComma && p.comma != closeOrValue {
-						return p.newError("expected a comma or close, not '%c'", b)
-					}
-				*/
 				p.mode = numMode
 				p.tmp = p.tmp[0:0]
 				p.numDot = false
 				p.numE = false
 				p.tmp = append(p.tmp, b)
-				p.comma = closeOrComma
 			case '"':
 				// TBD value or key
 			case '[':
-				/*
-					if p.comma != noComma && p.comma != closeOrValue {
-						return p.newError("expected a comma or close, not '['")
-					}
-				*/
 				p.stack = append(p.stack, '[')
 				// TBD arrayOpen handler
-				p.comma = closeOrValue
 			case ']':
-				/*
-					if p.comma != closeOrComma && p.comma != closeOrValue {
-						return p.newError("unexpected close")
-					}
-				*/
+				depth := len(p.stack)
+				if depth == 0 {
+					return p.newError("too many closes")
+				}
+				depth--
+				if p.stack[depth] != '[' {
+					return p.newError("expected an array close")
+				}
+				p.stack = p.stack[0:depth]
+				p.mode = afterMode
+				// TBD arrayClose handler
+			case '{':
+				// TBD need a mode for key and :
+			case '}':
+				// TBD
+			case '/':
+				if p.noComment {
+					return p.newError("comments not allowed")
+				}
+				p.preCommentMode = p.mode
+				p.mode = commentStartMode
+			default:
+				return p.newError("unexpected character '%c'", b)
+			}
+		case afterMode:
+			switch b {
+			case ' ', '\t', '\r':
+				continue
+			case '\n':
+				p.line++
+				p.noff = p.off
+			case ',':
+				p.mode = valueMode
+			case ']':
 				depth := len(p.stack)
 				if depth == 0 {
 					return p.newError("too many closes")
@@ -251,18 +204,8 @@ func (p *Parser) parse() error {
 				}
 				p.stack = p.stack[0:depth]
 				// TBD arrayClose handler
-				p.comma = closeOrComma
-			case '{':
-				// TBD need a comma mode for key and :
-			case '}':
-				// TBD
-			case '/':
-				if p.noComment {
-					return p.newError("comments not allowed")
-				}
-				p.mode = commentStartMode
 			default:
-				return p.newError("unexpected character '%c'", b)
+				return p.newError("expected a comma or close, not '%c'", b)
 			}
 		case nullMode:
 			p.ri++
@@ -270,7 +213,7 @@ func (p *Parser) parse() error {
 				return p.newError("expected null")
 			}
 			if 3 <= p.ri {
-				p.mode = valueMode
+				p.mode = afterMode
 				if p.nullHand != nil {
 					p.nullHand.Null()
 				}
@@ -281,7 +224,7 @@ func (p *Parser) parse() error {
 				return p.newError("expected false")
 			}
 			if 4 <= p.ri {
-				p.mode = valueMode
+				p.mode = afterMode
 				if p.boolHand != nil {
 					p.boolHand.Bool(false)
 				}
@@ -292,7 +235,7 @@ func (p *Parser) parse() error {
 				return p.newError("expected false")
 			}
 			if 3 <= p.ri {
-				p.mode = valueMode
+				p.mode = afterMode
 				if p.boolHand != nil {
 					p.boolHand.Bool(true)
 				}
@@ -309,25 +252,17 @@ func (p *Parser) parse() error {
 				}
 			case ' ', '\t', '\r':
 				done = true
+				p.mode = afterMode
 			case '\n':
 				done = true
 				p.line++
 				p.noff = p.off
+				p.mode = afterMode
 			case ',':
 				done = true
-				/*
-					if p.comma == noComma {
-						return p.newError("unexpected comma")
-					}
-				*/
-				p.comma = noComma
+				p.mode = valueMode
 			case ']':
 				done = true
-				/*
-					if p.comma != closeOrComma && p.comma != closeOrValue {
-						return p.newError("unexpected close")
-					}
-				*/
 				depth := len(p.stack)
 				if depth == 0 {
 					return p.newError("too many closes")
@@ -337,8 +272,8 @@ func (p *Parser) parse() error {
 					return p.newError("expected an array close")
 				}
 				p.stack = p.stack[0:depth]
+				p.mode = afterMode
 				// TBD arrayClose handler
-				p.comma = closeOrComma
 			case '-':
 				if 1 < len(p.tmp) {
 					prev := p.tmp[len(p.tmp)-2]
@@ -384,13 +319,40 @@ func (p *Parser) parse() error {
 					}
 					p.intHand.Int(i)
 				}
-				p.mode = valueMode
 			}
 		case strMode:
 			// TBD
+		case spaceMode:
+			switch b {
+			case ' ', '\t', '\r':
+				continue
+			case '\n':
+				p.line++
+				p.noff = p.off
+			default:
+				return p.newError("extra characters after close, '%c'", b)
+			}
+		case commentStartMode:
+			if b != '/' {
+				return p.newError("unexpected character '%c'", b)
+			}
+			p.mode = commentMode
+		case commentMode:
+			if b == '\n' {
+				p.line++
+				p.noff = p.off
+				p.mode = p.preCommentMode
+			}
+		case bomMode:
+			p.ri++
+			if []byte{0xEF, 0xBB, 0xBF}[p.ri] != b {
+				return p.newError("expected BOM")
+			}
+			if 2 <= p.ri {
+				p.mode = valueMode
+			}
 		}
-		if len(p.stack) == 0 && p.mode == valueMode && p.comma == closeOrComma {
-			p.comma = noComma
+		if len(p.stack) == 0 && p.mode == afterMode {
 			if p.onlyOne {
 				p.mode = spaceMode
 			} else {

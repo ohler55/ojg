@@ -1,16 +1,17 @@
 
 - Parse
- - make comma modes part of top level mode
-  - commaOrClose
-  - value or close (just value?)
-
- - need stack for obj vs array for no-handler
-  - stack []byte with { or [ in it
-  - check types
  - string
- - object (need string for key)
- - try func instead of mode enum
+  - when there is a handler, push onto tmp
+  - is normal push
+  - if \ then \x or \uhhhh
+   - escMode
+   - escUMode
+  - if < space then error
+  - if > 0x80 then ???
+   - just copy or decode form utf-8?
+    - looks like UTF-8 encoded already for jsut copy
 
+ - object (need string for key)
 
 
 - ojg.Write and String tests

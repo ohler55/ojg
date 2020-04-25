@@ -127,7 +127,7 @@ func jsonBenchmarks(base testing.BenchmarkResult, indent, sort bool) {
 	treeNs := treeRes.NsPerOp()
 	treeBytes := treeRes.AllocedBytesPerOp()
 	treeAllocs := treeRes.AllocsPerOp()
-	fmt.Printf("tree.JSON:   %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
+	fmt.Printf("tree.JSON:   %10d ns/op (%3.2fx)  %10d B/op (%3.2fx)  %10d allocs/op (%3.2fx)\n",
 		treeNs, 1.0, treeBytes, 1.0, treeAllocs, 1.0)
 
 	if sort {
@@ -140,7 +140,7 @@ func jsonBenchmarks(base testing.BenchmarkResult, indent, sort bool) {
 	ojgNs := ojgSRes.NsPerOp()
 	ojgBytes := ojgSRes.AllocedBytesPerOp()
 	ojgAllocs := ojgSRes.AllocsPerOp()
-	fmt.Printf(" ojg.String: %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
+	fmt.Printf(" ojg.String: %10d ns/op (%3.2fx)  %10d B/op (%3.2fx)  %10d allocs/op (%3.2fx)\n",
 		ojgNs, float64(treeNs)/float64(ojgNs),
 		ojgBytes, float64(treeBytes)/float64(ojgBytes),
 		ojgAllocs, float64(treeAllocs)/float64(ojgAllocs))
@@ -155,7 +155,7 @@ func jsonBenchmarks(base testing.BenchmarkResult, indent, sort bool) {
 	ojgNs = ojgWRes.NsPerOp()
 	ojgBytes = ojgWRes.AllocedBytesPerOp()
 	ojgAllocs = ojgWRes.AllocsPerOp()
-	fmt.Printf(" ojg.Write:  %10d ns/op (%3.1fx)  %10d B/op (%3.1fx)  %10d allocs/op (%3.1fx)\n",
+	fmt.Printf(" ojg.Write:  %10d ns/op (%3.2fx)  %10d B/op (%3.2fx)  %10d allocs/op (%3.2fx)\n",
 		ojgNs, float64(treeNs)/float64(ojgNs),
 		ojgBytes, float64(treeBytes)/float64(ojgBytes),
 		ojgAllocs, float64(treeAllocs)/float64(ojgAllocs))
@@ -268,14 +268,14 @@ func validateBenchmarks() {
 	goNs := goRes.NsPerOp()
 	goBytes := goRes.AllocedBytesPerOp()
 	goAllocs := goRes.AllocsPerOp()
-	fmt.Printf("json.Decode:       %10d ns/op (%3.1fx)  %10d B/op (%4.1fx)  %10d allocs/op (%4.1fx)\n",
+	fmt.Printf("json.Decode:       %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
 		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
 
 	ojgRes := testing.Benchmark(ojgValidate)
 	ojgNs := ojgRes.NsPerOp()
 	ojgBytes := ojgRes.AllocedBytesPerOp()
 	ojgAllocs := ojgRes.AllocsPerOp()
-	fmt.Printf(" ojg.Validate:     %10d ns/op (%3.1fx)  %10d B/op (%4.1fx)  %10d allocs/op (%4.1fx)\n",
+	fmt.Printf(" ojg.Validate:     %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
 		ojgNs, float64(goNs)/float64(ojgNs),
 		ojgBytes, float64(goBytes)/float64(ojgBytes),
 		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
@@ -284,7 +284,7 @@ func validateBenchmarks() {
 	treeNs := treeRes.NsPerOp()
 	treeBytes := treeRes.AllocedBytesPerOp()
 	treeAllocs := treeRes.AllocsPerOp()
-	fmt.Printf("tree.ParseString:  %10d ns/op (%3.1fx)  %10d B/op (%4.1fx)  %10d allocs/op (%4.1fx)\n",
+	fmt.Printf("tree.ParseString:  %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
 		treeNs, float64(goNs)/float64(treeNs),
 		treeBytes, float64(goBytes)/float64(treeBytes),
 		treeAllocs, float64(goAllocs)/float64(treeAllocs))
