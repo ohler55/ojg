@@ -14,8 +14,9 @@ func TestValidateString(t *testing.T) {
 		src string
 		// Empty means no error expected while non empty should be compared
 		// err.Error().
-		expect  string
-		options *ojg.ParseOptions
+		expect    string
+		onlyOne   bool
+		noComment bool
 	}
 	for _, d := range []data{
 		{src: "null", expect: ""},
@@ -33,7 +34,7 @@ func TestValidateString(t *testing.T) {
 
 		{src: "[]", expect: ""},
 		{src: "null {}", expect: ""},
-		{src: "null {}", expect: "extra characters after close, '{' at 1:6", options: &ojg.ParseOptions{OnlyOne: true}},
+		{src: "null {}", expect: "extra characters after close, '{' at 1:6", onlyOne: true},
 
 		{src: "-1.23", expect: ""},
 		{src: "+1.23", expect: "unexpected character '+' at 1:1"},
@@ -52,7 +53,7 @@ func TestValidateString(t *testing.T) {
 		{src: `"bad \uabcz"`, expect: "invalid JSON unicode character 'z' at 1:11"},
 
 		{src: "[\n  // a comment\n]", expect: ""},
-		{src: "[\n  // a comment\n]", expect: "comments not allowed at 2:3", options: &ojg.ParseOptions{NoComment: true}},
+		{src: "[\n  // a comment\n]", expect: "comments not allowed at 2:3", noComment: true},
 		{src: "[\n  / a comment\n]", expect: "unexpected character ' ' at 2:4"},
 
 		{src: "{}", expect: ""},
@@ -62,8 +63,9 @@ func TestValidateString(t *testing.T) {
 		{src: `{x}`, expect: "expected a string start or object close, not 'x' at 1:2"},
 	} {
 		var err error
-		if d.options != nil {
-			err = ojg.Validate(d.src, d.options)
+		if d.onlyOne || d.noComment {
+			p := ojg.Parser{OnlyOne: d.onlyOne, NoComment: d.noComment}
+			err = p.Validate(d.src)
 		} else {
 			err = ojg.Validate(d.src)
 		}

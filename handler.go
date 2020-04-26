@@ -4,56 +4,15 @@ package ojg
 
 // should make callback when end of top
 type Handler interface {
-	ObjectHandler
-	ArrayHandler
-	NullHandler
-	BoolHandler
-	IntHandler
-	FloatHandler
-	StrHandler
-	KeyHandler
-	ErrorHandler
-	Caller
-}
-
-type ErrorHandler interface {
-	Error(err error, line, col int64)
-}
-
-type ObjectHandler interface {
 	ObjectStart()
 	ObjectEnd()
-}
-
-type ArrayHandler interface {
 	ArrayStart()
 	ArrayEnd()
-}
-
-type NullHandler interface {
 	Null()
-}
-
-type IntHandler interface {
-	Int(value int64)
-}
-
-type FloatHandler interface {
-	Float(value float64)
-}
-
-type BoolHandler interface {
 	Bool(value bool)
-}
-
-type StrHandler interface {
+	Int(value int64)
+	Float(value float64)
 	Str(key string)
-}
-
-type KeyHandler interface {
 	Key(key string)
-}
-
-type Caller interface {
-	Call()
+	Call() bool
 }
