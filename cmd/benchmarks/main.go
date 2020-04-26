@@ -322,6 +322,7 @@ func ojgValidate(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_ = p.Validate(sampleJSON)
 		//err := p.Validate(sampleJSON)
+		//_, _ = p.Parse(sampleJSON)
 		//fmt.Println(err)
 	}
 }

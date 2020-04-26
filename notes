@@ -1,6 +1,6 @@
 
 - Parse
- - object (need string for key)
+ - benchmark with callback object vs function
 
 
 - ojg.Write and String tests

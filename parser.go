@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+
+	"github.com/ohler55/ojg/gd"
 )
 
 const (
@@ -40,6 +42,13 @@ type Parser struct {
 
 	Err error
 
+	// NoComments returns an error if a comment is encountered.
+	NoComment bool
+
+	// OnlyOne returns an error if more than one JSON is in the string or
+	// stream.
+	OnlyOne bool
+
 	objHand   ObjectHandler
 	arrayHand ArrayHandler
 	nullHand  NullHandler
@@ -50,6 +59,21 @@ type Parser struct {
 	keyHand   KeyHandler
 	errHand   ErrorHandler
 	caller    Caller
+
+	handler interface{}
+
+	errorFun       func(h interface{}, err error, line, col int64)
+	objectStartFun func(h interface{})
+	objectEndFun   func(h interface{})
+	arrayStartFun  func(h interface{})
+	arrayEndFun    func(h interface{})
+	nullFun        func(h interface{})
+	intFun         func(h interface{}, value int64)
+	floatFun       func(h interface{}, value float64)
+	boolFun        func(h interface{}, value bool)
+	strFun         func(h interface{}, key string)
+	keyFun         func(h interface{}, key string)
+	callFun        func(h interface{})
 
 	key      []byte
 	tmp      []byte
@@ -69,55 +93,52 @@ type Parser struct {
 }
 
 // Validate a JSON string. An error is returned if not valid JSON.
-func (p *Parser) Validate(s string, args ...interface{}) error {
-	p.prepStr(s, nil)
-	for _, a := range args {
-		switch ta := a.(type) {
-		case bool:
-			p.onlyOne = ta
-		case *ParseOptions:
-			p.noComment = ta.NoComment
-			p.onlyOne = ta.OnlyOne
-		default:
-			return fmt.Errorf("%T is not a valid argument type", a)
-		}
-	}
+func (p *Parser) Validate(s string) error {
+	p.prepStr(s)
 	err := p.parse()
 
 	return err
 }
 
 // ValidateReader a JSON stream. An error is returned if not valid JSON.
-func (p *Parser) ValidateReader(r io.Reader, args ...interface{}) error {
-	p.prepReader(r, nil)
-	for _, a := range args {
-		switch ta := a.(type) {
-		case bool:
-			p.onlyOne = ta
-		case *ParseOptions:
-			p.noComment = ta.NoComment
-			p.onlyOne = ta.OnlyOne
-		default:
-			return fmt.Errorf("%T is not a valid argument type", a)
-		}
-	}
-	err := p.parse()
-
-	return err
+func (p *Parser) ValidateReader(r io.Reader) error {
+	p.prepReader(r)
+	return p.parse()
 }
 
-func (p *Parser) prepStr(s string, handler interface{}) {
-	p.prep(handler)
+func boo(hand interface{}, value bool) {
+}
+
+type Boo struct {
+}
+
+func (b *Boo) Bool(value bool) {
+}
+
+// Parse a JSON string. An error is returned if not valid JSON.
+func (p *Parser) Parse(s string) (gd.Node, error) {
+	p.boolFun = boo
+	p.boolHand = &Boo{}
+	p.prepStr(s)
+	err := p.parse()
+
+	// TBD
+
+	return nil, err
+}
+
+func (p *Parser) prepStr(s string) {
+	p.prep()
 	p.buf = []byte(s)
 }
 
-func (p *Parser) prepReader(r io.Reader, handler interface{}) {
-	p.prep(handler)
+func (p *Parser) prepReader(r io.Reader) {
+	p.prep()
 	p.r = r
 	p.buf = make([]byte, 0, readBufSize)
 }
 
-func (p *Parser) prep(handler interface{}) {
+func (p *Parser) prep() {
 	if cap(p.tmp) < tmpMinSize {
 		p.tmp = make([]byte, 0, tmpMinSize)
 	} else {
@@ -136,16 +157,19 @@ func (p *Parser) prep(handler interface{}) {
 	p.noff = -1
 	p.line = 1
 	p.Err = nil
-	p.objHand, _ = handler.(ObjectHandler)
-	p.arrayHand, _ = handler.(ArrayHandler)
-	p.nullHand, _ = handler.(NullHandler)
-	p.boolHand, _ = handler.(BoolHandler)
-	p.intHand, _ = handler.(IntHandler)
-	p.floatHand, _ = handler.(FloatHandler)
-	p.strHand, _ = handler.(StrHandler)
-	p.keyHand, _ = handler.(KeyHandler)
-	p.errHand, _ = handler.(ErrorHandler)
-	p.caller, _ = handler.(Caller)
+}
+
+func (p *Parser) SetHandler(h interface{}) {
+	p.objHand, _ = h.(ObjectHandler)
+	p.arrayHand, _ = h.(ArrayHandler)
+	p.nullHand, _ = h.(NullHandler)
+	p.boolHand, _ = h.(BoolHandler)
+	p.intHand, _ = h.(IntHandler)
+	p.floatHand, _ = h.(FloatHandler)
+	p.strHand, _ = h.(StrHandler)
+	p.keyHand, _ = h.(KeyHandler)
+	p.errHand, _ = h.(ErrorHandler)
+	p.caller, _ = h.(Caller)
 }
 
 // This is a huge function only because there was a significant performance
@@ -323,8 +347,14 @@ func (p *Parser) parse() error {
 			}
 			if 4 <= p.ri {
 				p.mode = afterMode
-				if p.boolHand != nil {
-					p.boolHand.Bool(false)
+				if false {
+					if p.boolHand != nil {
+						p.boolHand.Bool(false)
+					}
+				} else {
+					if p.boolFun != nil {
+						p.boolFun(p.handler, false)
+					}
 				}
 			}
 		case trueMode:
@@ -334,8 +364,15 @@ func (p *Parser) parse() error {
 			}
 			if 3 <= p.ri {
 				p.mode = afterMode
-				if p.boolHand != nil {
-					p.boolHand.Bool(true)
+				if false {
+					if p.boolHand != nil {
+						p.boolHand.Bool(true)
+					}
+				} else {
+
+					if p.boolFun != nil {
+						p.boolFun(p.handler, true)
+					}
 				}
 			}
 		case numMode:
