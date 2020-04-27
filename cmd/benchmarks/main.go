@@ -25,6 +25,7 @@ func main() {
 	gd.TimeFormat = "nano"
 
 	validateBenchmarks()
+	parseBenchmarks()
 
 	base := testing.Benchmark(runBase)
 
@@ -318,7 +319,7 @@ func goValidate(b *testing.B) {
 }
 
 func ojgValidate(b *testing.B) {
-	p := ojg.Parser{}
+	p := &ojg.Parser{}
 	for n := 0; n < b.N; n++ {
 		_ = p.Validate(sampleJSON)
 		//err := p.Validate(sampleJSON)
@@ -329,5 +330,51 @@ func ojgValidate(b *testing.B) {
 func treeParse(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_, _ = tree.ParseString(sampleJSON)
+	}
+}
+
+func parseBenchmarks() {
+	fmt.Println()
+	fmt.Println("Parse JSON")
+
+	goRes := testing.Benchmark(goParse)
+	goNs := goRes.NsPerOp()
+	goBytes := goRes.AllocedBytesPerOp()
+	goAllocs := goRes.AllocsPerOp()
+	fmt.Printf("json.Unmarshal:    %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
+
+	ojgRes := testing.Benchmark(ojgParse)
+	ojgNs := ojgRes.NsPerOp()
+	ojgBytes := ojgRes.AllocedBytesPerOp()
+	ojgAllocs := ojgRes.AllocsPerOp()
+	fmt.Printf(" ojg.Parse:        %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+		ojgNs, float64(goNs)/float64(ojgNs),
+		ojgBytes, float64(goBytes)/float64(ojgBytes),
+		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
+
+	treeRes := testing.Benchmark(treeParse)
+	treeNs := treeRes.NsPerOp()
+	treeBytes := treeRes.AllocedBytesPerOp()
+	treeAllocs := treeRes.AllocsPerOp()
+	fmt.Printf("tree.ParseString:  %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+		treeNs, float64(goNs)/float64(treeNs),
+		treeBytes, float64(goBytes)/float64(treeBytes),
+		treeAllocs, float64(goAllocs)/float64(treeAllocs))
+}
+
+func goParse(b *testing.B) {
+	var result interface{}
+	for n := 0; n < b.N; n++ {
+		_ = json.Unmarshal([]byte(sampleJSON), &result)
+	}
+}
+
+func ojgParse(b *testing.B) {
+	p := &ojg.Parser{}
+	for n := 0; n < b.N; n++ {
+		_, _ = p.Parse(sampleJSON)
+		//_, err := p.Parse(sampleJSON)
+		//fmt.Println(err)
 	}
 }

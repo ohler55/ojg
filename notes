@@ -1,7 +1,11 @@
 
 - Parse
- - object (need string for key)
-
+ - nodeHandler
+  - stack
+   - key string
+   - obj gd.Object
+   - list []gd.Node - reuse
+    - need to collapse/set to nil when after copy
 
 - ojg.Write and String tests
 

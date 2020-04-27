@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"unicode/utf8"
+
+	"github.com/ohler55/ojg/gd"
 )
 
 const (
 	tmpMinSize   = 32 // for tokens and numbers
-	keyMinSize   = 64 // for object keys
-	stackMinSize = 64 // for container stack { or [
+	keyMinSize   = 32 // for object keys
+	stackMinSize = 32 // for container stack { or [
 	readBufSize  = 4096
 
 	bomMode          = 'b'
@@ -35,98 +38,85 @@ const (
 // validations or parsings which allows buffer reuse for a performance
 // advantage.
 type Parser struct {
-	r   io.Reader
-	buf []byte
+	buf       []byte
+	tmp       []byte // used for numbers and strings
+	stack     []byte // { or [
+	runeBytes []byte
+	h         Handler
+	r         io.Reader
+	ri        int // read index for null, false, and true
+	line      int
+	noff      int // Offset of last newline from start of buf. Can be negative when using a reader.
+	off       int
+	mode      int
+	nextMode  int
+	rn        rune
+	numDot    bool
+	numE      bool
 
-	Err error
+	// NoComments returns an error if a comment is encountered.
+	NoComment bool
 
-	objHand   ObjectHandler
-	arrayHand ArrayHandler
-	nullHand  NullHandler
-	boolHand  BoolHandler
-	intHand   IntHandler
-	floatHand FloatHandler
-	strHand   StrHandler
-	keyHand   KeyHandler
-	errHand   ErrorHandler
-	caller    Caller
-
-	key      []byte
-	tmp      []byte
-	stack    []byte // { or [
-	runeHex  []uint32
-	ri       int // read index for null, false, and true
-	line     int
-	noff     int // Offset of last newline from start of buf. Can be negative when using a reader.
-	off      int
-	mode     int
-	nextMode int
-	numDot   bool
-	numE     bool
-
-	noComment bool
-	onlyOne   bool
+	// OnlyOne returns an error if more than one JSON is in the string or
+	// stream.
+	OnlyOne bool
 }
 
 // Validate a JSON string. An error is returned if not valid JSON.
-func (p *Parser) Validate(s string, args ...interface{}) error {
-	p.prepStr(s, nil)
-	for _, a := range args {
-		switch ta := a.(type) {
-		case bool:
-			p.onlyOne = ta
-		case *ParseOptions:
-			p.noComment = ta.NoComment
-			p.onlyOne = ta.OnlyOne
-		default:
-			return fmt.Errorf("%T is not a valid argument type", a)
-		}
-	}
-	err := p.parse()
+func (p *Parser) Validate(s string) error {
+	p.buf = []byte(s)
+	p.h = nil
 
-	return err
+	return p.parse()
 }
 
 // ValidateReader a JSON stream. An error is returned if not valid JSON.
-func (p *Parser) ValidateReader(r io.Reader, args ...interface{}) error {
-	p.prepReader(r, nil)
+func (p *Parser) ValidateReader(r io.Reader) error {
+	p.r = r
+	p.buf = make([]byte, 0, readBufSize)
+	return p.parse()
+}
+
+// Parse a JSON string. An error is returned if not valid JSON.
+func (p *Parser) Parse(s string, args ...interface{}) (node gd.Node, err error) {
+	p.buf = []byte(s)
+
+	var callback func(gd.Node) bool
+
 	for _, a := range args {
 		switch ta := a.(type) {
 		case bool:
-			p.onlyOne = ta
-		case *ParseOptions:
-			p.noComment = ta.NoComment
-			p.onlyOne = ta.OnlyOne
-		default:
-			return fmt.Errorf("%T is not a valid argument type", a)
+			p.NoComment = ta
+		case func(gd.Node) bool:
+			callback = ta
+			p.OnlyOne = false
 		}
 	}
-	err := p.parse()
+	if callback == nil {
+		callback = func(n gd.Node) bool {
+			node = n
+			return false // tells the parser to stop
+		}
+	}
+	if h, _ := p.h.(*nodeHandler); h == nil {
+		p.h = &nodeHandler{cb: callback}
+	} else {
+		h.cb = callback
+	}
+	err = p.parse()
 
-	return err
+	return
 }
 
-func (p *Parser) prepStr(s string, handler interface{}) {
-	p.prep(handler)
-	p.buf = []byte(s)
-}
-
-func (p *Parser) prepReader(r io.Reader, handler interface{}) {
-	p.prep(handler)
-	p.r = r
-	p.buf = make([]byte, 0, readBufSize)
-}
-
-func (p *Parser) prep(handler interface{}) {
+// This is a huge function only because there was a significant performance
+// improvement by reducing function calls. The code is predominantly switch
+// statements with the first layer being the various parsing modes and the
+// second level deciding what to do with a byte read while in that mode.
+func (p *Parser) parse() error {
 	if cap(p.tmp) < tmpMinSize {
 		p.tmp = make([]byte, 0, tmpMinSize)
 	} else {
 		p.tmp = p.tmp[0:0]
-	}
-	if cap(p.key) < keyMinSize {
-		p.key = make([]byte, 0, keyMinSize)
-	} else {
-		p.key = p.key[0:0]
 	}
 	if cap(p.stack) < stackMinSize {
 		p.stack = make([]byte, 0, stackMinSize)
@@ -135,24 +125,6 @@ func (p *Parser) prep(handler interface{}) {
 	}
 	p.noff = -1
 	p.line = 1
-	p.Err = nil
-	p.objHand, _ = handler.(ObjectHandler)
-	p.arrayHand, _ = handler.(ArrayHandler)
-	p.nullHand, _ = handler.(NullHandler)
-	p.boolHand, _ = handler.(BoolHandler)
-	p.intHand, _ = handler.(IntHandler)
-	p.floatHand, _ = handler.(FloatHandler)
-	p.strHand, _ = handler.(StrHandler)
-	p.keyHand, _ = handler.(KeyHandler)
-	p.errHand, _ = handler.(ErrorHandler)
-	p.caller, _ = handler.(Caller)
-}
-
-// This is a huge function only because there was a significant performance
-// improvement by reducing function calls. The code is predominantly switch
-// statements with the first layer being the various parsing modes and the
-// second level deciding what to do with a byte read while in that mode.
-func (p *Parser) parse() error {
 	p.mode = valueMode
 	if p.r != nil {
 		fmt.Printf("*** fill buf\n")
@@ -193,7 +165,9 @@ func (p *Parser) parse() error {
 				p.nextMode = afterMode
 			case '[':
 				p.stack = append(p.stack, '[')
-				// TBD arrayOpen handler
+				if p.h != nil {
+					p.h.ArrayStart()
+				}
 			case ']':
 				depth := len(p.stack)
 				if depth == 0 {
@@ -205,11 +179,15 @@ func (p *Parser) parse() error {
 				}
 				p.stack = p.stack[0:depth]
 				p.mode = afterMode
-				// TBD arrayClose handler
+				if p.h != nil {
+					p.h.ArrayEnd()
+				}
 			case '{':
 				p.stack = append(p.stack, '{')
 				p.mode = keyMode
-				// TBD objHand.ObjectStart
+				if p.h != nil {
+					p.h.ObjectStart()
+				}
 			case '}':
 				depth := len(p.stack)
 				if depth == 0 {
@@ -221,9 +199,11 @@ func (p *Parser) parse() error {
 				}
 				p.stack = p.stack[0:depth]
 				p.mode = afterMode
-				// TBD objClose handler
+				if p.h != nil {
+					p.h.ObjectEnd()
+				}
 			case '/':
-				if p.noComment {
+				if p.NoComment {
 					return p.newError("comments not allowed")
 				}
 				p.nextMode = p.mode
@@ -254,7 +234,9 @@ func (p *Parser) parse() error {
 					return p.newError("expected an array close")
 				}
 				p.stack = p.stack[0:depth]
-				// TBD arrayClose handler
+				if p.h != nil {
+					p.h.ArrayEnd()
+				}
 			case '}':
 				depth := len(p.stack)
 				if depth == 0 {
@@ -265,7 +247,9 @@ func (p *Parser) parse() error {
 					return p.newError("expected an object close")
 				}
 				p.stack = p.stack[0:depth]
-				// TBD p.objHand.ObjectEnd
+				if p.h != nil {
+					p.h.ObjectEnd()
+				}
 			default:
 				return p.newError("expected a comma or close, not '%c'", b)
 			}
@@ -289,7 +273,9 @@ func (p *Parser) parse() error {
 					return p.newError("expected an object close")
 				}
 				p.stack = p.stack[0:depth]
-				// TBD p.obj.Hand.ObjectClose()
+				if p.h != nil {
+					p.h.ObjectEnd()
+				}
 			default:
 				return p.newError("expected a string start or object close, not '%c'", b)
 			}
@@ -312,8 +298,8 @@ func (p *Parser) parse() error {
 			}
 			if 3 <= p.ri {
 				p.mode = afterMode
-				if p.nullHand != nil {
-					p.nullHand.Null()
+				if p.h != nil {
+					p.h.Null()
 				}
 			}
 		case falseMode:
@@ -323,8 +309,8 @@ func (p *Parser) parse() error {
 			}
 			if 4 <= p.ri {
 				p.mode = afterMode
-				if p.boolHand != nil {
-					p.boolHand.Bool(false)
+				if p.h != nil {
+					p.h.Bool(false)
 				}
 			}
 		case trueMode:
@@ -334,17 +320,18 @@ func (p *Parser) parse() error {
 			}
 			if 3 <= p.ri {
 				p.mode = afterMode
-				if p.boolHand != nil {
-					p.boolHand.Bool(true)
+				if p.h != nil {
+					p.h.Bool(true)
 				}
 			}
 		case numMode:
 			done := false
-			p.tmp = append(p.tmp, b)
 			switch b {
 			case '0':
 				// ok as first if no other after
+				p.tmp = append(p.tmp, b)
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				p.tmp = append(p.tmp, b)
 				if len(p.tmp) == 2 && p.tmp[0] == '0' {
 					return p.newError("invalid number '%s'", p.tmp)
 				}
@@ -375,7 +362,9 @@ func (p *Parser) parse() error {
 				}
 				p.stack = p.stack[0:depth]
 				p.mode = afterMode
-				// TBD arrayClose handler
+				if p.h != nil {
+					p.h.ArrayEnd()
+				}
 			case '}':
 				done = true
 				depth := len(p.stack)
@@ -388,8 +377,11 @@ func (p *Parser) parse() error {
 				}
 				p.stack = p.stack[0:depth]
 				p.mode = afterMode
-				// TBD objClose handler
+				if p.h != nil {
+					p.h.ObjectEnd()
+				}
 			case '-':
+				p.tmp = append(p.tmp, b)
 				if 1 < len(p.tmp) {
 					prev := p.tmp[len(p.tmp)-2]
 					if prev != 'e' && prev != 'E' {
@@ -397,16 +389,19 @@ func (p *Parser) parse() error {
 					}
 				}
 			case '.':
+				p.tmp = append(p.tmp, b)
 				if p.numDot || p.numE {
 					return p.newError("invalid number '%s'", p.tmp)
 				}
 				p.numDot = true
 			case 'e', 'E':
+				p.tmp = append(p.tmp, b)
 				if p.numE {
 					return p.newError("invalid number '%s'", p.tmp)
 				}
 				p.numE = true
 			case '+':
+				p.tmp = append(p.tmp, b)
 				if len(p.tmp) == 1 {
 					return p.newError("invalid number '%s'", p.tmp)
 				} else {
@@ -418,21 +413,19 @@ func (p *Parser) parse() error {
 			default:
 				return p.newError("invalid number '%s'", p.tmp)
 			}
-			if done {
+			if done && p.h != nil {
 				if p.numDot || p.numE {
-					if p.floatHand != nil {
-						f, err := strconv.ParseFloat(string(p.tmp), 64)
-						if err != nil {
-							return p.wrapError(err)
-						}
-						p.floatHand.Float(f)
+					f, err := strconv.ParseFloat(string(p.tmp), 64)
+					if err != nil {
+						return p.wrapError(err)
 					}
-				} else if p.intHand != nil {
+					p.h.Float(f)
+				} else {
 					i, err := strconv.ParseInt(string(p.tmp), 10, 64)
 					if err != nil {
 						return p.wrapError(err)
 					}
-					p.intHand.Int(i)
+					p.h.Int(i)
 				}
 			}
 		case strMode:
@@ -444,69 +437,76 @@ func (p *Parser) parse() error {
 				p.mode = escMode
 			case '"':
 				p.mode = p.nextMode
-				// TBD if strHand then p.strHand.Str(string(p.tmp))
+				if p.h != nil {
+					p.h.Str(string(p.tmp))
+				}
 			default:
-				// TBD if strHand then append to p.tmp
+				if p.h != nil {
+					p.tmp = append(p.tmp, b)
+				}
 			}
 		case escMode:
 			p.mode = strMode
 			switch b {
 			case 'n':
-				if p.strHand != nil {
+				if p.h != nil {
 					p.tmp = append(p.tmp, '\n')
 				}
 			case '"':
-				if p.strHand != nil {
+				if p.h != nil {
 					p.tmp = append(p.tmp, '"')
 				}
 			case '\\':
-				if p.strHand != nil {
+				if p.h != nil {
 					p.tmp = append(p.tmp, '\\')
 				}
 			case '/':
-				if p.strHand != nil {
+				if p.h != nil {
 					p.tmp = append(p.tmp, '/')
 				}
 			case 'b':
-				if p.strHand != nil {
+				if p.h != nil {
 					p.tmp = append(p.tmp, '\b')
 				}
 			case 'f':
-				if p.strHand != nil {
+				if p.h != nil {
 					p.tmp = append(p.tmp, '\f')
 				}
 			case 'r':
-				if p.strHand != nil {
+				if p.h != nil {
 					p.tmp = append(p.tmp, '\r')
 				}
 			case 't':
-				if p.strHand != nil {
+				if p.h != nil {
 					p.tmp = append(p.tmp, '\t')
 				}
 			case 'u':
 				p.mode = uMode
-				if 0 < cap(p.runeHex) {
-					p.runeHex = p.runeHex[0:0]
-				} else {
-					p.runeHex = make([]uint32, 0, 4)
-				}
+				p.rn = 0
+				p.ri = 0
 			default:
 				return p.newError("invalid JSON escape character '\\%c'", b)
 			}
 		case uMode:
+			p.ri++
 			switch b {
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.runeHex = append(p.runeHex, uint32(b-'0'))
+				p.rn = p.rn<<4 | rune(b-'0')
 			case 'a', 'b', 'c', 'd', 'e', 'f':
-				p.runeHex = append(p.runeHex, uint32(b-'a'+10))
+				p.rn = p.rn<<4 | rune(b-'a'+10)
 			case 'A', 'B', 'C', 'D', 'E', 'F':
-				p.runeHex = append(p.runeHex, uint32(b-'A'+10))
+				p.rn = p.rn<<4 | rune(b-'A'+10)
 			default:
 				return p.newError("invalid JSON unicode character '%c'", b)
 			}
-			if len(p.runeHex) == 4 {
-				if p.strHand != nil {
-					// TBD build rune then append to p.tmp as bytes
+			if p.ri == 4 {
+				if p.h != nil {
+					if len(p.runeBytes) < 6 {
+						fmt.Println("*** allocating rune")
+						p.runeBytes = make([]byte, 6)
+					}
+					n := utf8.EncodeRune(p.runeBytes, p.rn)
+					p.tmp = append(p.tmp, p.runeBytes[:n]...)
 				}
 				p.mode = strMode
 			}
@@ -541,7 +541,10 @@ func (p *Parser) parse() error {
 			}
 		}
 		if len(p.stack) == 0 && p.mode == afterMode {
-			if p.onlyOne {
+			if p.h != nil {
+				p.h.Call()
+			}
+			if p.OnlyOne {
 				p.mode = spaceMode
 			} else {
 				p.mode = valueMode
@@ -552,19 +555,17 @@ func (p *Parser) parse() error {
 }
 
 func (p *Parser) newError(format string, args ...interface{}) error {
-	p.Err = &ParseError{
+	return &ParseError{
 		Message: fmt.Sprintf(format, args...),
 		Line:    p.line,
 		Column:  p.off - p.noff,
 	}
-	return p.Err
 }
 
 func (p *Parser) wrapError(err error) error {
-	p.Err = &ParseError{
+	return &ParseError{
 		Message: err.Error(),
 		Line:    p.line,
 		Column:  p.off - p.noff,
 	}
-	return p.Err
 }
