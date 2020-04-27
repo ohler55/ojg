@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	tmpMinSize   = 64 // for tokens and numbers
-	keyMinSize   = 64 // for object keys
-	stackMinSize = 64 // for container stack { or [
+	tmpMinSize   = 32 // for tokens and numbers
+	keyMinSize   = 32 // for object keys
+	stackMinSize = 32 // for container stack { or [
 	readBufSize  = 4096
 
 	bomMode          = 'b'
@@ -65,7 +65,6 @@ type Parser struct {
 // Validate a JSON string. An error is returned if not valid JSON.
 func (p *Parser) Validate(s string) error {
 	p.buf = []byte(s)
-	p.prep()
 	p.h = nil
 
 	return p.parse()
@@ -73,7 +72,6 @@ func (p *Parser) Validate(s string) error {
 
 // ValidateReader a JSON stream. An error is returned if not valid JSON.
 func (p *Parser) ValidateReader(r io.Reader) error {
-	p.prep()
 	p.r = r
 	p.buf = make([]byte, 0, readBufSize)
 	return p.parse()
@@ -82,7 +80,6 @@ func (p *Parser) ValidateReader(r io.Reader) error {
 // Parse a JSON string. An error is returned if not valid JSON.
 func (p *Parser) Parse(s string, args ...interface{}) (node gd.Node, err error) {
 	p.buf = []byte(s)
-	p.prep()
 
 	var callback func(gd.Node) bool
 
@@ -111,7 +108,11 @@ func (p *Parser) Parse(s string, args ...interface{}) (node gd.Node, err error) 
 	return
 }
 
-func (p *Parser) prep() {
+// This is a huge function only because there was a significant performance
+// improvement by reducing function calls. The code is predominantly switch
+// statements with the first layer being the various parsing modes and the
+// second level deciding what to do with a byte read while in that mode.
+func (p *Parser) parse() error {
 	if cap(p.tmp) < tmpMinSize {
 		p.tmp = make([]byte, 0, tmpMinSize)
 	} else {
@@ -124,13 +125,6 @@ func (p *Parser) prep() {
 	}
 	p.noff = -1
 	p.line = 1
-}
-
-// This is a huge function only because there was a significant performance
-// improvement by reducing function calls. The code is predominantly switch
-// statements with the first layer being the various parsing modes and the
-// second level deciding what to do with a byte read while in that mode.
-func (p *Parser) parse() error {
 	p.mode = valueMode
 	if p.r != nil {
 		fmt.Printf("*** fill buf\n")
