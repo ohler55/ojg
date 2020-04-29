@@ -7,6 +7,8 @@
    - list []gd.Node - reuse
     - need to collapse/set to nil when after copy
 
+- try handlers embedded in the code instead of separate.
+
 - ojg.Write and String tests
 
  - different tolerant options

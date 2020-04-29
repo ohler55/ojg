@@ -10,14 +10,18 @@ import (
 	"github.com/ohler55/ojg/gd"
 )
 
-func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) {
-	eq := false
+func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bool) {
 	switch te := expect.(type) {
 	case nil:
 		eq = nil == actual
 	case bool:
-		if ta, ok := actual.(bool); ok {
+		switch ta := actual.(type) {
+		case bool:
 			eq = te == ta
+		case gd.Bool:
+			eq = te == bool(ta)
+		default:
+			eq = false
 		}
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, gd.Int:
 		x, _ := asInt(expect)
@@ -40,8 +44,49 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) {
 				}
 			*/
 		}
+	case []interface{}:
+		switch ta := actual.(type) {
+		case []interface{}:
+			eq = true
+			for i := 0; i < len(te); i++ {
+				if len(ta) <= i {
+					eq = false
+					break
+				}
+				if eq = Equal(t, te[i], ta[i], args...); !eq {
+					break
+				}
+			}
+			if eq && len(te) != len(ta) {
+				eq = false
+			}
+		case gd.Array:
+			eq = Equal(t, expect, ta.Simplify(), args...)
+		default:
+			eq = false
+		}
+	case map[string]interface{}:
+		switch ta := actual.(type) {
+		case map[string]interface{}:
+			eq = true
+			for k, ve := range te {
+				va, has := ta[k]
+				if !has {
+					eq = false
+					break
+				}
+				eq = Equal(t, ve, va, args...)
+			}
+			if eq && len(te) != len(ta) {
+				eq = false
+			}
+		case gd.Object:
+			eq = Equal(t, expect, ta.Simplify(), args...)
+		default:
+			eq = false
+		}
 	default:
-		// TBD lists and maps
+		// TBD maps
 	}
 	if !eq {
 		var b strings.Builder
@@ -56,4 +101,5 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) {
 		}
 		t.Fatal(b.String())
 	}
+	return
 }

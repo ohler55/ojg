@@ -99,7 +99,9 @@ func (p *Parser) Parse(s string, args ...interface{}) (node gd.Node, err error) 
 		}
 	}
 	if h, _ := p.h.(*nodeHandler); h == nil {
-		p.h = &nodeHandler{cb: callback}
+		h = newNodeHandler()
+		h.cb = callback
+		p.h = h
 	} else {
 		h.cb = callback
 	}
@@ -163,6 +165,7 @@ func (p *Parser) parse() error {
 			case '"':
 				p.mode = strMode
 				p.nextMode = afterMode
+				p.tmp = p.tmp[0:0]
 			case '[':
 				p.stack = append(p.stack, '[')
 				if p.h != nil {
@@ -263,6 +266,7 @@ func (p *Parser) parse() error {
 			case '"':
 				p.mode = strMode
 				p.nextMode = colonMode
+				p.tmp = p.tmp[0:0]
 			case '}':
 				depth := len(p.stack)
 				if depth == 0 {
@@ -438,7 +442,11 @@ func (p *Parser) parse() error {
 			case '"':
 				p.mode = p.nextMode
 				if p.h != nil {
-					p.h.Str(string(p.tmp))
+					if p.mode == colonMode {
+						p.h.Key(string(p.tmp))
+					} else {
+						p.h.Str(string(p.tmp))
+					}
 				}
 			default:
 				if p.h != nil {
@@ -540,7 +548,7 @@ func (p *Parser) parse() error {
 				p.mode = valueMode
 			}
 		}
-		if len(p.stack) == 0 && p.mode == afterMode {
+		if len(p.stack) == 0 && (p.mode == afterMode || p.mode == keyMode) {
 			if p.h != nil {
 				p.h.Call()
 			}
@@ -550,6 +558,22 @@ func (p *Parser) parse() error {
 				p.mode = valueMode
 			}
 		}
+	}
+	if p.mode == numMode && p.h != nil {
+		if p.numDot || p.numE {
+			f, err := strconv.ParseFloat(string(p.tmp), 64)
+			if err != nil {
+				return p.wrapError(err)
+			}
+			p.h.Float(f)
+		} else {
+			i, err := strconv.ParseInt(string(p.tmp), 10, 64)
+			if err != nil {
+				return p.wrapError(err)
+			}
+			p.h.Int(i)
+		}
+		p.h.Call()
 	}
 	return nil
 }
