@@ -32,27 +32,34 @@ const (
 	spaceMode        = ' '
 	commentStartMode = '/'
 	commentMode      = 'c'
+
+	validateEval = 'v'
+	nodeEval     = 'n'
+	simpleEval   = 's'
 )
 
 // Parser is the core of validation and parsing. It can be reused for multiple
 // validations or parsings which allows buffer reuse for a performance
 // advantage.
 type Parser struct {
-	buf       []byte
-	tmp       []byte // used for numbers and strings
-	stack     []byte // { or [
-	runeBytes []byte
-	h         Handler
-	r         io.Reader
-	ri        int // read index for null, false, and true
-	line      int
-	noff      int // Offset of last newline from start of buf. Can be negative when using a reader.
-	off       int
-	mode      int
-	nextMode  int
-	rn        rune
-	numDot    bool
-	numE      bool
+	buf         []byte
+	tmp         []byte // used for numbers and strings
+	stack       []byte // { or [
+	runeBytes   []byte
+	vstack      []gd.Node
+	arrayStarts []int
+	r           io.Reader
+	cb          func(gd.Node) bool
+	ri          int // read index for null, false, and true
+	line        int
+	noff        int // Offset of last newline from start of buf. Can be negative when using a reader.
+	off         int
+	mode        int
+	nextMode    int
+	eval        int
+	rn          rune
+	numDot      bool
+	numE        bool
 
 	// NoComments returns an error if a comment is encountered.
 	NoComment bool
@@ -65,7 +72,7 @@ type Parser struct {
 // Validate a JSON string. An error is returned if not valid JSON.
 func (p *Parser) Validate(s string) error {
 	p.buf = []byte(s)
-	p.h = nil
+	p.eval = validateEval
 
 	return p.parse()
 }
@@ -74,6 +81,7 @@ func (p *Parser) Validate(s string) error {
 func (p *Parser) ValidateReader(r io.Reader) error {
 	p.r = r
 	p.buf = make([]byte, 0, readBufSize)
+	p.eval = validateEval
 	return p.parse()
 }
 
@@ -92,19 +100,20 @@ func (p *Parser) Parse(s string, args ...interface{}) (node gd.Node, err error) 
 			p.OnlyOne = false
 		}
 	}
+	if cap(p.vstack) < 64 {
+		p.vstack = make([]gd.Node, 0, 64)
+	}
+	if cap(p.arrayStarts) < 64 {
+		p.arrayStarts = make([]int, 0, 16)
+	}
 	if callback == nil {
 		callback = func(n gd.Node) bool {
 			node = n
 			return false // tells the parser to stop
 		}
 	}
-	if h, _ := p.h.(*nodeHandler); h == nil {
-		h = newNodeHandler()
-		h.cb = callback
-		p.h = h
-	} else {
-		h.cb = callback
-	}
+	p.cb = callback
+	p.eval = nodeEval
 	err = p.parse()
 
 	return
@@ -168,8 +177,11 @@ func (p *Parser) parse() error {
 				p.tmp = p.tmp[0:0]
 			case '[':
 				p.stack = append(p.stack, '[')
-				if p.h != nil {
-					p.h.ArrayStart()
+				switch p.eval {
+				case nodeEval:
+					p.arrayStarts = append(p.arrayStarts, len(p.vstack))
+				case simpleEval:
+					// TBD
 				}
 			case ']':
 				depth := len(p.stack)
@@ -182,14 +194,30 @@ func (p *Parser) parse() error {
 				}
 				p.stack = p.stack[0:depth]
 				p.mode = afterMode
-				if p.h != nil {
-					p.h.ArrayEnd()
+				switch p.eval {
+				case nodeEval:
+					start := p.arrayStarts[len(p.arrayStarts)-1]
+					size := len(p.vstack) - start
+					n := gd.Array(make([]gd.Node, size))
+					copy(n, p.vstack[start:len(p.vstack)])
+					p.vstack = p.vstack[0:start]
+					p.add(n)
+				case simpleEval:
+					// TBD
 				}
 			case '{':
 				p.stack = append(p.stack, '{')
 				p.mode = keyMode
-				if p.h != nil {
-					p.h.ObjectStart()
+				switch p.eval {
+				case nodeEval:
+					top := len(p.vstack) == 0
+					n := gd.Object{}
+					p.add(n)
+					if !top {
+						p.vstack = append(p.vstack, n)
+					}
+				case simpleEval:
+					// TBD
 				}
 			case '}':
 				depth := len(p.stack)
@@ -202,9 +230,6 @@ func (p *Parser) parse() error {
 				}
 				p.stack = p.stack[0:depth]
 				p.mode = afterMode
-				if p.h != nil {
-					p.h.ObjectEnd()
-				}
 			case '/':
 				if p.NoComment {
 					return p.newError("comments not allowed")
@@ -237,8 +262,16 @@ func (p *Parser) parse() error {
 					return p.newError("expected an array close")
 				}
 				p.stack = p.stack[0:depth]
-				if p.h != nil {
-					p.h.ArrayEnd()
+				switch p.eval {
+				case nodeEval:
+					start := p.arrayStarts[len(p.arrayStarts)-1]
+					size := len(p.vstack) - start
+					n := gd.Array(make([]gd.Node, size))
+					copy(n, p.vstack[start:len(p.vstack)])
+					p.vstack = p.vstack[0:start]
+					p.add(n)
+				case simpleEval:
+					// TBD
 				}
 			case '}':
 				depth := len(p.stack)
@@ -250,9 +283,6 @@ func (p *Parser) parse() error {
 					return p.newError("expected an object close")
 				}
 				p.stack = p.stack[0:depth]
-				if p.h != nil {
-					p.h.ObjectEnd()
-				}
 			default:
 				return p.newError("expected a comma or close, not '%c'", b)
 			}
@@ -277,9 +307,6 @@ func (p *Parser) parse() error {
 					return p.newError("expected an object close")
 				}
 				p.stack = p.stack[0:depth]
-				if p.h != nil {
-					p.h.ObjectEnd()
-				}
 			default:
 				return p.newError("expected a string start or object close, not '%c'", b)
 			}
@@ -302,8 +329,11 @@ func (p *Parser) parse() error {
 			}
 			if 3 <= p.ri {
 				p.mode = afterMode
-				if p.h != nil {
-					p.h.Null()
+				switch p.eval {
+				case nodeEval:
+					p.add(nil)
+				case simpleEval:
+					// TBD
 				}
 			}
 		case falseMode:
@@ -313,8 +343,11 @@ func (p *Parser) parse() error {
 			}
 			if 4 <= p.ri {
 				p.mode = afterMode
-				if p.h != nil {
-					p.h.Bool(false)
+				switch p.eval {
+				case nodeEval:
+					p.add(gd.Bool(false))
+				case simpleEval:
+					// TBD
 				}
 			}
 		case trueMode:
@@ -324,8 +357,11 @@ func (p *Parser) parse() error {
 			}
 			if 3 <= p.ri {
 				p.mode = afterMode
-				if p.h != nil {
-					p.h.Bool(true)
+				switch p.eval {
+				case nodeEval:
+					p.add(gd.Bool(true))
+				case simpleEval:
+					// TBD
 				}
 			}
 		case numMode:
@@ -366,8 +402,16 @@ func (p *Parser) parse() error {
 				}
 				p.stack = p.stack[0:depth]
 				p.mode = afterMode
-				if p.h != nil {
-					p.h.ArrayEnd()
+				switch p.eval {
+				case nodeEval:
+					start := p.arrayStarts[len(p.arrayStarts)-1]
+					size := len(p.vstack) - start
+					n := gd.Array(make([]gd.Node, size))
+					copy(n, p.vstack[start:len(p.vstack)])
+					p.vstack = p.vstack[0:start]
+					p.add(n)
+				case simpleEval:
+					// TBD
 				}
 			case '}':
 				done = true
@@ -381,9 +425,6 @@ func (p *Parser) parse() error {
 				}
 				p.stack = p.stack[0:depth]
 				p.mode = afterMode
-				if p.h != nil {
-					p.h.ObjectEnd()
-				}
 			case '-':
 				p.tmp = append(p.tmp, b)
 				if 1 < len(p.tmp) {
@@ -417,19 +458,29 @@ func (p *Parser) parse() error {
 			default:
 				return p.newError("invalid number '%s'", p.tmp)
 			}
-			if done && p.h != nil {
+			if done && p.eval != validateEval {
 				if p.numDot || p.numE {
 					f, err := strconv.ParseFloat(string(p.tmp), 64)
 					if err != nil {
 						return p.wrapError(err)
 					}
-					p.h.Float(f)
+					switch p.eval {
+					case nodeEval:
+						p.add(gd.Float(f))
+					case simpleEval:
+						// TBD
+					}
 				} else {
 					i, err := strconv.ParseInt(string(p.tmp), 10, 64)
 					if err != nil {
 						return p.wrapError(err)
 					}
-					p.h.Int(i)
+					switch p.eval {
+					case nodeEval:
+						p.add(gd.Int(i))
+					case simpleEval:
+						// TBD
+					}
 				}
 			}
 		case strMode:
@@ -441,15 +492,25 @@ func (p *Parser) parse() error {
 				p.mode = escMode
 			case '"':
 				p.mode = p.nextMode
-				if p.h != nil {
+				if p.eval != validateEval {
 					if p.mode == colonMode {
-						p.h.Key(string(p.tmp))
+						switch p.eval {
+						case nodeEval:
+							p.vstack = append(p.vstack, keyStr(p.tmp))
+						case simpleEval:
+							// TBD
+						}
 					} else {
-						p.h.Str(string(p.tmp))
+						switch p.eval {
+						case nodeEval:
+							p.add(gd.String(string(p.tmp)))
+						case simpleEval:
+							// TBD
+						}
 					}
 				}
 			default:
-				if p.h != nil {
+				if p.eval != validateEval {
 					p.tmp = append(p.tmp, b)
 				}
 			}
@@ -457,35 +518,35 @@ func (p *Parser) parse() error {
 			p.mode = strMode
 			switch b {
 			case 'n':
-				if p.h != nil {
+				if p.eval != validateEval {
 					p.tmp = append(p.tmp, '\n')
 				}
 			case '"':
-				if p.h != nil {
+				if p.eval != validateEval {
 					p.tmp = append(p.tmp, '"')
 				}
 			case '\\':
-				if p.h != nil {
+				if p.eval != validateEval {
 					p.tmp = append(p.tmp, '\\')
 				}
 			case '/':
-				if p.h != nil {
+				if p.eval != validateEval {
 					p.tmp = append(p.tmp, '/')
 				}
 			case 'b':
-				if p.h != nil {
+				if p.eval != validateEval {
 					p.tmp = append(p.tmp, '\b')
 				}
 			case 'f':
-				if p.h != nil {
+				if p.eval != validateEval {
 					p.tmp = append(p.tmp, '\f')
 				}
 			case 'r':
-				if p.h != nil {
+				if p.eval != validateEval {
 					p.tmp = append(p.tmp, '\r')
 				}
 			case 't':
-				if p.h != nil {
+				if p.eval != validateEval {
 					p.tmp = append(p.tmp, '\t')
 				}
 			case 'u':
@@ -508,7 +569,7 @@ func (p *Parser) parse() error {
 				return p.newError("invalid JSON unicode character '%c'", b)
 			}
 			if p.ri == 4 {
-				if p.h != nil {
+				if p.eval != validateEval {
 					if len(p.runeBytes) < 6 {
 						fmt.Println("*** allocating rune")
 						p.runeBytes = make([]byte, 6)
@@ -549,8 +610,11 @@ func (p *Parser) parse() error {
 			}
 		}
 		if len(p.stack) == 0 && (p.mode == afterMode || p.mode == keyMode) {
-			if p.h != nil {
-				p.h.Call()
+			switch p.eval {
+			case nodeEval:
+				p.cb(p.vstack[0])
+			case simpleEval:
+				// TBD
 			}
 			if p.OnlyOne {
 				p.mode = spaceMode
@@ -559,21 +623,36 @@ func (p *Parser) parse() error {
 			}
 		}
 	}
-	if p.mode == numMode && p.h != nil {
+	if p.mode == numMode && p.eval != validateEval {
 		if p.numDot || p.numE {
 			f, err := strconv.ParseFloat(string(p.tmp), 64)
 			if err != nil {
 				return p.wrapError(err)
 			}
-			p.h.Float(f)
+			switch p.eval {
+			case nodeEval:
+				p.add(gd.Float(f))
+			case simpleEval:
+				// TBD
+			}
 		} else {
 			i, err := strconv.ParseInt(string(p.tmp), 10, 64)
 			if err != nil {
 				return p.wrapError(err)
 			}
-			p.h.Int(i)
+			switch p.eval {
+			case nodeEval:
+				p.add(gd.Int(i))
+			case simpleEval:
+				// TBD
+			}
 		}
-		p.h.Call()
+		switch p.eval {
+		case nodeEval:
+			p.cb(p.vstack[0])
+		case simpleEval:
+			// TBD
+		}
 	}
 	return nil
 }
@@ -592,4 +671,17 @@ func (p *Parser) wrapError(err error) error {
 		Line:    p.line,
 		Column:  p.off - p.noff,
 	}
+}
+
+func (p *Parser) add(n gd.Node) {
+	if 2 <= len(p.vstack) {
+		if k, ok := p.vstack[len(p.vstack)-1].(keyStr); ok {
+			obj, _ := p.vstack[len(p.vstack)-2].(gd.Object)
+			obj[string(k)] = n
+			p.vstack = p.vstack[0 : len(p.vstack)-1]
+
+			return
+		}
+	}
+	p.vstack = append(p.vstack, n)
 }
