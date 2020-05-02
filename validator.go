@@ -17,7 +17,6 @@ type Validator struct {
 	// be made by not tracking line and column but that would make it
 	// validation much less useful.
 	buf      []byte
-	tmp      []byte // used for numbers and strings
 	stack    []byte // { or [
 	r        io.Reader
 	ri       int // read index for null, false, and true
@@ -57,11 +56,6 @@ func (p *Validator) ValidateReader(r io.Reader) error {
 // statements with the first layer being the various parsing modes and the
 // second level deciding what to do with a byte read while in that mode.
 func (p *Validator) validate() error {
-	if cap(p.tmp) < tmpMinSize {
-		p.tmp = make([]byte, 0, tmpMinSize)
-	} else {
-		p.tmp = p.tmp[:0]
-	}
 	if cap(p.stack) < stackMinSize {
 		p.stack = make([]byte, 0, stackMinSize)
 	} else {
@@ -98,15 +92,12 @@ func (p *Validator) validate() error {
 			case 't':
 				p.mode = trueMode
 				p.ri = 0
-				// TBD '-' signMode (0 or 1-9)
-				// TBD '0' zeroMode (. or end)
-				// TBD 1-9 digitMode (0-9 or end)
-			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-				p.mode = numMode
-				p.tmp = p.tmp[0:0]
-				p.numDot = false
-				p.numE = false
-				p.tmp = append(p.tmp, b)
+			case '-':
+				p.mode = negMode
+			case '0':
+				p.mode = zeroMode
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				p.mode = digitMode
 			case '"':
 				p.mode = strMode
 				p.nextMode = afterMode
@@ -241,16 +232,19 @@ func (p *Validator) validate() error {
 			if 3 <= p.ri {
 				p.mode = afterMode
 			}
-		case numMode:
+		case negMode:
 			switch b {
 			case '0':
-				// ok as first if no other after
-				p.tmp = append(p.tmp, b)
+				p.mode = zeroMode
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.tmp = append(p.tmp, b)
-				if len(p.tmp) == 2 && p.tmp[0] == '0' {
-					return p.newError("invalid number '%s'", p.tmp)
-				}
+				p.mode = digitMode
+			default:
+				return p.newError("invalid number")
+			}
+		case zeroMode:
+			switch b {
+			case '.':
+				p.mode = dotMode
 			case ' ', '\t', '\r':
 				p.mode = afterMode
 			case '\n':
@@ -285,39 +279,160 @@ func (p *Validator) validate() error {
 				}
 				p.stack = p.stack[0:depth]
 				p.mode = afterMode
-			case '-':
-				p.tmp = append(p.tmp, b)
-				if 1 < len(p.tmp) {
-					prev := p.tmp[len(p.tmp)-2]
-					if prev != 'e' && prev != 'E' {
-						return p.newError("invalid number '%s'", p.tmp)
-					}
-				}
-			case '.':
-				p.tmp = append(p.tmp, b)
-				if p.numDot || p.numE {
-					return p.newError("invalid number '%s'", p.tmp)
-				}
-				p.numDot = true
-			case 'e', 'E':
-				p.tmp = append(p.tmp, b)
-				if p.numE {
-					return p.newError("invalid number '%s'", p.tmp)
-				}
-				p.numE = true
-			case '+':
-				p.tmp = append(p.tmp, b)
-				if len(p.tmp) == 1 {
-					return p.newError("invalid number '%s'", p.tmp)
-				} else {
-					prev := p.tmp[len(p.tmp)-2]
-					if prev != 'e' && prev != 'E' {
-						return p.newError("invalid number '%s'", p.tmp)
-					}
-				}
 			default:
-				return p.newError("invalid number '%s'", p.tmp)
+				return p.newError("invalid number")
 			}
+		case digitMode:
+			switch b {
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				// no change in mode
+			case '.':
+				p.mode = dotMode
+			case ' ', '\t', '\r':
+				p.mode = afterMode
+			case '\n':
+				p.line++
+				p.noff = p.off
+				p.mode = afterMode
+			case ',':
+				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+					p.mode = keyMode
+				} else {
+					p.mode = valueMode
+				}
+			case ']':
+				depth := len(p.stack)
+				if depth == 0 {
+					return p.newError("too many closes")
+				}
+				depth--
+				if p.stack[depth] != '[' {
+					return p.newError("expected an array close")
+				}
+				p.stack = p.stack[0:depth]
+				p.mode = afterMode
+			case '}':
+				depth := len(p.stack)
+				if depth == 0 {
+					return p.newError("too many closes")
+				}
+				depth--
+				if p.stack[depth] != '{' {
+					return p.newError("expected an object close")
+				}
+				p.stack = p.stack[0:depth]
+				p.mode = afterMode
+			default:
+				return p.newError("invalid number")
+			}
+		case dotMode:
+			switch b {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				p.mode = fracMode
+			default:
+				return p.newError("invalid number")
+			}
+		case fracMode:
+			switch b {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				// no change in mode
+			case 'e', 'E':
+				p.mode = expSignMode
+			case ' ', '\t', '\r':
+				p.mode = afterMode
+			case '\n':
+				p.line++
+				p.noff = p.off
+				p.mode = afterMode
+			case ',':
+				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+					p.mode = keyMode
+				} else {
+					p.mode = valueMode
+				}
+			case ']':
+				depth := len(p.stack)
+				if depth == 0 {
+					return p.newError("too many closes")
+				}
+				depth--
+				if p.stack[depth] != '[' {
+					return p.newError("expected an array close")
+				}
+				p.stack = p.stack[0:depth]
+				p.mode = afterMode
+			case '}':
+				depth := len(p.stack)
+				if depth == 0 {
+					return p.newError("too many closes")
+				}
+				depth--
+				if p.stack[depth] != '{' {
+					return p.newError("expected an object close")
+				}
+				p.stack = p.stack[0:depth]
+				p.mode = afterMode
+			default:
+				return p.newError("invalid number")
+			}
+		case expSignMode:
+			switch b {
+			case '-', '+':
+				p.mode = expZeroMode
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				p.mode = expMode
+			default:
+				return p.newError("invalid number")
+			}
+		case expZeroMode:
+			switch b {
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				p.mode = expMode
+			default:
+				return p.newError("invalid number")
+			}
+		case expMode:
+			switch b {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				// okay
+			case ' ', '\t', '\r':
+				p.mode = afterMode
+			case '\n':
+				p.line++
+				p.noff = p.off
+				p.mode = afterMode
+			case ',':
+				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+					p.mode = keyMode
+				} else {
+					p.mode = valueMode
+				}
+			case ']':
+				depth := len(p.stack)
+				if depth == 0 {
+					return p.newError("too many closes")
+				}
+				depth--
+				if p.stack[depth] != '[' {
+					return p.newError("expected an array close")
+				}
+				p.stack = p.stack[0:depth]
+				p.mode = afterMode
+			case '}':
+				depth := len(p.stack)
+				if depth == 0 {
+					return p.newError("too many closes")
+				}
+				depth--
+				if p.stack[depth] != '{' {
+					return p.newError("expected an object close")
+				}
+				p.stack = p.stack[0:depth]
+				p.mode = afterMode
+			default:
+				return p.newError("invalid number")
+			}
+
 		case strMode:
 			if b < 0x20 {
 				return p.newError("invalid JSON character 0x%02x", b)
@@ -387,6 +502,13 @@ func (p *Validator) validate() error {
 				p.mode = valueMode
 			}
 		}
+	}
+	switch p.mode {
+	case afterMode, zeroMode, digitMode, fracMode, expMode, valueMode:
+		// okay
+	default:
+		fmt.Printf("*** final mode: %c\n", p.mode)
+		return p.newError("incomplete JSON")
 	}
 	return nil
 }
