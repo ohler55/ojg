@@ -293,16 +293,16 @@ func validateBenchmarks() {
 
 func goValidate(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		_ = json.Valid([]byte(patientJSON))
-		//_ = json.Valid([]byte(sampleJSON))
+		//_ = json.Valid([]byte(patientJSON))
+		_ = json.Valid([]byte(sampleJSON))
 	}
 }
 
 func ojgValidate(b *testing.B) {
 	v := &ojg.Validator{}
 	for n := 0; n < b.N; n++ {
-		_ = v.Validate([]byte(patientJSON))
-		//_ = v.Validate([]byte(sampleJSON))
+		//_ = v.Validate([]byte(patientJSON))
+		_ = v.Validate([]byte(sampleJSON))
 		//err := v.Validate([]byte(patientJSON))
 		//fmt.Println(err)
 	}
@@ -310,7 +310,8 @@ func ojgValidate(b *testing.B) {
 
 func treeValidate(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		_, _ = tree.ParseString(patientJSON)
+		//_, _ = tree.ParseString(patientJSON)
+		_, _ = tree.ParseString(sampleJSON)
 	}
 }
 
