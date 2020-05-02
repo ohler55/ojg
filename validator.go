@@ -16,17 +16,15 @@ type Validator struct {
 	// builing results add 15 to 20% overhead. An additional improvement could
 	// be made by not tracking line and column but that would make it
 	// validation much less useful.
-	buf      []byte
-	stack    []byte // { or [
+	buf      []byte // only used for read
 	r        io.Reader
-	ri       int // read index for null, false, and true
+	stack    []byte // { or [
+	ri       int    // read index for null, false, and true
 	line     int
 	noff     int // Offset of last newline from start of buf. Can be negative when using a reader.
 	off      int
 	mode     byte
 	nextMode byte
-	numDot   bool
-	numE     bool
 
 	// NoComments returns an error if a comment is encountered.
 	NoComment bool
@@ -38,24 +36,25 @@ type Validator struct {
 
 // Validate a JSON string. An error is returned if not valid JSON.
 func (p *Validator) Validate(b []byte) error {
-	p.buf = b
-
-	return p.validate()
+	return p.validate(b)
 }
 
 // ValidateReader a JSON stream. An error is returned if not valid JSON.
 func (p *Validator) ValidateReader(r io.Reader) error {
-	p.r = r
-	p.buf = make([]byte, 0, readBufSize)
+	//p.r = r
+	//p.buf = make([]byte, 0, readBufSize)
 
-	return p.validate()
+	// TBD separate validate into a processing part and a wrapper for strings
+	//  handle setup and end check and the inner should allow for continuing where it left off
+
+	return p.validate(nil)
 }
 
 // This is a huge function only because there was a significant performance
 // improvement by reducing function calls. The code is predominantly switch
 // statements with the first layer being the various parsing modes and the
 // second level deciding what to do with a byte read while in that mode.
-func (p *Validator) validate() error {
+func (p *Validator) validate(buf []byte) error {
 	if cap(p.stack) < stackMinSize {
 		p.stack = make([]byte, 0, stackMinSize)
 	} else {
@@ -64,17 +63,20 @@ func (p *Validator) validate() error {
 	p.noff = -1
 	p.line = 1
 	p.mode = valueMode
-	if p.r != nil {
-		fmt.Printf("*** fill buf\n")
-		// TBD read first batch
-	}
 	// Skip BOM if present.
-	if 0 < len(p.buf) && p.buf[0] == 0xEF {
+	if 0 < len(buf) && buf[0] == 0xEF {
 		p.mode = bomMode
 		p.ri = 0
 	}
+	if p.r != nil {
+		if cap(p.buf) < readBufSize {
+			p.buf = make([]byte, readBufSize)
+		}
+		fmt.Printf("*** fill buf\n")
+		// TBD read first batch
+	}
 	var b byte
-	for p.off, b = range p.buf {
+	for p.off, b = range buf {
 		switch p.mode {
 		case valueMode:
 			switch b {
@@ -107,18 +109,6 @@ func (p *Validator) validate() error {
 				if err := p.arrayEnd(); err != nil {
 					return err
 				}
-				/*
-					depth := len(p.stack)
-					if depth == 0 {
-						return p.newError("too many closes")
-					}
-					depth--
-					if p.stack[depth] != '[' {
-						return p.newError("expected an array close")
-					}
-					p.stack = p.stack[0:depth]
-					p.mode = afterMode
-				*/
 			case '{':
 				p.stack = append(p.stack, '{')
 				p.mode = keyMode
@@ -126,18 +116,6 @@ func (p *Validator) validate() error {
 				if err := p.objEnd(); err != nil {
 					return err
 				}
-				/*
-					depth := len(p.stack)
-					if depth == 0 {
-						return p.newError("too many closes")
-					}
-					depth--
-					if p.stack[depth] != '{' {
-						return p.newError("expected an object close")
-					}
-					p.stack = p.stack[0:depth]
-					p.mode = afterMode
-				*/
 			case '/':
 				if p.NoComment {
 					return p.newError("comments not allowed")
@@ -164,32 +142,10 @@ func (p *Validator) validate() error {
 				if err := p.arrayEnd(); err != nil {
 					return err
 				}
-				/*
-					depth := len(p.stack)
-					if depth == 0 {
-						return p.newError("too many closes")
-					}
-					depth--
-					if p.stack[depth] != '[' {
-						return p.newError("expected an array close")
-					}
-					p.stack = p.stack[0:depth]
-				*/
 			case '}':
 				if err := p.objEnd(); err != nil {
 					return err
 				}
-				/*
-					depth := len(p.stack)
-					if depth == 0 {
-						return p.newError("too many closes")
-					}
-					depth--
-					if p.stack[depth] != '{' {
-						return p.newError("expected an object close")
-					}
-					p.stack = p.stack[0:depth]
-				*/
 			default:
 				return p.newError("expected a comma or close, not '%c'", b)
 			}
@@ -207,17 +163,6 @@ func (p *Validator) validate() error {
 				if err := p.objEnd(); err != nil {
 					return err
 				}
-				/*
-					depth := len(p.stack)
-					if depth == 0 {
-						return p.newError("too many closes")
-					}
-					depth--
-					if p.stack[depth] != '{' {
-						return p.newError("expected an object close")
-					}
-					p.stack = p.stack[0:depth]
-				*/
 			default:
 				return p.newError("expected a string start or object close, not '%c'", b)
 			}
@@ -286,34 +231,10 @@ func (p *Validator) validate() error {
 				if err := p.arrayEnd(); err != nil {
 					return err
 				}
-				/*
-					depth := len(p.stack)
-					if depth == 0 {
-						return p.newError("too many closes")
-					}
-					depth--
-					if p.stack[depth] != '[' {
-						return p.newError("expected an array close")
-					}
-					p.stack = p.stack[0:depth]
-					p.mode = afterMode
-				*/
 			case '}':
 				if err := p.objEnd(); err != nil {
 					return err
 				}
-				/*
-					depth := len(p.stack)
-					if depth == 0 {
-						return p.newError("too many closes")
-					}
-					depth--
-					if p.stack[depth] != '{' {
-						return p.newError("expected an object close")
-					}
-					p.stack = p.stack[0:depth]
-					p.mode = afterMode
-				*/
 			default:
 				return p.newError("invalid number")
 			}
@@ -339,34 +260,10 @@ func (p *Validator) validate() error {
 				if err := p.arrayEnd(); err != nil {
 					return err
 				}
-				/*
-					depth := len(p.stack)
-					if depth == 0 {
-						return p.newError("too many closes")
-					}
-					depth--
-					if p.stack[depth] != '[' {
-						return p.newError("expected an array close")
-					}
-					p.stack = p.stack[0:depth]
-					p.mode = afterMode
-				*/
 			case '}':
 				if err := p.objEnd(); err != nil {
 					return err
 				}
-				/*
-					depth := len(p.stack)
-					if depth == 0 {
-						return p.newError("too many closes")
-					}
-					depth--
-					if p.stack[depth] != '{' {
-						return p.newError("expected an object close")
-					}
-					p.stack = p.stack[0:depth]
-					p.mode = afterMode
-				*/
 			default:
 				return p.newError("invalid number")
 			}
@@ -398,34 +295,10 @@ func (p *Validator) validate() error {
 				if err := p.arrayEnd(); err != nil {
 					return err
 				}
-				/*
-					depth := len(p.stack)
-					if depth == 0 {
-						return p.newError("too many closes")
-					}
-					depth--
-					if p.stack[depth] != '[' {
-						return p.newError("expected an array close")
-					}
-					p.stack = p.stack[0:depth]
-					p.mode = afterMode
-				*/
 			case '}':
 				if err := p.objEnd(); err != nil {
 					return err
 				}
-				/*
-					depth := len(p.stack)
-					if depth == 0 {
-						return p.newError("too many closes")
-					}
-					depth--
-					if p.stack[depth] != '{' {
-						return p.newError("expected an object close")
-					}
-					p.stack = p.stack[0:depth]
-					p.mode = afterMode
-				*/
 			default:
 				return p.newError("invalid number")
 			}
@@ -464,34 +337,20 @@ func (p *Validator) validate() error {
 				if err := p.arrayEnd(); err != nil {
 					return err
 				}
-				/*
-					depth := len(p.stack)
-					if depth == 0 {
-						return p.newError("too many closes")
-					}
-					depth--
-					if p.stack[depth] != '[' {
-						return p.newError("expected an array close")
-					}
-					p.stack = p.stack[0:depth]
-					p.mode = afterMode
-				*/
+				depth := len(p.stack)
+				if depth == 0 {
+					return p.newError("too many closes")
+				}
+				depth--
+				if p.stack[depth] != '[' {
+					return p.newError("expected an array close")
+				}
+				p.stack = p.stack[0:depth]
+				p.mode = afterMode
 			case '}':
 				if err := p.objEnd(); err != nil {
 					return err
 				}
-				/*
-					depth := len(p.stack)
-					if depth == 0 {
-						return p.newError("too many closes")
-					}
-					depth--
-					if p.stack[depth] != '{' {
-						return p.newError("expected an object close")
-					}
-					p.stack = p.stack[0:depth]
-					p.mode = afterMode
-				*/
 			default:
 				return p.newError("invalid number")
 			}
