@@ -1,13 +1,10 @@
 
 - Parse
- - nodeHandler
-  - stack
-   - key string
-   - obj gd.Object
-   - list []gd.Node - reuse
-    - need to collapse/set to nil when after copy
-
-- try handlers embedded in the code instead of separate.
+ - change numMode
+  - don't build tmp in validator
+ - make stack []interface{}
+  - separate add for simple and node
+  - make keyStr just a simple string type, not a node
 
 - ojg.Write and String tests
 

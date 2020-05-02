@@ -5,61 +5,29 @@ package ojg
 import (
 	"fmt"
 	"io"
-	"strconv"
-	"unicode/utf8"
-
-	"github.com/ohler55/ojg/gd"
 )
 
-const (
-	tmpMinSize   = 32 // for tokens and numbers
-	stackMinSize = 32 // for container stack { or [
-	readBufSize  = 4096
-
-	bomMode          = 'b'
-	valueMode        = 'v'
-	afterMode        = 'a'
-	nullMode         = 'n'
-	trueMode         = 't'
-	falseMode        = 'f'
-	numMode          = 'N'
-	negMode          = '-'
-	zeroMode         = '0'
-	digitMode        = 'd'
-	fracMode         = '.'
-	expSignMode      = 'X'
-	expMode          = 'x'
-	strMode          = 's'
-	escMode          = 'e'
-	uMode            = 'u'
-	keyMode          = 'k'
-	colonMode        = ':'
-	spaceMode        = ' '
-	commentStartMode = '/'
-	commentMode      = 'c'
-)
-
-// Parser a JSON parser. It can be reused for multiple parsings which allows
-// buffer reuse for a performance advantage.
-type Parser struct {
-	buf         []byte
-	tmp         []byte // used for numbers and strings
-	stack       []byte // { or [
-	runeBytes   []byte
-	vstack      []gd.Node
-	arrayStarts []int
-	r           io.Reader
-	cb          func(gd.Node) bool
-	ri          int // read index for null, false, and true
-	line        int
-	noff        int // Offset of last newline from start of buf. Can be negative when using a reader.
-	off         int
-	rn          rune
-	mode        byte
-	nextMode    byte
-	simple      bool
-	numDot      bool
-	numE        bool
+// Validator is a reusable JSON validator. It can be reused for multiple
+// validations or parsings which allows buffer reuse for a performance
+// advantage.
+type Validator struct {
+	// This and the Parser use the same basic code but without the
+	// building. It is a copy since adding the conditionals needed to avoid
+	// builing results add 15 to 20% overhead. An additional improvement could
+	// be made by not tracking line and column but that would make it
+	// validation much less useful.
+	buf      []byte
+	tmp      []byte // used for numbers and strings
+	stack    []byte // { or [
+	r        io.Reader
+	ri       int // read index for null, false, and true
+	line     int
+	noff     int // Offset of last newline from start of buf. Can be negative when using a reader.
+	off      int
+	mode     byte
+	nextMode byte
+	numDot   bool
+	numE     bool
 
 	// NoComments returns an error if a comment is encountered.
 	NoComment bool
@@ -69,54 +37,35 @@ type Parser struct {
 	OnlyOne bool
 }
 
-// Parse a JSON string. An error is returned if not valid JSON.
-func (p *Parser) Parse(b []byte, args ...interface{}) (node gd.Node, err error) {
+// Validate a JSON string. An error is returned if not valid JSON.
+func (p *Validator) Validate(b []byte) error {
 	p.buf = b
 
-	var callback func(gd.Node) bool
+	return p.validate()
+}
 
-	for _, a := range args {
-		switch ta := a.(type) {
-		case bool:
-			p.NoComment = ta
-		case func(gd.Node) bool:
-			callback = ta
-			p.OnlyOne = false
-		}
-	}
-	if cap(p.vstack) < 64 {
-		p.vstack = make([]gd.Node, 0, 64)
-	}
-	if cap(p.arrayStarts) < 64 {
-		p.arrayStarts = make([]int, 0, 16)
-	}
-	if callback == nil {
-		callback = func(n gd.Node) bool {
-			node = n
-			return false // tells the parser to stop
-		}
-	}
-	p.cb = callback
-	p.simple = false
-	err = p.parse()
+// ValidateReader a JSON stream. An error is returned if not valid JSON.
+func (p *Validator) ValidateReader(r io.Reader) error {
+	p.r = r
+	p.buf = make([]byte, 0, readBufSize)
 
-	return
+	return p.validate()
 }
 
 // This is a huge function only because there was a significant performance
 // improvement by reducing function calls. The code is predominantly switch
 // statements with the first layer being the various parsing modes and the
 // second level deciding what to do with a byte read while in that mode.
-func (p *Parser) parse() error {
+func (p *Validator) validate() error {
 	if cap(p.tmp) < tmpMinSize {
 		p.tmp = make([]byte, 0, tmpMinSize)
 	} else {
-		p.tmp = p.tmp[0:0]
+		p.tmp = p.tmp[:0]
 	}
 	if cap(p.stack) < stackMinSize {
 		p.stack = make([]byte, 0, stackMinSize)
 	} else {
-		p.stack = p.stack[0:0]
+		p.stack = p.stack[:0]
 	}
 	p.noff = -1
 	p.line = 1
@@ -149,6 +98,9 @@ func (p *Parser) parse() error {
 			case 't':
 				p.mode = trueMode
 				p.ri = 0
+				// TBD '-' signMode (0 or 1-9)
+				// TBD '0' zeroMode (. or end)
+				// TBD 1-9 digitMode (0-9 or end)
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
 				p.mode = numMode
 				p.tmp = p.tmp[0:0]
@@ -158,14 +110,8 @@ func (p *Parser) parse() error {
 			case '"':
 				p.mode = strMode
 				p.nextMode = afterMode
-				p.tmp = p.tmp[0:0]
 			case '[':
 				p.stack = append(p.stack, '[')
-				if p.simple {
-					// TBD
-				} else {
-					p.arrayStarts = append(p.arrayStarts, len(p.vstack))
-				}
 			case ']':
 				depth := len(p.stack)
 				if depth == 0 {
@@ -177,29 +123,9 @@ func (p *Parser) parse() error {
 				}
 				p.stack = p.stack[0:depth]
 				p.mode = afterMode
-				if p.simple {
-					// TBD
-				} else {
-					start := p.arrayStarts[len(p.arrayStarts)-1]
-					size := len(p.vstack) - start
-					n := gd.Array(make([]gd.Node, size))
-					copy(n, p.vstack[start:len(p.vstack)])
-					p.vstack = p.vstack[0:start]
-					p.add(n)
-				}
 			case '{':
 				p.stack = append(p.stack, '{')
 				p.mode = keyMode
-				if p.simple {
-					// TBD
-				} else {
-					top := len(p.vstack) == 0
-					n := gd.Object{}
-					p.add(n)
-					if !top {
-						p.vstack = append(p.vstack, n)
-					}
-				}
 			case '}':
 				depth := len(p.stack)
 				if depth == 0 {
@@ -223,7 +149,7 @@ func (p *Parser) parse() error {
 		case afterMode:
 			switch b {
 			case ' ', '\t', '\r':
-				continue
+				// keep going
 			case '\n':
 				p.line++
 				p.noff = p.off
@@ -243,16 +169,6 @@ func (p *Parser) parse() error {
 					return p.newError("expected an array close")
 				}
 				p.stack = p.stack[0:depth]
-				if p.simple {
-					// TBD
-				} else {
-					start := p.arrayStarts[len(p.arrayStarts)-1]
-					size := len(p.vstack) - start
-					n := gd.Array(make([]gd.Node, size))
-					copy(n, p.vstack[start:len(p.vstack)])
-					p.vstack = p.vstack[0:start]
-					p.add(n)
-				}
 			case '}':
 				depth := len(p.stack)
 				if depth == 0 {
@@ -269,14 +185,13 @@ func (p *Parser) parse() error {
 		case keyMode:
 			switch b {
 			case ' ', '\t', '\r':
-				continue
+				// keep going
 			case '\n':
 				p.line++
 				p.noff = p.off
 			case '"':
 				p.mode = strMode
 				p.nextMode = colonMode
-				p.tmp = p.tmp[0:0]
 			case '}':
 				depth := len(p.stack)
 				if depth == 0 {
@@ -293,7 +208,7 @@ func (p *Parser) parse() error {
 		case colonMode:
 			switch b {
 			case ' ', '\t', '\r':
-				continue
+				// keep going
 			case '\n':
 				p.line++
 				p.noff = p.off
@@ -309,11 +224,6 @@ func (p *Parser) parse() error {
 			}
 			if 3 <= p.ri {
 				p.mode = afterMode
-				if p.simple {
-					// TBD
-				} else {
-					p.add(nil)
-				}
 			}
 		case falseMode:
 			p.ri++
@@ -322,11 +232,6 @@ func (p *Parser) parse() error {
 			}
 			if 4 <= p.ri {
 				p.mode = afterMode
-				if p.simple {
-					// TBD
-				} else {
-					p.add(gd.Bool(false))
-				}
 			}
 		case trueMode:
 			p.ri++
@@ -335,14 +240,8 @@ func (p *Parser) parse() error {
 			}
 			if 3 <= p.ri {
 				p.mode = afterMode
-				if p.simple {
-					// TBD
-				} else {
-					p.add(gd.Bool(true))
-				}
 			}
 		case numMode:
-			done := false
 			switch b {
 			case '0':
 				// ok as first if no other after
@@ -353,22 +252,18 @@ func (p *Parser) parse() error {
 					return p.newError("invalid number '%s'", p.tmp)
 				}
 			case ' ', '\t', '\r':
-				done = true
 				p.mode = afterMode
 			case '\n':
-				done = true
 				p.line++
 				p.noff = p.off
 				p.mode = afterMode
 			case ',':
-				done = true
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
 				}
 			case ']':
-				done = true
 				depth := len(p.stack)
 				if depth == 0 {
 					return p.newError("too many closes")
@@ -379,18 +274,7 @@ func (p *Parser) parse() error {
 				}
 				p.stack = p.stack[0:depth]
 				p.mode = afterMode
-				if p.simple {
-					// TBD
-				} else {
-					start := p.arrayStarts[len(p.arrayStarts)-1]
-					size := len(p.vstack) - start
-					n := gd.Array(make([]gd.Node, size))
-					copy(n, p.vstack[start:len(p.vstack)])
-					p.vstack = p.vstack[0:start]
-					p.add(n)
-				}
 			case '}':
-				done = true
 				depth := len(p.stack)
 				if depth == 0 {
 					return p.newError("too many closes")
@@ -434,29 +318,6 @@ func (p *Parser) parse() error {
 			default:
 				return p.newError("invalid number '%s'", p.tmp)
 			}
-			if done {
-				if p.numDot || p.numE {
-					f, err := strconv.ParseFloat(string(p.tmp), 64)
-					if err != nil {
-						return p.wrapError(err)
-					}
-					if p.simple {
-						// TBD
-					} else {
-						p.add(gd.Float(f))
-					}
-				} else {
-					i, err := strconv.ParseInt(string(p.tmp), 10, 64)
-					if err != nil {
-						return p.wrapError(err)
-					}
-					if p.simple {
-						// TBD
-					} else {
-						p.add(gd.Int(i))
-					}
-				}
-			}
 		case strMode:
 			if b < 0x20 {
 				return p.newError("invalid JSON character 0x%02x", b)
@@ -466,44 +327,13 @@ func (p *Parser) parse() error {
 				p.mode = escMode
 			case '"':
 				p.mode = p.nextMode
-				if p.mode == colonMode {
-					if p.simple {
-						// TBD
-					} else {
-						p.vstack = append(p.vstack, keyStr(p.tmp))
-					}
-				} else {
-					if p.simple {
-						// TBD
-					} else {
-						p.add(gd.String(string(p.tmp)))
-					}
-				}
-			default:
-				p.tmp = append(p.tmp, b)
 			}
 		case escMode:
-			p.mode = strMode
 			switch b {
-			case 'n':
-				p.tmp = append(p.tmp, '\n')
-			case '"':
-				p.tmp = append(p.tmp, '"')
-			case '\\':
-				p.tmp = append(p.tmp, '\\')
-			case '/':
-				p.tmp = append(p.tmp, '/')
-			case 'b':
-				p.tmp = append(p.tmp, '\b')
-			case 'f':
-				p.tmp = append(p.tmp, '\f')
-			case 'r':
-				p.tmp = append(p.tmp, '\r')
-			case 't':
-				p.tmp = append(p.tmp, '\t')
+			case 'n', '"', '\\', '/', 'b', 'f', 'r', 't':
+				p.mode = strMode
 			case 'u':
 				p.mode = uMode
-				p.rn = 0
 				p.ri = 0
 			default:
 				return p.newError("invalid JSON escape character '\\%c'", b)
@@ -512,26 +342,18 @@ func (p *Parser) parse() error {
 			p.ri++
 			switch b {
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.rn = p.rn<<4 | rune(b-'0')
 			case 'a', 'b', 'c', 'd', 'e', 'f':
-				p.rn = p.rn<<4 | rune(b-'a'+10)
 			case 'A', 'B', 'C', 'D', 'E', 'F':
-				p.rn = p.rn<<4 | rune(b-'A'+10)
 			default:
 				return p.newError("invalid JSON unicode character '%c'", b)
 			}
 			if p.ri == 4 {
-				if len(p.runeBytes) < 6 {
-					p.runeBytes = make([]byte, 6)
-				}
-				n := utf8.EncodeRune(p.runeBytes, p.rn)
-				p.tmp = append(p.tmp, p.runeBytes[:n]...)
 				p.mode = strMode
 			}
 		case spaceMode:
 			switch b {
 			case ' ', '\t', '\r':
-				continue
+				// keep going
 			case '\n':
 				p.line++
 				p.noff = p.off
@@ -559,11 +381,6 @@ func (p *Parser) parse() error {
 			}
 		}
 		if len(p.stack) == 0 && (p.mode == afterMode || p.mode == keyMode) {
-			if p.simple {
-				// TBD
-			} else {
-				p.cb(p.vstack[0])
-			}
 			if p.OnlyOne {
 				p.mode = spaceMode
 			} else {
@@ -571,38 +388,10 @@ func (p *Parser) parse() error {
 			}
 		}
 	}
-	if p.mode == numMode {
-		if p.numDot || p.numE {
-			f, err := strconv.ParseFloat(string(p.tmp), 64)
-			if err != nil {
-				return p.wrapError(err)
-			}
-			if p.simple {
-				// TBD
-			} else {
-				p.add(gd.Float(f))
-			}
-		} else {
-			i, err := strconv.ParseInt(string(p.tmp), 10, 64)
-			if err != nil {
-				return p.wrapError(err)
-			}
-			if p.simple {
-				// TBD
-			} else {
-				p.add(gd.Int(i))
-			}
-		}
-		if p.simple {
-			// TBD
-		} else {
-			p.cb(p.vstack[0])
-		}
-	}
 	return nil
 }
 
-func (p *Parser) newError(format string, args ...interface{}) error {
+func (p *Validator) newError(format string, args ...interface{}) error {
 	return &ParseError{
 		Message: fmt.Sprintf(format, args...),
 		Line:    p.line,
@@ -610,24 +399,10 @@ func (p *Parser) newError(format string, args ...interface{}) error {
 	}
 }
 
-func (p *Parser) wrapError(err error) error {
+func (p *Validator) wrapError(err error) error {
 	return &ParseError{
 		Message: err.Error(),
 		Line:    p.line,
 		Column:  p.off - p.noff,
 	}
-}
-
-func (p *Parser) add(n gd.Node) {
-	if 2 <= len(p.vstack) {
-		if k, ok := p.vstack[len(p.vstack)-1].(keyStr); ok {
-			obj, _ := p.vstack[len(p.vstack)-2].(gd.Object)
-			//fmt.Printf("*** obj: %v  %s  %t\n", obj, k, obj == nil)
-			obj[string(k)] = n
-			p.vstack = p.vstack[0 : len(p.vstack)-1]
-
-			return
-		}
-	}
-	p.vstack = append(p.vstack, n)
 }
