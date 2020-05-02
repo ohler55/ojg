@@ -16,8 +16,6 @@ type Validator struct {
 	// builing results add 15 to 20% overhead. An additional improvement could
 	// be made by not tracking line and column but that would make it
 	// validation much less useful.
-	buf      []byte // only used for read
-	r        io.Reader
 	stack    []byte // { or [
 	ri       int    // read index for null, false, and true
 	line     int
@@ -36,25 +34,19 @@ type Validator struct {
 
 // Validate a JSON string. An error is returned if not valid JSON.
 func (p *Validator) Validate(b []byte) error {
-	return p.validate(b)
+	return p.validate(b, nil)
 }
 
 // ValidateReader a JSON stream. An error is returned if not valid JSON.
 func (p *Validator) ValidateReader(r io.Reader) error {
-	//p.r = r
-	//p.buf = make([]byte, 0, readBufSize)
-
-	// TBD separate validate into a processing part and a wrapper for strings
-	//  handle setup and end check and the inner should allow for continuing where it left off
-
-	return p.validate(nil)
+	return p.validate(nil, r)
 }
 
 // This is a huge function only because there was a significant performance
 // improvement by reducing function calls. The code is predominantly switch
 // statements with the first layer being the various parsing modes and the
 // second level deciding what to do with a byte read while in that mode.
-func (p *Validator) validate(buf []byte) error {
+func (p *Validator) validate(buf []byte, r io.Reader) error {
 	if cap(p.stack) < stackMinSize {
 		p.stack = make([]byte, 0, stackMinSize)
 	} else {
@@ -68,368 +60,379 @@ func (p *Validator) validate(buf []byte) error {
 		p.mode = bomMode
 		p.ri = 0
 	}
-	if p.r != nil {
-		if cap(p.buf) < readBufSize {
-			p.buf = make([]byte, readBufSize)
+	if r != nil {
+		if cap(buf) < readBufSize {
+			buf = make([]byte, readBufSize)
 		}
-		fmt.Printf("*** fill buf\n")
+		// TBD figure out why the inclusion of the statement this is never
+		// called give a 15% performance boost.
+		_ = fmt.Sprintf("dummy call\n")
 		// TBD read first batch
 	}
 	var b byte
-	for p.off, b = range buf {
-		switch p.mode {
-		case valueMode:
-			switch b {
-			case ' ', '\t', '\r':
-				// ignore and continue
-			case '\n':
-				p.line++
-				p.noff = p.off
-			case 'n':
-				p.mode = nullMode
-				p.ri = 0
-			case 'f':
-				p.mode = falseMode
-				p.ri = 0
-			case 't':
-				p.mode = trueMode
-				p.ri = 0
-			case '-':
-				p.mode = negMode
-			case '0':
-				p.mode = zeroMode
-			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.mode = digitMode
-			case '"':
-				p.mode = strMode
-				p.nextMode = afterMode
-			case '[':
-				p.stack = append(p.stack, '[')
-			case ']':
-				if err := p.arrayEnd(); err != nil {
-					return err
-				}
-			case '{':
-				p.stack = append(p.stack, '{')
-				p.mode = keyMode
-			case '}':
-				if err := p.objEnd(); err != nil {
-					return err
-				}
-			case '/':
-				if p.NoComment {
-					return p.newError("comments not allowed")
-				}
-				p.nextMode = p.mode
-				p.mode = commentStartMode
-			default:
-				return p.newError("unexpected character '%c'", b)
-			}
-		case afterMode:
-			switch b {
-			case ' ', '\t', '\r':
-				// keep going
-			case '\n':
-				p.line++
-				p.noff = p.off
-			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+	for {
+		if r != nil {
+			// TBD fill buf
+		}
+		for p.off, b = range buf {
+			switch p.mode {
+			case valueMode:
+				switch b {
+				case ' ', '\t', '\r':
+					// ignore and continue
+				case '\n':
+					p.line++
+					p.noff = p.off
+				case 'n':
+					p.mode = nullMode
+					p.ri = 0
+				case 'f':
+					p.mode = falseMode
+					p.ri = 0
+				case 't':
+					p.mode = trueMode
+					p.ri = 0
+				case '-':
+					p.mode = negMode
+				case '0':
+					p.mode = zeroMode
+				case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+					p.mode = digitMode
+				case '"':
+					p.mode = strMode
+					p.nextMode = afterMode
+				case '[':
+					p.stack = append(p.stack, '[')
+				case ']':
+					if err := p.arrayEnd(); err != nil {
+						return err
+					}
+				case '{':
+					p.stack = append(p.stack, '{')
 					p.mode = keyMode
-				} else {
+				case '}':
+					if err := p.objEnd(); err != nil {
+						return err
+					}
+				case '/':
+					if p.NoComment {
+						return p.newError("comments not allowed")
+					}
+					p.nextMode = p.mode
+					p.mode = commentStartMode
+				default:
+					return p.newError("unexpected character '%c'", b)
+				}
+			case afterMode:
+				switch b {
+				case ' ', '\t', '\r':
+					// keep going
+				case '\n':
+					p.line++
+					p.noff = p.off
+				case ',':
+					if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+						p.mode = keyMode
+					} else {
+						p.mode = valueMode
+					}
+				case ']':
+					if err := p.arrayEnd(); err != nil {
+						return err
+					}
+				case '}':
+					if err := p.objEnd(); err != nil {
+						return err
+					}
+				default:
+					return p.newError("expected a comma or close, not '%c'", b)
+				}
+			case keyMode:
+				switch b {
+				case ' ', '\t', '\r':
+					// keep going
+				case '\n':
+					p.line++
+					p.noff = p.off
+				case '"':
+					p.mode = strMode
+					p.nextMode = colonMode
+				case '}':
+					if err := p.objEnd(); err != nil {
+						return err
+					}
+				default:
+					return p.newError("expected a string start or object close, not '%c'", b)
+				}
+			case colonMode:
+				switch b {
+				case ' ', '\t', '\r':
+					// keep going
+				case '\n':
+					p.line++
+					p.noff = p.off
+				case ':':
 					p.mode = valueMode
+				default:
+					return p.newError("expected a colon, not '%c'", b)
 				}
-			case ']':
-				if err := p.arrayEnd(); err != nil {
-					return err
+			case nullMode:
+				p.ri++
+				if "null"[p.ri] != b {
+					return p.newError("expected null")
 				}
-			case '}':
-				if err := p.objEnd(); err != nil {
-					return err
+				if 3 <= p.ri {
+					p.mode = afterMode
 				}
-			default:
-				return p.newError("expected a comma or close, not '%c'", b)
-			}
-		case keyMode:
-			switch b {
-			case ' ', '\t', '\r':
-				// keep going
-			case '\n':
-				p.line++
-				p.noff = p.off
-			case '"':
-				p.mode = strMode
-				p.nextMode = colonMode
-			case '}':
-				if err := p.objEnd(); err != nil {
-					return err
+			case falseMode:
+				p.ri++
+				if "false"[p.ri] != b {
+					return p.newError("expected false")
 				}
-			default:
-				return p.newError("expected a string start or object close, not '%c'", b)
-			}
-		case colonMode:
-			switch b {
-			case ' ', '\t', '\r':
-				// keep going
-			case '\n':
-				p.line++
-				p.noff = p.off
-			case ':':
-				p.mode = valueMode
-			default:
-				return p.newError("expected a colon, not '%c'", b)
-			}
-		case nullMode:
-			p.ri++
-			if "null"[p.ri] != b {
-				return p.newError("expected null")
-			}
-			if 3 <= p.ri {
-				p.mode = afterMode
-			}
-		case falseMode:
-			p.ri++
-			if "false"[p.ri] != b {
-				return p.newError("expected false")
-			}
-			if 4 <= p.ri {
-				p.mode = afterMode
-			}
-		case trueMode:
-			p.ri++
-			if "true"[p.ri] != b {
-				return p.newError("expected false")
-			}
-			if 3 <= p.ri {
-				p.mode = afterMode
-			}
-		case negMode:
-			switch b {
-			case '0':
-				p.mode = zeroMode
-			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.mode = digitMode
-			default:
-				return p.newError("invalid number")
-			}
-		case zeroMode:
-			switch b {
-			case '.':
-				p.mode = dotMode
-			case ' ', '\t', '\r':
-				p.mode = afterMode
-			case '\n':
-				p.line++
-				p.noff = p.off
-				p.mode = afterMode
-			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
-					p.mode = keyMode
+				if 4 <= p.ri {
+					p.mode = afterMode
+				}
+			case trueMode:
+				p.ri++
+				if "true"[p.ri] != b {
+					return p.newError("expected false")
+				}
+				if 3 <= p.ri {
+					p.mode = afterMode
+				}
+			case negMode:
+				switch b {
+				case '0':
+					p.mode = zeroMode
+				case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+					p.mode = digitMode
+				default:
+					return p.newError("invalid number")
+				}
+			case zeroMode:
+				switch b {
+				case '.':
+					p.mode = dotMode
+				case ' ', '\t', '\r':
+					p.mode = afterMode
+				case '\n':
+					p.line++
+					p.noff = p.off
+					p.mode = afterMode
+				case ',':
+					if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+						p.mode = keyMode
+					} else {
+						p.mode = valueMode
+					}
+				case ']':
+					if err := p.arrayEnd(); err != nil {
+						return err
+					}
+				case '}':
+					if err := p.objEnd(); err != nil {
+						return err
+					}
+				default:
+					return p.newError("invalid number")
+				}
+			case digitMode:
+				switch b {
+				case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+					// no change in mode
+				case '.':
+					p.mode = dotMode
+				case ' ', '\t', '\r':
+					p.mode = afterMode
+				case '\n':
+					p.line++
+					p.noff = p.off
+					p.mode = afterMode
+				case ',':
+					if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+						p.mode = keyMode
+					} else {
+						p.mode = valueMode
+					}
+				case ']':
+					if err := p.arrayEnd(); err != nil {
+						return err
+					}
+				case '}':
+					if err := p.objEnd(); err != nil {
+						return err
+					}
+				default:
+					return p.newError("invalid number")
+				}
+			case dotMode:
+				if '0' <= b && b <= '9' {
+					p.mode = fracMode
 				} else {
-					p.mode = valueMode
+					return p.newError("invalid number")
 				}
-			case ']':
-				if err := p.arrayEnd(); err != nil {
-					return err
+			case fracMode:
+				switch b {
+				case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+					// no change in mode
+				case 'e', 'E':
+					p.mode = expSignMode
+				case ' ', '\t', '\r':
+					p.mode = afterMode
+				case '\n':
+					p.line++
+					p.noff = p.off
+					p.mode = afterMode
+				case ',':
+					if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+						p.mode = keyMode
+					} else {
+						p.mode = valueMode
+					}
+				case ']':
+					if err := p.arrayEnd(); err != nil {
+						return err
+					}
+				case '}':
+					if err := p.objEnd(); err != nil {
+						return err
+					}
+				default:
+					return p.newError("invalid number")
 				}
-			case '}':
-				if err := p.objEnd(); err != nil {
-					return err
+			case expSignMode:
+				switch b {
+				case '-', '+':
+					p.mode = expZeroMode
+				case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+					p.mode = expMode
+				default:
+					return p.newError("invalid number")
 				}
-			default:
-				return p.newError("invalid number")
-			}
-		case digitMode:
-			switch b {
-			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				// no change in mode
-			case '.':
-				p.mode = dotMode
-			case ' ', '\t', '\r':
-				p.mode = afterMode
-			case '\n':
-				p.line++
-				p.noff = p.off
-				p.mode = afterMode
-			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
-					p.mode = keyMode
+			case expZeroMode:
+				if '0' <= b && b <= '9' {
+					p.mode = expMode
 				} else {
-					p.mode = valueMode
+					return p.newError("invalid number")
 				}
-			case ']':
-				if err := p.arrayEnd(); err != nil {
-					return err
+			case expMode:
+				switch b {
+				case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+					// okay
+				case ' ', '\t', '\r':
+					p.mode = afterMode
+				case '\n':
+					p.line++
+					p.noff = p.off
+					p.mode = afterMode
+				case ',':
+					if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+						p.mode = keyMode
+					} else {
+						p.mode = valueMode
+					}
+				case ']':
+					if err := p.arrayEnd(); err != nil {
+						return err
+					}
+					depth := len(p.stack)
+					if depth == 0 {
+						return p.newError("too many closes")
+					}
+					depth--
+					if p.stack[depth] != '[' {
+						return p.newError("expected an array close")
+					}
+					p.stack = p.stack[0:depth]
+					p.mode = afterMode
+				case '}':
+					if err := p.objEnd(); err != nil {
+						return err
+					}
+				default:
+					return p.newError("invalid number")
 				}
-			case '}':
-				if err := p.objEnd(); err != nil {
-					return err
-				}
-			default:
-				return p.newError("invalid number")
-			}
-		case dotMode:
-			if '0' <= b && b <= '9' {
-				p.mode = fracMode
-			} else {
-				return p.newError("invalid number")
-			}
-		case fracMode:
-			switch b {
-			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				// no change in mode
-			case 'e', 'E':
-				p.mode = expSignMode
-			case ' ', '\t', '\r':
-				p.mode = afterMode
-			case '\n':
-				p.line++
-				p.noff = p.off
-				p.mode = afterMode
-			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
-					p.mode = keyMode
-				} else {
-					p.mode = valueMode
-				}
-			case ']':
-				if err := p.arrayEnd(); err != nil {
-					return err
-				}
-			case '}':
-				if err := p.objEnd(); err != nil {
-					return err
-				}
-			default:
-				return p.newError("invalid number")
-			}
-		case expSignMode:
-			switch b {
-			case '-', '+':
-				p.mode = expZeroMode
-			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.mode = expMode
-			default:
-				return p.newError("invalid number")
-			}
-		case expZeroMode:
-			if '0' <= b && b <= '9' {
-				p.mode = expMode
-			} else {
-				return p.newError("invalid number")
-			}
-		case expMode:
-			switch b {
-			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				// okay
-			case ' ', '\t', '\r':
-				p.mode = afterMode
-			case '\n':
-				p.line++
-				p.noff = p.off
-				p.mode = afterMode
-			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
-					p.mode = keyMode
-				} else {
-					p.mode = valueMode
-				}
-			case ']':
-				if err := p.arrayEnd(); err != nil {
-					return err
-				}
-				depth := len(p.stack)
-				if depth == 0 {
-					return p.newError("too many closes")
-				}
-				depth--
-				if p.stack[depth] != '[' {
-					return p.newError("expected an array close")
-				}
-				p.stack = p.stack[0:depth]
-				p.mode = afterMode
-			case '}':
-				if err := p.objEnd(); err != nil {
-					return err
-				}
-			default:
-				return p.newError("invalid number")
-			}
 
-		case strMode:
-			if b < 0x20 {
-				return p.newError("invalid JSON character 0x%02x", b)
+			case strMode:
+				if b < 0x20 {
+					return p.newError("invalid JSON character 0x%02x", b)
+				}
+				switch b {
+				case '\\':
+					p.mode = escMode
+				case '"':
+					p.mode = p.nextMode
+				}
+			case escMode:
+				switch b {
+				case 'n', '"', '\\', '/', 'b', 'f', 'r', 't':
+					p.mode = strMode
+				case 'u':
+					p.mode = uMode
+					p.ri = 0
+				default:
+					return p.newError("invalid JSON escape character '\\%c'", b)
+				}
+			case uMode:
+				p.ri++
+				switch b {
+				case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				case 'a', 'b', 'c', 'd', 'e', 'f':
+				case 'A', 'B', 'C', 'D', 'E', 'F':
+				default:
+					return p.newError("invalid JSON unicode character '%c'", b)
+				}
+				if p.ri == 4 {
+					p.mode = strMode
+				}
+			case spaceMode:
+				switch b {
+				case ' ', '\t', '\r':
+					// keep going
+				case '\n':
+					p.line++
+					p.noff = p.off
+				default:
+					return p.newError("extra characters after close, '%c'", b)
+				}
+			case commentStartMode:
+				if b != '/' {
+					return p.newError("unexpected character '%c'", b)
+				}
+				p.mode = commentMode
+			case commentMode:
+				if b == '\n' {
+					p.line++
+					p.noff = p.off
+					p.mode = p.nextMode
+				}
+			case bomMode:
+				p.ri++
+				if []byte{0xEF, 0xBB, 0xBF}[p.ri] != b {
+					return p.newError("expected BOM")
+				}
+				if 2 <= p.ri {
+					p.mode = valueMode
+				}
 			}
-			switch b {
-			case '\\':
-				p.mode = escMode
-			case '"':
-				p.mode = p.nextMode
-			}
-		case escMode:
-			switch b {
-			case 'n', '"', '\\', '/', 'b', 'f', 'r', 't':
-				p.mode = strMode
-			case 'u':
-				p.mode = uMode
-				p.ri = 0
-			default:
-				return p.newError("invalid JSON escape character '\\%c'", b)
-			}
-		case uMode:
-			p.ri++
-			switch b {
-			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-			case 'a', 'b', 'c', 'd', 'e', 'f':
-			case 'A', 'B', 'C', 'D', 'E', 'F':
-			default:
-				return p.newError("invalid JSON unicode character '%c'", b)
-			}
-			if p.ri == 4 {
-				p.mode = strMode
-			}
-		case spaceMode:
-			switch b {
-			case ' ', '\t', '\r':
-				// keep going
-			case '\n':
-				p.line++
-				p.noff = p.off
-			default:
-				return p.newError("extra characters after close, '%c'", b)
-			}
-		case commentStartMode:
-			if b != '/' {
-				return p.newError("unexpected character '%c'", b)
-			}
-			p.mode = commentMode
-		case commentMode:
-			if b == '\n' {
-				p.line++
-				p.noff = p.off
-				p.mode = p.nextMode
-			}
-		case bomMode:
-			p.ri++
-			if []byte{0xEF, 0xBB, 0xBF}[p.ri] != b {
-				return p.newError("expected BOM")
-			}
-			if 2 <= p.ri {
-				p.mode = valueMode
+			if len(p.stack) == 0 && (p.mode == afterMode || p.mode == keyMode) {
+				if p.OnlyOne {
+					p.mode = spaceMode
+				} else {
+					p.mode = valueMode
+				}
 			}
 		}
-		if len(p.stack) == 0 && (p.mode == afterMode || p.mode == keyMode) {
-			if p.OnlyOne {
-				p.mode = spaceMode
-			} else {
-				p.mode = valueMode
-			}
+		if r == nil {
+			break
 		}
+		// TBD fill buf
 	}
 	switch p.mode {
 	case afterMode, zeroMode, digitMode, fracMode, expMode, valueMode:
 		// okay
 	default:
-		fmt.Printf("*** final mode: %c\n", p.mode)
+		//fmt.Printf("*** final mode: %c\n", p.mode)
 		return p.newError("incomplete JSON")
 	}
 	return nil

@@ -1,7 +1,7 @@
 
 - Parse
- - change numMode
-  - don't build tmp in validator
+ - use same num handler as validator
+ - try building number directly
  - make stack []interface{}
   - separate add for simple and node
   - make keyStr just a simple string type, not a node

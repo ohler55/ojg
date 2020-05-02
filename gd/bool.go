@@ -28,23 +28,3 @@ func (n Bool) Dup() Node {
 func (n Bool) Empty() bool {
 	return false
 }
-
-func (n Bool) AsBool() (Bool, bool) {
-	return n, true
-}
-
-func (n Bool) AsInt() (Int, bool) {
-	var i int64
-	if n {
-		i = 1
-	}
-	return Int(i), false
-}
-
-func (n Bool) AsFloat() (Float, bool) {
-	var f float64
-	if n {
-		f = 1.0
-	}
-	return Float(f), false
-}

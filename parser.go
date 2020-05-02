@@ -41,10 +41,11 @@ const (
 	commentMode      = 'c'
 )
 
+var emptyGdArray = gd.Array([]gd.Node{})
+
 // Parser a JSON parser. It can be reused for multiple parsings which allows
 // buffer reuse for a performance advantage.
 type Parser struct {
-	buf         []byte
 	tmp         []byte // used for numbers and strings
 	stack       []byte // { or [
 	runeBytes   []byte
@@ -60,8 +61,9 @@ type Parser struct {
 	mode        byte
 	nextMode    byte
 	simple      bool
-	numDot      bool
-	numE        bool
+
+	numDot bool
+	numE   bool
 
 	// NoComments returns an error if a comment is encountered.
 	NoComment bool
@@ -73,8 +75,6 @@ type Parser struct {
 
 // Parse a JSON string. An error is returned if not valid JSON.
 func (p *Parser) Parse(b []byte, args ...interface{}) (node gd.Node, err error) {
-	p.buf = b
-
 	var callback func(gd.Node) bool
 
 	for _, a := range args {
@@ -86,12 +86,6 @@ func (p *Parser) Parse(b []byte, args ...interface{}) (node gd.Node, err error) 
 			p.OnlyOne = false
 		}
 	}
-	if cap(p.vstack) < 64 {
-		p.vstack = make([]gd.Node, 0, 64)
-	}
-	if cap(p.arrayStarts) < 64 {
-		p.arrayStarts = make([]int, 0, 16)
-	}
 	if callback == nil {
 		callback = func(n gd.Node) bool {
 			node = n
@@ -100,7 +94,7 @@ func (p *Parser) Parse(b []byte, args ...interface{}) (node gd.Node, err error) 
 	}
 	p.cb = callback
 	p.simple = false
-	err = p.parse()
+	err = p.parse(b)
 
 	return
 }
@@ -109,7 +103,7 @@ func (p *Parser) Parse(b []byte, args ...interface{}) (node gd.Node, err error) 
 // improvement by reducing function calls. The code is predominantly switch
 // statements with the first layer being the various parsing modes and the
 // second level deciding what to do with a byte read while in that mode.
-func (p *Parser) parse() error {
+func (p *Parser) parse(buf []byte) error {
 	if cap(p.tmp) < tmpMinSize {
 		p.tmp = make([]byte, 0, tmpMinSize)
 	} else {
@@ -120,6 +114,12 @@ func (p *Parser) parse() error {
 	} else {
 		p.stack = p.stack[0:0]
 	}
+	if cap(p.vstack) < 64 {
+		p.vstack = make([]gd.Node, 0, 64)
+	}
+	if cap(p.arrayStarts) < 64 {
+		p.arrayStarts = make([]int, 0, 16)
+	}
 	p.noff = -1
 	p.line = 1
 	p.mode = valueMode
@@ -128,12 +128,12 @@ func (p *Parser) parse() error {
 		// TBD read first batch
 	}
 	// Skip BOM if present.
-	if 0 < len(p.buf) && p.buf[0] == 0xEF {
+	if 0 < len(buf) && buf[0] == 0xEF {
 		p.mode = bomMode
 		p.ri = 0
 	}
 	var b byte
-	for p.off, b = range p.buf {
+	for p.off, b = range buf {
 		switch p.mode {
 		case valueMode:
 			switch b {
@@ -167,27 +167,11 @@ func (p *Parser) parse() error {
 					// TBD
 				} else {
 					p.arrayStarts = append(p.arrayStarts, len(p.vstack))
+					p.vstack = append(p.vstack, emptyGdArray)
 				}
 			case ']':
-				depth := len(p.stack)
-				if depth == 0 {
-					return p.newError("too many closes")
-				}
-				depth--
-				if p.stack[depth] != '[' {
-					return p.newError("expected an array close")
-				}
-				p.stack = p.stack[0:depth]
-				p.mode = afterMode
-				if p.simple {
-					// TBD
-				} else {
-					start := p.arrayStarts[len(p.arrayStarts)-1]
-					size := len(p.vstack) - start
-					n := gd.Array(make([]gd.Node, size))
-					copy(n, p.vstack[start:len(p.vstack)])
-					p.vstack = p.vstack[0:start]
-					p.add(n)
+				if err := p.arrayEnd(); err != nil {
+					return err
 				}
 			case '{':
 				p.stack = append(p.stack, '{')
@@ -195,24 +179,13 @@ func (p *Parser) parse() error {
 				if p.simple {
 					// TBD
 				} else {
-					top := len(p.vstack) == 0
 					n := gd.Object{}
-					p.add(n)
-					if !top {
-						p.vstack = append(p.vstack, n)
-					}
+					p.vstack = append(p.vstack, n)
 				}
 			case '}':
-				depth := len(p.stack)
-				if depth == 0 {
-					return p.newError("too many closes")
+				if err := p.objectEnd(); err != nil {
+					return err
 				}
-				depth--
-				if p.stack[depth] != '{' {
-					return p.newError("expected an object close")
-				}
-				p.stack = p.stack[0:depth]
-				p.mode = afterMode
 			case '/':
 				if p.NoComment {
 					return p.newError("comments not allowed")
@@ -236,35 +209,13 @@ func (p *Parser) parse() error {
 					p.mode = valueMode
 				}
 			case ']':
-				depth := len(p.stack)
-				if depth == 0 {
-					return p.newError("too many closes")
-				}
-				depth--
-				if p.stack[depth] != '[' {
-					return p.newError("expected an array close")
-				}
-				p.stack = p.stack[0:depth]
-				if p.simple {
-					// TBD
-				} else {
-					start := p.arrayStarts[len(p.arrayStarts)-1]
-					size := len(p.vstack) - start
-					n := gd.Array(make([]gd.Node, size))
-					copy(n, p.vstack[start:len(p.vstack)])
-					p.vstack = p.vstack[0:start]
-					p.add(n)
+				if err := p.arrayEnd(); err != nil {
+					return err
 				}
 			case '}':
-				depth := len(p.stack)
-				if depth == 0 {
-					return p.newError("too many closes")
+				if err := p.objectEnd(); err != nil {
+					return err
 				}
-				depth--
-				if p.stack[depth] != '{' {
-					return p.newError("expected an object close")
-				}
-				p.stack = p.stack[0:depth]
 			default:
 				return p.newError("expected a comma or close, not '%c'", b)
 			}
@@ -280,15 +231,9 @@ func (p *Parser) parse() error {
 				p.nextMode = colonMode
 				p.tmp = p.tmp[0:0]
 			case '}':
-				depth := len(p.stack)
-				if depth == 0 {
-					return p.newError("too many closes")
+				if err := p.objectEnd(); err != nil {
+					return err
 				}
-				depth--
-				if p.stack[depth] != '{' {
-					return p.newError("expected an object close")
-				}
-				p.stack = p.stack[0:depth]
 			default:
 				return p.newError("expected a string start or object close, not '%c'", b)
 			}
@@ -371,38 +316,8 @@ func (p *Parser) parse() error {
 				}
 			case ']':
 				done = true
-				depth := len(p.stack)
-				if depth == 0 {
-					return p.newError("too many closes")
-				}
-				depth--
-				if p.stack[depth] != '[' {
-					return p.newError("expected an array close")
-				}
-				p.stack = p.stack[0:depth]
-				p.mode = afterMode
-				if p.simple {
-					// TBD
-				} else {
-					start := p.arrayStarts[len(p.arrayStarts)-1]
-					size := len(p.vstack) - start
-					n := gd.Array(make([]gd.Node, size))
-					copy(n, p.vstack[start:len(p.vstack)])
-					p.vstack = p.vstack[0:start]
-					p.add(n)
-				}
 			case '}':
 				done = true
-				depth := len(p.stack)
-				if depth == 0 {
-					return p.newError("too many closes")
-				}
-				depth--
-				if p.stack[depth] != '{' {
-					return p.newError("expected an object close")
-				}
-				p.stack = p.stack[0:depth]
-				p.mode = afterMode
 			case '-':
 				p.tmp = append(p.tmp, b)
 				if 1 < len(p.tmp) {
@@ -437,6 +352,7 @@ func (p *Parser) parse() error {
 				return p.newError("invalid number '%s'", p.tmp)
 			}
 			if done {
+				// TBD change all this
 				if p.numDot || p.numE {
 					f, err := strconv.ParseFloat(string(p.tmp), 64)
 					if err != nil {
@@ -456,6 +372,16 @@ func (p *Parser) parse() error {
 						// TBD
 					} else {
 						p.add(gd.Int(i))
+					}
+				}
+				switch b {
+				case ']':
+					if err := p.arrayEnd(); err != nil {
+						return err
+					}
+				case '}':
+					if err := p.objectEnd(); err != nil {
+						return err
 					}
 				}
 			}
@@ -624,7 +550,6 @@ func (p *Parser) add(n gd.Node) {
 	if 2 <= len(p.vstack) {
 		if k, ok := p.vstack[len(p.vstack)-1].(keyStr); ok {
 			obj, _ := p.vstack[len(p.vstack)-2].(gd.Object)
-			//fmt.Printf("*** obj: %v  %s  %t\n", obj, k, obj == nil)
 			obj[string(k)] = n
 			p.vstack = p.vstack[0 : len(p.vstack)-1]
 
@@ -632,4 +557,54 @@ func (p *Parser) add(n gd.Node) {
 		}
 	}
 	p.vstack = append(p.vstack, n)
+}
+
+func (p *Parser) arrayEnd() error {
+	depth := len(p.stack)
+	if depth == 0 {
+		return p.newError("too many closes")
+	}
+	depth--
+	if p.stack[depth] != '[' {
+		return p.newError("expected an array close")
+	}
+	p.stack = p.stack[0:depth]
+	p.mode = afterMode
+	if p.simple {
+		// TBD
+	} else {
+		start := p.arrayStarts[len(p.arrayStarts)-1] + 1
+		p.arrayStarts = p.arrayStarts[:len(p.arrayStarts)-1]
+		size := len(p.vstack) - start
+		n := gd.Array(make([]gd.Node, size))
+		copy(n, p.vstack[start:len(p.vstack)])
+		p.vstack = p.vstack[0 : start-1]
+		p.add(n)
+	}
+	return nil
+}
+
+func (p *Parser) objectEnd() error {
+	depth := len(p.stack)
+	if depth == 0 {
+		return p.newError("too many closes")
+	}
+	depth--
+	if p.stack[depth] != '{' {
+		return p.newError("expected an object close")
+	}
+	p.stack = p.stack[0:depth]
+	p.mode = afterMode
+	n := p.vstack[len(p.vstack)-1]
+	p.vstack = p.vstack[:len(p.vstack)-1]
+	p.add(n)
+
+	return nil
+}
+
+func (p *Parser) printStack(label string) {
+	fmt.Printf("*** stack at %s - %v\n", label, p.arrayStarts)
+	for _, v := range p.vstack {
+		fmt.Printf("  %T %v\n", v, v)
+	}
 }

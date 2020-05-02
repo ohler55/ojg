@@ -110,6 +110,7 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 }
 
 func (o *Options) buildJSON(data interface{}, depth int) (err error) {
+Top:
 	switch td := data.(type) {
 	case nil:
 		o.buf = append(o.buf, []byte("null")...)
@@ -178,6 +179,10 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 		err = o.buildObject(td, depth)
 
 	default:
+		if simp, _ := data.(gd.Simplifier); simp != nil {
+			data = simp.Simplify()
+			goto Top
+		}
 		o.buildString(fmt.Sprintf("%v", td))
 	}
 	if o.w != nil && o.WriteLimit < len(o.buf) {

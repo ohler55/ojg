@@ -298,8 +298,9 @@ func goValidate(b *testing.B) {
 }
 
 func ojgValidate(b *testing.B) {
-	v := &ojg.Validator{}
+	var v ojg.Validator
 	for n := 0; n < b.N; n++ {
+		//var v ojg.Validator
 		_ = v.Validate([]byte(sampleJSON))
 		//err := v.Validate([]byte(sampleJSON))
 		//fmt.Println(err)
@@ -386,7 +387,7 @@ const sampleJSON = `[
         "nest": {
           "nest": {
             "nest": {
-              "egg": 12345678
+              "egg": [12345678, 87654321]
             }
           }
         }

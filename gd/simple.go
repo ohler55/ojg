@@ -68,6 +68,9 @@ func FromSimple(v interface{}) (n Node, err error) {
 			}
 			n = o
 		default:
+			if simp, _ := n.(Simplifier); simp != nil {
+				return FromSimple(simp.Simplify())
+			}
 			err = fmt.Errorf("can not convert a %T to a Node", v)
 		}
 	}
@@ -138,6 +141,9 @@ func AlterSimple(v interface{}) (n Node, err error) {
 		case Object:
 			n = tv
 		default:
+			if simp, _ := n.(Simplifier); simp != nil {
+				return FromSimple(simp.Simplify())
+			}
 			err = fmt.Errorf("can not convert a %T to a Node", v)
 		}
 	}

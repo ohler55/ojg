@@ -97,15 +97,3 @@ func (n Object) Dup() Node {
 func (n Object) Empty() bool {
 	return len(n) == 0
 }
-
-func (n Object) AsBool() (Bool, bool) {
-	return Bool(len(n) == 0), false
-}
-
-func (n Object) AsInt() (Int, bool) {
-	return 0, false
-}
-
-func (n Object) AsFloat() (Float, bool) {
-	return Float(0.0), false
-}

@@ -27,16 +27,3 @@ func (n Float) Dup() Node {
 func (n Float) Empty() bool {
 	return false
 }
-
-func (n Float) AsBool() (Bool, bool) {
-	// Not really a bool but just in case return a value but ok as false.
-	return Bool(float64(n) != 0.0), false
-}
-
-func (n Float) AsInt() (Int, bool) {
-	return Int(int64(n)), true
-}
-
-func (n Float) AsFloat() (Float, bool) {
-	return n, true
-}
