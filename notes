@@ -1,10 +1,11 @@
 
 - Parse
- - use same num handler as validator
- - try building number directly
+ - handle big numbers
+  - gd.Big
  - make stack []interface{}
   - separate add for simple and node
   - make keyStr just a simple string type, not a node
+ - handle reader in parser and validator
 
 - ojg.Write and String tests
 

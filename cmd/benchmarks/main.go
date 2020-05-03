@@ -24,8 +24,8 @@ func main() {
 	tree.Sort = false
 	gd.TimeFormat = "nano"
 
-	validateBenchmarks()
 	parseBenchmarks()
+	validateBenchmarks()
 
 	base := testing.Benchmark(runBase)
 

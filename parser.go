@@ -5,7 +5,8 @@ package ojg
 import (
 	"fmt"
 	"io"
-	"strconv"
+	"math"
+	"math/big"
 	"unicode/utf8"
 
 	"github.com/ohler55/ojg/gd"
@@ -57,13 +58,11 @@ type Parser struct {
 	line        int
 	noff        int // Offset of last newline from start of buf. Can be negative when using a reader.
 	off         int
+	num         number
 	rn          rune
 	mode        byte
 	nextMode    byte
 	simple      bool
-
-	numDot bool
-	numE   bool
 
 	// NoComments returns an error if a comment is encountered.
 	NoComment bool
@@ -151,12 +150,17 @@ func (p *Parser) parse(buf []byte) error {
 			case 't':
 				p.mode = trueMode
 				p.ri = 0
-			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-				p.mode = numMode
-				p.tmp = p.tmp[0:0]
-				p.numDot = false
-				p.numE = false
-				p.tmp = append(p.tmp, b)
+			case '-':
+				p.mode = negMode
+				p.num.reset()
+				p.num.neg = true
+			case '0':
+				p.mode = zeroMode
+				p.num.reset()
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				p.mode = digitMode
+				p.num.reset()
+				p.num.i = uint64(b - '0')
 			case '"':
 				p.mode = strMode
 				p.nextMode = afterMode
@@ -288,102 +292,214 @@ func (p *Parser) parse(buf []byte) error {
 					p.add(gd.Bool(true))
 				}
 			}
-		case numMode:
-			done := false
+		case negMode:
 			switch b {
 			case '0':
-				// ok as first if no other after
-				p.tmp = append(p.tmp, b)
+				p.mode = zeroMode
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.tmp = append(p.tmp, b)
-				if len(p.tmp) == 2 && p.tmp[0] == '0' {
-					return p.newError("invalid number '%s'", p.tmp)
-				}
+				p.mode = digitMode
+				p.num.addDigit(b)
+			default:
+				return p.newError("invalid number")
+			}
+		case zeroMode:
+			switch b {
+			case '.':
+				p.mode = dotMode
 			case ' ', '\t', '\r':
-				done = true
 				p.mode = afterMode
+				if err := p.appendNum(); err != nil {
+					return err
+				}
 			case '\n':
-				done = true
 				p.line++
 				p.noff = p.off
 				p.mode = afterMode
+				if err := p.appendNum(); err != nil {
+					return err
+				}
 			case ',':
-				done = true
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
 				}
+				if err := p.appendNum(); err != nil {
+					return err
+				}
 			case ']':
-				done = true
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+				if err := p.arrayEnd(); err != nil {
+					return err
+				}
 			case '}':
-				done = true
-			case '-':
-				p.tmp = append(p.tmp, b)
-				if 1 < len(p.tmp) {
-					prev := p.tmp[len(p.tmp)-2]
-					if prev != 'e' && prev != 'E' {
-						return p.newError("invalid number '%s'", p.tmp)
-					}
+				if err := p.appendNum(); err != nil {
+					return err
 				}
-			case '.':
-				p.tmp = append(p.tmp, b)
-				if p.numDot || p.numE {
-					return p.newError("invalid number '%s'", p.tmp)
-				}
-				p.numDot = true
-			case 'e', 'E':
-				p.tmp = append(p.tmp, b)
-				if p.numE {
-					return p.newError("invalid number '%s'", p.tmp)
-				}
-				p.numE = true
-			case '+':
-				p.tmp = append(p.tmp, b)
-				if len(p.tmp) == 1 {
-					return p.newError("invalid number '%s'", p.tmp)
-				} else {
-					prev := p.tmp[len(p.tmp)-2]
-					if prev != 'e' && prev != 'E' {
-						return p.newError("invalid number '%s'", p.tmp)
-					}
+				if err := p.objectEnd(); err != nil {
+					return err
 				}
 			default:
-				return p.newError("invalid number '%s'", p.tmp)
+				return p.newError("invalid number")
 			}
-			if done {
-				// TBD change all this
-				if p.numDot || p.numE {
-					f, err := strconv.ParseFloat(string(p.tmp), 64)
-					if err != nil {
-						return p.wrapError(err)
-					}
-					if p.simple {
-						// TBD
-					} else {
-						p.add(gd.Float(f))
-					}
+		case digitMode:
+			switch b {
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				p.num.addDigit(b)
+			case '.':
+				p.mode = dotMode
+			case ' ', '\t', '\r':
+				p.mode = afterMode
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+			case '\n':
+				p.line++
+				p.noff = p.off
+				p.mode = afterMode
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+			case ',':
+				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+					p.mode = keyMode
 				} else {
-					i, err := strconv.ParseInt(string(p.tmp), 10, 64)
-					if err != nil {
-						return p.wrapError(err)
-					}
-					if p.simple {
-						// TBD
-					} else {
-						p.add(gd.Int(i))
-					}
+					p.mode = valueMode
 				}
-				switch b {
-				case ']':
-					if err := p.arrayEnd(); err != nil {
-						return err
-					}
-				case '}':
-					if err := p.objectEnd(); err != nil {
-						return err
-					}
+				if err := p.appendNum(); err != nil {
+					return err
 				}
+			case ']':
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+				if err := p.arrayEnd(); err != nil {
+					return err
+				}
+			case '}':
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+				if err := p.objectEnd(); err != nil {
+					return err
+				}
+			default:
+				return p.newError("invalid number")
+			}
+		case dotMode:
+			if '0' <= b && b <= '9' {
+				p.mode = fracMode
+				p.num.addFrac(b)
+			} else {
+				return p.newError("invalid number")
+			}
+		case fracMode:
+			switch b {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				p.num.addFrac(b)
+			case 'e', 'E':
+				p.mode = expSignMode
+			case ' ', '\t', '\r':
+				p.mode = afterMode
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+			case '\n':
+				p.line++
+				p.noff = p.off
+				p.mode = afterMode
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+			case ',':
+				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+					p.mode = keyMode
+				} else {
+					p.mode = valueMode
+				}
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+			case ']':
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+				if err := p.arrayEnd(); err != nil {
+					return err
+				}
+			case '}':
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+				if err := p.objectEnd(); err != nil {
+					return err
+				}
+			default:
+				return p.newError("invalid number")
+			}
+		case expSignMode:
+			switch b {
+			case '-':
+				p.mode = expZeroMode
+				p.num.negExp = true
+			case '+':
+				p.mode = expZeroMode
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				p.mode = expMode
+				p.num.addExp(b)
+			default:
+				return p.newError("invalid number")
+			}
+		case expZeroMode:
+			if '0' <= b && b <= '9' {
+				p.mode = expMode
+				p.num.addExp(b)
+			} else {
+				return p.newError("invalid number")
+			}
+		case expMode:
+			switch b {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				p.num.addExp(b)
+			case ' ', '\t', '\r':
+				p.mode = afterMode
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+			case '\n':
+				p.line++
+				p.noff = p.off
+				p.mode = afterMode
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+			case ',':
+				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+					p.mode = keyMode
+				} else {
+					p.mode = valueMode
+				}
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+			case ']':
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+				if err := p.arrayEnd(); err != nil {
+					return err
+				}
+			case '}':
+				if err := p.appendNum(); err != nil {
+					return err
+				}
+				if err := p.objectEnd(); err != nil {
+					return err
+				}
+			default:
+				return p.newError("invalid number")
 			}
 		case strMode:
 			if b < 0x20 {
@@ -499,33 +615,25 @@ func (p *Parser) parse(buf []byte) error {
 			}
 		}
 	}
-	if p.mode == numMode {
-		if p.numDot || p.numE {
-			f, err := strconv.ParseFloat(string(p.tmp), 64)
-			if err != nil {
-				return p.wrapError(err)
-			}
-			if p.simple {
-				// TBD
-			} else {
-				p.add(gd.Float(f))
-			}
+	switch p.mode {
+	case afterMode, valueMode:
+		if p.simple {
+			// TBD
 		} else {
-			i, err := strconv.ParseInt(string(p.tmp), 10, 64)
-			if err != nil {
-				return p.wrapError(err)
-			}
-			if p.simple {
-				// TBD
-			} else {
-				p.add(gd.Int(i))
-			}
+			p.cb(p.vstack[0])
+		}
+	case zeroMode, digitMode, fracMode, expMode:
+		if err := p.appendNum(); err != nil {
+			return err
 		}
 		if p.simple {
 			// TBD
 		} else {
 			p.cb(p.vstack[0])
 		}
+	default:
+		//fmt.Printf("*** final mode: %c\n", p.mode)
+		return p.newError("incomplete JSON")
 	}
 	return nil
 }
@@ -557,6 +665,128 @@ func (p *Parser) add(n gd.Node) {
 		}
 	}
 	p.vstack = append(p.vstack, n)
+}
+
+type number struct {
+	i      uint64
+	frac   uint64
+	div    uint64
+	exp    uint64
+	neg    bool
+	negExp bool
+	bigBuf []byte
+}
+
+func (n *number) reset() {
+	n.i = 0
+	n.frac = 0
+	n.div = 1
+	n.neg = false
+	n.negExp = false
+	if 0 < len(n.bigBuf) {
+		n.bigBuf = n.bigBuf[:0]
+	}
+}
+
+const bigLimit = math.MaxInt64 / 10
+
+func (n *number) addDigit(b byte) {
+	if 0 < len(n.bigBuf) {
+		n.bigBuf = append(n.bigBuf, b)
+	} else if n.i <= bigLimit {
+		n.i = n.i*10 + uint64(b-'0')
+		if math.MaxInt64 < n.i {
+			// fill bigBuf
+		}
+	} else { // big
+		// fill bigBuf
+		// TBD
+	}
+}
+
+func (n *number) addFrac(b byte) {
+	if 0 < len(n.bigBuf) {
+		n.bigBuf = append(n.bigBuf, b)
+	} else if n.frac <= bigLimit {
+		n.frac = n.frac*10 + uint64(b-'0')
+		if math.MaxInt64 < n.frac {
+			// fill bigBuf
+		}
+	} else { // big
+		// fill bigBuf
+		// TBD
+	}
+}
+
+func (n *number) addExp(b byte) {
+	if 0 < len(n.bigBuf) {
+		n.bigBuf = append(n.bigBuf, b)
+	} else if n.exp <= 102 {
+		n.exp = n.exp*10 + uint64(b-'0')
+		if 1022 < n.exp {
+			// fill bigBuf
+		}
+	} else { // big
+		// fill bigBuf
+		// TBD
+	}
+}
+
+func (n *number) asInt() int64 {
+	i := int64(n.i)
+	if n.neg {
+		i = -i
+	}
+	return i
+}
+
+func (n *number) asFloat() (float64, error) {
+	f := float64(n.i)
+	if 0 < n.frac {
+		f += float64(n.frac) / float64(n.div)
+	}
+	if n.neg {
+		f = -f
+	}
+	if 0 < n.exp {
+		x := int(n.exp)
+		if n.negExp {
+			x = -x
+		}
+		f *= math.Pow10(int(x))
+	}
+	return f, nil
+}
+
+func (n *number) asBig() (f *big.Float, err error) {
+	f, _, err = big.ParseFloat(string(n.bigBuf), 10, 0, big.ToNearestAway)
+	return
+}
+
+func (p *Parser) appendNum() error {
+	if 0 < len(p.num.bigBuf) {
+		if p.simple {
+			// TBD
+		} else {
+			// TBD
+			//p.add(gd.Big(p.num.asBig()))
+		}
+	} else if p.num.frac == 0 && p.num.exp == 0 {
+		if p.simple {
+			// TBD
+		} else {
+			p.add(gd.Int(p.num.asInt()))
+		}
+	} else if f, err := p.num.asFloat(); err == nil {
+		if p.simple {
+			// TBD
+		} else {
+			p.add(gd.Float(f))
+		}
+	} else {
+		return err
+	}
+	return nil
 }
 
 func (p *Parser) arrayEnd() error {
