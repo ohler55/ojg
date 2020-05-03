@@ -145,6 +145,69 @@ func TestParseString(t *testing.T) {
 	}
 }
 
+func TestParseSimpleString(t *testing.T) {
+	for _, d := range []data{
+		{src: "null", value: nil},
+		{src: "true", value: true},
+		{src: "false", value: false},
+		{src: "123", value: 123},
+		{src: "-321", value: -321},
+		{src: "12.3", value: 12.3},
+		{src: `12345678901234567890`, value: "12345678901234567890"},
+		{src: `9223372036854775807`, value: 9223372036854775807},     // max int
+		{src: `9223372036854775808`, value: "9223372036854775808"},   // max int + 1
+		{src: `-9223372036854775807`, value: -9223372036854775807},   // min int
+		{src: `-9223372036854775808`, value: "-9223372036854775808"}, // min int -1
+		{src: `0.9223372036854775808`, value: "0.9223372036854775808"},
+		{src: `1.2e1025`, value: "1.2e1025"},
+		{src: `-1.2e-1025`, value: "-1.2e-1025"},
+
+		{src: `"xyz"`, value: "xyz"},
+
+		{src: "[]", value: []interface{}{}},
+		{src: "[true]", value: []interface{}{true}},
+		{src: "[true,false]", value: []interface{}{true, false}},
+		{src: "[[]]", value: []interface{}{[]interface{}{}}},
+		{src: "[[true]]", value: []interface{}{[]interface{}{true}}},
+
+		{src: "{}", value: map[string]interface{}{}},
+		{src: `{"abc":true}`, value: map[string]interface{}{"abc": true}},
+		{src: `{"abc":{"def":3}}`, value: map[string]interface{}{"abc": map[string]interface{}{"def": 3}}},
+
+		{src: `{"abc": [{"x": {"y": [{"b": true}]},"z": 7}]}`,
+			value: map[string]interface{}{
+				"abc": []interface{}{
+					map[string]interface{}{
+						"x": map[string]interface{}{
+							"y": []interface{}{
+								map[string]interface{}{
+									"b": true,
+								},
+							},
+						},
+						"z": 7,
+					},
+				},
+			}},
+	} {
+		var err error
+		var v interface{}
+		if d.onlyOne || d.noComment {
+			p := ojg.Parser{OnlyOne: d.onlyOne, NoComment: d.noComment}
+			v, err = p.ParseSimple([]byte(d.src))
+		} else {
+			v, err = ojg.ParseSimple([]byte(d.src))
+		}
+		if 0 < len(d.expect) {
+			tt.NotNil(t, err, d.src)
+			tt.Equal(t, d.expect, err.Error(), d.src)
+		} else {
+			tt.Nil(t, err, d.src)
+			tt.Equal(t, d.value, v, d.src)
+		}
+	}
+}
+
 func xTestDev(t *testing.T) {
 	for _, d := range []data{
 		{src: `1.2e200`, value: gd.Big("0.9223372036854775808")},

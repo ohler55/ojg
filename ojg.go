@@ -34,11 +34,14 @@ func Load(r io.Reader, args ...interface{}) (gd.Node, error) {
 	return nil, nil
 }
 
-func ParseSimple(s string, args ...interface{}) (interface{}, error) {
+func ParseSimple(b []byte, args ...interface{}) (n interface{}, err error) {
+	p := Parser{}
+	return p.ParseSimple(b, args...)
+}
 
-	// TBD
-
-	return nil, nil
+func ParseSimpleString(s string, args ...interface{}) (n interface{}, err error) {
+	p := Parser{}
+	return p.ParseSimple([]byte(s), args...)
 }
 
 func LoadSimple(r io.Reader, args ...interface{}) (interface{}, error) {

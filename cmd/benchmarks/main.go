@@ -333,6 +333,15 @@ func parseBenchmarks() {
 		ojgBytes, float64(goBytes)/float64(ojgBytes),
 		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
 
+	ojgRes = testing.Benchmark(ojgParseSimple)
+	ojgNs = ojgRes.NsPerOp()
+	ojgBytes = ojgRes.AllocedBytesPerOp()
+	ojgAllocs = ojgRes.AllocsPerOp()
+	fmt.Printf(" ojg.ParseSimple:  %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+		ojgNs, float64(goNs)/float64(ojgNs),
+		ojgBytes, float64(goBytes)/float64(ojgBytes),
+		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
+
 	treeRes := testing.Benchmark(treeParse)
 	treeNs := treeRes.NsPerOp()
 	treeBytes := treeRes.AllocedBytesPerOp()
@@ -354,6 +363,15 @@ func ojgParse(b *testing.B) {
 	p := &ojg.Parser{}
 	for n := 0; n < b.N; n++ {
 		_, _ = p.Parse([]byte(sampleJSON))
+		//_, err := p.Parse([]byte(sampleJSON))
+		//fmt.Println(err)
+	}
+}
+
+func ojgParseSimple(b *testing.B) {
+	p := &ojg.Parser{}
+	for n := 0; n < b.N; n++ {
+		_, _ = p.ParseSimple([]byte(sampleJSON))
 		//_, err := p.Parse([]byte(sampleJSON))
 		//fmt.Println(err)
 	}

@@ -1,11 +1,5 @@
 
 - Parse
- - handle big numbers
-  - gd.BigInt
-  - gd.BigFloat
- - make stack []interface{}
-  - separate add for simple and node
-  - make keyStr just a simple string type, not a node
  - handle reader in parser and validator
 
 - ojg.Write and String tests
@@ -17,6 +11,7 @@
 
 - Path
  - use S prefix instead of I
+  - or maybe handle all with one
 
 - parser
  - callback with parser which can be asked for value
