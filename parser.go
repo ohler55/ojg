@@ -21,7 +21,6 @@ const (
 	nullMode         = 'n'
 	trueMode         = 't'
 	falseMode        = 'f'
-	numMode          = 'N'
 	negMode          = '-'
 	zeroMode         = '0'
 	digitMode        = 'd'
@@ -680,14 +679,6 @@ func (p *Parser) newError(format string, args ...interface{}) error {
 	}
 }
 
-func (p *Parser) wrapError(err error) error {
-	return &ParseError{
-		Message: err.Error(),
-		Line:    p.line,
-		Column:  p.off - p.noff,
-	}
-}
-
 func (p *Parser) nadd(n gd.Node) {
 	if 2 <= len(p.nstack) {
 		if k, ok := p.nstack[len(p.nstack)-1].(nKey); ok {
@@ -789,11 +780,4 @@ func (p *Parser) objectEnd() error {
 		p.nadd(n)
 	}
 	return nil
-}
-
-func (p *Parser) printStack(label string) {
-	fmt.Printf("*** stack at %s - %v\n", label, p.arrayStarts)
-	for _, v := range p.nstack {
-		fmt.Printf("  %T %v\n", v, v)
-	}
 }

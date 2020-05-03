@@ -11,7 +11,8 @@ import (
 // Parse JSON into a gd.Node. Arguments are optional and can be a bool
 // or func(gd.Node) bool.
 //
-// A bool indicates the NoComment parser attribute should be set to the bool value.
+// A bool indicates the NoComment parser attribute should be set to the bool
+// value.
 //
 // A func argument is the callback for the parser if processing multiple
 // JSONs. If no callback function is provided the processing is limited to
@@ -21,6 +22,8 @@ func Parse(b []byte, args ...interface{}) (n gd.Node, err error) {
 	return p.Parse(b, args...)
 }
 
+// ParseString is similar to Parse except it takes a string argument to be
+// parsed instead of a []byte.
 func ParseString(s string, args ...interface{}) (n gd.Node, err error) {
 	p := Parser{}
 	return p.Parse([]byte(s), args...)
@@ -34,11 +37,22 @@ func Load(r io.Reader, args ...interface{}) (gd.Node, error) {
 	return nil, nil
 }
 
+// ParseSimple JSON into a gd.Node. Arguments are optional and can be a bool
+// or func(interface{}) bool.
+//
+// A bool indicates the NoComment parser attribute should be set to the bool
+// value.
+//
+// A func argument is the callback for the parser if processing multiple
+// JSONs. If no callback function is provided the processing is limited to
+// only one JSON.
 func ParseSimple(b []byte, args ...interface{}) (n interface{}, err error) {
 	p := Parser{}
 	return p.ParseSimple(b, args...)
 }
 
+// ParseSimpleString is similar to ParseSimple except it takes a string
+// argument to be parsed instead of a []byte.
 func ParseSimpleString(s string, args ...interface{}) (n interface{}, err error) {
 	p := Parser{}
 	return p.ParseSimple([]byte(s), args...)

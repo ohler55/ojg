@@ -34,8 +34,11 @@ func (x Expr) Bool(n gd.Node, defVal ...bool) (v bool) {
 		v = defVal[0]
 	}
 	if n := x.First(n); n != nil {
-		if b, ok := n.AsBool(); ok {
-			v = bool(b)
+		switch tn := n.(type) {
+		case gd.Bool:
+			v = bool(tn)
+			//case bool:
+			//v = tn
 		}
 	}
 	return

@@ -208,7 +208,8 @@ func TestParseSimpleString(t *testing.T) {
 	}
 }
 
-func xTestDev(t *testing.T) {
+/*
+func TestDev(t *testing.T) {
 	for _, d := range []data{
 		{src: `1.2e200`, value: gd.Big("0.9223372036854775808")},
 	} {
@@ -229,3 +230,4 @@ func xTestDev(t *testing.T) {
 		}
 	}
 }
+*/

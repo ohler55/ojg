@@ -67,12 +67,12 @@ func (p *Validator) validate(buf []byte, r io.Reader) error {
 		// TBD figure out why the inclusion of the statement this is never
 		// called give a 15% performance boost.
 		_ = fmt.Sprintf("dummy call\n")
-		// TBD read first batch
 	}
 	var b byte
 	for {
 		if r != nil {
 			// TBD fill buf
+			fmt.Println("*** reader not implemented yet")
 		}
 		for p.off, b = range buf {
 			switch p.mode {
@@ -426,7 +426,6 @@ func (p *Validator) validate(buf []byte, r io.Reader) error {
 		if r == nil {
 			break
 		}
-		// TBD fill buf
 	}
 	switch p.mode {
 	case afterMode, zeroMode, digitMode, fracMode, expMode, valueMode:
@@ -441,14 +440,6 @@ func (p *Validator) validate(buf []byte, r io.Reader) error {
 func (p *Validator) newError(format string, args ...interface{}) error {
 	return &ParseError{
 		Message: fmt.Sprintf(format, args...),
-		Line:    p.line,
-		Column:  p.off - p.noff,
-	}
-}
-
-func (p *Validator) wrapError(err error) error {
-	return &ParseError{
-		Message: err.Error(),
 		Line:    p.line,
 		Column:  p.off - p.noff,
 	}

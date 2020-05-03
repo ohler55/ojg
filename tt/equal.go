@@ -38,15 +38,15 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 		x, _ := asString(expect)
 		a, ok := asString(actual)
 		eq = x == a && ok
-		if !eq {
-			/*
-				if !eq {
-					tx, ta = colorizeStrings(tx, ta)
-					expect = tx
-					actual = ta
-				}
-			*/
-		}
+		/*
+			if !eq {
+					if !eq {
+						tx, ta = colorizeStrings(tx, ta)
+						expect = tx
+						actual = ta
+					}
+			}
+		*/
 	case []interface{}:
 		switch ta := actual.(type) {
 		case []interface{}:
