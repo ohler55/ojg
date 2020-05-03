@@ -5,8 +5,6 @@ package ojg
 import (
 	"fmt"
 	"io"
-	"math"
-	"math/big"
 	"unicode/utf8"
 
 	"github.com/ohler55/ojg/gd"
@@ -346,7 +344,7 @@ func (p *Parser) parse(buf []byte) error {
 			}
 		case digitMode:
 			switch b {
-			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.num.addDigit(b)
 			case '.':
 				p.mode = dotMode
@@ -667,109 +665,12 @@ func (p *Parser) add(n gd.Node) {
 	p.vstack = append(p.vstack, n)
 }
 
-type number struct {
-	i      uint64
-	frac   uint64
-	div    uint64
-	exp    uint64
-	neg    bool
-	negExp bool
-	bigBuf []byte
-}
-
-func (n *number) reset() {
-	n.i = 0
-	n.frac = 0
-	n.div = 1
-	n.neg = false
-	n.negExp = false
-	if 0 < len(n.bigBuf) {
-		n.bigBuf = n.bigBuf[:0]
-	}
-}
-
-const bigLimit = math.MaxInt64 / 10
-
-func (n *number) addDigit(b byte) {
-	if 0 < len(n.bigBuf) {
-		n.bigBuf = append(n.bigBuf, b)
-	} else if n.i <= bigLimit {
-		n.i = n.i*10 + uint64(b-'0')
-		if math.MaxInt64 < n.i {
-			// fill bigBuf
-		}
-	} else { // big
-		// fill bigBuf
-		// TBD
-	}
-}
-
-func (n *number) addFrac(b byte) {
-	if 0 < len(n.bigBuf) {
-		n.bigBuf = append(n.bigBuf, b)
-	} else if n.frac <= bigLimit {
-		n.frac = n.frac*10 + uint64(b-'0')
-		if math.MaxInt64 < n.frac {
-			// fill bigBuf
-		}
-	} else { // big
-		// fill bigBuf
-		// TBD
-	}
-}
-
-func (n *number) addExp(b byte) {
-	if 0 < len(n.bigBuf) {
-		n.bigBuf = append(n.bigBuf, b)
-	} else if n.exp <= 102 {
-		n.exp = n.exp*10 + uint64(b-'0')
-		if 1022 < n.exp {
-			// fill bigBuf
-		}
-	} else { // big
-		// fill bigBuf
-		// TBD
-	}
-}
-
-func (n *number) asInt() int64 {
-	i := int64(n.i)
-	if n.neg {
-		i = -i
-	}
-	return i
-}
-
-func (n *number) asFloat() (float64, error) {
-	f := float64(n.i)
-	if 0 < n.frac {
-		f += float64(n.frac) / float64(n.div)
-	}
-	if n.neg {
-		f = -f
-	}
-	if 0 < n.exp {
-		x := int(n.exp)
-		if n.negExp {
-			x = -x
-		}
-		f *= math.Pow10(int(x))
-	}
-	return f, nil
-}
-
-func (n *number) asBig() (f *big.Float, err error) {
-	f, _, err = big.ParseFloat(string(n.bigBuf), 10, 0, big.ToNearestAway)
-	return
-}
-
 func (p *Parser) appendNum() error {
 	if 0 < len(p.num.bigBuf) {
 		if p.simple {
 			// TBD
 		} else {
-			// TBD
-			//p.add(gd.Big(p.num.asBig()))
+			p.add(gd.Big(p.num.asBig()))
 		}
 	} else if p.num.frac == 0 && p.num.exp == 0 {
 		if p.simple {

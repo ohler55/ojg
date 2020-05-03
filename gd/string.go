@@ -2,8 +2,6 @@
 
 package gd
 
-const hex = "0123456789abcdef"
-
 type String string
 
 func (n String) String() string {

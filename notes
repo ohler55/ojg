@@ -1,7 +1,8 @@
 
 - Parse
  - handle big numbers
-  - gd.Big
+  - gd.BigInt
+  - gd.BigFloat
  - make stack []interface{}
   - separate add for simple and node
   - make keyStr just a simple string type, not a node

@@ -31,6 +31,9 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 		x, _ := asFloat(expect)
 		a, ok := asFloat(actual)
 		eq = x == a && ok
+	case gd.Big:
+		x, _ := actual.(gd.Big)
+		eq = te == x
 	case string:
 		x, _ := asString(expect)
 		a, ok := asString(actual)

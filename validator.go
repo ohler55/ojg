@@ -238,7 +238,7 @@ func (p *Validator) validate(buf []byte, r io.Reader) error {
 				}
 			case digitMode:
 				switch b {
-				case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 					// no change in mode
 				case '.':
 					p.mode = dotMode

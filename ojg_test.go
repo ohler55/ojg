@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ohler55/ojg"
+	"github.com/ohler55/ojg/gd"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -89,6 +90,15 @@ func TestParseString(t *testing.T) {
 		{src: "123", value: 123},
 		{src: "-321", value: -321},
 		{src: "12.3", value: 12.3},
+		{src: `12345678901234567890`, value: gd.Big("12345678901234567890")},
+		{src: `9223372036854775807`, value: 9223372036854775807},             // max int
+		{src: `9223372036854775808`, value: gd.Big("9223372036854775808")},   // max int + 1
+		{src: `-9223372036854775807`, value: -9223372036854775807},           // min int
+		{src: `-9223372036854775808`, value: gd.Big("-9223372036854775808")}, // min int -1
+		{src: `0.9223372036854775808`, value: gd.Big("0.9223372036854775808")},
+		{src: `1.2e1025`, value: gd.Big("1.2e1025")},
+		{src: `-1.2e-1025`, value: gd.Big("-1.2e-1025")},
+
 		{src: `"xyz"`, value: "xyz"},
 
 		{src: "[]", value: []interface{}{}},
@@ -137,7 +147,7 @@ func TestParseString(t *testing.T) {
 
 func xTestDev(t *testing.T) {
 	for _, d := range []data{
-		//{src: `{"a":[true]}`},
+		{src: `1.2e200`, value: gd.Big("0.9223372036854775808")},
 	} {
 		var err error
 		var v interface{}
