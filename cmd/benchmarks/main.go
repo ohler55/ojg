@@ -27,10 +27,10 @@ func main() {
 	tree.Sort = false
 	gd.TimeFormat = "nano"
 
+	validateReaderBenchmarks()
+	validateBenchmarks()
 	parseBenchmarks()
 	parseReaderBenchmarks()
-	validateBenchmarks()
-	validateReaderBenchmarks()
 
 	base := testing.Benchmark(runBase)
 
