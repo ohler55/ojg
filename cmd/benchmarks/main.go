@@ -27,8 +27,8 @@ func main() {
 	tree.Sort = false
 	gd.TimeFormat = "nano"
 
-	validateReaderBenchmarks()
 	validateBenchmarks()
+	validateReaderBenchmarks()
 	parseBenchmarks()
 	parseReaderBenchmarks()
 
