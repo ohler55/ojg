@@ -60,17 +60,20 @@ func (p *Validator) ValidateReader(r io.Reader) error {
 	p.line = 1
 	p.mode = valueMode
 	buf := make([]byte, readBufSize)
-	if cnt, err := r.Read(buf); err == nil {
-		buf = buf[:cnt]
-	} else if err != io.EOF {
-		return err
+	eof := false
+	cnt, err := r.Read(buf)
+	buf = buf[:cnt]
+	if err != nil {
+		if err != io.EOF {
+			return err
+		}
+		eof = true
 	}
 	// Skip BOM if present.
 	if 0 < len(buf) && buf[0] == 0xEF {
 		p.mode = bomMode
 		p.ri = 0
 	}
-	eof := false
 	for {
 		if err := p.validateBuffer(buf, eof); err != nil {
 			return err

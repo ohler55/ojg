@@ -27,10 +27,10 @@ func main() {
 	tree.Sort = false
 	gd.TimeFormat = "nano"
 
-	validateBenchmarks()
-	validateReaderBenchmarks()
 	parseBenchmarks()
 	parseReaderBenchmarks()
+	validateBenchmarks()
+	validateReaderBenchmarks()
 
 	base := testing.Benchmark(runBase)
 
@@ -461,14 +461,23 @@ func parseReaderBenchmarks() {
 	goNs := goRes.NsPerOp() - baseRes.NsPerOp()
 	goBytes := goRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
 	goAllocs := goRes.AllocsPerOp() - baseRes.AllocsPerOp()
-	fmt.Printf("json.Decoder:        %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+	fmt.Printf("json.Decoder:           %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
 		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
 
 	ojgRes := testing.Benchmark(ojgParseReader)
 	ojgNs := ojgRes.NsPerOp() - baseRes.NsPerOp()
 	ojgBytes := ojgRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
 	ojgAllocs := ojgRes.AllocsPerOp() - baseRes.AllocsPerOp()
-	fmt.Printf(" ojg.ParseReader:    %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+	fmt.Printf(" ojg.ParseReader:       %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+		ojgNs, float64(goNs)/float64(ojgNs),
+		ojgBytes, float64(goBytes)/float64(ojgBytes),
+		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
+
+	ojgRes = testing.Benchmark(ojgParseSimpleReader)
+	ojgNs = ojgRes.NsPerOp() - baseRes.NsPerOp()
+	ojgBytes = ojgRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
+	ojgAllocs = ojgRes.AllocsPerOp() - baseRes.AllocsPerOp()
+	fmt.Printf(" ojg.ParseSimpleReader: %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
 		ojgNs, float64(goNs)/float64(ojgNs),
 		ojgBytes, float64(goBytes)/float64(ojgBytes),
 		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
@@ -477,7 +486,7 @@ func parseReaderBenchmarks() {
 	treeNs := treeRes.NsPerOp() - baseRes.NsPerOp()
 	treeBytes := treeRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
 	treeAllocs := treeRes.AllocsPerOp() - baseRes.AllocsPerOp()
-	fmt.Printf("tree.ParseReader:    %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+	fmt.Printf("tree.ParseReader:       %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
 		treeNs, float64(goNs)/float64(treeNs),
 		treeBytes, float64(goBytes)/float64(treeBytes),
 		treeAllocs, float64(goAllocs)/float64(treeAllocs))
@@ -494,6 +503,22 @@ func ojgParseReader(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_, _ = f.Seek(0, 0)
 		_, _ = p.ParseReader(f)
+		//_, err = p.ParseReader(f)
+		//fmt.Println(err)
+	}
+}
+
+func ojgParseSimpleReader(b *testing.B) {
+	var p ojg.Parser
+	f, err := os.Open("test/sample.json")
+	if err != nil {
+		fmt.Printf("Failed to read test/sample.json. %s\n", err)
+		return
+	}
+	defer func() { _ = f.Close() }()
+	for n := 0; n < b.N; n++ {
+		_, _ = f.Seek(0, 0)
+		_, _ = p.ParseSimpleReader(f)
 		//_, err = p.ParseReader(f)
 		//fmt.Println(err)
 	}
