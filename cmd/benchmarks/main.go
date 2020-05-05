@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"log"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -25,7 +28,9 @@ func main() {
 	gd.TimeFormat = "nano"
 
 	parseBenchmarks()
+	parseReaderBenchmarks()
 	validateBenchmarks()
+	validateReaderBenchmarks()
 
 	base := testing.Benchmark(runBase)
 
@@ -269,7 +274,7 @@ func validateBenchmarks() {
 	goNs := goRes.NsPerOp()
 	goBytes := goRes.AllocedBytesPerOp()
 	goAllocs := goRes.AllocsPerOp()
-	fmt.Printf("json.Decode:       %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+	fmt.Printf("json.Valid:        %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
 		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
 
 	ojgRes := testing.Benchmark(ojgValidate)
@@ -300,7 +305,6 @@ func goValidate(b *testing.B) {
 func ojgValidate(b *testing.B) {
 	var v ojg.Validator
 	for n := 0; n < b.N; n++ {
-		//var v ojg.Validator
 		_ = v.Validate([]byte(sampleJSON))
 		//err := v.Validate([]byte(sampleJSON))
 		//fmt.Println(err)
@@ -310,6 +314,101 @@ func ojgValidate(b *testing.B) {
 func treeValidate(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_, _ = tree.ParseString(sampleJSON)
+	}
+}
+
+func validateReaderBenchmarks() {
+	fmt.Println()
+	fmt.Println("Validate io.Reader JSON")
+
+	baseRes := testing.Benchmark(baseValidateReader)
+
+	goRes := testing.Benchmark(goParseReader)
+	goNs := goRes.NsPerOp() - baseRes.NsPerOp()
+	goBytes := goRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
+	goAllocs := goRes.AllocsPerOp() - baseRes.AllocsPerOp()
+	fmt.Printf("json.Decoder:        %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
+
+	ojgRes := testing.Benchmark(ojgValidateReader)
+	ojgNs := ojgRes.NsPerOp() - baseRes.NsPerOp()
+	ojgBytes := ojgRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
+	ojgAllocs := ojgRes.AllocsPerOp() - baseRes.AllocsPerOp()
+	fmt.Printf(" ojg.ValidateReader: %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+		ojgNs, float64(goNs)/float64(ojgNs),
+		ojgBytes, float64(goBytes)/float64(ojgBytes),
+		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
+
+	treeRes := testing.Benchmark(treeParseReader)
+	treeNs := treeRes.NsPerOp() - baseRes.NsPerOp()
+	treeBytes := treeRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
+	treeAllocs := treeRes.AllocsPerOp() - baseRes.AllocsPerOp()
+	fmt.Printf("tree.ParseReader:    %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+		treeNs, float64(goNs)/float64(treeNs),
+		treeBytes, float64(goBytes)/float64(treeBytes),
+		treeAllocs, float64(goAllocs)/float64(treeAllocs))
+}
+
+func baseValidateReader(b *testing.B) {
+	f, err := os.Open("test/sample.json")
+	if err != nil {
+		fmt.Printf("Failed to read test/sample.json. %s\n", err)
+		return
+	}
+	defer func() { _ = f.Close() }()
+	for n := 0; n < b.N; n++ {
+		_, _ = f.Seek(0, 0)
+		_, _ = f.Seek(0, 2)
+	}
+}
+
+func goParseReader(b *testing.B) {
+	f, err := os.Open("test/sample.json")
+	if err != nil {
+		fmt.Printf("Failed to read test/sample.json. %s\n", err)
+		return
+	}
+	defer func() { _ = f.Close() }()
+	for n := 0; n < b.N; n++ {
+		_, _ = f.Seek(0, 0)
+		dec := json.NewDecoder(f)
+		for {
+			var data interface{}
+			if err := dec.Decode(&data); err == io.EOF {
+				break
+			} else if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+}
+
+func ojgValidateReader(b *testing.B) {
+	var v ojg.Validator
+	f, err := os.Open("test/sample.json")
+	if err != nil {
+		fmt.Printf("Failed to read test/sample.json. %s\n", err)
+		return
+	}
+	defer func() { _ = f.Close() }()
+	for n := 0; n < b.N; n++ {
+		_, _ = f.Seek(0, 0)
+		_ = v.ValidateReader(f)
+		//err = v.ValidateReader(f)
+		//fmt.Println(err)
+	}
+}
+
+func treeParseReader(b *testing.B) {
+	f, err := os.Open("test/sample.json")
+	if err != nil {
+		fmt.Printf("Failed to read test/sample.json. %s\n", err)
+		return
+	}
+	defer func() { _ = f.Close() }()
+	for n := 0; n < b.N; n++ {
+		_, _ = f.Seek(0, 0)
+		_, _ = tree.ParseReader(f)
 	}
 }
 
@@ -350,6 +449,54 @@ func parseBenchmarks() {
 		treeNs, float64(goNs)/float64(treeNs),
 		treeBytes, float64(goBytes)/float64(treeBytes),
 		treeAllocs, float64(goAllocs)/float64(treeAllocs))
+}
+
+func parseReaderBenchmarks() {
+	fmt.Println()
+	fmt.Println("Parse io.Reader JSON")
+
+	baseRes := testing.Benchmark(baseValidateReader)
+
+	goRes := testing.Benchmark(goParseReader)
+	goNs := goRes.NsPerOp() - baseRes.NsPerOp()
+	goBytes := goRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
+	goAllocs := goRes.AllocsPerOp() - baseRes.AllocsPerOp()
+	fmt.Printf("json.Decoder:        %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
+
+	ojgRes := testing.Benchmark(ojgParseReader)
+	ojgNs := ojgRes.NsPerOp() - baseRes.NsPerOp()
+	ojgBytes := ojgRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
+	ojgAllocs := ojgRes.AllocsPerOp() - baseRes.AllocsPerOp()
+	fmt.Printf(" ojg.ParseReader:    %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+		ojgNs, float64(goNs)/float64(ojgNs),
+		ojgBytes, float64(goBytes)/float64(ojgBytes),
+		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
+
+	treeRes := testing.Benchmark(treeParseReader)
+	treeNs := treeRes.NsPerOp() - baseRes.NsPerOp()
+	treeBytes := treeRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
+	treeAllocs := treeRes.AllocsPerOp() - baseRes.AllocsPerOp()
+	fmt.Printf("tree.ParseReader:    %10d ns/op (%3.2fx)  %10d B/op (%4.2fx)  %10d allocs/op (%4.2fx)\n",
+		treeNs, float64(goNs)/float64(treeNs),
+		treeBytes, float64(goBytes)/float64(treeBytes),
+		treeAllocs, float64(goAllocs)/float64(treeAllocs))
+}
+
+func ojgParseReader(b *testing.B) {
+	var p ojg.Parser
+	f, err := os.Open("test/sample.json")
+	if err != nil {
+		fmt.Printf("Failed to read test/sample.json. %s\n", err)
+		return
+	}
+	defer func() { _ = f.Close() }()
+	for n := 0; n < b.N; n++ {
+		_, _ = f.Seek(0, 0)
+		_, _ = p.ParseReader(f)
+		//_, err = p.ParseReader(f)
+		//fmt.Println(err)
+	}
 }
 
 func goParse(b *testing.B) {

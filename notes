@@ -1,6 +1,6 @@
 
 - Parse
- - handle reader in parser and validator
+ - test callbacks
 
 - ojg.Write and String tests
 

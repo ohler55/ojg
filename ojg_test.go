@@ -3,6 +3,8 @@
 package ojg_test
 
 import (
+	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/ohler55/ojg"
@@ -206,6 +208,23 @@ func TestParseSimpleString(t *testing.T) {
 			tt.Equal(t, d.value, v, d.src)
 		}
 	}
+}
+
+func TestValidateReader(t *testing.T) {
+	r := strings.NewReader("[true,[false,[null],123],456]")
+	err := ojg.ValidateReader(r)
+	tt.Nil(t, err)
+
+	var buf []byte
+	buf = append(buf, "[\n"...)
+	for i := 0; i < 1000; i++ {
+		buf = append(buf, "  true,\n"...)
+	}
+	buf = append(buf, "  false\n]\n"...)
+	br := bytes.NewReader(buf)
+	err = ojg.ValidateReader(br)
+	tt.Nil(t, err)
+	// TBD try a longer JSON generate
 }
 
 /*

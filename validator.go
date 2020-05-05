@@ -71,8 +71,14 @@ func (p *Validator) validate(buf []byte, r io.Reader) error {
 	var b byte
 	for {
 		if r != nil {
-			// TBD fill buf
-			fmt.Println("*** reader not implemented yet")
+			buf = buf[:cap(buf)]
+			if cnt, err := r.Read(buf); err == nil {
+				buf = buf[:cnt]
+			} else if err == io.EOF {
+				break
+			} else {
+				return err
+			}
 		}
 		for p.off, b = range buf {
 			switch p.mode {

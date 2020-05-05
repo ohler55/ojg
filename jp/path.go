@@ -42,22 +42,22 @@ func First(n gd.Node, path interface{}) (result gd.Node) {
 	return
 }
 
-func Bool(n gd.Node, path interface{}, defVal ...bool) (v bool) {
+func Bool(n interface{}, path interface{}, defVal ...bool) (v bool) {
 	// TBD
 	return
 }
 
-func Int(n gd.Node, path interface{}, defVal ...int64) (v int64) {
+func Int(n interface{}, path interface{}, defVal ...int64) (v int64) {
 	// TBD
 	return
 }
 
-func Float(n gd.Node, path interface{}, defVal ...float64) (v float64) {
+func Float(n interface{}, path interface{}, defVal ...float64) (v float64) {
 	// TBD
 	return
 }
 
-func Time(n gd.Node, path interface{}, defVal ...time.Time) (v time.Time) {
+func Time(n interface{}, path interface{}, defVal ...time.Time) (v time.Time) {
 	// TBD
 	return
 }
@@ -94,62 +94,42 @@ func RemoveOne(n gd.Node, path interface{}) gd.Node {
 	return nil
 }
 
-func Iget(n interface{}, path interface{}) []gd.Node {
+func Sget(n interface{}, path interface{}) []gd.Node {
 	// TBD
 	return nil
 }
 
-func Ifirst(n interface{}, path interface{}) gd.Node {
+func Sfirst(n interface{}, path interface{}) gd.Node {
 	// TBD
 	return nil
 }
 
-func Ibool(n interface{}, path interface{}, defVal ...bool) (v bool) {
-	// TBD
-	return
-}
-
-func Iint(n interface{}, path interface{}, defVal ...int64) (v int64) {
-	// TBD
-	return
-}
-
-func Ifloat(n interface{}, path interface{}, defVal ...float64) (v float64) {
-	// TBD
-	return
-}
-
-func Itime(n interface{}, path interface{}, defVal time.Time) (v time.Time) {
-	// TBD
-	return
-}
-
-func Iarray(n interface{}, path interface{}) []interface{} {
+func Sarray(n interface{}, path interface{}) []interface{} {
 	// TBD
 	return nil
 }
 
-func Iobject(n interface{}, path interface{}) map[string]interface{} {
+func Sobject(n interface{}, path interface{}) map[string]interface{} {
 	// TBD
 	return nil
 }
 
-func Iset(n, value interface{}, path interface{}) error {
+func Sset(n, value interface{}, path interface{}) error {
 	// TBD
 	return nil
 }
 
-func IsetOne(n, value interface{}, path interface{}) error {
+func SsetOne(n, value interface{}, path interface{}) error {
 	// TBD
 	return nil
 }
 
-func Iremove(n interface{}, path interface{}) []interface{} {
+func Sremove(n interface{}, path interface{}) []interface{} {
 	// TBD
 	return nil
 }
 
-func IremoveOne(n interface{}, path interface{}) interface{} {
+func SremoveOne(n interface{}, path interface{}) interface{} {
 	// TBD
 	return nil
 }
