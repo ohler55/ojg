@@ -40,6 +40,7 @@ const (
 )
 
 var emptyGdArray = gd.Array([]gd.Node{})
+var emptySimpleArray = []interface{}{}
 
 // Parser a JSON parser. It can be reused for multiple parsings which allows
 // buffer reuse for a performance advantage.
@@ -90,21 +91,16 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (node gd.Node, err error
 	}
 	p.cb = callback
 	p.simple = false
-	if cap(p.tmp) < tmpMinSize {
+	if cap(p.tmp) < tmpMinSize { // indicates not initialized
 		p.tmp = make([]byte, 0, tmpMinSize)
+		p.stack = make([]byte, 0, stackMinSize)
+		p.nstack = make([]gd.Node, 0, 64)
+		p.arrayStarts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
-	}
-	if cap(p.stack) < stackMinSize {
-		p.stack = make([]byte, 0, stackMinSize)
-	} else {
 		p.stack = p.stack[0:0]
-	}
-	if cap(p.nstack) < 64 {
-		p.nstack = make([]gd.Node, 0, 64)
-	}
-	if cap(p.arrayStarts) < 64 {
-		p.arrayStarts = make([]int, 0, 16)
+		p.nstack = p.nstack[:0]
+		p.arrayStarts = p.arrayStarts[:0]
 	}
 	p.noff = -1
 	p.line = 1
@@ -139,21 +135,16 @@ func (p *Parser) ParseSimple(buf []byte, args ...interface{}) (data interface{},
 	}
 	p.icb = callback
 	p.simple = true
-	if cap(p.tmp) < tmpMinSize {
+	if cap(p.tmp) < tmpMinSize { // indicates not initialized
 		p.tmp = make([]byte, 0, tmpMinSize)
+		p.stack = make([]byte, 0, stackMinSize)
+		p.istack = make([]interface{}, 0, 64)
+		p.arrayStarts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
-	}
-	if cap(p.stack) < stackMinSize {
-		p.stack = make([]byte, 0, stackMinSize)
-	} else {
 		p.stack = p.stack[0:0]
-	}
-	if cap(p.istack) < 64 {
-		p.istack = make([]interface{}, 0, 64)
-	}
-	if cap(p.arrayStarts) < 64 {
-		p.arrayStarts = make([]int, 0, 16)
+		p.istack = p.istack[:0]
+		p.arrayStarts = p.arrayStarts[:0]
 	}
 	p.noff = -1
 	p.line = 1
@@ -188,21 +179,16 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node gd.Node, er
 	}
 	p.cb = callback
 	p.simple = false
-	if cap(p.tmp) < tmpMinSize {
+	if cap(p.tmp) < tmpMinSize { // indicates not initialized
 		p.tmp = make([]byte, 0, tmpMinSize)
+		p.stack = make([]byte, 0, stackMinSize)
+		p.nstack = make([]gd.Node, 0, 64)
+		p.arrayStarts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
-	}
-	if cap(p.stack) < stackMinSize {
-		p.stack = make([]byte, 0, stackMinSize)
-	} else {
 		p.stack = p.stack[0:0]
-	}
-	if cap(p.nstack) < 64 {
-		p.nstack = make([]gd.Node, 0, 64)
-	}
-	if cap(p.arrayStarts) < 64 {
-		p.arrayStarts = make([]int, 0, 16)
+		p.nstack = p.nstack[:0]
+		p.arrayStarts = p.arrayStarts[:0]
 	}
 	p.noff = -1
 	p.line = 1
@@ -264,21 +250,16 @@ func (p *Parser) ParseSimpleReader(r io.Reader, args ...interface{}) (node inter
 	}
 	p.icb = callback
 	p.simple = true
-	if cap(p.tmp) < tmpMinSize {
+	if cap(p.tmp) < tmpMinSize { // indicates not initialized
 		p.tmp = make([]byte, 0, tmpMinSize)
+		p.stack = make([]byte, 0, stackMinSize)
+		p.istack = make([]interface{}, 0, 64)
+		p.arrayStarts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
-	}
-	if cap(p.stack) < stackMinSize {
-		p.stack = make([]byte, 0, stackMinSize)
-	} else {
 		p.stack = p.stack[0:0]
-	}
-	if cap(p.istack) < 64 {
-		p.istack = make([]interface{}, 0, 64)
-	}
-	if cap(p.arrayStarts) < 64 {
-		p.arrayStarts = make([]int, 0, 16)
+		p.istack = p.istack[:0]
+		p.arrayStarts = p.arrayStarts[:0]
 	}
 	p.noff = -1
 	p.line = 1
@@ -358,7 +339,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.stack = append(p.stack, '[')
 				if p.simple {
 					p.arrayStarts = append(p.arrayStarts, len(p.istack))
-					p.istack = append(p.istack, emptyGdArray)
+					p.istack = append(p.istack, emptySimpleArray)
 				} else {
 					p.arrayStarts = append(p.arrayStarts, len(p.nstack))
 					p.nstack = append(p.nstack, emptyGdArray)
