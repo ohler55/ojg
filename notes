@@ -10,24 +10,7 @@
  - function map for creating objects from maps { "^O": "My-Type", "attr1": 123 }
 
 - Path
- - use S prefix instead of I
-  - or maybe handle all with one
 
-- parser
- - callback with parser which can be asked for value
-
-- Node
-	// Empty() bool
-	// AsBool() (v Bool, ok bool)
-	// AsInt() (v Int, ok bool)
-	// AsFloat() (v Float, ok bool)
-	// AsTime() (v Time, ok bool)
-	// AsString() (v String, ok bool)
-	// AsArray() (v Array, ok bool)
-	// AsObject() (v Object, ok bool)
-
-       	// Equal(other Node, ignore ...string) bool
-	// Diff(other Node, ignore ...string) (diffs []string)
 
 - jp - https://goessner.net/articles/JsonPath
  - jp.Str(n gd.Node, path string, defVal string) string

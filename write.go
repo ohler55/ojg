@@ -57,21 +57,24 @@ type Options struct {
 // map[string]interface{} or a gd.Node type, The args, if supplied can be an
 // int as an indent or a *Options.
 func String(data interface{}, args ...interface{}) string {
-	var o Options
+	var o *Options
 
 	if 0 < len(args) {
 		switch ta := args[0].(type) {
 		case int:
 			o.Indent = ta
 		case *Options:
-			o = *ta
+			o = ta
 		}
 	}
 	if o.InitSize == 0 {
 		o.InitSize = 256
 	}
-	o.buf = make([]byte, 0, o.InitSize)
-
+	if len(o.buf) < o.InitSize {
+		o.buf = make([]byte, 0, o.InitSize)
+	} else {
+		o.buf = o.buf[:0]
+	}
 	_ = o.buildJSON(data, 0)
 
 	return string(o.buf)
@@ -82,14 +85,14 @@ func String(data interface{}, args ...interface{}) string {
 // or a gd.Node type, The args, if supplied can be an int as an indent or a
 // *Options.
 func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
-	var o Options
+	var o *Options
 
 	if 0 < len(args) {
 		switch ta := args[0].(type) {
 		case int:
 			o.Indent = ta
 		case *Options:
-			o = *ta
+			o = ta
 		}
 	}
 	o.w = w
@@ -99,7 +102,11 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	if o.WriteLimit == 0 {
 		o.WriteLimit = 1024
 	}
-	o.buf = make([]byte, 0, o.InitSize)
+	if len(o.buf) < o.InitSize {
+		o.buf = make([]byte, 0, o.InitSize)
+	} else {
+		o.buf = o.buf[:0]
+	}
 	if err = o.buildJSON(data, 0); err != nil {
 		return
 	}
@@ -110,7 +117,6 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 }
 
 func (o *Options) buildJSON(data interface{}, depth int) (err error) {
-Top:
 	switch td := data.(type) {
 	case nil:
 		o.buf = append(o.buf, []byte("null")...)
@@ -181,7 +187,7 @@ Top:
 	default:
 		if simp, _ := data.(gd.Simplifier); simp != nil {
 			data = simp.Simplify()
-			goto Top
+			return o.buildJSON(data, depth)
 		}
 		o.buildString(fmt.Sprintf("%v", td))
 	}
