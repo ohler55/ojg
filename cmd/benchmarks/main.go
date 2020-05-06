@@ -26,12 +26,12 @@ func main() {
 	flag.Parse()
 	tree.Sort = false
 	gd.TimeFormat = "nano"
-	/*
-		parseBenchmarks()
-		parseReaderBenchmarks()
-		validateBenchmarks()
-		validateReaderBenchmarks()
-	*/
+
+	parseBenchmarks()
+	parseReaderBenchmarks()
+	validateBenchmarks()
+	validateReaderBenchmarks()
+
 	base := testing.Benchmark(runBase)
 
 	jsonBenchmarks(base, false, false)
