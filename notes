@@ -1,6 +1,7 @@
 
 - Parse
  - test callbacks
+ - try using arrayStack instead of stack, will need to use -1 for obj
 
 - ojg.Write and String tests
 

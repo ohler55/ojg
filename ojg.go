@@ -29,12 +29,11 @@ func ParseString(s string, args ...interface{}) (n gd.Node, err error) {
 	return p.Parse([]byte(s), args...)
 }
 
-// Load
+// Load a JSON from a io.Reader into a gd.Node. An error is returned if not
+// valid JSON.
 func Load(r io.Reader, args ...interface{}) (gd.Node, error) {
-
-	// TBD
-
-	return nil, nil
+	p := Parser{}
+	return p.ParseReader(r, args...)
 }
 
 // ParseSimple JSON into a gd.Node. Arguments are optional and can be a bool
@@ -58,11 +57,11 @@ func ParseSimpleString(s string, args ...interface{}) (n interface{}, err error)
 	return p.ParseSimple([]byte(s), args...)
 }
 
+// LoadSimple a JSON from a io.Reader into a simple type. An error is returned
+// if not valid JSON.
 func LoadSimple(r io.Reader, args ...interface{}) (interface{}, error) {
-
-	// TBD
-
-	return nil, nil
+	p := Parser{}
+	return p.ParseSimpleReader(r, args...)
 }
 
 // Validate a JSON string. An error is returned if not valid JSON.

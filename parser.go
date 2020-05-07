@@ -62,13 +62,10 @@ type Parser struct {
 	mode        byte
 	nextMode    byte
 	simple      bool
+	onlyOne     bool
 
 	// NoComments returns an error if a comment is encountered.
 	NoComment bool
-
-	// OnlyOne returns an error if more than one JSON is in the string or
-	// stream.
-	OnlyOne bool
 }
 
 func (p *Parser) Parse(buf []byte, args ...interface{}) (node gd.Node, err error) {
@@ -80,10 +77,11 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (node gd.Node, err error
 			p.NoComment = ta
 		case func(gd.Node) bool:
 			callback = ta
-			p.OnlyOne = false
+			p.onlyOne = false
 		}
 	}
 	if callback == nil {
+		p.onlyOne = true
 		callback = func(n gd.Node) bool {
 			node = n
 			return false // tells the parser to stop
@@ -124,10 +122,11 @@ func (p *Parser) ParseSimple(buf []byte, args ...interface{}) (data interface{},
 			p.NoComment = ta
 		case func(interface{}) bool:
 			callback = ta
-			p.OnlyOne = false
+			p.onlyOne = false
 		}
 	}
 	if callback == nil {
+		p.onlyOne = true
 		callback = func(n interface{}) bool {
 			data = n
 			return false // tells the parser to stop
@@ -168,10 +167,11 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node gd.Node, er
 			p.NoComment = ta
 		case func(gd.Node) bool:
 			callback = ta
-			p.OnlyOne = false
+			p.onlyOne = false
 		}
 	}
 	if callback == nil {
+		p.onlyOne = true
 		callback = func(n gd.Node) bool {
 			node = n
 			return false // tells the parser to stop
@@ -239,10 +239,11 @@ func (p *Parser) ParseSimpleReader(r io.Reader, args ...interface{}) (node inter
 			p.NoComment = ta
 		case func(interface{}) bool:
 			callback = ta
-			p.OnlyOne = false
+			p.onlyOne = false
 		}
 	}
 	if callback == nil {
+		p.onlyOne = true
 		callback = func(n interface{}) bool {
 			node = n
 			return false // tells the parser to stop
@@ -684,9 +685,9 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.mode = p.nextMode
 				if p.mode == colonMode {
 					if p.simple {
-						p.istack = append(p.istack, nKey(p.tmp))
+						p.istack = append(p.istack, Key(p.tmp))
 					} else {
-						p.nstack = append(p.nstack, nKey(p.tmp))
+						p.nstack = append(p.nstack, Key(p.tmp))
 					}
 				} else {
 					if p.simple {
@@ -777,10 +778,12 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		if len(p.stack) == 0 && (p.mode == afterMode || p.mode == keyMode) {
 			if p.simple {
 				p.icb(p.istack[0])
+				p.istack = p.istack[:0]
 			} else {
 				p.cb(p.nstack[0])
+				p.nstack = p.nstack[:0]
 			}
-			if p.OnlyOne {
+			if p.onlyOne {
 				p.mode = spaceMode
 			} else {
 				p.mode = valueMode
@@ -791,8 +794,10 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		switch p.mode {
 		case afterMode, valueMode:
 			if p.simple {
-				p.icb(p.istack[0])
-			} else {
+				if 0 < len(p.istack) {
+					p.icb(p.istack[0])
+				}
+			} else if 0 < len(p.nstack) {
 				p.cb(p.nstack[0])
 			}
 		case zeroMode, digitMode, fracMode, expMode:
@@ -800,10 +805,14 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				return err
 			}
 			if p.simple {
-				p.icb(p.istack[0])
-			} else {
+				if 0 < len(p.istack) {
+					p.icb(p.istack[0])
+				}
+			} else if 0 < len(p.nstack) {
 				p.cb(p.nstack[0])
 			}
+		case spaceMode:
+			// just reading white space
 		default:
 			//fmt.Printf("*** final mode: %c\n", p.mode)
 			return p.newError("incomplete JSON")
@@ -822,7 +831,7 @@ func (p *Parser) newError(format string, args ...interface{}) error {
 
 func (p *Parser) nadd(n gd.Node) {
 	if 2 <= len(p.nstack) {
-		if k, ok := p.nstack[len(p.nstack)-1].(nKey); ok {
+		if k, ok := p.nstack[len(p.nstack)-1].(Key); ok {
 			obj, _ := p.nstack[len(p.nstack)-2].(gd.Object)
 			obj[string(k)] = n
 			p.nstack = p.nstack[0 : len(p.nstack)-1]
@@ -835,7 +844,7 @@ func (p *Parser) nadd(n gd.Node) {
 
 func (p *Parser) iadd(n interface{}) {
 	if 2 <= len(p.istack) {
-		if k, ok := p.istack[len(p.istack)-1].(nKey); ok {
+		if k, ok := p.istack[len(p.istack)-1].(Key); ok {
 			obj, _ := p.istack[len(p.istack)-2].(map[string]interface{})
 			obj[string(k)] = n
 			p.istack = p.istack[0 : len(p.istack)-1]
@@ -878,7 +887,7 @@ func (p *Parser) arrayEnd() error {
 	}
 	depth--
 	if p.stack[depth] != '[' {
-		return p.newError("expected an array close")
+		return p.newError("unexpected array close")
 	}
 	p.stack = p.stack[0:depth]
 	p.mode = afterMode
@@ -907,7 +916,7 @@ func (p *Parser) objectEnd() error {
 	}
 	depth--
 	if p.stack[depth] != '{' {
-		return p.newError("expected an object close")
+		return p.newError("unexpected object close")
 	}
 	p.stack = p.stack[0:depth]
 	p.mode = afterMode

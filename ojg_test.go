@@ -4,6 +4,7 @@ package ojg_test
 
 import (
 	"bytes"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -65,7 +66,15 @@ func TestValidateString(t *testing.T) {
 		{src: `{"a":3}`},
 		{src: `{"a": 3, "b": true}`},
 		{src: `{"a":{"b":{"c":true}}}`},
+		{src: ` { "a"
+:
+true
+}`},
 		{src: `{x}`, expect: "expected a string start or object close, not 'x' at 1:2"},
+		{src: "{}}", expect: "too many closes at 1:3"},
+		{src: "[]]", expect: "too many closes at 1:3"},
+		{src: `{"x":2]`, expect: "unexpected array close at 1:7"},
+		{src: "[}", expect: "unexpected object close at 1:2"},
 	} {
 		var err error
 		if d.onlyOne || d.noComment {
@@ -85,7 +94,6 @@ func TestValidateString(t *testing.T) {
 
 func TestParseString(t *testing.T) {
 	for _, d := range []data{
-
 		{src: "null", value: nil},
 		{src: "true", value: true},
 		{src: "false", value: false},
@@ -98,6 +106,9 @@ func TestParseString(t *testing.T) {
 		{src: `-9223372036854775807`, value: -9223372036854775807},           // min int
 		{src: `-9223372036854775808`, value: gd.Big("-9223372036854775808")}, // min int -1
 		{src: `0.9223372036854775808`, value: gd.Big("0.9223372036854775808")},
+		{src: `123456789012345678901234567890`, value: gd.Big("123456789012345678901234567890")},
+		{src: `0.123456789012345678901234567890`, value: gd.Big("0.123456789012345678901234567890")},
+		{src: `0.1e20000`, value: gd.Big("0.1e20000")},
 		{src: `1.2e1025`, value: gd.Big("1.2e1025")},
 		{src: `-1.2e-1025`, value: gd.Big("-1.2e-1025")},
 
@@ -132,7 +143,7 @@ func TestParseString(t *testing.T) {
 		var err error
 		var v interface{}
 		if d.onlyOne || d.noComment {
-			p := ojg.Parser{OnlyOne: d.onlyOne, NoComment: d.noComment}
+			p := ojg.Parser{NoComment: d.noComment}
 			v, err = p.Parse([]byte(d.src))
 		} else {
 			v, err = ojg.Parse([]byte(d.src))
@@ -155,12 +166,15 @@ func TestParseSimpleString(t *testing.T) {
 		{src: "123", value: 123},
 		{src: "-321", value: -321},
 		{src: "12.3", value: 12.3},
+		{src: "-12.3", value: -12.3},
+		{src: "-12.3e-5", value: -12.3e-5},
 		{src: `12345678901234567890`, value: "12345678901234567890"},
 		{src: `9223372036854775807`, value: 9223372036854775807},     // max int
 		{src: `9223372036854775808`, value: "9223372036854775808"},   // max int + 1
 		{src: `-9223372036854775807`, value: -9223372036854775807},   // min int
 		{src: `-9223372036854775808`, value: "-9223372036854775808"}, // min int -1
 		{src: `0.9223372036854775808`, value: "0.9223372036854775808"},
+		{src: `-0.9223372036854775808`, value: "-0.9223372036854775808"},
 		{src: `1.2e1025`, value: "1.2e1025"},
 		{src: `-1.2e-1025`, value: "-1.2e-1025"},
 
@@ -195,7 +209,7 @@ func TestParseSimpleString(t *testing.T) {
 		var err error
 		var v interface{}
 		if d.onlyOne || d.noComment {
-			p := ojg.Parser{OnlyOne: d.onlyOne, NoComment: d.noComment}
+			p := ojg.Parser{NoComment: d.noComment}
 			v, err = p.ParseSimple([]byte(d.src))
 		} else {
 			v, err = ojg.ParseSimple([]byte(d.src))
@@ -227,6 +241,112 @@ func TestValidateReader(t *testing.T) {
 	// TBD try a longer JSON generate
 }
 
+const callbackJSON = `
+1
+[2]
+{"x":3}
+true false 123
+`
+
+func TestParseCallback(t *testing.T) {
+	var results []byte
+	cb := func(n gd.Node) bool {
+		if 0 < len(results) {
+			results = append(results, ' ')
+		}
+		results = append(results, n.String()...)
+		return false
+	}
+	var p ojg.Parser
+	v, err := p.Parse([]byte(callbackJSON), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, `1 [2] {"x":3} true false 123`, string(results))
+}
+
+func TestParseReaderCallback(t *testing.T) {
+	var results []byte
+	cb := func(n gd.Node) bool {
+		if 0 < len(results) {
+			results = append(results, ' ')
+		}
+		results = append(results, n.String()...)
+		return false
+	}
+	var p ojg.Parser
+	v, err := p.ParseReader(strings.NewReader(callbackJSON), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, `1 [2] {"x":3} true false 123`, string(results))
+}
+
+func TestParseSimpleCallback(t *testing.T) {
+	var results []byte
+	cb := func(n interface{}) bool {
+		if 0 < len(results) {
+			results = append(results, ' ')
+		}
+		results = append(results, fmt.Sprintf("%v", n)...)
+		return false
+	}
+	var p ojg.Parser
+	v, err := p.ParseSimple([]byte(callbackJSON), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
+}
+
+func TestParseSimpleReaderCallback(t *testing.T) {
+	var results []byte
+	cb := func(n interface{}) bool {
+		if 0 < len(results) {
+			results = append(results, ' ')
+		}
+		results = append(results, fmt.Sprintf("%v", n)...)
+		return false
+	}
+	var p ojg.Parser
+	v, err := p.ParseSimpleReader(strings.NewReader(callbackJSON), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
+}
+
+func TestNumberReset(t *testing.T) {
+	var p ojg.Parser
+	_, err := p.Parse([]byte("123456789012345678901234567890 1234567890"), func(gd.Node) bool { return false })
+	tt.Nil(t, err)
+}
+
+func TestOjgParseString(t *testing.T) {
+	v, err := ojg.ParseString("true")
+	tt.Nil(t, err)
+	tt.Equal(t, true, v)
+}
+
+func TestOjgParseSimpleString(t *testing.T) {
+	v, err := ojg.ParseSimpleString("true")
+	tt.Nil(t, err)
+	tt.Equal(t, true, v)
+}
+
+func TestOjgLoad(t *testing.T) {
+	v, err := ojg.Load(strings.NewReader("true"))
+	tt.Nil(t, err)
+	tt.Equal(t, true, v)
+}
+
+func TestOjgLoadSimple(t *testing.T) {
+	v, err := ojg.LoadSimple(strings.NewReader("true"))
+	tt.Nil(t, err)
+	tt.Equal(t, true, v)
+}
+
+func TestOjgValidateString(t *testing.T) {
+	err := ojg.ValidateString("true")
+	tt.Nil(t, err)
+}
+
 /*
 func TestDev(t *testing.T) {
 	for _, d := range []data{
@@ -235,7 +355,7 @@ func TestDev(t *testing.T) {
 		var err error
 		var v interface{}
 		if d.onlyOne || d.noComment {
-			p := ojg.Parser{OnlyOne: d.onlyOne, NoComment: d.noComment}
+			p := ojg.Parser{NoComment: d.noComment}
 			v, err = p.Parse([]byte(d.src))
 		} else {
 			v, err = ojg.Parse([]byte(d.src))

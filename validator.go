@@ -472,7 +472,7 @@ func (p *Validator) arrayEnd() error {
 	}
 	depth--
 	if p.stack[depth] != '[' {
-		return p.newError("expected an array close")
+		return p.newError("unexpected array close")
 	}
 	p.stack = p.stack[0:depth]
 	p.mode = afterMode
@@ -486,7 +486,7 @@ func (p *Validator) objEnd() error {
 	}
 	depth--
 	if p.stack[depth] != '{' {
-		return p.newError("expected an object close")
+		return p.newError("unexpected object close")
 	}
 	p.stack = p.stack[0:depth]
 	p.mode = afterMode
