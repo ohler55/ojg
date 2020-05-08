@@ -20,7 +20,7 @@ true false 123
 `
 
 func TestParseString(t *testing.T) {
-	for _, d := range []data{
+	for i, d := range []data{
 		{src: "null", value: nil},
 		{src: "true", value: true},
 		{src: "false", value: false},
@@ -77,16 +77,16 @@ func TestParseString(t *testing.T) {
 		}
 		if 0 < len(d.expect) {
 			tt.NotNil(t, err, d.src)
-			tt.Equal(t, d.expect, err.Error(), d.src)
+			tt.Equal(t, d.expect, err.Error(), i, ": ", d.src)
 		} else {
 			tt.Nil(t, err, d.src)
-			tt.Equal(t, d.value, v, d.src)
+			tt.Equal(t, d.value, v, ": ", d.src)
 		}
 	}
 }
 
 func TestParseSimpleString(t *testing.T) {
-	for _, d := range []data{
+	for i, d := range []data{
 		{src: "null", value: nil},
 		{src: "true", value: true},
 		{src: "false", value: false},
@@ -143,10 +143,10 @@ func TestParseSimpleString(t *testing.T) {
 		}
 		if 0 < len(d.expect) {
 			tt.NotNil(t, err, d.src)
-			tt.Equal(t, d.expect, err.Error(), d.src)
+			tt.Equal(t, d.expect, err.Error(), i, ": ", d.src)
 		} else {
 			tt.Nil(t, err, d.src)
-			tt.Equal(t, d.value, v, d.src)
+			tt.Equal(t, d.value, v, i, ": ", d.src)
 		}
 	}
 }

@@ -15,8 +15,8 @@ type Options struct {
 	// Sort object members if true.
 	Sort bool
 
-	// SkipNil skips the writing of nil values in an object.
-	SkipNil bool
+	// OmitNil skips the writing of nil values in an object.
+	OmitNil bool
 
 	// InitSize is the initial buffer size.
 	InitSize int

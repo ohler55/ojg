@@ -429,11 +429,11 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = p.nextMode
 			}
 		case bomMode:
-			p.ri++
 			if []byte{0xEF, 0xBB, 0xBF}[p.ri] != b {
 				return p.newError("expected BOM")
 			}
-			if 2 <= p.ri {
+			p.ri++
+			if 3 <= p.ri {
 				p.mode = valueMode
 			}
 		}

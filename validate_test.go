@@ -12,7 +12,7 @@ import (
 )
 
 func TestValidateString(t *testing.T) {
-	for _, d := range []data{
+	for i, d := range []data{
 		{src: "null"},
 		{src: "true"},
 		{src: "false"},
@@ -73,9 +73,9 @@ true
 		}
 		if 0 < len(d.expect) {
 			tt.NotNil(t, err, d.src)
-			tt.Equal(t, d.expect, err.Error(), d.src)
+			tt.Equal(t, d.expect, err.Error(), i, ": ", d.src)
 		} else {
-			tt.Nil(t, err, d.src)
+			tt.Nil(t, err, i, ": ", d.src)
 		}
 	}
 }
@@ -93,5 +93,24 @@ func TestValidateReader(t *testing.T) {
 	buf = append(buf, "  false\n]\n"...)
 	br := bytes.NewReader(buf)
 	err = ojg.ValidateReader(br)
+	tt.Nil(t, err)
+}
+
+func TestValidateResuse(t *testing.T) {
+	var v ojg.Validator
+	err := v.Validate([]byte("[true,[false,[null],123],456]"))
+	tt.Nil(t, err)
+	// a second time
+	err = v.Validate([]byte("[true,[false,[null],123],456]"))
+	tt.Nil(t, err)
+
+	r := strings.NewReader("[true,[false,[null],123],456]")
+	err = v.ValidateReader(r)
+	tt.Nil(t, err)
+}
+
+func TestValidateBOM(t *testing.T) {
+	var v ojg.Validator
+	err := v.Validate([]byte("\xef\xbb\xbf[true]"))
 	tt.Nil(t, err)
 }

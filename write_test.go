@@ -3,6 +3,7 @@
 package ojg_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -12,15 +13,27 @@ import (
 	"github.com/ohler55/ojg/tt"
 )
 
+// Used to test Simplifier objects in simple data.
+type simon struct {
+	x int
+}
+
+func (s *simon) Simplify() interface{} {
+	return map[string]interface{}{
+		"type": "simon",
+		"x":    s.x,
+	}
+}
+
 func TestOjgString(t *testing.T) {
 	opt := &ojg.Options{}
 	tm := time.Date(2020, time.May, 7, 19, 29, 19, 123456789, time.UTC)
-	for _, d := range []data{
+	for i, d := range []data{
 		{value: nil, expect: "null"},
 		{value: true, expect: "true"},
 		{value: false, expect: "false"},
 		{value: "string", expect: `"string"`},
-		{value: "\\\t\n\r\b\f\"&<>\u2028\u2029", expect: `"\\\t\n\r\b\f\"\u0026\u003c\u003e\u2028\u2029"`},
+		{value: "\\\t\n\r\b\f\"&<>\u2028\u2029\x07\U0001D122", expect: `"\\\t\n\r\b\f\"\u0026\u003c\u003e\u2028\u2029\u0007𝄢"`},
 		{value: gd.String("string"), expect: `"string"`},
 		{value: []interface{}{true, false}, expect: "[true,false]"},
 		{value: gd.Array{gd.Bool(true), gd.Bool(false)}, expect: "[true,false]"},
@@ -39,6 +52,14 @@ func TestOjgString(t *testing.T) {
 		{value: gd.Array{gd.Time(tm)}, expect: `["2020-05-07T19:29:19.123456789Z"]`, options: &ojg.Options{TimeFormat: time.RFC3339Nano}},
 		{value: gd.Array{gd.Time(tm)}, expect: "[1588879759.123456789]", options: &ojg.Options{TimeFormat: "second"}},
 		{value: gd.Array{gd.Time(tm)}, expect: `[{"@":1588879759123456789}]`, options: &ojg.Options{TimeWrap: "@"}},
+		{value: map[string]interface{}{"t": true, "x": nil}, expect: "{\"t\":true}", options: &ojg.Options{OmitNil: true}},
+		{value: map[string]interface{}{"t": true, "f": false}, expect: "{\n  \"f\":false,\n  \"t\":true\n}", options: &ojg.Options{Sort: true, Indent: 2}},
+		{value: map[string]interface{}{"t": true}, expect: "{\n  \"t\":true\n}", options: &ojg.Options{Indent: 2}},
+		{value: gd.Object{"t": gd.True, "x": nil}, expect: "{\"t\":true}", options: &ojg.Options{OmitNil: true}},
+		{value: gd.Object{"t": gd.True}, expect: "{\n  \"t\":true\n}", options: &ojg.Options{Indent: 2}},
+		{value: gd.Object{"t": gd.True}, expect: "{\n  \"t\":true\n}", options: &ojg.Options{Indent: 2, Sort: true}},
+
+		{value: &simon{x: 3}, expect: `{"type":"simon","x":3}`, options: &ojg.Options{Sort: true}},
 	} {
 		var s string
 		if d.options == nil {
@@ -50,7 +71,7 @@ func TestOjgString(t *testing.T) {
 		} else {
 			s = ojg.String(d.value, d.options)
 		}
-		tt.Equal(t, d.expect, s, d.src)
+		tt.Equal(t, d.expect, s, fmt.Sprintf("%d: %v", i, d.value))
 	}
 }
 

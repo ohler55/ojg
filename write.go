@@ -357,7 +357,7 @@ func (o *Options) buildObject(n gd.Object, depth int) (err error) {
 			sort.Strings(keys)
 			for i, k := range keys {
 				m := n[k]
-				if m == nil && o.SkipNil {
+				if m == nil && o.OmitNil {
 					continue
 				}
 				if 0 < i {
@@ -375,7 +375,7 @@ func (o *Options) buildObject(n gd.Object, depth int) (err error) {
 		} else {
 			first := true
 			for k, m := range n {
-				if m == nil && o.SkipNil {
+				if m == nil && o.OmitNil {
 					continue
 				}
 				if first {
@@ -403,7 +403,7 @@ func (o *Options) buildObject(n gd.Object, depth int) (err error) {
 			sort.Strings(keys)
 			for i, k := range keys {
 				m := n[k]
-				if m == nil && o.SkipNil {
+				if m == nil && o.OmitNil {
 					continue
 				}
 				if 0 < i {
@@ -420,7 +420,7 @@ func (o *Options) buildObject(n gd.Object, depth int) (err error) {
 		} else {
 			first := true
 			for k, m := range n {
-				if m == nil && o.SkipNil {
+				if m == nil && o.OmitNil {
 					continue
 				}
 				if first {
@@ -465,7 +465,7 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err er
 			sort.Strings(keys)
 			for i, k := range keys {
 				m := n[k]
-				if m == nil && o.SkipNil {
+				if m == nil && o.OmitNil {
 					continue
 				}
 				if 0 < i {
@@ -483,7 +483,7 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err er
 		} else {
 			first := true
 			for k, m := range n {
-				if m == nil && o.SkipNil {
+				if m == nil && o.OmitNil {
 					continue
 				}
 				if first {
@@ -511,7 +511,7 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err er
 			sort.Strings(keys)
 			for i, k := range keys {
 				m := n[k]
-				if m == nil && o.SkipNil {
+				if m == nil && o.OmitNil {
 					continue
 				}
 				if 0 < i {
@@ -528,7 +528,7 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err er
 		} else {
 			first := true
 			for k, m := range n {
-				if m == nil && o.SkipNil {
+				if m == nil && o.OmitNil {
 					continue
 				}
 				if first {
