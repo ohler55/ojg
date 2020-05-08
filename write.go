@@ -19,50 +19,19 @@ const (
 	hex = "0123456789abcdef"
 )
 
-// Options for writing data to JSON.
-type Options struct {
-
-	// Indent for the output.
-	Indent int
-
-	// Sort object members if true.
-	Sort bool
-
-	// SkipNil skips the writing of nil values in an object.
-	SkipNil bool
-
-	// InitSize is the initial buffer size.
-	InitSize int
-
-	// WriteLimit is the size of the buffer that will trigger a write when
-	// using a writer.
-	WriteLimit int
-
-	// TimeFormat defines how time is encoded. Options are to use a time. layout
-	// string format such as time.RFC3339Nano, "second" for a decimal
-	// representation, "nano" for a an integer.
-	TimeFormat string
-
-	// TimeWrap if not empty encoded time as an object with a single member. For
-	// example if set to "@" then and TimeFormat is RFC3339Nano then the encoded
-	// time will look like '{"@":"2020-04-12T16:34:04.123456789Z"}'
-	TimeWrap string
-
-	buf []byte
-	w   io.Writer
-}
-
 // String returns a JSON string for the data provided. The data can be a
 // simple type of nil, bool, int, floats, time.Time, []interface{}, or
 // map[string]interface{} or a gd.Node type, The args, if supplied can be an
 // int as an indent or a *Options.
 func String(data interface{}, args ...interface{}) string {
-	var o *Options
+	o := &defaultOptions
 
 	if 0 < len(args) {
 		switch ta := args[0].(type) {
 		case int:
-			o.Indent = ta
+			oi := *o
+			oi.Indent = ta
+			o = &oi
 		case *Options:
 			o = ta
 		}
@@ -70,7 +39,7 @@ func String(data interface{}, args ...interface{}) string {
 	if o.InitSize == 0 {
 		o.InitSize = 256
 	}
-	if len(o.buf) < o.InitSize {
+	if cap(o.buf) < o.InitSize {
 		o.buf = make([]byte, 0, o.InitSize)
 	} else {
 		o.buf = o.buf[:0]
@@ -85,12 +54,14 @@ func String(data interface{}, args ...interface{}) string {
 // or a gd.Node type, The args, if supplied can be an int as an indent or a
 // *Options.
 func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
-	var o *Options
+	o := &defaultOptions
 
 	if 0 < len(args) {
 		switch ta := args[0].(type) {
 		case int:
-			o.Indent = ta
+			oi := *o
+			oi.Indent = ta
+			o = &oi
 		case *Options:
 			o = ta
 		}
@@ -102,7 +73,7 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	if o.WriteLimit == 0 {
 		o.WriteLimit = 1024
 	}
-	if len(o.buf) < o.InitSize {
+	if cap(o.buf) < o.InitSize {
 		o.buf = make([]byte, 0, o.InitSize)
 	} else {
 		o.buf = o.buf[:0]
@@ -158,7 +129,7 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 
 	case float32:
-		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 64))...)
+		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 32))...)
 	case float64:
 		o.buf = append(o.buf, []byte(strconv.FormatFloat(td, 'g', -1, 64))...)
 	case gd.Float:
@@ -189,7 +160,12 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 			data = simp.Simplify()
 			return o.buildJSON(data, depth)
 		}
-		o.buildString(fmt.Sprintf("%v", td))
+		if 0 < len(o.CreateKey) {
+			// TBD build simple using reflection
+			//return o.buildJSON(data, depth)
+		} else {
+			o.buildString(fmt.Sprintf("%v", td))
+		}
 	}
 	if o.w != nil && o.WriteLimit < len(o.buf) {
 		_, err = o.w.Write(o.buf)

@@ -1,7 +1,8 @@
 
 - Parse
- - test callbacks
  - try using arrayStack instead of stack, will need to use -1 for obj
+
+- Write
 
 - ojg.Write and String tests
 
@@ -9,6 +10,12 @@
   - comma tolerant (optional)
   - key quote optional
  - function map for creating objects from maps { "^O": "My-Type", "attr1": 123 }
+  - maybe just a list of objects then use reflection
+  - map[interface{}]func(map[string]interface{}) (interface{}, error)
+
+ojg.Reconstruct(data interface{}, createKey string, builders map[interface{}]func(map[string]interface{}) (interface{}, error)) (interface{}, error)
+
+  - if nil func then use reflection
 
 - Path
 

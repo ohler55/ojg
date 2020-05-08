@@ -4,6 +4,9 @@ package gd
 
 type Bool bool
 
+var True = Bool(true)
+var False = Bool(false)
+
 func (n Bool) String() (s string) {
 	if n {
 		s = "true"
