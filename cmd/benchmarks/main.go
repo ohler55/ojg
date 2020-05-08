@@ -200,7 +200,7 @@ func treeJSONSort(b *testing.B) {
 func ojgString(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data, _ := gd.AlterSimple(benchmarkData(tm))
-	opt := ojg.Options{SkipNil: true}
+	opt := ojg.Options{OmitNil: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		_ = ojg.String(data, &opt)
@@ -210,7 +210,7 @@ func ojgString(b *testing.B) {
 func ojgString2(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data, _ := gd.AlterSimple(benchmarkData(tm))
-	opt := ojg.Options{SkipNil: true, Indent: 2}
+	opt := ojg.Options{OmitNil: true, Indent: 2}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		_ = ojg.String(data, &opt)
@@ -220,7 +220,7 @@ func ojgString2(b *testing.B) {
 func ojgStringSort(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data, _ := gd.AlterSimple(benchmarkData(tm))
-	opt := ojg.Options{SkipNil: true, Indent: 2, Sort: true}
+	opt := ojg.Options{OmitNil: true, Indent: 2, Sort: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		_ = ojg.String(data, &opt)
@@ -230,7 +230,7 @@ func ojgStringSort(b *testing.B) {
 func ojgWrite(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data, _ := gd.AlterSimple(benchmarkData(tm))
-	opt := ojg.Options{SkipNil: true}
+	opt := ojg.Options{OmitNil: true}
 	var buf strings.Builder
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -243,7 +243,7 @@ func ojgWrite(b *testing.B) {
 func ojgWrite2(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data, _ := gd.AlterSimple(benchmarkData(tm))
-	opt := ojg.Options{SkipNil: true, Indent: 2}
+	opt := ojg.Options{OmitNil: true, Indent: 2}
 	var buf strings.Builder
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -256,7 +256,7 @@ func ojgWrite2(b *testing.B) {
 func ojgWriteSort(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data, _ := gd.AlterSimple(benchmarkData(tm))
-	opt := ojg.Options{SkipNil: true, Indent: 2, Sort: true}
+	opt := ojg.Options{OmitNil: true, Indent: 2, Sort: true}
 	var buf strings.Builder
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
