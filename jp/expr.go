@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ohler55/ojg/gd"
+	"github.com/ohler55/ojg/gen"
 )
 
 type Expr []Frag
@@ -19,12 +19,12 @@ func (x Expr) String() string {
 	return b.String()
 }
 
-func (x Expr) Get(n gd.Node) (result []gd.Node) {
+func (x Expr) Get(n gen.Node) (result []gen.Node) {
 	// TBD
 	return
 }
 
-func (x Expr) First(n gd.Node) (result gd.Node) {
+func (x Expr) First(n gen.Node) (result gen.Node) {
 	// TBD
 	return
 }
@@ -38,7 +38,7 @@ func (x Expr) Bool(n interface{}, defVal ...bool) (v bool) {
 	}
 	// TBD first...
 	switch tn := n.(type) {
-	case gd.Bool:
+	case gen.Bool:
 		v = bool(tn)
 	case bool:
 		v = tn
@@ -46,49 +46,49 @@ func (x Expr) Bool(n interface{}, defVal ...bool) (v bool) {
 	return
 }
 
-func (x Expr) Int(n gd.Node, defVal ...int64) (v int64) {
+func (x Expr) Int(n gen.Node, defVal ...int64) (v int64) {
 	// TBD
 	return
 }
 
-func (x Expr) Float(n gd.Node, defVal ...float64) (v float64) {
+func (x Expr) Float(n gen.Node, defVal ...float64) (v float64) {
 	// TBD
 	return
 }
 
-func (x Expr) Time(n gd.Node, defVal ...time.Time) (v time.Time) {
+func (x Expr) Time(n gen.Node, defVal ...time.Time) (v time.Time) {
 	// TBD
 	return
 }
 
-func (x Expr) Array(n gd.Node) gd.Array {
+func (x Expr) Array(n gen.Node) gen.Array {
 	// TBD
 	return nil
 }
 
-func (x Expr) Object(n gd.Node) gd.Object {
+func (x Expr) Object(n gen.Node) gen.Object {
 	// TBD
 	return nil
 }
 
 // Set a child node value.
-func (x Expr) Set(n, value gd.Node) error {
+func (x Expr) Set(n, value gen.Node) error {
 	// TBD
 	return nil
 }
 
-func (x Expr) SetOne(n, value gd.Node) error {
+func (x Expr) SetOne(n, value gen.Node) error {
 	// TBD
 	return nil
 }
 
 // Remove removes nodes returns then in an array.
-func (x Expr) Remove(n gd.Node) []gd.Node {
+func (x Expr) Remove(n gen.Node) []gen.Node {
 	// TBD
 	return nil
 }
 
-func (x Expr) RemoveOne(n gd.Node) gd.Node {
+func (x Expr) RemoveOne(n gen.Node) gen.Node {
 	// TBD
 	return nil
 }

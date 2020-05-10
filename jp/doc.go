@@ -2,7 +2,7 @@
 
 /* Package jp is an implementation of JSON Path.
 
-The JSONPath expressions operate on both generic data from the ojg/gd package
+The JSONPath expressions operate on both generic data from the ojg/gen package
 as well as on interface{} based data. interface{} data can include:
 
   nil
@@ -14,8 +14,8 @@ as well as on interface{} based data. interface{} data can include:
   []interface{}
   map[string]interface{}
 
-Separate but equivalent functions are provided for gd and interface{}
-navigation. The reasoning is that the gd based functions are more strongly
+Separate but equivalent functions are provided for gen and interface{}
+navigation. The reasoning is that the gen based functions are more strongly
 types so issues are caught at compile time while interface{} issues can only
 be caught at run time. The interface{} functions are prefixed with an `I`.
 

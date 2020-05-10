@@ -5,7 +5,7 @@ package jp
 import (
 	"time"
 
-	"github.com/ohler55/ojg/gd"
+	"github.com/ohler55/ojg/gen"
 )
 
 func Must(path string) Frag {
@@ -28,14 +28,14 @@ func Bracket(path []string) (Frag, error) {
 	return nil, nil
 }
 
-func Get(n gd.Node, path interface{}) (result []gd.Node) {
+func Get(n gen.Node, path interface{}) (result []gen.Node) {
 	if x, _ := pathToExpr(path); x != nil {
 		result = x.Get(n)
 	}
 	return
 }
 
-func First(n gd.Node, path interface{}) (result gd.Node) {
+func First(n gen.Node, path interface{}) (result gen.Node) {
 	if x, _ := pathToExpr(path); x != nil {
 		result = x.First(n)
 	}
@@ -62,44 +62,44 @@ func Time(n interface{}, path interface{}, defVal ...time.Time) (v time.Time) {
 	return
 }
 
-func Array(n gd.Node, path interface{}) gd.Array {
+func Array(n gen.Node, path interface{}) gen.Array {
 	// TBD
 	return nil
 }
 
-func Object(n gd.Node, path interface{}) gd.Object {
+func Object(n gen.Node, path interface{}) gen.Object {
 	// TBD
 	return nil
 }
 
 // Set a child node value.
-func Set(n, value gd.Node, path interface{}) error {
+func Set(n, value gen.Node, path interface{}) error {
 	// TBD
 	return nil
 }
 
-func SetOne(n, value gd.Node, path interface{}) error {
+func SetOne(n, value gen.Node, path interface{}) error {
 	// TBD
 	return nil
 }
 
 // Remove removes nodes returns then in an array.
-func Remove(n gd.Node, path interface{}) []gd.Node {
+func Remove(n gen.Node, path interface{}) []gen.Node {
 	// TBD
 	return nil
 }
 
-func RemoveOne(n gd.Node, path interface{}) gd.Node {
+func RemoveOne(n gen.Node, path interface{}) gen.Node {
 	// TBD
 	return nil
 }
 
-func Sget(n interface{}, path interface{}) []gd.Node {
+func Sget(n interface{}, path interface{}) []gen.Node {
 	// TBD
 	return nil
 }
 
-func Sfirst(n interface{}, path interface{}) gd.Node {
+func Sfirst(n interface{}, path interface{}) gen.Node {
 	// TBD
 	return nil
 }

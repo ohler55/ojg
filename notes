@@ -1,8 +1,31 @@
 
+- lower case field names
+
+- recompose reflection
+
+- From and Alter in both simple and gen
+ - reflect
+ - tests
+
 - Parse
  - try using arrayStack instead of stack, will need to use -1 for obj
 
 - Write
+
+- ojg/doc.go
+ - JSON tools
+ - different approach than go json
+  - interface{} the same, referred to as simple type
+  - also generic data, not to be confused with golang discussions
+   - types elements to match JSON, if it is allowed as an elemtn it will write to JSON
+   - light weight with very low memory and performance impact
+  - go json relies on decoration on fixed structs with no support for interface elements
+   - borrowing from Oj for Ruby, types can be encoded and later recomposed
+   - OjG supports multiple docs in one string or stream
+  - includes builders for simple and generic
+  - JSON path on generic and simple
+  - validator
+
 
 - ojg.Write and String tests
 
@@ -12,8 +35,6 @@
  - function map for creating objects from maps { "^O": "My-Type", "attr1": 123 }
   - maybe just a list of objects then use reflection
   - map[interface{}]func(map[string]interface{}) (interface{}, error)
-
-ojg.Reconstruct(data interface{}, createKey string, builders map[interface{}]func(map[string]interface{}) (interface{}, error)) (interface{}, error)
 
   - if nil func then use reflection
 

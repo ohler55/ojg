@@ -5,11 +5,11 @@ package ojg
 import (
 	"io"
 
-	"github.com/ohler55/ojg/gd"
+	"github.com/ohler55/ojg/gen"
 )
 
-// Parse JSON into a gd.Node. Arguments are optional and can be a bool
-// or func(gd.Node) bool.
+// Parse JSON into a gen.Node. Arguments are optional and can be a bool
+// or func(gen.Node) bool.
 //
 // A bool indicates the NoComment parser attribute should be set to the bool
 // value.
@@ -17,26 +17,26 @@ import (
 // A func argument is the callback for the parser if processing multiple
 // JSONs. If no callback function is provided the processing is limited to
 // only one JSON.
-func Parse(b []byte, args ...interface{}) (n gd.Node, err error) {
+func Parse(b []byte, args ...interface{}) (n gen.Node, err error) {
 	p := Parser{}
 	return p.Parse(b, args...)
 }
 
 // ParseString is similar to Parse except it takes a string argument to be
 // parsed instead of a []byte.
-func ParseString(s string, args ...interface{}) (n gd.Node, err error) {
+func ParseString(s string, args ...interface{}) (n gen.Node, err error) {
 	p := Parser{}
 	return p.Parse([]byte(s), args...)
 }
 
-// Load a JSON from a io.Reader into a gd.Node. An error is returned if not
+// Load a JSON from a io.Reader into a gen.Node. An error is returned if not
 // valid JSON.
-func Load(r io.Reader, args ...interface{}) (gd.Node, error) {
+func Load(r io.Reader, args ...interface{}) (gen.Node, error) {
 	p := Parser{}
 	return p.ParseReader(r, args...)
 }
 
-// ParseSimple JSON into a gd.Node. Arguments are optional and can be a bool
+// ParseSimple JSON into a gen.Node. Arguments are optional and can be a bool
 // or func(interface{}) bool.
 //
 // A bool indicates the NoComment parser attribute should be set to the bool

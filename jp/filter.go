@@ -5,7 +5,7 @@ package jp
 import (
 	"strings"
 
-	"github.com/ohler55/ojg/gd"
+	"github.com/ohler55/ojg/gen"
 )
 
 // Filter
@@ -24,14 +24,14 @@ func (f *Filter) bracketFill(b *strings.Builder) {
 	// TBD
 }
 
-func (f *Filter) get(n interface{}, rest []Frag) (result []gd.Node) {
+func (f *Filter) get(n interface{}, rest []Frag) (result []gen.Node) {
 	if 0 < len(rest) {
 		// TBD filter
 	}
 	return
 }
 
-func (f *Filter) first(n interface{}, rest []Frag) (result gd.Node) {
+func (f *Filter) first(n interface{}, rest []Frag) (result gen.Node) {
 	if 0 < len(rest) {
 		// TBD filter
 	}

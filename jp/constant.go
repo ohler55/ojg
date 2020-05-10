@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ohler55/ojg/gd"
+	"github.com/ohler55/ojg/gen"
 )
 
 // Constant
 type Constant struct {
-	Value gd.Node
+	Value gen.Node
 }
 
 func (f *Constant) fill(b *strings.Builder) {
@@ -22,11 +22,11 @@ func (f *Constant) bracketFill(b *strings.Builder) {
 	// TBD
 }
 
-func (f *Constant) get(_ interface{}, _ []Frag) (result []gd.Node) {
+func (f *Constant) get(_ interface{}, _ []Frag) (result []gen.Node) {
 	return append(result, f.Value)
 }
 
-func (f *Constant) first(_ interface{}, _ []Frag) gd.Node {
+func (f *Constant) first(_ interface{}, _ []Frag) gen.Node {
 	return f.Value
 }
 

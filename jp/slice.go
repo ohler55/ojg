@@ -5,7 +5,7 @@ package jp
 import (
 	"strings"
 
-	"github.com/ohler55/ojg/gd"
+	"github.com/ohler55/ojg/gen"
 )
 
 // Slice
@@ -23,14 +23,14 @@ func (f *Slice) bracketFill(b *strings.Builder) {
 	// TBD
 }
 
-func (f *Slice) get(n interface{}, rest []Frag) (result []gd.Node) {
+func (f *Slice) get(n interface{}, rest []Frag) (result []gen.Node) {
 	if 0 < len(rest) {
 		// TBD slice
 	}
 	return
 }
 
-func (f *Slice) first(n interface{}, rest []Frag) (result gd.Node) {
+func (f *Slice) first(n interface{}, rest []Frag) (result gen.Node) {
 	if 0 < len(rest) {
 		// TBD slice
 	}

@@ -1,14 +1,15 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package gd
+package gen
 
 import (
-	"fmt"
 	"time"
 	"unsafe"
+
+	"github.com/ohler55/ojg/simple"
 )
 
-func FromSimple(v interface{}) (n Node, err error) {
+func From(v interface{}) (n Node) {
 	if v != nil {
 		switch tv := v.(type) {
 		case bool:
@@ -54,30 +55,32 @@ func FromSimple(v interface{}) (n Node, err error) {
 		case []interface{}:
 			a := make(Array, len(tv))
 			for i, m := range tv {
-				if a[i], err = FromSimple(m); err != nil {
-					break
-				}
+				a[i] = From(m)
 			}
 			n = a
 		case map[string]interface{}:
 			o := Object{}
 			for k, m := range tv {
-				if o[k], err = FromSimple(m); err != nil {
-					break
-				}
+				o[k] = From(m)
 			}
 			n = o
 		default:
-			if simp, _ := n.(Simplifier); simp != nil {
-				return FromSimple(simp.Simplify())
+			if g, _ := n.(Genericer); g != nil {
+				return g.Generic()
 			}
-			err = fmt.Errorf("can not convert a %T to a Node", v)
+			if simp, _ := n.(simple.Simplifier); simp != nil {
+				return From(simp.Simplify())
+			}
+			// TBD from
+
+			// TBD always succeed with something
+			// err = fmt.Errorf("can not convert a %T to a Node", v)
 		}
 	}
 	return
 }
 
-func AlterSimple(v interface{}) (n Node, err error) {
+func Alter(v interface{}) (n Node) {
 	if v != nil {
 		switch tv := v.(type) {
 		case bool:
@@ -123,9 +126,7 @@ func AlterSimple(v interface{}) (n Node, err error) {
 		case []interface{}:
 			a := *(*Array)(unsafe.Pointer(&tv))
 			for i, m := range tv {
-				if a[i], err = AlterSimple(m); err != nil {
-					break
-				}
+				a[i] = Alter(m)
 			}
 			n = a
 		case Array:
@@ -133,18 +134,20 @@ func AlterSimple(v interface{}) (n Node, err error) {
 		case map[string]interface{}:
 			o := *(*Object)(unsafe.Pointer(&tv))
 			for k, m := range tv {
-				if o[k], err = AlterSimple(m); err != nil {
-					break
-				}
+				o[k] = Alter(m)
 			}
 			n = o
 		case Object:
 			n = tv
 		default:
-			if simp, _ := n.(Simplifier); simp != nil {
-				return FromSimple(simp.Simplify())
+			if g, _ := n.(Genericer); g != nil {
+				return g.Generic()
 			}
-			err = fmt.Errorf("can not convert a %T to a Node", v)
+			if simp, _ := n.(simple.Simplifier); simp != nil {
+				return From(simp.Simplify())
+			}
+			// TBD
+			//err = fmt.Errorf("can not convert a %T to a Node", v)
 		}
 	}
 	return

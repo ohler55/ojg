@@ -6,7 +6,7 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/ohler55/ojg/gd"
+	"github.com/ohler55/ojg/gen"
 )
 
 // 9223372036854775807 / 10 = 922337203685477580
@@ -125,6 +125,6 @@ func (n *number) asFloat() (float64, error) {
 	return f, nil
 }
 
-func (n *number) asBig() gd.Big {
-	return gd.Big(n.bigBuf)
+func (n *number) asBig() gen.Big {
+	return gen.Big(n.bigBuf)
 }

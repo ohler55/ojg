@@ -42,7 +42,7 @@ func TestOjgValidateString(t *testing.T) {
 /*
 func TestDev(t *testing.T) {
 	for _, d := range []data{
-		{src: `1.2e200`, value: gd.Big("0.9223372036854775808")},
+		{src: `1.2e200`, value: gen.Big("0.9223372036854775808")},
 	} {
 		var err error
 		var v interface{}

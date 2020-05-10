@@ -10,7 +10,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/ohler55/ojg/gd"
+	"github.com/ohler55/ojg/gen"
+	"github.com/ohler55/ojg/simple"
 )
 
 const (
@@ -21,7 +22,7 @@ const (
 
 // String returns a JSON string for the data provided. The data can be a
 // simple type of nil, bool, int, floats, time.Time, []interface{}, or
-// map[string]interface{} or a gd.Node type, The args, if supplied can be an
+// map[string]interface{} or a gen.Node type, The args, if supplied can be an
 // int as an indent or a *Options.
 func String(data interface{}, args ...interface{}) string {
 	o := &defaultOptions
@@ -51,7 +52,7 @@ func String(data interface{}, args ...interface{}) string {
 
 // Write a JSON string for the data provided. The data can be a simple type of
 // nil, bool, int, floats, time.Time, []interface{}, or map[string]interface{}
-// or a gd.Node type, The args, if supplied can be an int as an indent or a
+// or a gen.Node type, The args, if supplied can be an int as an indent or a
 // *Options.
 func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	o := &defaultOptions
@@ -98,7 +99,7 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 		} else {
 			o.buf = append(o.buf, []byte("false")...)
 		}
-	case gd.Bool:
+	case gen.Bool:
 		if td {
 			o.buf = append(o.buf, []byte("true")...)
 		} else {
@@ -125,44 +126,46 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint64:
 		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
-	case gd.Int:
+	case gen.Int:
 		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 
 	case float32:
 		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 32))...)
 	case float64:
 		o.buf = append(o.buf, []byte(strconv.FormatFloat(td, 'g', -1, 64))...)
-	case gd.Float:
+	case gen.Float:
 		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 64))...)
 
 	case string:
 		o.buildString(td)
-	case gd.String:
+	case gen.String:
 		o.buildString(string(td))
 
 	case time.Time:
 		o.buildTime(td)
-	case gd.Time:
+	case gen.Time:
 		o.buildTime(time.Time(td))
 
 	case []interface{}:
 		err = o.buildSimpleArray(td, depth)
-	case gd.Array:
+	case gen.Array:
 		err = o.buildArray(td, depth)
 
 	case map[string]interface{}:
 		err = o.buildSimpleObject(td, depth)
-	case gd.Object:
+	case gen.Object:
 		err = o.buildObject(td, depth)
 
 	default:
-		if simp, _ := data.(gd.Simplifier); simp != nil {
+		if g, _ := data.(gen.Genericer); g != nil {
+			return o.buildJSON(g.Generic(), depth)
+		}
+		if simp, _ := data.(simple.Simplifier); simp != nil {
 			data = simp.Simplify()
 			return o.buildJSON(data, depth)
 		}
 		if 0 < len(o.CreateKey) {
-			// TBD build simple using reflection
-			//return o.buildJSON(data, depth)
+			return o.buildJSON(simple.From(data), depth)
 		} else {
 			o.buildString(fmt.Sprintf("%v", td))
 		}
@@ -248,7 +251,7 @@ func (o *Options) buildTime(t time.Time) {
 	}
 }
 
-func (o *Options) buildArray(n gd.Array, depth int) (err error) {
+func (o *Options) buildArray(n gen.Array, depth int) (err error) {
 	o.buf = append(o.buf, '[')
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
@@ -335,7 +338,7 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) (err error) {
 	return
 }
 
-func (o *Options) buildObject(n gd.Object, depth int) (err error) {
+func (o *Options) buildObject(n gen.Object, depth int) (err error) {
 	o.buf = append(o.buf, '{')
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1

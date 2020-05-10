@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/ohler55/ojg"
-	"github.com/ohler55/ojg/gd"
+	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -27,17 +27,17 @@ func TestParseString(t *testing.T) {
 		{src: "123", value: 123},
 		{src: "-321", value: -321},
 		{src: "12.3", value: 12.3},
-		{src: `12345678901234567890`, value: gd.Big("12345678901234567890")},
-		{src: `9223372036854775807`, value: 9223372036854775807},             // max int
-		{src: `9223372036854775808`, value: gd.Big("9223372036854775808")},   // max int + 1
-		{src: `-9223372036854775807`, value: -9223372036854775807},           // min int
-		{src: `-9223372036854775808`, value: gd.Big("-9223372036854775808")}, // min int -1
-		{src: `0.9223372036854775808`, value: gd.Big("0.9223372036854775808")},
-		{src: `123456789012345678901234567890`, value: gd.Big("123456789012345678901234567890")},
-		{src: `0.123456789012345678901234567890`, value: gd.Big("0.123456789012345678901234567890")},
-		{src: `0.1e20000`, value: gd.Big("0.1e20000")},
-		{src: `1.2e1025`, value: gd.Big("1.2e1025")},
-		{src: `-1.2e-1025`, value: gd.Big("-1.2e-1025")},
+		{src: `12345678901234567890`, value: gen.Big("12345678901234567890")},
+		{src: `9223372036854775807`, value: 9223372036854775807},              // max int
+		{src: `9223372036854775808`, value: gen.Big("9223372036854775808")},   // max int + 1
+		{src: `-9223372036854775807`, value: -9223372036854775807},            // min int
+		{src: `-9223372036854775808`, value: gen.Big("-9223372036854775808")}, // min int -1
+		{src: `0.9223372036854775808`, value: gen.Big("0.9223372036854775808")},
+		{src: `123456789012345678901234567890`, value: gen.Big("123456789012345678901234567890")},
+		{src: `0.123456789012345678901234567890`, value: gen.Big("0.123456789012345678901234567890")},
+		{src: `0.1e20000`, value: gen.Big("0.1e20000")},
+		{src: `1.2e1025`, value: gen.Big("1.2e1025")},
+		{src: `-1.2e-1025`, value: gen.Big("-1.2e-1025")},
 
 		{src: `"xyz"`, value: "xyz"},
 
@@ -153,7 +153,7 @@ func TestParseSimpleString(t *testing.T) {
 
 func TestParseCallback(t *testing.T) {
 	var results []byte
-	cb := func(n gd.Node) bool {
+	cb := func(n gen.Node) bool {
 		if 0 < len(results) {
 			results = append(results, ' ')
 		}
@@ -169,7 +169,7 @@ func TestParseCallback(t *testing.T) {
 
 func TestParseReaderCallback(t *testing.T) {
 	var results []byte
-	cb := func(n gd.Node) bool {
+	cb := func(n gen.Node) bool {
 		if 0 < len(results) {
 			results = append(results, ' ')
 		}
@@ -217,6 +217,6 @@ func TestParseSimpleReaderCallback(t *testing.T) {
 
 func TestNumberReset(t *testing.T) {
 	var p ojg.Parser
-	_, err := p.Parse([]byte("123456789012345678901234567890 1234567890"), func(gd.Node) bool { return false })
+	_, err := p.Parse([]byte("123456789012345678901234567890 1234567890"), func(gen.Node) bool { return false })
 	tt.Nil(t, err)
 }

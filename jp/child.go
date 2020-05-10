@@ -5,7 +5,7 @@ package jp
 import (
 	"strings"
 
-	"github.com/ohler55/ojg/gd"
+	"github.com/ohler55/ojg/gen"
 )
 
 // Child
@@ -19,14 +19,14 @@ func (f *Child) bracketFill(b *strings.Builder) {
 	// TBD "['" + string(f) + "']"
 }
 
-func (f *Child) get(n interface{}, rest []Frag) (result []gd.Node) {
+func (f *Child) get(n interface{}, rest []Frag) (result []gen.Node) {
 	if 0 < len(rest) {
 		// TBD match name is a map then rest
 	}
 	return
 }
 
-func (f *Child) first(n interface{}, rest []Frag) (result gd.Node) {
+func (f *Child) first(n interface{}, rest []Frag) (result gen.Node) {
 	if 0 < len(rest) {
 		// TBD match name is a map then rest
 	}

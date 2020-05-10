@@ -5,7 +5,7 @@ package jp
 import (
 	"strings"
 
-	"github.com/ohler55/ojg/gd"
+	"github.com/ohler55/ojg/gen"
 )
 
 // Bracketed is an indicator that the expression should be written in bracketed format.
@@ -19,14 +19,14 @@ func (f *Bracketed) bracketFill(b *strings.Builder) {
 	// dummy
 }
 
-func (f *Bracketed) get(n interface{}, rest []Frag) (result []gd.Node) {
+func (f *Bracketed) get(n interface{}, rest []Frag) (result []gen.Node) {
 	if 0 < len(rest) {
 		result = rest[0].get(n, rest[1:])
 	}
 	return
 }
 
-func (f *Bracketed) first(n interface{}, rest []Frag) (result gd.Node) {
+func (f *Bracketed) first(n interface{}, rest []Frag) (result gen.Node) {
 	if 0 < len(rest) {
 		result = rest[0].first(n, rest[1:])
 	}

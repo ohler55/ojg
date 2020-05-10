@@ -5,7 +5,7 @@ package jp
 import (
 	"strings"
 
-	"github.com/ohler55/ojg/gd"
+	"github.com/ohler55/ojg/gen"
 )
 
 // Descent
@@ -19,14 +19,14 @@ func (f *Descent) bracketFill(b *strings.Builder) {
 	// TBD "[.]" or "[..]" ??
 }
 
-func (f *Descent) get(n interface{}, rest []Frag) (result []gd.Node) {
+func (f *Descent) get(n interface{}, rest []Frag) (result []gen.Node) {
 	if 0 < len(rest) {
 		// TBD recursive descent
 	}
 	return
 }
 
-func (f *Descent) first(n interface{}, rest []Frag) (result gd.Node) {
+func (f *Descent) first(n interface{}, rest []Frag) (result gen.Node) {
 	if 0 < len(rest) {
 		// TBD recursive descent
 	}

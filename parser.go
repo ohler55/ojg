@@ -7,7 +7,7 @@ import (
 	"io"
 	"unicode/utf8"
 
-	"github.com/ohler55/ojg/gd"
+	"github.com/ohler55/ojg/gen"
 )
 
 const (
@@ -39,7 +39,7 @@ const (
 	commentMode      = 'c'
 )
 
-var emptyGdArray = gd.Array([]gd.Node{})
+var emptyGenArray = gen.Array([]gen.Node{})
 var emptySimpleArray = []interface{}{}
 
 // Parser a JSON parser. It can be reused for multiple parsings which allows
@@ -48,10 +48,10 @@ type Parser struct {
 	tmp         []byte // used for numbers and strings
 	stack       []byte // { or [
 	runeBytes   []byte
-	nstack      []gd.Node
+	nstack      []gen.Node
 	istack      []interface{}
 	arrayStarts []int
-	cb          func(gd.Node) bool
+	cb          func(gen.Node) bool
 	icb         func(interface{}) bool
 	ri          int // read index for null, false, and true
 	line        int
@@ -68,21 +68,21 @@ type Parser struct {
 	NoComment bool
 }
 
-func (p *Parser) Parse(buf []byte, args ...interface{}) (node gd.Node, err error) {
-	var callback func(gd.Node) bool
+func (p *Parser) Parse(buf []byte, args ...interface{}) (node gen.Node, err error) {
+	var callback func(gen.Node) bool
 
 	for _, a := range args {
 		switch ta := a.(type) {
 		case bool:
 			p.NoComment = ta
-		case func(gd.Node) bool:
+		case func(gen.Node) bool:
 			callback = ta
 			p.onlyOne = false
 		}
 	}
 	if callback == nil {
 		p.onlyOne = true
-		callback = func(n gd.Node) bool {
+		callback = func(n gen.Node) bool {
 			node = n
 			return false // tells the parser to stop
 		}
@@ -92,7 +92,7 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (node gd.Node, err error
 	if cap(p.tmp) < tmpMinSize { // indicates not initialized
 		p.tmp = make([]byte, 0, tmpMinSize)
 		p.stack = make([]byte, 0, stackMinSize)
-		p.nstack = make([]gd.Node, 0, 64)
+		p.nstack = make([]gen.Node, 0, 64)
 		p.arrayStarts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
@@ -158,21 +158,21 @@ func (p *Parser) ParseSimple(buf []byte, args ...interface{}) (data interface{},
 }
 
 // ParseReader a JSON io.Reader. An error is returned if not valid JSON.
-func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node gd.Node, err error) {
-	var callback func(gd.Node) bool
+func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node gen.Node, err error) {
+	var callback func(gen.Node) bool
 
 	for _, a := range args {
 		switch ta := a.(type) {
 		case bool:
 			p.NoComment = ta
-		case func(gd.Node) bool:
+		case func(gen.Node) bool:
 			callback = ta
 			p.onlyOne = false
 		}
 	}
 	if callback == nil {
 		p.onlyOne = true
-		callback = func(n gd.Node) bool {
+		callback = func(n gen.Node) bool {
 			node = n
 			return false // tells the parser to stop
 		}
@@ -182,7 +182,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node gd.Node, er
 	if cap(p.tmp) < tmpMinSize { // indicates not initialized
 		p.tmp = make([]byte, 0, tmpMinSize)
 		p.stack = make([]byte, 0, stackMinSize)
-		p.nstack = make([]gd.Node, 0, 64)
+		p.nstack = make([]gen.Node, 0, 64)
 		p.arrayStarts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
@@ -343,7 +343,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 					p.istack = append(p.istack, emptySimpleArray)
 				} else {
 					p.arrayStarts = append(p.arrayStarts, len(p.nstack))
-					p.nstack = append(p.nstack, emptyGdArray)
+					p.nstack = append(p.nstack, emptyGenArray)
 				}
 			case ']':
 				if err := p.arrayEnd(); err != nil {
@@ -356,7 +356,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 					n := map[string]interface{}{}
 					p.istack = append(p.istack, n)
 				} else {
-					n := gd.Object{}
+					n := gen.Object{}
 					p.nstack = append(p.nstack, n)
 				}
 			case '}':
@@ -449,7 +449,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				if p.simple {
 					p.iadd(false)
 				} else {
-					p.nadd(gd.Bool(false))
+					p.nadd(gen.Bool(false))
 				}
 			}
 		case trueMode:
@@ -462,7 +462,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				if p.simple {
 					p.iadd(true)
 				} else {
-					p.nadd(gd.Bool(true))
+					p.nadd(gen.Bool(true))
 				}
 			}
 		case negMode:
@@ -693,7 +693,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 					if p.simple {
 						p.iadd(string(p.tmp))
 					} else {
-						p.nadd(gd.String(string(p.tmp)))
+						p.nadd(gen.String(string(p.tmp)))
 					}
 				}
 			default:
@@ -829,10 +829,10 @@ func (p *Parser) newError(format string, args ...interface{}) error {
 	}
 }
 
-func (p *Parser) nadd(n gd.Node) {
+func (p *Parser) nadd(n gen.Node) {
 	if 2 <= len(p.nstack) {
 		if k, ok := p.nstack[len(p.nstack)-1].(Key); ok {
-			obj, _ := p.nstack[len(p.nstack)-2].(gd.Object)
+			obj, _ := p.nstack[len(p.nstack)-2].(gen.Object)
 			obj[string(k)] = n
 			p.nstack = p.nstack[0 : len(p.nstack)-1]
 
@@ -860,19 +860,19 @@ func (p *Parser) appendNum() error {
 		if p.simple {
 			p.iadd(string(p.num.asBig()))
 		} else {
-			p.nadd(gd.Big(p.num.asBig()))
+			p.nadd(gen.Big(p.num.asBig()))
 		}
 	} else if p.num.frac == 0 && p.num.exp == 0 {
 		if p.simple {
 			p.iadd(p.num.asInt())
 		} else {
-			p.nadd(gd.Int(p.num.asInt()))
+			p.nadd(gen.Int(p.num.asInt()))
 		}
 	} else if f, err := p.num.asFloat(); err == nil {
 		if p.simple {
 			p.iadd(f)
 		} else {
-			p.nadd(gd.Float(f))
+			p.nadd(gen.Float(f))
 		}
 	} else {
 		return err
@@ -901,7 +901,7 @@ func (p *Parser) arrayEnd() error {
 		p.iadd(n)
 	} else {
 		size := len(p.nstack) - start
-		n := gd.Array(make([]gd.Node, size))
+		n := gen.Array(make([]gen.Node, size))
 		copy(n, p.nstack[start:len(p.nstack)])
 		p.nstack = p.nstack[0 : start-1]
 		p.nadd(n)

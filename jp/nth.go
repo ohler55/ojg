@@ -5,7 +5,7 @@ package jp
 import (
 	"strings"
 
-	"github.com/ohler55/ojg/gd"
+	"github.com/ohler55/ojg/gen"
 )
 
 // Nth
@@ -19,14 +19,14 @@ func (f *Nth) bracketFill(b *strings.Builder) {
 	// TBD "[n]"
 }
 
-func (f *Nth) get(n interface{}, rest []Frag) (result []gd.Node) {
+func (f *Nth) get(n interface{}, rest []Frag) (result []gen.Node) {
 	if 0 < len(rest) {
 		// TBD match all
 	}
 	return
 }
 
-func (f *Nth) first(n interface{}, rest []Frag) (result gd.Node) {
+func (f *Nth) first(n interface{}, rest []Frag) (result gen.Node) {
 	if 0 < len(rest) {
 		// TBD match all
 	}
