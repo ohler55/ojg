@@ -1,11 +1,7 @@
 
-- lower case field names
+- complete simple docs for decompose and recompose
 
-- recompose reflection
-
-- From and Alter in both simple and gen
- - reflect
- - tests
+- complete gen package
 
 - Parse
  - try using arrayStack instead of stack, will need to use -1 for obj

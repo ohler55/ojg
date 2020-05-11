@@ -13,12 +13,22 @@ import (
 // 10 so that numbers look correct when displayed in base 10.
 const fracMax = 10000000.0
 
+// ConvOptions are the options availble to Decompose() and From() functions.
 type ConvOptions struct {
-	CreateKey    string
+
+	// CreateKey is the map element used to identify the type of a decomposed
+	// object.
+	CreateKey string
+
+	// FullTypePath if true will use the package and type name as the
+	// CreateKey value.
 	FullTypePath bool
-	OmitNil      bool
+
+	// OmitNil if true omits object members that have nil values.
+	OmitNil bool
 }
 
+// DefaultConvOptions are the default options for decompsing.
 var DefaultConvOptions = ConvOptions{
 	CreateKey:    "type",
 	FullTypePath: false,

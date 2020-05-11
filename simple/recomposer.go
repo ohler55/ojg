@@ -9,52 +9,62 @@ import (
 	"time"
 )
 
-type RecomposeFunc func(map[string]interface{}) (interface{}, error)
-
-type builder struct {
-	build RecomposeFunc
-	short string
-	full  string
-	rtype reflect.Type
-}
-
+// Recomposer is used to recompose simple data into structs.
 type Recomposer struct {
+
+	// CreateKey identifies the creation key in decomposed objects.
 	CreateKey string
-	builders  map[string]*builder
+
+	composers map[string]*composer
 }
 
-func NewRecomposer(createKey string, builders map[interface{}]RecomposeFunc) (*Recomposer, error) {
+// NewRecomposer creates a new instance. The composers are a map of objects
+// expected and functions to recompose them. If no function is provided then
+// reflection is used instead.
+func NewRecomposer(createKey string, composers map[interface{}]RecomposeFunc) (*Recomposer, error) {
 	r := Recomposer{
 		CreateKey: createKey,
-		builders:  map[string]*builder{},
+		composers: map[string]*composer{},
 	}
-	for v, fun := range builders {
-		rt := reflect.TypeOf(v)
-		if rt.Kind() == reflect.Ptr {
-			rt = rt.Elem()
+	for v, fun := range composers {
+		c, err := newComposer(v, fun)
+		if err != nil {
+			return nil, err
 		}
-		b := builder{
-			build: fun,
-			short: rt.Name(),
-			full:  rt.PkgPath() + "/" + rt.Name(),
-			rtype: rt,
-		}
-		r.builders[b.short] = &b
-		r.builders[b.full] = &b
+		r.composers[c.short] = c
+		r.composers[c.full] = c
 	}
 	return &r, nil
 }
 
-//
+// Recompose simple data into more complex go types.
 func (r *Recomposer) Recompose(v interface{}, tv ...interface{}) (interface{}, error) {
-	// TBD only use option for list and map types
-	/*
-		var xt reflect.Type
-		if 0 < len(tv) && tv[0] != nil {
-			xt = reflect.TypeOf(tv[0])
+	var rt reflect.Type
+
+	if 0 < len(tv) {
+		rt = reflect.TypeOf(tv[0])
+		if rt.Kind() != reflect.Slice && rt.Kind() != reflect.Array {
+			return nil, fmt.Errorf("only a slice type can be provided as an optional argument")
 		}
-	*/
-	return r.recompose(v)
+	}
+	result, err := r.recompose(v)
+	if err == nil && rt != nil {
+		if ra, ok := result.([]interface{}); ok {
+			av := reflect.MakeSlice(rt, len(ra), len(ra))
+			et := rt.Elem()
+			for i, v := range ra {
+				vv := reflect.ValueOf(v)
+				iv := av.Index(i)
+				if vv.Type().ConvertibleTo(et) {
+					iv.Set(vv.Convert(et))
+				} else {
+					return nil, fmt.Errorf("can not convert (%s)%v to a %s", iv.Type(), iv, et)
+				}
+			}
+			result = av.Interface()
+		}
+	}
+	return result, err
 }
 
 func (r *Recomposer) recompose(v interface{}) (interface{}, error) {
@@ -104,12 +114,8 @@ func (r *Recomposer) recompose(v interface{}) (interface{}, error) {
 		}
 		if cv := o[r.CreateKey]; cv != nil {
 			tn, _ := cv.(string)
-			if b := r.builders[tn]; b != nil {
-				if b.build != nil {
-					return b.build(o)
-				}
-				// TBD use reflection
-				//  handle embedded as well
+			if b := r.composers[tn]; b != nil {
+				return b.compose(o, r.CreateKey)
 			}
 		}
 		v = o

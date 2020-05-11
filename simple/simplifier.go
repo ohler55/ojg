@@ -2,6 +2,8 @@
 
 package simple
 
+// Simplifier interface is for objects that can decompose themselves into
+// simple data.
 type Simplifier interface {
 
 	// Simplify should return one of the simple types which are: nil, bool,
