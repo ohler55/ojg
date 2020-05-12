@@ -1,6 +1,6 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package ojg
+package oj
 
 import (
 	"github.com/ohler55/ojg/gen"

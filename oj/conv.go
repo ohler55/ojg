@@ -1,6 +1,6 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package simple
+package oj
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 // 10 so that numbers look correct when displayed in base 10.
 const fracMax = 10000000.0
 
-// ConvOptions are the options availble to Decompose() and From() functions.
+// ConvOptions are the options available to Decompose() function.
 type ConvOptions struct {
 
 	// CreateKey is the map element used to identify the type of a decomposed
@@ -35,16 +35,10 @@ var DefaultConvOptions = ConvOptions{
 	OmitNil:      true,
 }
 
-// Decompose is an alias for From(). It exists for symmetry in function names
-// with Decompose vs Recompose.
-func Decompose(v interface{}, options ...*ConvOptions) interface{} {
-	return From(v, options...)
-}
-
-// From creates a simple type converting non simple to simple types using
+// Decompose creates a simple type converting non simple to simple types using
 // either the Simplify() interface or reflection. Unlike Alter() a deep copy
 // is returned leaving the original data unchanged.
-func From(v interface{}, options ...*ConvOptions) interface{} {
+func Decompose(v interface{}, options ...*ConvOptions) interface{} {
 	opt := &DefaultConvOptions
 	if 0 < len(options) {
 		opt = options[0]
@@ -79,29 +73,29 @@ func From(v interface{}, options ...*ConvOptions) interface{} {
 		case []interface{}:
 			a := make([]interface{}, len(tv))
 			for i, m := range tv {
-				a[i] = From(m)
+				a[i] = Decompose(m)
 			}
 			v = a
 		case map[string]interface{}:
 			o := map[string]interface{}{}
 			for k, m := range tv {
-				if mv := From(m); mv != nil || !opt.OmitNil {
+				if mv := Decompose(m); mv != nil || !opt.OmitNil {
 					o[k] = mv
 				}
 			}
 			v = o
 		default:
 			if simp, _ := v.(Simplifier); simp != nil {
-				return From(simp.Simplify())
+				return Decompose(simp.Simplify())
 			}
-			return From(reflectData(v, opt))
+			return Decompose(reflectData(v, opt))
 		}
 	}
 	return v
 }
 
 // Alter the data into all simple types converting non simple to simple types
-// using either the Simplify() interface or reflection. Unlike From() map and
+// using either the Simplify() interface or reflection. Unlike Decompose() map and
 // slices members are modified if necessary to assure all elements are simple
 // types.
 func Alter(v interface{}, options ...*ConvOptions) interface{} {
@@ -192,7 +186,7 @@ func reflectStruct(rv reflect.Value, opt *ConvOptions) interface{} {
 	for i := rv.NumField() - 1; 0 <= i; i-- {
 		name := []byte(t.Field(i).Name)
 		name[0] = name[0] | 0x20
-		obj[string(name)] = From(rv.Field(i).Interface(), opt)
+		obj[string(name)] = Decompose(rv.Field(i).Interface(), opt)
 	}
 	return obj
 }
@@ -215,9 +209,9 @@ func reflectMap(rv reflect.Value, opt *ConvOptions) interface{} {
 	for it.Next() {
 		k := it.Key().Interface()
 		if ks, ok := k.(string); ok {
-			obj[ks] = From(it.Value().Interface())
+			obj[ks] = Decompose(it.Value().Interface())
 		} else {
-			obj[fmt.Sprint(k)] = From(it.Value().Interface(), opt)
+			obj[fmt.Sprint(k)] = Decompose(it.Value().Interface(), opt)
 		}
 	}
 	return obj
@@ -227,7 +221,7 @@ func reflectArray(rv reflect.Value, opt *ConvOptions) interface{} {
 	size := rv.Len()
 	a := make([]interface{}, size)
 	for i := size - 1; 0 <= i; i-- {
-		a[i] = From(rv.Index(i).Interface(), opt)
+		a[i] = Decompose(rv.Index(i).Interface(), opt)
 	}
 	return a
 }

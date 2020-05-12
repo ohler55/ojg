@@ -1,13 +1,13 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package ojg_test
+package oj_test
 
 import (
 	"bytes"
 	"strings"
 	"testing"
 
-	"github.com/ohler55/ojg"
+	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -66,10 +66,10 @@ true
 	} {
 		var err error
 		if d.onlyOne || d.noComment {
-			p := ojg.Validator{OnlyOne: d.onlyOne, NoComment: d.noComment}
+			p := oj.Validator{OnlyOne: d.onlyOne, NoComment: d.noComment}
 			err = p.Validate([]byte(d.src))
 		} else {
-			err = ojg.Validate([]byte(d.src))
+			err = oj.Validate([]byte(d.src))
 		}
 		if 0 < len(d.expect) {
 			tt.NotNil(t, err, d.src)
@@ -82,7 +82,7 @@ true
 
 func TestValidateReader(t *testing.T) {
 	r := strings.NewReader("[true,[false,[null],123],456]")
-	err := ojg.ValidateReader(r)
+	err := oj.ValidateReader(r)
 	tt.Nil(t, err)
 
 	var buf []byte
@@ -92,12 +92,12 @@ func TestValidateReader(t *testing.T) {
 	}
 	buf = append(buf, "  false\n]\n"...)
 	br := bytes.NewReader(buf)
-	err = ojg.ValidateReader(br)
+	err = oj.ValidateReader(br)
 	tt.Nil(t, err)
 }
 
 func TestValidateResuse(t *testing.T) {
-	var v ojg.Validator
+	var v oj.Validator
 	err := v.Validate([]byte("[true,[false,[null],123],456]"))
 	tt.Nil(t, err)
 	// a second time
@@ -110,7 +110,7 @@ func TestValidateResuse(t *testing.T) {
 }
 
 func TestValidateBOM(t *testing.T) {
-	var v ojg.Validator
+	var v oj.Validator
 	err := v.Validate([]byte("\xef\xbb\xbf[true]"))
 	tt.Nil(t, err)
 }

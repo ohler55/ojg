@@ -1,8 +1,8 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package ojg_test
+package oj_test
 
-import "github.com/ohler55/ojg"
+import "github.com/ohler55/ojg/oj"
 
 type data struct {
 	src string
@@ -12,6 +12,6 @@ type data struct {
 	value     interface{}
 	onlyOne   bool
 	noComment bool
-	options   *ojg.Options
+	options   *oj.Options
 	indent    int
 }

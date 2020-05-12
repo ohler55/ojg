@@ -1,16 +1,16 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package simple_test
+package oj_test
 
 import (
 	"testing"
 
-	"github.com/ohler55/ojg/simple"
+	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
 )
 
-func TestSimpleBuilderArray(t *testing.T) {
-	var b simple.Builder
+func TestOjBuilderArray(t *testing.T) {
+	var b oj.Builder
 
 	err := b.Array()
 	tt.Nil(t, err, "b.Array()")
@@ -35,8 +35,8 @@ func TestSimpleBuilderArray(t *testing.T) {
 	tt.Equal(t, []interface{}{true, []interface{}{false}}, v)
 }
 
-func TestSimpleBuilderObject(t *testing.T) {
-	var b simple.Builder
+func TestOjBuilderObject(t *testing.T) {
+	var b oj.Builder
 
 	err := b.Object()
 	tt.Nil(t, err, "b.Object()")
@@ -62,8 +62,8 @@ func TestSimpleBuilderObject(t *testing.T) {
 	tt.Equal(t, map[string]interface{}{"a": true, "b": map[string]interface{}{"c": false}}, v)
 }
 
-func TestSimpleBuilderMixed(t *testing.T) {
-	var b simple.Builder
+func TestOjBuilderMixed(t *testing.T) {
+	var b oj.Builder
 
 	b.Reset() // not needed, just making sure there are not issues
 
@@ -86,8 +86,8 @@ func TestSimpleBuilderMixed(t *testing.T) {
 	tt.Equal(t, map[string]interface{}{"a": []interface{}{true, map[string]interface{}{"x": 123}, nil}}, v)
 }
 
-func TestSimpleBuilderErrors(t *testing.T) {
-	var b simple.Builder
+func TestOjBuilderErrors(t *testing.T) {
+	var b oj.Builder
 
 	err := b.Object("bad")
 	tt.Equal(t, "can not use a key when pushing to an array", err.Error())

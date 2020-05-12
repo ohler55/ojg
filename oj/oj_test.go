@@ -1,41 +1,29 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package ojg_test
+package oj_test
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/ohler55/ojg"
+	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
 )
 
-func TestOjgParseString(t *testing.T) {
-	v, err := ojg.ParseString("true")
+func TestOjParseString(t *testing.T) {
+	v, err := oj.ParseString("true")
 	tt.Nil(t, err)
 	tt.Equal(t, true, v)
 }
 
-func TestOjgParseSimpleString(t *testing.T) {
-	v, err := ojg.ParseSimpleString("true")
+func TestOjLoad(t *testing.T) {
+	v, err := oj.Load(strings.NewReader("true"))
 	tt.Nil(t, err)
 	tt.Equal(t, true, v)
 }
 
-func TestOjgLoad(t *testing.T) {
-	v, err := ojg.Load(strings.NewReader("true"))
-	tt.Nil(t, err)
-	tt.Equal(t, true, v)
-}
-
-func TestOjgLoadSimple(t *testing.T) {
-	v, err := ojg.LoadSimple(strings.NewReader("true"))
-	tt.Nil(t, err)
-	tt.Equal(t, true, v)
-}
-
-func TestOjgValidateString(t *testing.T) {
-	err := ojg.ValidateString("true")
+func TestOjValidateString(t *testing.T) {
+	err := oj.ValidateString("true")
 	tt.Nil(t, err)
 }
 
@@ -47,10 +35,10 @@ func TestDev(t *testing.T) {
 		var err error
 		var v interface{}
 		if d.onlyOne || d.noComment {
-			p := ojg.Parser{NoComment: d.noComment}
+			p := oj.Parser{NoComment: d.noComment}
 			v, err = p.Parse([]byte(d.src))
 		} else {
-			v, err = ojg.Parse([]byte(d.src))
+			v, err = oj.Parse([]byte(d.src))
 		}
 		if 0 < len(d.expect) {
 			tt.NotNil(t, err, d.src)

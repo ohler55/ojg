@@ -1,6 +1,6 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package simple
+package oj
 
 // Simplifier interface is for objects that can decompose themselves into
 // simple data.

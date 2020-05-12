@@ -5,8 +5,6 @@ package gen
 import (
 	"time"
 	"unsafe"
-
-	"github.com/ohler55/ojg/simple"
 )
 
 func From(v interface{}) (n Node) {
@@ -68,9 +66,11 @@ func From(v interface{}) (n Node) {
 			if g, _ := n.(Genericer); g != nil {
 				return g.Generic()
 			}
-			if simp, _ := n.(simple.Simplifier); simp != nil {
-				return From(simp.Simplify())
-			}
+			/*
+				if simp, _ := n.(simple.Simplifier); simp != nil {
+					return From(simp.Simplify())
+				}
+			*/
 			// TBD from
 
 			// TBD always succeed with something
@@ -143,9 +143,11 @@ func Alter(v interface{}) (n Node) {
 			if g, _ := n.(Genericer); g != nil {
 				return g.Generic()
 			}
-			if simp, _ := n.(simple.Simplifier); simp != nil {
-				return From(simp.Simplify())
-			}
+			/*
+				if simp, _ := n.(simple.Simplifier); simp != nil {
+					return From(simp.Simplify())
+				}
+			*/
 			// TBD
 			//err = fmt.Errorf("can not convert a %T to a Node", v)
 		}

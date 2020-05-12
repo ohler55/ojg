@@ -2,7 +2,7 @@
 
 /*
 
-Package simple contains functions and types to support building simple types
+Package oj contains functions and types to support building simple types
 where simple types are:
 
   nil
@@ -22,7 +22,7 @@ Builder
 
 An example of building simple data is:
 
-  var b simple.Builder
+  var b oj.Builder
 
   b.Object()
   b.Value(1, "a")
@@ -38,4 +38,4 @@ Decompose and Recompose
 // TBD
 
 */
-package simple
+package oj

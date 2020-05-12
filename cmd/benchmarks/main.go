@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
+	"github.com/ohler55/ojg/oj"
 
 	"gitlab.com/uhn/core/pkg/tree"
 )
@@ -120,8 +120,8 @@ func jsonBenchmarks(base testing.BenchmarkResult, indent, sort bool) {
 	fmt.Printf("JSON() benchmarks, indent: %t, sort: %t\n", indent, sort)
 
 	var treeRes testing.BenchmarkResult
-	var ojgSRes testing.BenchmarkResult
-	var ojgWRes testing.BenchmarkResult
+	var ojSRes testing.BenchmarkResult
+	var ojWRes testing.BenchmarkResult
 
 	if sort {
 		treeRes = testing.Benchmark(treeJSONSort)
@@ -137,34 +137,34 @@ func jsonBenchmarks(base testing.BenchmarkResult, indent, sort bool) {
 		treeNs, 1.0, treeBytes, 1.0, treeAllocs, 1.0)
 
 	if sort {
-		ojgSRes = testing.Benchmark(ojgStringSort)
+		ojSRes = testing.Benchmark(ojStringSort)
 	} else if indent {
-		ojgSRes = testing.Benchmark(ojgString2)
+		ojSRes = testing.Benchmark(ojString2)
 	} else {
-		ojgSRes = testing.Benchmark(ojgString)
+		ojSRes = testing.Benchmark(ojString)
 	}
-	ojgNs := ojgSRes.NsPerOp()
-	ojgBytes := ojgSRes.AllocedBytesPerOp()
-	ojgAllocs := ojgSRes.AllocsPerOp()
-	fmt.Printf(" ojg.String:            %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
-		ojgNs, float64(treeNs)/float64(ojgNs),
-		ojgBytes, float64(treeBytes)/float64(ojgBytes),
-		ojgAllocs, float64(treeAllocs)/float64(ojgAllocs))
+	ojNs := ojSRes.NsPerOp()
+	ojBytes := ojSRes.AllocedBytesPerOp()
+	ojAllocs := ojSRes.AllocsPerOp()
+	fmt.Printf(" oj.String:            %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
+		ojNs, float64(treeNs)/float64(ojNs),
+		ojBytes, float64(treeBytes)/float64(ojBytes),
+		ojAllocs, float64(treeAllocs)/float64(ojAllocs))
 
 	if sort {
-		ojgWRes = testing.Benchmark(ojgWriteSort)
+		ojWRes = testing.Benchmark(ojWriteSort)
 	} else if indent {
-		ojgWRes = testing.Benchmark(ojgWrite2)
+		ojWRes = testing.Benchmark(ojWrite2)
 	} else {
-		ojgWRes = testing.Benchmark(ojgWrite)
+		ojWRes = testing.Benchmark(ojWrite)
 	}
-	ojgNs = ojgWRes.NsPerOp()
-	ojgBytes = ojgWRes.AllocedBytesPerOp()
-	ojgAllocs = ojgWRes.AllocsPerOp()
-	fmt.Printf(" ojg.Write:             %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
-		ojgNs, float64(treeNs)/float64(ojgNs),
-		ojgBytes, float64(treeBytes)/float64(ojgBytes),
-		ojgAllocs, float64(treeAllocs)/float64(ojgAllocs))
+	ojNs = ojWRes.NsPerOp()
+	ojBytes = ojWRes.AllocedBytesPerOp()
+	ojAllocs = ojWRes.AllocsPerOp()
+	fmt.Printf(" oj.Write:             %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
+		ojNs, float64(treeNs)/float64(ojNs),
+		ojBytes, float64(treeBytes)/float64(ojBytes),
+		ojAllocs, float64(treeAllocs)/float64(ojAllocs))
 }
 
 func treeJSON(b *testing.B) {
@@ -197,71 +197,71 @@ func treeJSONSort(b *testing.B) {
 	}
 }
 
-func ojgString(b *testing.B) {
+func ojString(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data := gen.Alter(benchmarkData(tm))
-	opt := ojg.Options{OmitNil: true}
+	opt := oj.Options{OmitNil: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = ojg.String(data, &opt)
+		_ = oj.String(data, &opt)
 	}
 }
 
-func ojgString2(b *testing.B) {
+func ojString2(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data := gen.Alter(benchmarkData(tm))
-	opt := ojg.Options{OmitNil: true, Indent: 2}
+	opt := oj.Options{OmitNil: true, Indent: 2}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = ojg.String(data, &opt)
+		_ = oj.String(data, &opt)
 	}
 }
 
-func ojgStringSort(b *testing.B) {
+func ojStringSort(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data := gen.Alter(benchmarkData(tm))
-	opt := ojg.Options{OmitNil: true, Indent: 2, Sort: true}
+	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = ojg.String(data, &opt)
+		_ = oj.String(data, &opt)
 	}
 }
 
-func ojgWrite(b *testing.B) {
+func ojWrite(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data := gen.Alter(benchmarkData(tm))
-	opt := ojg.Options{OmitNil: true}
+	opt := oj.Options{OmitNil: true}
 	var buf strings.Builder
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		buf.Reset()
-		_ = ojg.Write(&buf, data, &opt)
+		_ = oj.Write(&buf, data, &opt)
 		_ = buf.String()
 	}
 }
 
-func ojgWrite2(b *testing.B) {
+func ojWrite2(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data := gen.Alter(benchmarkData(tm))
-	opt := ojg.Options{OmitNil: true, Indent: 2}
+	opt := oj.Options{OmitNil: true, Indent: 2}
 	var buf strings.Builder
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		buf.Reset()
-		_ = ojg.Write(&buf, data, &opt)
+		_ = oj.Write(&buf, data, &opt)
 		_ = buf.String()
 	}
 }
 
-func ojgWriteSort(b *testing.B) {
+func ojWriteSort(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data := gen.Alter(benchmarkData(tm))
-	opt := ojg.Options{OmitNil: true, Indent: 2, Sort: true}
+	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
 	var buf strings.Builder
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		buf.Reset()
-		_ = ojg.Write(&buf, data, &opt)
+		_ = oj.Write(&buf, data, &opt)
 		_ = buf.String()
 	}
 }
@@ -277,14 +277,14 @@ func validateBenchmarks() {
 	fmt.Printf("json.Valid:             %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
 		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
 
-	ojgRes := testing.Benchmark(ojgValidate)
-	ojgNs := ojgRes.NsPerOp()
-	ojgBytes := ojgRes.AllocedBytesPerOp()
-	ojgAllocs := ojgRes.AllocsPerOp()
-	fmt.Printf(" ojg.Validate:          %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		ojgNs, float64(goNs)/float64(ojgNs),
-		ojgBytes, float64(goBytes)/float64(ojgBytes),
-		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
+	ojRes := testing.Benchmark(ojValidate)
+	ojNs := ojRes.NsPerOp()
+	ojBytes := ojRes.AllocedBytesPerOp()
+	ojAllocs := ojRes.AllocsPerOp()
+	fmt.Printf("  oj.Validate:          %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
+		ojNs, float64(goNs)/float64(ojNs),
+		ojBytes, float64(goBytes)/float64(ojBytes),
+		ojAllocs, float64(goAllocs)/float64(ojAllocs))
 
 	treeRes := testing.Benchmark(treeValidate)
 	treeNs := treeRes.NsPerOp()
@@ -302,8 +302,8 @@ func goValidate(b *testing.B) {
 	}
 }
 
-func ojgValidate(b *testing.B) {
-	var v ojg.Validator
+func ojValidate(b *testing.B) {
+	var v oj.Validator
 	for n := 0; n < b.N; n++ {
 		_ = v.Validate([]byte(sampleJSON))
 		//err := v.Validate([]byte(sampleJSON))
@@ -330,14 +330,14 @@ func validateReaderBenchmarks() {
 	fmt.Printf("json.Decoder:           %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
 		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
 
-	ojgRes := testing.Benchmark(ojgValidateReader)
-	ojgNs := ojgRes.NsPerOp() - baseRes.NsPerOp()
-	ojgBytes := ojgRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
-	ojgAllocs := ojgRes.AllocsPerOp() - baseRes.AllocsPerOp()
-	fmt.Printf(" ojg.ValidateReader:    %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		ojgNs, float64(goNs)/float64(ojgNs),
-		ojgBytes, float64(goBytes)/float64(ojgBytes),
-		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
+	ojRes := testing.Benchmark(ojValidateReader)
+	ojNs := ojRes.NsPerOp() - baseRes.NsPerOp()
+	ojBytes := ojRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
+	ojAllocs := ojRes.AllocsPerOp() - baseRes.AllocsPerOp()
+	fmt.Printf("  oj.ValidateReader:    %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
+		ojNs, float64(goNs)/float64(ojNs),
+		ojBytes, float64(goBytes)/float64(ojBytes),
+		ojAllocs, float64(goAllocs)/float64(ojAllocs))
 
 	treeRes := testing.Benchmark(treeParseReader)
 	treeNs := treeRes.NsPerOp() - baseRes.NsPerOp()
@@ -383,8 +383,8 @@ func goParseReader(b *testing.B) {
 	}
 }
 
-func ojgValidateReader(b *testing.B) {
-	var v ojg.Validator
+func ojValidateReader(b *testing.B) {
+	var v oj.Validator
 	f, err := os.Open("test/sample.json")
 	if err != nil {
 		fmt.Printf("Failed to read test/sample.json. %s\n", err)
@@ -423,24 +423,26 @@ func parseBenchmarks() {
 	fmt.Printf("json.Unmarshal:         %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
 		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
 
-	ojgRes := testing.Benchmark(ojgParse)
-	ojgNs := ojgRes.NsPerOp()
-	ojgBytes := ojgRes.AllocedBytesPerOp()
-	ojgAllocs := ojgRes.AllocsPerOp()
-	fmt.Printf(" ojg.Parse:             %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		ojgNs, float64(goNs)/float64(ojgNs),
-		ojgBytes, float64(goBytes)/float64(ojgBytes),
-		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
+	ojRes := testing.Benchmark(ojParse)
+	ojNs := ojRes.NsPerOp()
+	ojBytes := ojRes.AllocedBytesPerOp()
+	ojAllocs := ojRes.AllocsPerOp()
+	fmt.Printf("  oj.Parse:             %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
+		ojNs, float64(goNs)/float64(ojNs),
+		ojBytes, float64(goBytes)/float64(ojBytes),
+		ojAllocs, float64(goAllocs)/float64(ojAllocs))
 
-	ojgRes = testing.Benchmark(ojgParseSimple)
-	ojgNs = ojgRes.NsPerOp()
-	ojgBytes = ojgRes.AllocedBytesPerOp()
-	ojgAllocs = ojgRes.AllocsPerOp()
-	fmt.Printf(" ojg.ParseSimple:       %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		ojgNs, float64(goNs)/float64(ojgNs),
-		ojgBytes, float64(goBytes)/float64(ojgBytes),
-		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
-
+	// TBD add gen parser
+	/*
+		ojRes = testing.Benchmark(ojParseSimple)
+		ojNs = ojRes.NsPerOp()
+		ojBytes = ojRes.AllocedBytesPerOp()
+		ojAllocs = ojRes.AllocsPerOp()
+		fmt.Printf("  oj.ParseSimple:       %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
+			ojNs, float64(goNs)/float64(ojNs),
+			ojBytes, float64(goBytes)/float64(ojBytes),
+			ojAllocs, float64(goAllocs)/float64(ojAllocs))
+	*/
 	treeRes := testing.Benchmark(treeParse)
 	treeNs := treeRes.NsPerOp()
 	treeBytes := treeRes.AllocedBytesPerOp()
@@ -464,24 +466,26 @@ func parseReaderBenchmarks() {
 	fmt.Printf("json.Decoder:           %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
 		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
 
-	ojgRes := testing.Benchmark(ojgParseReader)
-	ojgNs := ojgRes.NsPerOp() - baseRes.NsPerOp()
-	ojgBytes := ojgRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
-	ojgAllocs := ojgRes.AllocsPerOp() - baseRes.AllocsPerOp()
-	fmt.Printf(" ojg.ParseReader:       %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		ojgNs, float64(goNs)/float64(ojgNs),
-		ojgBytes, float64(goBytes)/float64(ojgBytes),
-		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
+	ojRes := testing.Benchmark(ojParseReader)
+	ojNs := ojRes.NsPerOp() - baseRes.NsPerOp()
+	ojBytes := ojRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
+	ojAllocs := ojRes.AllocsPerOp() - baseRes.AllocsPerOp()
+	fmt.Printf("  oj.ParseReader:       %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
+		ojNs, float64(goNs)/float64(ojNs),
+		ojBytes, float64(goBytes)/float64(ojBytes),
+		ojAllocs, float64(goAllocs)/float64(ojAllocs))
 
-	ojgRes = testing.Benchmark(ojgParseSimpleReader)
-	ojgNs = ojgRes.NsPerOp() - baseRes.NsPerOp()
-	ojgBytes = ojgRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
-	ojgAllocs = ojgRes.AllocsPerOp() - baseRes.AllocsPerOp()
-	fmt.Printf(" ojg.ParseSimpleReader: %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		ojgNs, float64(goNs)/float64(ojgNs),
-		ojgBytes, float64(goBytes)/float64(ojgBytes),
-		ojgAllocs, float64(goAllocs)/float64(ojgAllocs))
-
+	// TBD add gen parser
+	/*
+		ojRes = testing.Benchmark(ojParseSimpleReader)
+		ojNs = ojRes.NsPerOp() - baseRes.NsPerOp()
+		ojBytes = ojRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
+		ojAllocs = ojRes.AllocsPerOp() - baseRes.AllocsPerOp()
+		fmt.Printf(" oj.ParseSimpleReader: %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
+			ojNs, float64(goNs)/float64(ojNs),
+			ojBytes, float64(goBytes)/float64(ojBytes),
+			ojAllocs, float64(goAllocs)/float64(ojAllocs))
+	*/
 	treeRes := testing.Benchmark(treeParseReader)
 	treeNs := treeRes.NsPerOp() - baseRes.NsPerOp()
 	treeBytes := treeRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
@@ -492,8 +496,8 @@ func parseReaderBenchmarks() {
 		treeAllocs, float64(goAllocs)/float64(treeAllocs))
 }
 
-func ojgParseReader(b *testing.B) {
-	var p ojg.Parser
+func ojParseReader(b *testing.B) {
+	var p oj.Parser
 	f, err := os.Open("test/sample.json")
 	if err != nil {
 		fmt.Printf("Failed to read test/sample.json. %s\n", err)
@@ -508,8 +512,9 @@ func ojgParseReader(b *testing.B) {
 	}
 }
 
-func ojgParseSimpleReader(b *testing.B) {
-	var p ojg.Parser
+/*
+func ojParseSimpleReader(b *testing.B) {
+	var p oj.Parser
 	f, err := os.Open("test/sample.json")
 	if err != nil {
 		fmt.Printf("Failed to read test/sample.json. %s\n", err)
@@ -518,11 +523,12 @@ func ojgParseSimpleReader(b *testing.B) {
 	defer func() { _ = f.Close() }()
 	for n := 0; n < b.N; n++ {
 		_, _ = f.Seek(0, 0)
-		_, _ = p.ParseSimpleReader(f)
+		_, _ = p.ParseReader(f)
 		//_, err = p.ParseReader(f)
 		//fmt.Println(err)
 	}
 }
+*/
 
 func goParse(b *testing.B) {
 	var result interface{}
@@ -531,8 +537,8 @@ func goParse(b *testing.B) {
 	}
 }
 
-func ojgParse(b *testing.B) {
-	p := &ojg.Parser{}
+func ojParse(b *testing.B) {
+	p := &oj.Parser{}
 	for n := 0; n < b.N; n++ {
 		_, _ = p.Parse([]byte(sampleJSON))
 		//_, err := p.Parse([]byte(sampleJSON))
@@ -540,14 +546,16 @@ func ojgParse(b *testing.B) {
 	}
 }
 
-func ojgParseSimple(b *testing.B) {
-	p := &ojg.Parser{}
+/*
+func ojParseSimple(b *testing.B) {
+	p := &oj.Parser{}
 	for n := 0; n < b.N; n++ {
-		_, _ = p.ParseSimple([]byte(sampleJSON))
+		_, _ = p.Parse([]byte(sampleJSON))
 		//_, err := p.Parse([]byte(sampleJSON))
 		//fmt.Println(err)
 	}
 }
+*/
 
 func treeParse(b *testing.B) {
 	for n := 0; n < b.N; n++ {

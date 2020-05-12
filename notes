@@ -1,5 +1,35 @@
 
+- gen should have it's own parser, copy
+
+- make oj subdir
+ - oj
+  - tt
+  - gen
+  - jp
+
+- use cases
+ - parse - either ok
+ - mods - gen is safer if that matters
+ - get and convert to type - either
+  - with simple reflect to go into objects
+ - using object based API for gen
+  - simple uses func calls instead
+  - style really
+
+
+ - move simple into oj
+ - make gen an object based view of the same functions as oj
+
 - complete simple docs for decompose and recompose
+
+- AttrSetter
+ - SetAttr or AttrSet
+ - use instead of reflection if supported
+ - separate for simple and gen? - *just in simple*
+
+- walk each type in recomposer to register sub-types if not already reistered
+
+- examples
 
 - complete gen package
 

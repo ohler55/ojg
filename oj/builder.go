@@ -1,6 +1,6 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package simple
+package oj
 
 import "fmt"
 
@@ -8,7 +8,7 @@ var emptyArray = []interface{}{}
 
 type sKey string
 
-// Builder is a simple type builder. It uses a stack model to build where maps
+// Builder is a basic type builder. It uses a stack model to build where maps
 // (objects) and slices (arrays) add pushed on the stack and closed with a
 // pop.
 type Builder struct {

@@ -1,6 +1,6 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package ojg
+package oj
 
 import (
 	"fmt"
@@ -11,7 +11,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/ohler55/ojg/gen"
-	"github.com/ohler55/ojg/simple"
 )
 
 const (
@@ -160,12 +159,12 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 		if g, _ := data.(gen.Genericer); g != nil {
 			return o.buildJSON(g.Generic(), depth)
 		}
-		if simp, _ := data.(simple.Simplifier); simp != nil {
+		if simp, _ := data.(Simplifier); simp != nil {
 			data = simp.Simplify()
 			return o.buildJSON(data, depth)
 		}
 		if 0 < len(o.CreateKey) {
-			return o.buildJSON(simple.From(data), depth)
+			return o.buildJSON(Decompose(data), depth)
 		} else {
 			o.buildString(fmt.Sprintf("%v", td))
 		}

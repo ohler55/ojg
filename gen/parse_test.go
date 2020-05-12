@@ -1,17 +1,8 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package ojg_test
+package gen_test
 
-import (
-	"fmt"
-	"strings"
-	"testing"
-
-	"github.com/ohler55/ojg"
-	"github.com/ohler55/ojg/gen"
-	"github.com/ohler55/ojg/tt"
-)
-
+/*
 const callbackJSON = `
 1
 [2]
@@ -70,10 +61,10 @@ func TestParseString(t *testing.T) {
 		var err error
 		var v interface{}
 		if d.onlyOne || d.noComment {
-			p := ojg.Parser{NoComment: d.noComment}
+			p := oj.Parser{NoComment: d.noComment}
 			v, err = p.Parse([]byte(d.src))
 		} else {
-			v, err = ojg.Parse([]byte(d.src))
+			v, err = oj.Parse([]byte(d.src))
 		}
 		if 0 < len(d.expect) {
 			tt.NotNil(t, err, d.src)
@@ -136,10 +127,10 @@ func TestParseSimpleString(t *testing.T) {
 		var err error
 		var v interface{}
 		if d.onlyOne || d.noComment {
-			p := ojg.Parser{NoComment: d.noComment}
+			p := oj.Parser{NoComment: d.noComment}
 			v, err = p.ParseSimple([]byte(d.src))
 		} else {
-			v, err = ojg.ParseSimple([]byte(d.src))
+			v, err = oj.ParseSimple([]byte(d.src))
 		}
 		if 0 < len(d.expect) {
 			tt.NotNil(t, err, d.src)
@@ -160,7 +151,7 @@ func TestParseCallback(t *testing.T) {
 		results = append(results, n.String()...)
 		return false
 	}
-	var p ojg.Parser
+	var p oj.Parser
 	v, err := p.Parse([]byte(callbackJSON), cb)
 	tt.Nil(t, err)
 	tt.Nil(t, v)
@@ -176,7 +167,7 @@ func TestParseReaderCallback(t *testing.T) {
 		results = append(results, n.String()...)
 		return false
 	}
-	var p ojg.Parser
+	var p oj.Parser
 	v, err := p.ParseReader(strings.NewReader(callbackJSON), cb)
 	tt.Nil(t, err)
 	tt.Nil(t, v)
@@ -192,7 +183,7 @@ func TestParseSimpleCallback(t *testing.T) {
 		results = append(results, fmt.Sprintf("%v", n)...)
 		return false
 	}
-	var p ojg.Parser
+	var p oj.Parser
 	v, err := p.ParseSimple([]byte(callbackJSON), cb)
 	tt.Nil(t, err)
 	tt.Nil(t, v)
@@ -208,7 +199,7 @@ func TestParseSimpleReaderCallback(t *testing.T) {
 		results = append(results, fmt.Sprintf("%v", n)...)
 		return false
 	}
-	var p ojg.Parser
+	var p oj.Parser
 	v, err := p.ParseSimpleReader(strings.NewReader(callbackJSON), cb)
 	tt.Nil(t, err)
 	tt.Nil(t, v)
@@ -216,7 +207,8 @@ func TestParseSimpleReaderCallback(t *testing.T) {
 }
 
 func TestNumberReset(t *testing.T) {
-	var p ojg.Parser
+	var p oj.Parser
 	_, err := p.Parse([]byte("123456789012345678901234567890 1234567890"), func(gen.Node) bool { return false })
 	tt.Nil(t, err)
 }
+*/
