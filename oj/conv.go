@@ -13,6 +13,26 @@ import (
 // 10 so that numbers look correct when displayed in base 10.
 const fracMax = 10000000.0
 
+const (
+	Exact = Status(iota)
+	Ok
+	Fail
+)
+
+type Status int
+
+func (status Status) String() (s string) {
+	switch status {
+	case Exact:
+		s = "Exact"
+	case Ok:
+		s = "Ok"
+	case Fail:
+		s = "Fail"
+	}
+	return
+}
+
 // ConvOptions are the options available to Decompose() function.
 type ConvOptions struct {
 

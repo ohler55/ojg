@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"unicode/utf8"
-
-	"github.com/ohler55/ojg/gen"
 )
 
 const (
@@ -39,28 +37,23 @@ const (
 	commentMode      = 'c'
 )
 
-var emptyGenArray = gen.Array([]gen.Node{})
-var emptySimpleArray = []interface{}{}
-
 // Parser a JSON parser. It can be reused for multiple parsings which allows
 // buffer reuse for a performance advantage.
 type Parser struct {
-	tmp         []byte // used for numbers and strings
-	stack       []byte // { or [
-	runeBytes   []byte
-	istack      []interface{}
-	arrayStarts []int
-	cb          func(gen.Node) bool
-	icb         func(interface{}) bool
-	ri          int // read index for null, false, and true
-	line        int
-	noff        int // Offset of last newline from start of buf. Can be negative when using a reader.
-	off         int
-	num         number
-	rn          rune
-	mode        byte
-	nextMode    byte
-	onlyOne     bool
+	tmp       []byte // used for numbers and strings
+	runeBytes []byte
+	stack     []interface{}
+	starts    []int
+	cb        func(interface{}) bool
+	ri        int // read index for null, false, and true
+	line      int
+	noff      int // Offset of last newline from start of buf. Can be negative when using a reader.
+	off       int
+	num       number
+	rn        rune
+	mode      byte
+	nextMode  byte
+	onlyOne   bool
 
 	// NoComments returns an error if a comment is encountered.
 	NoComment bool
@@ -88,17 +81,15 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (data interface{}, err e
 			return false // tells the parser to stop
 		}
 	}
-	p.icb = callback
+	p.cb = callback
 	if cap(p.tmp) < tmpMinSize { // indicates not initialized
 		p.tmp = make([]byte, 0, tmpMinSize)
-		p.stack = make([]byte, 0, stackMinSize)
-		p.istack = make([]interface{}, 0, 64)
-		p.arrayStarts = make([]int, 0, 16)
+		p.stack = make([]interface{}, 0, 64)
+		p.starts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
-		p.stack = p.stack[0:0]
-		p.istack = p.istack[:0]
-		p.arrayStarts = p.arrayStarts[:0]
+		p.stack = p.stack[:0]
+		p.starts = p.starts[:0]
 	}
 	p.noff = -1
 	p.line = 1
@@ -134,17 +125,15 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node interface{}
 			return false // tells the parser to stop
 		}
 	}
-	p.icb = callback
+	p.cb = callback
 	if cap(p.tmp) < tmpMinSize { // indicates not initialized
 		p.tmp = make([]byte, 0, tmpMinSize)
-		p.stack = make([]byte, 0, stackMinSize)
-		p.istack = make([]interface{}, 0, 64)
-		p.arrayStarts = make([]int, 0, 16)
+		p.stack = make([]interface{}, 0, 64)
+		p.starts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
-		p.stack = p.stack[0:0]
-		p.istack = p.istack[:0]
-		p.arrayStarts = p.arrayStarts[:0]
+		p.stack = p.stack[:0]
+		p.starts = p.starts[:0]
 	}
 	p.noff = -1
 	p.line = 1
@@ -221,18 +210,17 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.nextMode = afterMode
 				p.tmp = p.tmp[0:0]
 			case '[':
-				p.stack = append(p.stack, '[')
-				p.arrayStarts = append(p.arrayStarts, len(p.istack))
-				p.istack = append(p.istack, emptySimpleArray)
+				p.starts = append(p.starts, len(p.stack))
+				p.stack = append(p.stack, emptyArray)
 			case ']':
 				if err := p.arrayEnd(); err != nil {
 					return err
 				}
 			case '{':
-				p.stack = append(p.stack, '{')
+				p.starts = append(p.starts, -1)
 				p.mode = keyMode
 				n := map[string]interface{}{}
-				p.istack = append(p.istack, n)
+				p.stack = append(p.stack, n)
 			case '}':
 				if err := p.objectEnd(); err != nil {
 					return err
@@ -254,7 +242,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.line++
 				p.noff = p.off
 			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
@@ -354,7 +342,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 					return err
 				}
 			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
@@ -398,7 +386,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 					return err
 				}
 			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
@@ -449,7 +437,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 					return err
 				}
 			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
@@ -511,7 +499,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 					return err
 				}
 			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
@@ -546,7 +534,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			case '"':
 				p.mode = p.nextMode
 				if p.mode == colonMode {
-					p.istack = append(p.istack, Key(p.tmp))
+					p.stack = append(p.stack, Key(p.tmp))
 				} else {
 					p.iadd(string(p.tmp))
 				}
@@ -629,9 +617,9 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.mode = valueMode
 			}
 		}
-		if len(p.stack) == 0 && (p.mode == afterMode || p.mode == keyMode) {
-			p.icb(p.istack[0])
-			p.istack = p.istack[:0]
+		if len(p.starts) == 0 && (p.mode == afterMode || p.mode == keyMode) {
+			p.cb(p.stack[0])
+			p.stack = p.stack[:0]
 			if p.onlyOne {
 				p.mode = spaceMode
 			} else {
@@ -642,15 +630,15 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 	if last {
 		switch p.mode {
 		case afterMode, valueMode:
-			if 0 < len(p.istack) {
-				p.icb(p.istack[0])
+			if 0 < len(p.stack) {
+				p.cb(p.stack[0])
 			}
 		case zeroMode, digitMode, fracMode, expMode:
 			if err := p.appendNum(); err != nil {
 				return err
 			}
-			if 0 < len(p.istack) {
-				p.icb(p.istack[0])
+			if 0 < len(p.stack) {
+				p.cb(p.stack[0])
 			}
 		case spaceMode:
 			// just reading white space
@@ -671,16 +659,16 @@ func (p *Parser) newError(format string, args ...interface{}) error {
 }
 
 func (p *Parser) iadd(n interface{}) {
-	if 2 <= len(p.istack) {
-		if k, ok := p.istack[len(p.istack)-1].(Key); ok {
-			obj, _ := p.istack[len(p.istack)-2].(map[string]interface{})
+	if 2 <= len(p.stack) {
+		if k, ok := p.stack[len(p.stack)-1].(Key); ok {
+			obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
 			obj[string(k)] = n
-			p.istack = p.istack[0 : len(p.istack)-1]
+			p.stack = p.stack[0 : len(p.stack)-1]
 
 			return
 		}
 	}
-	p.istack = append(p.istack, n)
+	p.stack = append(p.stack, n)
 }
 
 func (p *Parser) appendNum() error {
@@ -697,40 +685,39 @@ func (p *Parser) appendNum() error {
 }
 
 func (p *Parser) arrayEnd() error {
-	depth := len(p.stack)
+	depth := len(p.starts)
 	if depth == 0 {
 		return p.newError("too many closes")
 	}
 	depth--
-	if p.stack[depth] != '[' {
+	if p.starts[depth] < 0 {
 		return p.newError("unexpected array close")
 	}
-	p.stack = p.stack[0:depth]
 	p.mode = afterMode
-	start := p.arrayStarts[len(p.arrayStarts)-1] + 1
-	p.arrayStarts = p.arrayStarts[:len(p.arrayStarts)-1]
-	size := len(p.istack) - start
+	start := p.starts[len(p.starts)-1] + 1
+	p.starts = p.starts[:len(p.starts)-1]
+	size := len(p.stack) - start
 	n := make([]interface{}, size)
-	copy(n, p.istack[start:len(p.istack)])
-	p.istack = p.istack[0 : start-1]
+	copy(n, p.stack[start:len(p.stack)])
+	p.stack = p.stack[0 : start-1]
 	p.iadd(n)
 
 	return nil
 }
 
 func (p *Parser) objectEnd() error {
-	depth := len(p.stack)
+	depth := len(p.starts)
 	if depth == 0 {
 		return p.newError("too many closes")
 	}
 	depth--
-	if p.stack[depth] != '{' {
+	if 0 <= p.starts[depth] {
 		return p.newError("unexpected object close")
 	}
-	p.stack = p.stack[0:depth]
+	p.starts = p.starts[0:depth]
 	p.mode = afterMode
-	n := p.istack[len(p.istack)-1]
-	p.istack = p.istack[:len(p.istack)-1]
+	n := p.stack[len(p.stack)-1]
+	p.stack = p.stack[:len(p.stack)-1]
 	p.iadd(n)
 
 	return nil

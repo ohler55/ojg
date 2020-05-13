@@ -6,8 +6,6 @@ import "fmt"
 
 var emptyArray = []interface{}{}
 
-type sKey string
-
 // Builder is a basic type builder. It uses a stack model to build where maps
 // (objects) and slices (arrays) add pushed on the stack and closed with a
 // pop.
@@ -56,7 +54,7 @@ func (b *Builder) Array(key ...string) error {
 		if len(b.starts) == 0 || 0 <= b.starts[len(b.starts)-1] {
 			return fmt.Errorf("can not use a key when pushing to an array")
 		}
-		b.stack = append(b.stack, sKey(key[0]))
+		b.stack = append(b.stack, Key(key[0]))
 	} else if 0 < len(b.starts) && b.starts[len(b.starts)-1] < 0 {
 		return fmt.Errorf("must have a key when pushing to an object")
 	}
@@ -97,7 +95,7 @@ func (b *Builder) Pop() {
 			b.stack = b.stack[:start]
 			b.stack[start-1] = a
 			if 2 < len(b.stack) {
-				if k, ok := b.stack[len(b.stack)-2].(sKey); ok {
+				if k, ok := b.stack[len(b.stack)-2].(Key); ok {
 					if obj, _ := b.stack[len(b.stack)-3].(map[string]interface{}); obj != nil {
 						obj[string(k)] = a
 						b.stack = b.stack[:len(b.stack)-2]

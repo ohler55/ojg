@@ -144,11 +144,7 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 		b.WriteString(fmt.Sprintf("\nexpect: (%T) %v\nactual: (%T) %v\n", expect, expect, actual, actual))
 		stackFill(&b)
 		if 0 < len(args) {
-			if format, _ := args[0].(string); 0 < len(format) {
-				b.WriteString(fmt.Sprintf(format, args[1:]...))
-			} else {
-				b.WriteString(fmt.Sprint(args...))
-			}
+			b.WriteString(fmt.Sprint(args...))
 		}
 		t.Fatal(b.String())
 	}
