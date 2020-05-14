@@ -9,31 +9,26 @@ import (
 	"github.com/ohler55/ojg/gen"
 )
 
-// Int convert the value provided to an int64 making every effort to complete
-// the conversion. If the value can not be converted zero is returned.
-func Int(v interface{}) (i int64) {
-	i, _ = AsInt(v)
-	return
-}
-
-// AsInt convert the value provided to an int64 making every effort to
-// complete the conversion. If the value can not be converted zero is
-// returned. A status code is returned indicating the conversion was an type
-// match, a successful conversion (Ok), or the conversion was not possible
-// (Fail).
-func AsInt(v interface{}) (i int64, status Status) {
-	status = Exact
+// Int convert the value provided to an int64. If conversion is not possible
+// such if the provided value is an array then the first option default value
+// is returned or if not provide 0 is returned. If the type is not one of the
+// int or uint types and there is a second optional default then that value is
+// returned. This approach keeps the return as a single value and give the
+// user the choice of how to indicate a bad value.
+func Int(v interface{}, defaults ...int64) (i int64) {
 	switch tv := v.(type) {
 	case nil:
-		i = 0
-		status = Ok
+		if 1 < len(defaults) {
+			i = defaults[1]
+		}
 	case bool:
-		if tv {
+		if 1 < len(defaults) {
+			i = defaults[1]
+		} else if tv {
 			i = 1
 		} else {
 			i = 0
 		}
-		status = Ok
 	case int64:
 		i = tv
 	case int:
@@ -56,55 +51,74 @@ func AsInt(v interface{}) (i int64, status Status) {
 		i = int64(tv)
 	case float32:
 		i = int64(tv)
-		status = Ok
+		if float32(i) != tv {
+			if 1 < len(defaults) {
+				i = defaults[1]
+			}
+		}
 	case float64:
 		i = int64(tv)
-		status = Ok
-	case string:
-		status = Fail
-		if f, err := strconv.ParseFloat(tv, 64); err == nil {
-			i = int64(f)
-			if float64(i) == f {
-				status = Ok
+		if float64(i) != tv {
+			if 1 < len(defaults) {
+				i = defaults[1]
 			}
-		} else if i, err = strconv.ParseInt(tv, 10, 64); err == nil {
-			status = Ok
-		} else {
-			status = Fail
 		}
+	case string:
+		var err error
+		if 1 < len(defaults) {
+			i = defaults[1]
+		} else if i, err = strconv.ParseInt(tv, 10, 64); err != nil {
+			if f, err := strconv.ParseFloat(tv, 64); err == nil {
+				i = int64(f)
+				if float64(i) != f {
+					if 0 < len(defaults) {
+						i = defaults[0]
+					}
+				}
+			} else if 0 < len(defaults) {
+				i = defaults[0]
+			}
+		}
+
 	case time.Time:
-		i = tv.UnixNano()
+		if 1 < len(defaults) {
+			i = defaults[1]
+		} else {
+			i = tv.UnixNano()
+		}
 
 	case gen.Bool:
-		if tv {
+		if 1 < len(defaults) {
+			i = defaults[1]
+		} else if tv {
 			i = 1
 		} else {
 			i = 0
 		}
-		status = Ok
 	case gen.Int:
 		i = int64(tv)
 	case gen.Float:
 		i = int64(tv)
-	case gen.String:
-		status = Fail
-		if f, err := strconv.ParseFloat(string(tv), 64); err == nil {
-			i = int64(f)
-			if float64(i) == f {
-				status = Ok
+		if float64(i) != float64(tv) {
+			if 1 < len(defaults) {
+				i = defaults[1]
 			}
-		} else if i, err = strconv.ParseInt(string(tv), 10, 64); err == nil {
-			status = Ok
-		} else {
-			status = Fail
 		}
+	case gen.String:
+		i = Int(string(tv), defaults...)
 	case gen.Time:
-		i = time.Time(tv).UnixNano()
+		if 1 < len(defaults) {
+			i = defaults[1]
+		} else {
+			i = time.Time(tv).UnixNano()
+		}
 	case gen.Big:
-		return AsInt(string(tv))
+		return Int(string(tv), defaults...)
 
 	default:
-		status = Fail
+		if 0 < len(defaults) {
+			i = defaults[0]
+		}
 	}
 	return
 }

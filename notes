@@ -1,11 +1,10 @@
 
-- gen should have it's own parser, copy
+- Int(interface{}, ...int64) int64
+ - first optional is value to return if can't convert
+ - second is value for not an int or exact type match
+ - no need for AsInt
 
-- make oj subdir
- - oj
-  - tt
-  - gen
-  - jp
+- docs and unit tests for oj
 
 - use cases
  - parse - either ok
@@ -16,16 +15,12 @@
   - simple uses func calls instead
   - style really
 
-
- - move simple into oj
- - make gen an object based view of the same functions as oj
+- gen.Node
 
 - complete simple docs for decompose and recompose
 
 - AttrSetter
- - SetAttr or AttrSet
- - use instead of reflection if supported
- - separate for simple and gen? - *just in simple*
+ - use instead of reflection if supported in Recompose
 
 - walk each type in recomposer to register sub-types if not already reistered
 
@@ -33,10 +28,16 @@
 
 - complete gen package
 
-- Parse
- - try using arrayStack instead of stack, will need to use -1 for obj
-
 - Write
+
+- path
+ - build path with jp.Child("foo").Any().Child("bar")
+  - each returns a jp.Expr , []jp.Frag and appends
+ - jp.Expr{fp.Child("foo"), fp.Any{}}
+ - jp.Parse("foo.*.bar")
+
+
+
 
 - ojg/doc.go
  - JSON tools
