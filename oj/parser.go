@@ -211,7 +211,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.tmp = p.tmp[0:0]
 			case '[':
 				p.starts = append(p.starts, len(p.stack))
-				p.stack = append(p.stack, emptyArray)
+				p.stack = append(p.stack, emptySlice)
 			case ']':
 				if err := p.arrayEnd(); err != nil {
 					return err

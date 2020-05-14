@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"time"
 	"unicode/utf8"
-
-	"github.com/ohler55/ojg/gen"
 )
 
 const (
@@ -19,11 +17,11 @@ const (
 	hex = "0123456789abcdef"
 )
 
-// String returns a JSON string for the data provided. The data can be a
+// JSON returns a JSON string for the data provided. The data can be a
 // simple type of nil, bool, int, floats, time.Time, []interface{}, or
-// map[string]interface{} or a gen.Node type, The args, if supplied can be an
+// map[string]interface{} or a Node type, The args, if supplied can be an
 // int as an indent or a *Options.
-func String(data interface{}, args ...interface{}) string {
+func JSON(data interface{}, args ...interface{}) string {
 	o := &defaultOptions
 
 	if 0 < len(args) {
@@ -51,7 +49,7 @@ func String(data interface{}, args ...interface{}) string {
 
 // Write a JSON string for the data provided. The data can be a simple type of
 // nil, bool, int, floats, time.Time, []interface{}, or map[string]interface{}
-// or a gen.Node type, The args, if supplied can be an int as an indent or a
+// or a Node type, The args, if supplied can be an int as an indent or a
 // *Options.
 func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	o := &defaultOptions
@@ -98,7 +96,7 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 		} else {
 			o.buf = append(o.buf, []byte("false")...)
 		}
-	case gen.Bool:
+	case Bool:
 		if td {
 			o.buf = append(o.buf, []byte("true")...)
 		} else {
@@ -125,38 +123,38 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint64:
 		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
-	case gen.Int:
+	case Int:
 		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 
 	case float32:
 		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 32))...)
 	case float64:
 		o.buf = append(o.buf, []byte(strconv.FormatFloat(td, 'g', -1, 64))...)
-	case gen.Float:
+	case Float:
 		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 64))...)
 
 	case string:
 		o.buildString(td)
-	case gen.String:
+	case String:
 		o.buildString(string(td))
 
 	case time.Time:
 		o.buildTime(td)
-	case gen.Time:
+	case Time:
 		o.buildTime(time.Time(td))
 
 	case []interface{}:
 		err = o.buildSimpleArray(td, depth)
-	case gen.Array:
+	case Array:
 		err = o.buildArray(td, depth)
 
 	case map[string]interface{}:
 		err = o.buildSimpleObject(td, depth)
-	case gen.Object:
+	case Object:
 		err = o.buildObject(td, depth)
 
 	default:
-		if g, _ := data.(gen.Genericer); g != nil {
+		if g, _ := data.(Genericer); g != nil {
 			return o.buildJSON(g.Generic(), depth)
 		}
 		if simp, _ := data.(Simplifier); simp != nil {
@@ -250,7 +248,7 @@ func (o *Options) buildTime(t time.Time) {
 	}
 }
 
-func (o *Options) buildArray(n gen.Array, depth int) (err error) {
+func (o *Options) buildArray(n Array, depth int) (err error) {
 	o.buf = append(o.buf, '[')
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
@@ -337,7 +335,7 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) (err error) {
 	return
 }
 
-func (o *Options) buildObject(n gen.Object, depth int) (err error) {
+func (o *Options) buildObject(n Object, depth int) (err error) {
 	o.buf = append(o.buf, '{')
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1

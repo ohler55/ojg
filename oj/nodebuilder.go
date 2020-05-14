@@ -1,17 +1,15 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package gen
+package oj
 
 import "fmt"
 
-var emptyArray = Array{}
-
-type Builder struct {
+type NodeBuilder struct {
 	stack  []Node
 	starts []int
 }
 
-func (b *Builder) Reset() {
+func (b *NodeBuilder) Reset() {
 	if 0 < cap(b.stack) && 0 < len(b.stack) {
 		b.stack = b.stack[:0]
 		b.starts = b.starts[:0]
@@ -21,7 +19,7 @@ func (b *Builder) Reset() {
 	}
 }
 
-func (b *Builder) Object(key ...string) error {
+func (b *NodeBuilder) Object(key ...string) error {
 	newObj := Object{}
 	if 0 < len(key) {
 		if len(b.starts) == 0 || 0 <= b.starts[len(b.starts)-1] {
@@ -39,7 +37,7 @@ func (b *Builder) Object(key ...string) error {
 	return nil
 }
 
-func (b *Builder) Array(key ...string) error {
+func (b *NodeBuilder) Array(key ...string) error {
 	if 0 < len(key) {
 		if len(b.starts) == 0 || 0 <= b.starts[len(b.starts)-1] {
 			return fmt.Errorf("can not use a key when pushing to an array")
@@ -54,7 +52,7 @@ func (b *Builder) Array(key ...string) error {
 	return nil
 }
 
-func (b *Builder) Value(value Node, key ...string) error {
+func (b *NodeBuilder) Value(value Node, key ...string) error {
 	if 0 < len(key) {
 		if len(b.starts) == 0 || 0 <= b.starts[len(b.starts)-1] {
 			return fmt.Errorf("can not use a key when pushing to an array")
@@ -70,7 +68,7 @@ func (b *Builder) Value(value Node, key ...string) error {
 	return nil
 }
 
-func (b *Builder) Pop() {
+func (b *NodeBuilder) Pop() {
 	if 0 < len(b.starts) {
 		start := b.starts[len(b.starts)-1]
 		if 0 <= start { // array
@@ -93,13 +91,13 @@ func (b *Builder) Pop() {
 	}
 }
 
-func (b *Builder) PopAll() {
+func (b *NodeBuilder) PopAll() {
 	for 0 < len(b.starts) {
 		b.Pop()
 	}
 }
 
-func (b *Builder) Result() (result interface{}) {
+func (b *NodeBuilder) Result() (result interface{}) {
 	if 0 < len(b.stack) {
 		result = b.stack[0]
 	}

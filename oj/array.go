@@ -1,6 +1,6 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package gen
+package oj
 
 import (
 	"strings"
@@ -8,6 +8,8 @@ import (
 )
 
 type Array []Node
+
+var emptyArray = Array{}
 
 func (n Array) String() string {
 	var b strings.Builder

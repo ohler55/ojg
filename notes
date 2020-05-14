@@ -1,9 +1,4 @@
 
-- Int(interface{}, ...int64) int64
- - first optional is value to return if can't convert
- - second is value for not an int or exact type match
- - no need for AsInt
-
 - docs and unit tests for oj
 
 - use cases
@@ -15,12 +10,10 @@
   - simple uses func calls instead
   - style really
 
-- gen.Node
-
 - complete simple docs for decompose and recompose
 
 - AttrSetter
- - use instead of reflection if supported in Recompose
+ - use instead of reflection if supported in Recompose if asserted
 
 - walk each type in recomposer to register sub-types if not already reistered
 

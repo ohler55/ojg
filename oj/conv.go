@@ -7,6 +7,7 @@ import (
 	"math"
 	"reflect"
 	"time"
+	"unsafe"
 )
 
 // 23 for fraction in IEEE 754 which amounts to 7 significant digits. Use base
@@ -168,6 +169,154 @@ func Alter(v interface{}, options ...*ConvOptions) interface{} {
 		}
 	}
 	return v
+}
+
+func Generify(v interface{}, options ...*ConvOptions) (n Node) {
+	opt := &DefaultConvOptions
+	if 0 < len(options) {
+		opt = options[0]
+	}
+	if v != nil {
+		switch tv := v.(type) {
+		case bool:
+			n = Bool(tv)
+		case Bool:
+			n = tv
+		case int:
+			n = Int(int64(tv))
+		case int8:
+			n = Int(int64(tv))
+		case int16:
+			n = Int(int64(tv))
+		case int32:
+			n = Int(int64(tv))
+		case int64:
+			n = Int(tv)
+		case uint:
+			n = Int(int64(tv))
+		case uint8:
+			n = Int(int64(tv))
+		case uint16:
+			n = Int(int64(tv))
+		case uint32:
+			n = Int(int64(tv))
+		case uint64:
+			n = Int(int64(tv))
+		case Int:
+			n = tv
+		case float32:
+			n = Float(float64(tv))
+		case float64:
+			n = Float(tv)
+		case Float:
+			n = tv
+		case string:
+			n = String(tv)
+		case String:
+			n = tv
+		case time.Time:
+			n = Time(tv)
+		case Time:
+			n = tv
+		case []interface{}:
+			a := make(Array, len(tv))
+			for i, m := range tv {
+				a[i] = Generify(m, opt)
+			}
+			n = a
+		case map[string]interface{}:
+			o := Object{}
+			for k, m := range tv {
+				o[k] = Generify(m, opt)
+			}
+			n = o
+		default:
+			if g, _ := n.(Genericer); g != nil {
+				return g.Generic()
+			}
+			if simp, _ := n.(Simplifier); simp != nil {
+				return Generify(simp.Simplify(), opt)
+			}
+			return Generify(reflectData(v, opt))
+		}
+	}
+	return
+}
+
+func GenAlter(v interface{}, options ...*ConvOptions) (n Node) {
+	opt := &DefaultConvOptions
+	if 0 < len(options) {
+		opt = options[0]
+	}
+	if v != nil {
+		switch tv := v.(type) {
+		case bool:
+			n = Bool(tv)
+		case Bool:
+			n = tv
+		case int:
+			n = Int(int64(tv))
+		case int8:
+			n = Int(int64(tv))
+		case int16:
+			n = Int(int64(tv))
+		case int32:
+			n = Int(int64(tv))
+		case int64:
+			n = Int(tv)
+		case uint:
+			n = Int(int64(tv))
+		case uint8:
+			n = Int(int64(tv))
+		case uint16:
+			n = Int(int64(tv))
+		case uint32:
+			n = Int(int64(tv))
+		case uint64:
+			n = Int(int64(tv))
+		case Int:
+			n = tv
+		case float32:
+			n = Float(float64(tv))
+		case float64:
+			n = Float(tv)
+		case Float:
+			n = tv
+		case string:
+			n = String(tv)
+		case String:
+			n = tv
+		case time.Time:
+			n = Time(tv)
+		case Time:
+			n = tv
+		case []interface{}:
+			a := *(*Array)(unsafe.Pointer(&tv))
+			for i, m := range tv {
+				a[i] = GenAlter(m)
+			}
+			n = a
+		case Array:
+			n = tv
+		case map[string]interface{}:
+			o := *(*Object)(unsafe.Pointer(&tv))
+			for k, m := range tv {
+				o[k] = GenAlter(m, opt)
+			}
+			n = o
+		case Object:
+			n = tv
+		default:
+			if g, _ := n.(Genericer); g != nil {
+				return g.Generic()
+			}
+			if simp, _ := n.(Simplifier); simp != nil {
+				return GenAlter(simp.Simplify(), opt)
+			}
+			return GenAlter(reflectData(v, opt))
+		}
+	}
+	return
 }
 
 func reflectData(data interface{}, opt *ConvOptions) interface{} {

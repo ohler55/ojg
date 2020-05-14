@@ -1,6 +1,6 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package gen
+package oj
 
 import (
 	"fmt"
@@ -8,38 +8,9 @@ import (
 	"unicode/utf8"
 )
 
-const (
-	tmpMinSize   = 32 // for tokens and numbers
-	stackMinSize = 32 // for container stack { or [
-	readBufSize  = 4096
-
-	bomMode          = 'b'
-	valueMode        = 'v'
-	afterMode        = 'a'
-	nullMode         = 'n'
-	trueMode         = 't'
-	falseMode        = 'f'
-	negMode          = '-'
-	zeroMode         = '0'
-	digitMode        = 'd'
-	dotMode          = '.'
-	fracMode         = 'F'
-	expSignMode      = '+'
-	expZeroMode      = 'X'
-	expMode          = 'x'
-	strMode          = 's'
-	escMode          = 'e'
-	uMode            = 'u'
-	keyMode          = 'k'
-	colonMode        = ':'
-	spaceMode        = ' '
-	commentStartMode = '/'
-	commentMode      = 'c'
-)
-
-// Parser a JSON parser. It can be reused for multiple parsings which allows
+// NodeParser a JSON parser. It can be reused for multiple parsings which allows
 // buffer reuse for a performance advantage.
-type Parser struct {
+type NodeParser struct {
 	tmp       []byte // used for numbers and strings
 	stack     []byte // { or [
 	runeBytes []byte
@@ -61,7 +32,7 @@ type Parser struct {
 	NoComment bool
 }
 
-func (p *Parser) Parse(buf []byte, args ...interface{}) (node Node, err error) {
+func (p *NodeParser) Parse(buf []byte, args ...interface{}) (node Node, err error) {
 	var callback func(Node) bool
 
 	for _, a := range args {
@@ -105,7 +76,7 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (node Node, err error) {
 }
 
 // ParseReader a JSON io.Reader. An error is returned if not valid JSON.
-func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node Node, err error) {
+func (p *NodeParser) ParseReader(r io.Reader, args ...interface{}) (node Node, err error) {
 	var callback func(Node) bool
 
 	for _, a := range args {
@@ -175,7 +146,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node Node, err e
 	return
 }
 
-func (p *Parser) parseBuffer(buf []byte, last bool) error {
+func (p *NodeParser) parseBuffer(buf []byte, last bool) error {
 	var b byte
 	for p.off, b = range buf {
 		switch p.mode {
@@ -652,7 +623,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 	return nil
 }
 
-func (p *Parser) newError(format string, args ...interface{}) error {
+func (p *NodeParser) newError(format string, args ...interface{}) error {
 	return &ParseError{
 		Message: fmt.Sprintf(format, args...),
 		Line:    p.line,
@@ -660,7 +631,7 @@ func (p *Parser) newError(format string, args ...interface{}) error {
 	}
 }
 
-func (p *Parser) nadd(n Node) {
+func (p *NodeParser) nadd(n Node) {
 	if 2 <= len(p.nstack) {
 		if k, ok := p.nstack[len(p.nstack)-1].(Key); ok {
 			obj, _ := p.nstack[len(p.nstack)-2].(Object)
@@ -673,7 +644,7 @@ func (p *Parser) nadd(n Node) {
 	p.nstack = append(p.nstack, n)
 }
 
-func (p *Parser) appendNum() error {
+func (p *NodeParser) appendNum() error {
 	if 0 < len(p.num.bigBuf) {
 		p.nadd(Big(p.num.asBig()))
 	} else if p.num.frac == 0 && p.num.exp == 0 {
@@ -686,7 +657,7 @@ func (p *Parser) appendNum() error {
 	return nil
 }
 
-func (p *Parser) arrayEnd() error {
+func (p *NodeParser) arrayEnd() error {
 	depth := len(p.stack)
 	if depth == 0 {
 		return p.newError("too many closes")
@@ -708,7 +679,7 @@ func (p *Parser) arrayEnd() error {
 	return nil
 }
 
-func (p *Parser) objectEnd() error {
+func (p *NodeParser) objectEnd() error {
 	depth := len(p.stack)
 	if depth == 0 {
 		return p.newError("too many closes")

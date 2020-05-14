@@ -1,24 +1,24 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package gen_test
+package oj_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/ohler55/ojg/gen"
+	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
 )
 
 func TestObjectString(t *testing.T) {
-	gen.Sort = true
-	o := gen.Object{"a": gen.Int(3), "b": gen.Object{"c": gen.Int(5)}, "d": gen.Int(7)}
+	oj.Sort = true
+	o := oj.Object{"a": oj.Int(3), "b": oj.Object{"c": oj.Int(5)}, "d": oj.Int(7)}
 
 	tt.Equal(t, `{"a":3,"b":{"c":5},"d":7}`, o.String())
 }
 
 func TestObjectSimple(t *testing.T) {
-	o := gen.Object{"a": gen.Int(3), "b": gen.Int(7)}
+	o := oj.Object{"a": oj.Int(3), "b": oj.Int(7)}
 	simple := o.Simplify()
 
 	tt.Equal(t, "map[string]interface {}", fmt.Sprintf("%T", simple))
@@ -28,7 +28,7 @@ func TestObjectSimple(t *testing.T) {
 }
 
 func TestObjectAlter(t *testing.T) {
-	o := gen.Object{"a": gen.Int(3), "b": gen.Int(7)}
+	o := oj.Object{"a": oj.Int(3), "b": oj.Int(7)}
 	alt := o.Alter()
 
 	tt.Equal(t, "map[string]interface {}", fmt.Sprintf("%T", alt))

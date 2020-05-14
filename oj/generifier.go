@@ -1,6 +1,6 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package gen
+package oj
 
 // Genericer is the interface for the Generic() function that converts types
 // to generic types.

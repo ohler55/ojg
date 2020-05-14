@@ -2,10 +2,6 @@
 
 package oj
 
-import (
-	"github.com/ohler55/ojg/gen"
-)
-
 type Key string
 
 // String returns the key as a string.
@@ -26,7 +22,7 @@ func (k Key) Simplify() interface{} {
 }
 
 // Dup returns a deep duplicate of the node.
-func (k Key) Dup() gen.Node {
+func (k Key) Dup() Node {
 	return k
 }
 

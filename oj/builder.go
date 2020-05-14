@@ -4,7 +4,7 @@ package oj
 
 import "fmt"
 
-var emptyArray = []interface{}{}
+var emptySlice = []interface{}{}
 
 // Builder is a basic type builder. It uses a stack model to build where maps
 // (objects) and slices (arrays) add pushed on the stack and closed with a
@@ -59,7 +59,7 @@ func (b *Builder) Array(key ...string) error {
 		return fmt.Errorf("must have a key when pushing to an object")
 	}
 	b.starts = append(b.starts, len(b.stack))
-	b.stack = append(b.stack, emptyArray)
+	b.stack = append(b.stack, emptySlice)
 
 	return nil
 }

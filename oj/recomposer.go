@@ -119,6 +119,45 @@ func (r *Recomposer) recompose(v interface{}) (interface{}, error) {
 			}
 		}
 		v = o
+
+	case Bool:
+		v = bool(tv)
+	case Int:
+		v = int64(tv)
+	case Float:
+		v = float64(tv)
+	case String:
+		v = string(tv)
+	case Time:
+		v = time.Time(tv)
+	case Big:
+		v = string(tv)
+	case Array:
+		a := make([]interface{}, len(tv))
+		var err error
+		for i, m := range tv {
+			if a[i], err = r.recompose(m); err != nil {
+				return nil, err
+			}
+		}
+		v = a
+	case Object:
+		o := map[string]interface{}{}
+		for k, m := range tv {
+			if mv, err := r.recompose(m); err == nil {
+				o[k] = mv
+			} else {
+				return nil, err
+			}
+		}
+		if cv := o[r.CreateKey]; cv != nil {
+			tn, _ := cv.(string)
+			if b := r.composers[tn]; b != nil {
+				return b.compose(o, r.CreateKey)
+			}
+		}
+		v = o
+
 	default:
 		return nil, fmt.Errorf("%T is not a valid simple type", v)
 	}

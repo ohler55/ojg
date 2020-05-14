@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// RecomposeFunc should build an object from data in a map returing the
+// RecomposeFunc should build an object from data in a map returning the
 // recomposed object or an error.
 type RecomposeFunc func(map[string]interface{}) (interface{}, error)
 
