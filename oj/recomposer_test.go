@@ -15,6 +15,27 @@ type WithList struct {
 	Fun  func() bool
 }
 
+type Setter struct {
+	a int64
+	b string
+}
+
+func (s *Setter) String() string {
+	return fmt.Sprintf("Setter{a:%d,b:%s}", s.a, s.b)
+}
+
+func (s *Setter) SetAttr(attr string, val interface{}) error {
+	switch attr {
+	case "a":
+		s.a, _ = val.(int64)
+	case "b":
+		s.b, _ = val.(string)
+	default:
+		return fmt.Errorf("%s is not an attribute of Setter", attr)
+	}
+	return nil
+}
+
 func sillyRecompose(data map[string]interface{}) (interface{}, error) {
 	s := silly{}
 	i, _ := data["val"].(int64)
@@ -65,6 +86,18 @@ func TestOjRecomposeReflect(t *testing.T) {
 	d, _ := v.(*Dummy)
 	tt.NotNil(t, d, "check type")
 	tt.Equal(t, 3, d.Val)
+}
+
+func TestOjRecomposeAttrSetter(t *testing.T) {
+	src := map[string]interface{}{"type": "Setter", "a": 3, "b": "bee"}
+	r, err := oj.NewRecomposer("type", map[interface{}]oj.RecomposeFunc{&Setter{}: nil})
+	tt.Nil(t, err, "NewRecomposer")
+	var v interface{}
+	v, err = r.Recompose(src)
+	tt.Nil(t, err, "Recompose")
+	s, _ := v.(*Setter)
+	tt.NotNil(t, s, "check type")
+	tt.Equal(t, "Setter{a:3,b:bee}", s.String())
 }
 
 func TestOjRecomposeReflectList(t *testing.T) {

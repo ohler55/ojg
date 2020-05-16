@@ -14,6 +14,7 @@ import (
 
 var indent = 2
 var color = false
+var bright = false
 
 // If true wrap extracts with an array.
 var wrapExtract = false
@@ -24,6 +25,7 @@ var wrapExtract = false
 func init() {
 	flag.IntVar(&indent, "i", indent, "indent")
 	flag.BoolVar(&color, "c", color, "color")
+	flag.BoolVar(&bright, "b", bright, "bright color")
 	// TBD -x extract into an array
 	// TBD -m match into an array
 }
@@ -60,10 +62,15 @@ usage: %s [<options>] [@<extraction>]... [<json-file>]...
 }
 
 func write(v interface{}) bool {
-	if color {
+	if bright {
+		o := oj.BrightOptions
+		o.Indent = indent
+		o.Color = true
+		oj.Write(os.Stdout, v, &o)
+	} else if color {
 		o := oj.DefaultOptions
 		o.Indent = indent
-		o.Color = color
+		o.Color = true
 		oj.Write(os.Stdout, v, &o)
 	} else {
 		oj.Write(os.Stdout, v, indent)

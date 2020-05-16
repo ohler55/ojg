@@ -17,7 +17,7 @@ const (
 	Cyan          = "\x1b[36m"
 	White         = "\x1b[37m"
 	Gray          = "\x1b[90m"
-	Pink          = "\x1b[91m"
+	BrightRed     = "\x1b[91m"
 	BrightGreen   = "\x1b[92m"
 	BrightYellow  = "\x1b[93m"
 	BrightBlue    = "\x1b[94m"
@@ -98,10 +98,21 @@ type Options struct {
 var DefaultOptions = Options{
 	InitSize:    256,
 	SyntaxColor: Normal,
-	KeyColor:    BrightBlue,
+	KeyColor:    Blue,
 	NullColor:   Red,
-	BoolColor:   BrightCyan,
-	NumberColor: BrightYellow,
+	BoolColor:   Yellow,
+	NumberColor: Cyan,
+	StringColor: Green,
+	buf:         make([]byte, 0, 256),
+}
+
+var BrightOptions = Options{
+	InitSize:    256,
+	SyntaxColor: Normal,
+	KeyColor:    BrightBlue,
+	NullColor:   BrightRed,
+	BoolColor:   BrightYellow,
+	NumberColor: BrightCyan,
 	StringColor: BrightGreen,
 	buf:         make([]byte, 0, 256),
 }

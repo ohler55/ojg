@@ -41,6 +41,18 @@ func (c *composer) compose(obj map[string]interface{}, createKey string) (interf
 		return c.fun(obj)
 	}
 	nvp := reflect.New(c.rtype)
+	no := nvp.Interface()
+	if aso, _ := no.(AttrSetter); aso != nil {
+		for key, v := range obj {
+			if createKey == key {
+				continue
+			}
+			if err := aso.SetAttr(key, v); err != nil {
+				return nil, err
+			}
+		}
+		return aso, nil
+	}
 	nv := nvp.Elem()
 	for key, v := range obj {
 		if createKey == key {

@@ -1,19 +1,9 @@
 
+- walk each type in recomposer to register sub-types if not already reistered
+
 - docs and unit tests for oj
 
 - cmd/oj
- - pipe into
- - args
-  -i indent
-  -c color
-   - syntax
-   - key
-   - null
-   - bool
-   - number
-   - string
-
-
   -colors list of colors or maybe map?
   -x extract expression (JSON Path)
    - also bare arg starting with @
@@ -22,26 +12,7 @@
 
  -colors normal:blue:-:-:red:green
 
-- complete simple docs for decompose and recompose
-
-- AttrSetter
- - use instead of reflection if supported in Recompose if asserted
-
-- walk each type in recomposer to register sub-types if not already reistered
-
 - examples
-
-- complete gen package
-
-- Write
- - Options
-  - color
-  - condition like indent but add color
-   - should color be added for each or pre-created
-    - "}" or "\27xyz}"
-     - always just the start, let back to normal be at the end
-    - { } [ ] , null true false number string
-    - just as easy to add before each in the code
 
 - path
  - oj.Path().Child("foo").Any().Child("bar")
@@ -67,20 +38,6 @@
   - includes builders for simple and generic
   - JSON path on generic and simple
   - validator
-
-
-- ojg.Write and String tests
-
- - different tolerant options
-  - comma tolerant (optional)
-  - key quote optional
- - function map for creating objects from maps { "^O": "My-Type", "attr1": 123 }
-  - maybe just a list of objects then use reflection
-  - map[interface{}]func(map[string]interface{}) (interface{}, error)
-
-  - if nil func then use reflection
-
-- Path
 
 
 - jp - https://goessner.net/articles/JsonPath
