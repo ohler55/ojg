@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ohler55/ojg/oj"
 )
@@ -54,6 +55,9 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 					}
 			}
 		*/
+	case time.Time:
+		tm, _ := actual.(time.Time)
+		eq = tm == te
 	case oj.String:
 		x, _ := asString(expect)
 		a, ok := asString(actual)

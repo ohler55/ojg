@@ -5,6 +5,7 @@ package oj_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
@@ -18,6 +19,7 @@ type WithList struct {
 type Setter struct {
 	a int64
 	b string
+	s *Setter
 }
 
 func (s *Setter) String() string {
@@ -62,6 +64,25 @@ func TestOjRecomposeBasic(t *testing.T) {
 	d, _ := v.(*Dummy)
 	tt.NotNil(t, d, "Dummy")
 	tt.Equal(t, []interface{}{-8, -16, -32, 0, 8, 16, 32, 64, 1.2, map[string]interface{}{}}, d.Nest)
+}
+
+func TestOjRecomposeNode(t *testing.T) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	src := map[string]interface{}{
+		"type": "Dummy",
+		"val":  oj.Int(3),
+		"nest": oj.Array{oj.Int(-8), oj.Bool(true), oj.Float(1.2), oj.String("abc"),
+			oj.Object{"big": oj.Big("123"), "time": oj.Time(tm)},
+		},
+	}
+	r, err := oj.NewRecomposer("type", map[interface{}]oj.RecomposeFunc{&Dummy{}: nil})
+	tt.Nil(t, err, "NewRecomposer")
+	var v interface{}
+	v, err = r.Recompose(src)
+	tt.Nil(t, err, "Recompose")
+	d, _ := v.(*Dummy)
+	tt.NotNil(t, d, "Dummy")
+	tt.Equal(t, []interface{}{-8, true, 1.2, "abc", map[string]interface{}{"big": "123", "time": tm}}, d.Nest)
 }
 
 func TestOjRecomposeFunc(t *testing.T) {

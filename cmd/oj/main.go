@@ -51,13 +51,23 @@ usage: %s [<options>] [@<extraction>]... [<json-file>]...
 		}
 	}
 	var p oj.Parser
+	var err error
 	if 0 < len(files) {
-		// TBD
-		for _, f := range files {
-			fmt.Printf("*** %s\n", f)
+		var f *os.File
+		for _, file := range files {
+			if f, err = os.Open(file); err == nil {
+				_, err = p.ParseReader(f, write)
+				f.Close()
+			}
+			if err != nil {
+				break
+			}
 		}
 	} else {
-		p.ParseReader(os.Stdin, write)
+		_, err = p.ParseReader(os.Stdin, write)
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "*-*-* %s\n", err)
 	}
 }
 

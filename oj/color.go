@@ -235,6 +235,9 @@ func (o *Options) cbuildObject(n Object, depth int) (err error) {
 			o.buildString(k)
 			o.buf = append(o.buf, o.SyntaxColor...)
 			o.buf = append(o.buf, ':')
+			if 0 < o.Indent {
+				o.buf = append(o.buf, ' ')
+			}
 			if m := n[k]; m == nil {
 				o.buf = append(o.buf, o.NullColor...)
 				o.buf = append(o.buf, []byte("null")...)
@@ -257,8 +260,11 @@ func (o *Options) cbuildObject(n Object, depth int) (err error) {
 			o.buf = append(o.buf, []byte(cs)...)
 			o.buf = append(o.buf, o.KeyColor...)
 			o.buildString(k)
-			o.buf = append(o.buf, o.NullColor...)
+			o.buf = append(o.buf, o.SyntaxColor...)
 			o.buf = append(o.buf, ':')
+			if 0 < o.Indent {
+				o.buf = append(o.buf, ' ')
+			}
 			if m == nil {
 				o.buf = append(o.buf, o.NullColor...)
 				o.buf = append(o.buf, []byte("null")...)
@@ -268,6 +274,7 @@ func (o *Options) cbuildObject(n Object, depth int) (err error) {
 		}
 	}
 	o.buf = append(o.buf, []byte(is)...)
+	o.buf = append(o.buf, o.SyntaxColor...)
 	o.buf = append(o.buf, '}')
 
 	return
@@ -312,6 +319,9 @@ func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) (err e
 			o.buildString(k)
 			o.buf = append(o.buf, o.SyntaxColor...)
 			o.buf = append(o.buf, ':')
+			if 0 < o.Indent {
+				o.buf = append(o.buf, ' ')
+			}
 			if m := n[k]; m == nil {
 				o.buf = append(o.buf, o.NullColor...)
 				o.buf = append(o.buf, []byte("null")...)
@@ -336,6 +346,9 @@ func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) (err e
 			o.buildString(k)
 			o.buf = append(o.buf, o.SyntaxColor...)
 			o.buf = append(o.buf, ':')
+			if 0 < o.Indent {
+				o.buf = append(o.buf, ' ')
+			}
 			if m == nil {
 				o.buf = append(o.buf, o.NullColor...)
 				o.buf = append(o.buf, []byte("null")...)

@@ -98,3 +98,51 @@ func TestOjWrite(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Equal(t, "[\n  false,\n  true\n]", b.String())
 }
+
+func TestOjColor(t *testing.T) {
+	opt := &oj.Options{
+		Color: true,
+		// use visible character to make it easier to verify
+		SyntaxColor: "s",
+		KeyColor:    "k",
+		NullColor:   "n",
+		BoolColor:   "b",
+		NumberColor: "0",
+		StringColor: "q",
+	}
+	tm := time.Date(2020, time.May, 7, 19, 29, 19, 123456789, time.UTC)
+	for i, d := range []data{
+		{value: nil, expect: "nnull" + oj.Normal},
+		{value: true, expect: "btrue" + oj.Normal},
+		{value: false, expect: "bfalse" + oj.Normal},
+		{value: "string", expect: `q"string"` + oj.Normal},
+		{value: oj.String("string"), expect: `q"string"` + oj.Normal},
+		{value: []interface{}{true, false}, expect: "s[btrues,bfalses]" + oj.Normal},
+		{value: oj.Array{oj.Bool(true), oj.Bool(false)}, expect: "s[btrues,bfalses]" + oj.Normal},
+		{value: oj.Object{"f": oj.False}, expect: `s{k"f"s:bfalses}` + oj.Normal},
+		//{value: oj.Object{"f": oj.False}, expect: `s{k"f"s:bfalses}`, options: &oj.Options{Sort: true}},
+		//{value: map[string]interface{}{"t": true, "f": false}, expect: `{"f":false,"t":true}`, options: &oj.Options{Sort: true}},
+		//{value: oj.Array{oj.True, oj.False}, expect: "[true,false]" + oj.Normal},
+		//{value: oj.Array{oj.False, oj.True}, expect: "[false,true]" + oj.Normal},
+		{value: []interface{}{-1, int8(2), int16(-3), int32(4), int64(-5)}, expect: "s[0-1s,02s,0-3s,04s,0-5s]" + oj.Normal},
+		{value: []interface{}{uint(1), 'A', uint8(2), uint16(3), uint32(4), uint64(5)}, expect: "s[01s,065s,02s,03s,04s,05s]" + oj.Normal},
+		{value: oj.Array{oj.Int(1), oj.Float(1.2)}, expect: "s[01s,01.2s]" + oj.Normal},
+		{value: []interface{}{float32(1.2), float64(2.1)}, expect: "s[01.2s,02.1s]" + oj.Normal},
+		{value: []interface{}{tm}, expect: "s[q1588879759123456789s]" + oj.Normal},
+		{value: oj.Array{oj.Time(tm)}, expect: "s[q1588879759123456789s]" + oj.Normal},
+
+		//{value: map[string]interface{}{"t": true, "x": nil}, expect: "{\"t\":true}", options: &oj.Options{OmitNil: true}},
+		//{value: map[string]interface{}{"t": true, "f": false}, expect: "{\n  \"f\":false,\n  \"t\":true\n}", options: &oj.Options{Sort: true, Indent: 2}},
+		//{value: map[string]interface{}{"t": true}, expect: "{\n  \"t\":true\n}", options: &oj.Options{Indent: 2}},
+		//{value: oj.Object{"t": oj.True, "x": nil}, expect: "{\"t\":true}", options: &oj.Options{OmitNil: true}},
+		//{value: oj.Object{"t": oj.True}, expect: "{\n  \"t\":true\n}", options: &oj.Options{Indent: 2}},
+		//{value: oj.Object{"t": oj.True}, expect: "{\n  \"t\":true\n}", options: &oj.Options{Indent: 2, Sort: true}},
+
+		//{value: &simon{x: 3}, expect: `{"type":"simon","x":3}`, options: &oj.Options{Sort: true}},
+	} {
+		var b strings.Builder
+		err := oj.Write(&b, d.value, opt)
+		tt.Nil(t, err)
+		tt.Equal(t, d.expect, b.String(), fmt.Sprintf("%d: %v", i, d.value))
+	}
+}

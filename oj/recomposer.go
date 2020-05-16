@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+// RecomposeFunc should build an object from data in a map returning the
+// recomposed object or an error.
+type RecomposeFunc func(map[string]interface{}) (interface{}, error)
+
 // Recomposer is used to recompose simple data into structs.
 type Recomposer struct {
 
@@ -27,14 +31,44 @@ func NewRecomposer(createKey string, composers map[interface{}]RecomposeFunc) (*
 		composers: map[string]*composer{},
 	}
 	for v, fun := range composers {
-		c, err := newComposer(v, fun)
-		if err != nil {
+		rt := reflect.TypeOf(v)
+		if err := r.registerComposer(rt, fun); err != nil {
 			return nil, err
 		}
-		r.composers[c.short] = c
-		r.composers[c.full] = c
 	}
 	return &r, nil
+}
+
+func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) error {
+	if rt.Kind() == reflect.Ptr {
+		rt = rt.Elem()
+	}
+	full := rt.PkgPath() + "/" + rt.Name()
+	if _, has := r.composers[full]; has {
+		return nil
+	}
+	// TBD could loosen this up and allow any type as long as a function is provided.
+	if rt.Kind() != reflect.Struct {
+		return fmt.Errorf("only structs can be recomposed. %s is not a struct type", rt)
+	}
+	c := composer{
+		fun:   fun,
+		short: rt.Name(),
+		full:  full,
+		rtype: rt,
+	}
+	r.composers[c.short] = &c
+	r.composers[c.full] = &c
+	for i := rt.NumField() - 1; 0 <= i; i-- {
+		f := rt.Field(i)
+		ft := f.Type
+		switch ft.Kind() {
+		case reflect.Array, reflect.Slice, reflect.Map, reflect.Ptr:
+			ft = ft.Elem()
+		}
+		_ = r.registerComposer(ft, nil)
+	}
+	return nil
 }
 
 // Recompose simple data into more complex go types.

@@ -371,6 +371,7 @@ func (o *Options) buildObject(n Object, depth int) (err error) {
 				o.buf = append(o.buf, []byte(cs)...)
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
+				o.buf = append(o.buf, ' ')
 				if m := n[k]; m == nil {
 					o.buf = append(o.buf, []byte("null")...)
 				} else if err = o.buildJSON(m, d2); err != nil {
@@ -391,6 +392,7 @@ func (o *Options) buildObject(n Object, depth int) (err error) {
 				o.buf = append(o.buf, []byte(cs)...)
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
+				o.buf = append(o.buf, ' ')
 				if m == nil {
 					o.buf = append(o.buf, []byte("null")...)
 				} else if err = o.buildJSON(m, d2); err != nil {
@@ -479,6 +481,7 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err er
 				o.buf = append(o.buf, []byte(cs)...)
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
+				o.buf = append(o.buf, ' ')
 				if m := n[k]; m == nil {
 					o.buf = append(o.buf, []byte("null")...)
 				} else if err = o.buildJSON(m, d2); err != nil {
@@ -499,6 +502,7 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err er
 				o.buf = append(o.buf, []byte(cs)...)
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
+				o.buf = append(o.buf, ' ')
 				if m == nil {
 					o.buf = append(o.buf, []byte("null")...)
 				} else if err = o.buildJSON(m, d2); err != nil {

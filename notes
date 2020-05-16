@@ -1,6 +1,4 @@
 
-- walk each type in recomposer to register sub-types if not already reistered
-
 - docs and unit tests for oj
 
 - cmd/oj
@@ -8,7 +6,6 @@
   -x extract expression (JSON Path)
    - also bare arg starting with @
   -m match against (if a match return whole json)
-  files
 
  -colors normal:blue:-:-:red:green
 

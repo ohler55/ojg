@@ -8,32 +8,11 @@ import (
 	"strings"
 )
 
-// RecomposeFunc should build an object from data in a map returning the
-// recomposed object or an error.
-type RecomposeFunc func(map[string]interface{}) (interface{}, error)
-
 type composer struct {
 	fun   RecomposeFunc
 	short string
 	full  string
 	rtype reflect.Type
-}
-
-func newComposer(v interface{}, fun RecomposeFunc) (*composer, error) {
-	rt := reflect.TypeOf(v)
-	if rt.Kind() == reflect.Ptr {
-		rt = rt.Elem()
-	}
-	if rt.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("only structs can be recomposed. %s is not a struct type", rt)
-	}
-	c := composer{
-		fun:   fun,
-		short: rt.Name(),
-		full:  rt.PkgPath() + "/" + rt.Name(),
-		rtype: rt,
-	}
-	return &c, nil
 }
 
 func (c *composer) compose(obj map[string]interface{}, createKey string) (interface{}, error) {
