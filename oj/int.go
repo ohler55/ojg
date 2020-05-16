@@ -27,7 +27,3 @@ func (n Int) Dup() Node {
 func (n Int) Empty() bool {
 	return false
 }
-
-func (n Int) Int() int64 {
-	return int64(n)
-}

@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/oj"
 
 	"gitlab.com/uhn/core/pkg/tree"
@@ -25,7 +24,7 @@ func main() {
 	testing.Init()
 	flag.Parse()
 	tree.Sort = false
-	gen.TimeFormat = "nano"
+	oj.TimeFormat = "nano"
 
 	parseBenchmarks()
 	parseReaderBenchmarks()
@@ -72,38 +71,38 @@ func convBenchmarks(base testing.BenchmarkResult) {
 	fmt.Printf("tree.FromNative:        %6d ns/op (%3.1fx)  %6d B/op (%3.1fx)  %6d allocs/op (%3.1fx)\n",
 		treeNs, 1.0, treeBytes, 1.0, treeAllocs, 1.0)
 
-	genFrom := testing.Benchmark(convFromSimple)
+	genFrom := testing.Benchmark(ojGenerify)
 	fromNs := genFrom.NsPerOp() - base.NsPerOp()
 	fromBytes := genFrom.AllocedBytesPerOp() - base.AllocedBytesPerOp()
 	fromAllocs := genFrom.AllocsPerOp() - base.AllocsPerOp()
-	fmt.Printf("  gen.From:             %6d ns/op (%3.1fx)  %6d B/op (%3.1fx)  %6d allocs/op (%3.1fx)\n",
+	fmt.Printf("  oj.Generify:          %6d ns/op (%3.1fx)  %6d B/op (%3.1fx)  %6d allocs/op (%3.1fx)\n",
 		fromNs, float64(treeNs)/float64(fromNs),
 		fromBytes, float64(treeBytes)/float64(fromBytes),
 		fromAllocs, float64(treeAllocs)/float64(fromAllocs))
 
-	genAlter := testing.Benchmark(convAlterSimple)
+	genAlter := testing.Benchmark(ojGenAlter)
 	alterNs := genAlter.NsPerOp() - base.NsPerOp()
 	alterBytes := genAlter.AllocedBytesPerOp() - base.AllocedBytesPerOp()
 	alterAllocs := genAlter.AllocsPerOp() - base.AllocsPerOp()
-	fmt.Printf("  gen.Alter:            %6d ns/op (%3.1fx)  %6d B/op (%3.1fx)  %6d allocs/op (%3.1fx)\n",
+	fmt.Printf("  oj.GenAlter:          %6d ns/op (%3.1fx)  %6d B/op (%3.1fx)  %6d allocs/op (%3.1fx)\n",
 		alterNs, float64(treeNs)/float64(alterNs),
 		alterBytes, float64(treeBytes)/float64(alterBytes),
 		alterAllocs, float64(treeAllocs)/float64(alterAllocs))
 }
 
-func convAlterSimple(b *testing.B) {
+func ojGenAlter(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	for n := 0; n < b.N; n++ {
 		native := benchmarkData(tm)
-		_ = gen.Alter(native)
+		_ = oj.GenAlter(native)
 	}
 }
 
-func convFromSimple(b *testing.B) {
+func ojGenerify(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	for n := 0; n < b.N; n++ {
 		native := benchmarkData(tm)
-		_ = gen.From(native)
+		_ = oj.Generify(native)
 	}
 }
 
@@ -137,16 +136,16 @@ func jsonBenchmarks(base testing.BenchmarkResult, indent, sort bool) {
 		treeNs, 1.0, treeBytes, 1.0, treeAllocs, 1.0)
 
 	if sort {
-		ojSRes = testing.Benchmark(ojStringSort)
+		ojSRes = testing.Benchmark(ojJSONSort)
 	} else if indent {
-		ojSRes = testing.Benchmark(ojString2)
+		ojSRes = testing.Benchmark(ojJSON2)
 	} else {
-		ojSRes = testing.Benchmark(ojString)
+		ojSRes = testing.Benchmark(ojJSON)
 	}
 	ojNs := ojSRes.NsPerOp()
 	ojBytes := ojSRes.AllocedBytesPerOp()
 	ojAllocs := ojSRes.AllocsPerOp()
-	fmt.Printf(" oj.String:            %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
+	fmt.Printf("  oj.JSON:              %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
 		ojNs, float64(treeNs)/float64(ojNs),
 		ojBytes, float64(treeBytes)/float64(ojBytes),
 		ojAllocs, float64(treeAllocs)/float64(ojAllocs))
@@ -161,7 +160,7 @@ func jsonBenchmarks(base testing.BenchmarkResult, indent, sort bool) {
 	ojNs = ojWRes.NsPerOp()
 	ojBytes = ojWRes.AllocedBytesPerOp()
 	ojAllocs = ojWRes.AllocsPerOp()
-	fmt.Printf(" oj.Write:             %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
+	fmt.Printf("  oj.Write:             %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
 		ojNs, float64(treeNs)/float64(ojNs),
 		ojBytes, float64(treeBytes)/float64(ojBytes),
 		ojAllocs, float64(treeAllocs)/float64(ojAllocs))
@@ -197,39 +196,39 @@ func treeJSONSort(b *testing.B) {
 	}
 }
 
-func ojString(b *testing.B) {
+func ojJSON(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := gen.Alter(benchmarkData(tm))
+	data := oj.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = oj.String(data, &opt)
+		_ = oj.JSON(data, &opt)
 	}
 }
 
-func ojString2(b *testing.B) {
+func ojJSON2(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := gen.Alter(benchmarkData(tm))
+	data := oj.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true, Indent: 2}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = oj.String(data, &opt)
+		_ = oj.JSON(data, &opt)
 	}
 }
 
-func ojStringSort(b *testing.B) {
+func ojJSONSort(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := gen.Alter(benchmarkData(tm))
+	data := oj.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = oj.String(data, &opt)
+		_ = oj.JSON(data, &opt)
 	}
 }
 
 func ojWrite(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := gen.Alter(benchmarkData(tm))
+	data := oj.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true}
 	var buf strings.Builder
 	b.ResetTimer()
@@ -242,7 +241,7 @@ func ojWrite(b *testing.B) {
 
 func ojWrite2(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := gen.Alter(benchmarkData(tm))
+	data := oj.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true, Indent: 2}
 	var buf strings.Builder
 	b.ResetTimer()
@@ -255,7 +254,7 @@ func ojWrite2(b *testing.B) {
 
 func ojWriteSort(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := gen.Alter(benchmarkData(tm))
+	data := oj.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
 	var buf strings.Builder
 	b.ResetTimer()
@@ -436,7 +435,7 @@ func parseBenchmarks() {
 	ojNs = ojRes.NsPerOp()
 	ojBytes = ojRes.AllocedBytesPerOp()
 	ojAllocs = ojRes.AllocsPerOp()
-	fmt.Printf(" gen.Parse:             %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
+	fmt.Printf("  oj.GenParse:          %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
 		ojNs, float64(goNs)/float64(ojNs),
 		ojBytes, float64(goBytes)/float64(ojBytes),
 		ojAllocs, float64(goAllocs)/float64(ojAllocs))
@@ -477,7 +476,7 @@ func parseReaderBenchmarks() {
 	ojNs = ojRes.NsPerOp() - baseRes.NsPerOp()
 	ojBytes = ojRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
 	ojAllocs = ojRes.AllocsPerOp() - baseRes.AllocsPerOp()
-	fmt.Printf(" gen.ParseReader:       %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
+	fmt.Printf("  oj.GenParseReader:    %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
 		ojNs, float64(goNs)/float64(ojNs),
 		ojBytes, float64(goBytes)/float64(ojBytes),
 		ojAllocs, float64(goAllocs)/float64(ojAllocs))
@@ -509,7 +508,7 @@ func ojParseReader(b *testing.B) {
 }
 
 func genParseReader(b *testing.B) {
-	var p gen.Parser
+	var p oj.NodeParser
 	f, err := os.Open("test/sample.json")
 	if err != nil {
 		fmt.Printf("Failed to read test/sample.json. %s\n", err)
@@ -541,7 +540,7 @@ func ojParse(b *testing.B) {
 }
 
 func genParse(b *testing.B) {
-	p := &gen.Parser{}
+	p := &oj.NodeParser{}
 	for n := 0; n < b.N; n++ {
 		_, _ = p.Parse([]byte(sampleJSON))
 		//_, err := p.Parse([]byte(sampleJSON))

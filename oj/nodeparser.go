@@ -184,7 +184,7 @@ func (p *NodeParser) parseBuffer(buf []byte, last bool) error {
 			case '[':
 				p.stack = append(p.stack, '[')
 				p.starts = append(p.starts, len(p.nstack))
-				p.nstack = append(p.nstack, emptyArray)
+				p.nstack = append(p.nstack, EmptyArray)
 			case ']':
 				if err := p.arrayEnd(); err != nil {
 					return err

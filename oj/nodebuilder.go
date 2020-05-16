@@ -47,7 +47,7 @@ func (b *NodeBuilder) Array(key ...string) error {
 		return fmt.Errorf("must have a key when pushing to an object")
 	}
 	b.starts = append(b.starts, len(b.stack))
-	b.stack = append(b.stack, emptyArray)
+	b.stack = append(b.stack, EmptyArray)
 
 	return nil
 }

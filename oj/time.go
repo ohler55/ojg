@@ -62,7 +62,7 @@ func (n Time) buildString(b *strings.Builder) {
 		if 0 < nano {
 			b.WriteString(fmt.Sprintf("%d.%09d", secs, nano-(secs*int64(time.Second))))
 		} else {
-			b.WriteString(fmt.Sprintf("%d.%09d", secs, -nano-(secs*int64(time.Second))))
+			b.WriteString(fmt.Sprintf("%d.%09d", secs, -nano+(secs*int64(time.Second))))
 		}
 	default:
 		b.WriteString(`"`)

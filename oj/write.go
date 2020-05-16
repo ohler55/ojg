@@ -22,7 +22,7 @@ const (
 // map[string]interface{} or a Node type, The args, if supplied can be an
 // int as an indent or a *Options.
 func JSON(data interface{}, args ...interface{}) string {
-	o := &defaultOptions
+	o := &DefaultOptions
 
 	if 0 < len(args) {
 		switch ta := args[0].(type) {
@@ -52,7 +52,7 @@ func JSON(data interface{}, args ...interface{}) string {
 // or a Node type, The args, if supplied can be an int as an indent or a
 // *Options.
 func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
-	o := &defaultOptions
+	o := &DefaultOptions
 
 	if 0 < len(args) {
 		switch ta := args[0].(type) {
@@ -76,10 +76,15 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	} else {
 		o.buf = o.buf[:0]
 	}
-	if err = o.buildJSON(data, 0); err != nil {
-		return
+	if o.Color {
+		err = o.cbuildJSON(data, 0)
+	} else {
+		err = o.buildJSON(data, 0)
 	}
-	if w != nil && 0 < len(o.buf) {
+	if o.Color {
+		o.buf = append(o.buf, Normal...)
+	}
+	if err == nil && w != nil && 0 < len(o.buf) {
 		_, err = o.w.Write(o.buf)
 	}
 	return

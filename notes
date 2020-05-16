@@ -1,14 +1,26 @@
 
 - docs and unit tests for oj
 
-- use cases
- - parse - either ok
- - mods - gen is safer if that matters
- - get and convert to type - either
-  - with simple reflect to go into objects
- - using object based API for gen
-  - simple uses func calls instead
-  - style really
+- cmd/oj
+ - pipe into
+ - args
+  -i indent
+  -c color
+   - syntax
+   - key
+   - null
+   - bool
+   - number
+   - string
+
+
+  -colors list of colors or maybe map?
+  -x extract expression (JSON Path)
+   - also bare arg starting with @
+  -m match against (if a match return whole json)
+  files
+
+ -colors normal:blue:-:-:red:green
 
 - complete simple docs for decompose and recompose
 
@@ -22,8 +34,18 @@
 - complete gen package
 
 - Write
+ - Options
+  - color
+  - condition like indent but add color
+   - should color be added for each or pre-created
+    - "}" or "\27xyz}"
+     - always just the start, let back to normal be at the end
+    - { } [ ] , null true false number string
+    - just as easy to add before each in the code
 
 - path
+ - oj.Path().Child("foo").Any().Child("bar")
+ - oj.X().C("foo").A().C("bar")
  - build path with jp.Child("foo").Any().Child("bar")
   - each returns a jp.Expr , []jp.Frag and appends
  - jp.Expr{fp.Child("foo"), fp.Any{}}

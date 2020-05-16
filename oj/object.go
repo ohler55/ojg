@@ -4,7 +4,6 @@ package oj
 
 import (
 	"sort"
-	"strings"
 	"unsafe"
 )
 
@@ -13,10 +12,9 @@ var Sort = false
 type Object map[string]Node
 
 func (n Object) String() string {
-	var b strings.Builder
+	b := []byte{'{'}
 	first := true
 
-	b.WriteByte('{')
 	if Sort {
 		keys := make([]string, 0, len(n))
 		for k := range n {
@@ -25,15 +23,16 @@ func (n Object) String() string {
 		sort.Strings(keys)
 		for i, k := range keys {
 			if 0 < i {
-				b.WriteByte(',')
+				b = append(b, ',')
 			}
-			b.WriteByte('"')
-			b.WriteString(k)
-			b.WriteString(`":`)
+			b = append(b, '"')
+			b = append(b, k...)
+			b = append(b, '"')
+			b = append(b, ':')
 			if m := n[k]; m == nil {
-				b.WriteString("null")
+				b = append(b, "null"...)
 			} else {
-				b.WriteString(m.String())
+				b = append(b, m.String()...)
 			}
 		}
 	} else {
@@ -41,21 +40,22 @@ func (n Object) String() string {
 			if first {
 				first = false
 			} else {
-				b.WriteByte(',')
+				b = append(b, ',')
 			}
-			b.WriteByte('"')
-			b.WriteString(k)
-			b.WriteString(`":`)
+			b = append(b, '"')
+			b = append(b, k...)
+			b = append(b, '"')
+			b = append(b, ':')
 			if m == nil {
-				b.WriteString("null")
+				b = append(b, "null"...)
 			} else {
-				b.WriteString(m.String())
+				b = append(b, m.String()...)
 			}
 		}
 	}
-	b.WriteByte('}')
+	b = append(b, '}')
 
-	return b.String()
+	return string(b)
 }
 
 func (n Object) Alter() interface{} {

@@ -6,6 +6,26 @@ import (
 	"io"
 )
 
+const (
+	Normal        = "\x1b[m"
+	Black         = "\x1b[30m"
+	Red           = "\x1b[31m"
+	Green         = "\x1b[32m"
+	Yellow        = "\x1b[33m"
+	Blue          = "\x1b[34m"
+	Magenta       = "\x1b[35m"
+	Cyan          = "\x1b[36m"
+	White         = "\x1b[37m"
+	Gray          = "\x1b[90m"
+	Pink          = "\x1b[91m"
+	BrightGreen   = "\x1b[92m"
+	BrightYellow  = "\x1b[93m"
+	BrightBlue    = "\x1b[94m"
+	BrightMagenta = "\x1b[95m"
+	BrightCyan    = "\x1b[96m"
+	BrightWhite   = "\x1b[97m"
+)
+
 // Options for writing data to JSON.
 type Options struct {
 
@@ -50,11 +70,38 @@ type Options struct {
 	// with the CreateKey.
 	FullTypePath bool
 
+	// Color if true will colorize the output.
+	Color bool
+
+	// SyntaxColor is the color for syntax in the JSON output.
+	SyntaxColor string
+
+	// KeyColor is the color for key in the JSON output.
+	KeyColor string
+
+	// NullColor is the color for null in the JSON output.
+	NullColor string
+
+	// BoolColor is the color for bool in the JSON output.
+	BoolColor string
+
+	// NumberColor is the color for number in the JSON output.
+	NumberColor string
+
+	// StringColor is the color for string in the JSON output.
+	StringColor string
+
 	buf []byte
 	w   io.Writer
 }
 
-var defaultOptions = Options{
-	InitSize: 256,
-	buf:      make([]byte, 0, 256),
+var DefaultOptions = Options{
+	InitSize:    256,
+	SyntaxColor: Normal,
+	KeyColor:    BrightBlue,
+	NullColor:   Red,
+	BoolColor:   BrightCyan,
+	NumberColor: BrightYellow,
+	StringColor: BrightGreen,
+	buf:         make([]byte, 0, 256),
 }

@@ -3,31 +3,28 @@
 package oj
 
 import (
-	"strings"
 	"unsafe"
 )
 
 type Array []Node
 
-var emptyArray = Array{}
+var EmptyArray = Array{}
 
 func (n Array) String() string {
-	var b strings.Builder
-
-	b.WriteByte('[')
+	b := []byte{'['}
 	for i, m := range n {
 		if 0 < i {
-			b.WriteByte(',')
+			b = append(b, ',')
 		}
 		if m == nil {
-			b.WriteString("null")
+			b = append(b, "null"...)
 		} else {
-			b.WriteString(m.String())
+			b = append(b, m.String()...)
 		}
 	}
-	b.WriteByte(']')
+	b = append(b, ']')
 
-	return b.String()
+	return string(b)
 }
 
 func (n Array) Alter() interface{} {
@@ -60,7 +57,11 @@ func (n Array) Dup() Node {
 	if n != nil {
 		a = make(Array, 0, len(n))
 		for _, m := range n {
-			a = append(a, m.Dup())
+			if m == nil {
+				a = append(a, nil)
+			} else {
+				a = append(a, m.Dup())
+			}
 		}
 	}
 	return a

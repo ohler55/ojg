@@ -11,12 +11,12 @@ import (
 )
 
 func TestArrayString(t *testing.T) {
-	a := oj.Array{oj.Int(3), oj.Array{oj.Int(5)}, oj.Int(7)}
+	a := oj.Array{oj.Int(3), oj.Array{oj.Int(5)}, nil}
 
-	tt.Equal(t, "[3,[5],7]", a.String())
+	tt.Equal(t, "[3,[5],null]", a.String())
 }
 
-func TestArraySimple(t *testing.T) {
+func TestArraySimplify(t *testing.T) {
 	a := oj.Array{oj.Int(3), oj.Int(7)}
 	simple := a.Simplify()
 
@@ -31,4 +31,16 @@ func TestArrayAlter(t *testing.T) {
 
 	aa := alt.([]interface{})
 	tt.Equal(t, "int64 3  int64 7", fmt.Sprintf("%T %v  %T %v", aa[0], aa[0], aa[1], aa[1]))
+}
+
+func TestArrayDup(t *testing.T) {
+	a := oj.Array{oj.Int(3), oj.Array{oj.Int(5)}, nil}
+
+	dup := a.Dup()
+	tt.NotNil(t, dup)
+	tt.Equal(t, "[3,[5],null]", dup.String())
+}
+
+func TestArrayEmpty(t *testing.T) {
+	tt.Equal(t, true, oj.EmptyArray.Empty())
 }
