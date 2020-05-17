@@ -88,6 +88,9 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (data interface{}, err e
 		p.starts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
+		for i := len(p.stack) - 1; 0 <= i; i-- {
+			p.stack = nil
+		}
 		p.stack = p.stack[:0]
 		p.starts = p.starts[:0]
 	}
@@ -100,6 +103,10 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (data interface{}, err e
 		p.ri = 0
 	}
 	err = p.parseBuffer(buf, true)
+	for i := len(p.stack) - 1; 0 <= i; i-- {
+		p.stack = nil
+	}
+	p.stack = p.stack[:0]
 	return
 }
 

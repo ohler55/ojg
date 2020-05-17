@@ -26,6 +26,7 @@ func main() {
 	tree.Sort = false
 	oj.TimeFormat = "nano"
 
+	jsonPathBenchmarks()
 	parseBenchmarks()
 	parseReaderBenchmarks()
 	validateBenchmarks()
@@ -554,6 +555,49 @@ func treeParse(b *testing.B) {
 	}
 }
 
+func jsonPathBenchmarks() {
+	fmt.Println()
+	fmt.Println("JSON Path")
+
+	ojRes := testing.Benchmark(ojExpr)
+	ojNs := ojRes.NsPerOp()
+	ojBytes := ojRes.AllocedBytesPerOp()
+	ojAllocs := ojRes.AllocsPerOp()
+	fmt.Printf("  oj.Expr.Get:          %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
+		ojNs, 1.0, ojBytes, 1.0, ojAllocs, 1.0)
+
+	treeRes := testing.Benchmark(treePath)
+	treeNs := treeRes.NsPerOp()
+	treeBytes := treeRes.AllocedBytesPerOp()
+	treeAllocs := treeRes.AllocsPerOp()
+	fmt.Printf("tree.Path.Get:          %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
+		treeNs, float64(ojNs)/float64(treeNs),
+		treeBytes, float64(ojBytes)/float64(treeBytes),
+		treeAllocs, float64(ojAllocs)/float64(treeAllocs))
+}
+
+func treePath(b *testing.B) {
+	p := tree.MustParsePath("..a.*.c.d")
+	native := buildTree(4, 3, 0)
+	data, _ := tree.FromNative(native)
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_ = p.Get(data, data)
+	}
+}
+
+func ojExpr(b *testing.B) {
+	p := oj.X().D().C("a").W().C("c").C("d")
+	data := buildTree(4, 3, 0)
+	//fmt.Printf("*** %s\n", oj.JSON(data, 2))
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_ = p.Get(data)
+		//foo := p.Get(data)
+		//fmt.Printf("*** %s\n", oj.JSON(foo))
+	}
+}
+
 const sampleJSON = `[
   [],
   null,
@@ -585,3 +629,17 @@ const sampleJSON = `[
   }
 ]
 `
+
+func buildTree(size, depth, iv int) interface{} {
+	obj := map[string]interface{}{}
+	for i := 0; i < size; i++ {
+		k := string([]byte{'a' + byte(i)})
+		nv := iv*10 + i + 1
+		if 0 < depth {
+			obj[k] = buildTree(size, depth-1, nv)
+		} else {
+			obj[k] = nv
+		}
+	}
+	return obj
+}

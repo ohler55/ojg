@@ -1,4 +1,12 @@
 
+- path
+ - first func call approach, second stack
+  - try in Descent Frag
+ - test print
+ - Expr funcs to build
+
+
+
 - docs and unit tests for oj
 
 - cmd/oj
@@ -16,11 +24,23 @@
  - oj.X().C("foo").A().C("bar")
  - build path with jp.Child("foo").Any().Child("bar")
   - each returns a jp.Expr , []jp.Frag and appends
- - jp.Expr{fp.Child("foo"), fp.Any{}}
- - jp.Parse("foo.*.bar")
-
-
-
+ - oj.Expr{fp.Child("foo"), fp.Any{}}
+ - oj.ParsePath("foo.*.bar")
+ - eval
+  - use calls on each frag
+   - simpler except $ in filter
+  - use stack
+   - avoids function calls
+  - Expr.Get() []interface{}
+  - Expr.First() interface{}
+  - Expr.GetNodes() []Node
+  - Expr.FirstNode() Node
+  - Expr.Set(data interface{}, value interface{}) error
+   - if data is Node then convert the value to a Node, or error if can't convert
+  - Expr.SetOne(interface{}, interface{}) error
+  - Expr.Del()
+  - Expr.DelOne()
+  - Append([]byte) []byte
 
 - ojg/doc.go
  - JSON tools
@@ -46,6 +66,7 @@
 	// SetFirst(path string, val Node) error
 	// Remove(key string) []Node
 	// RemoveFirst(key string) Node
+ - root - $
  - current - @
  - child - .foo
  - wildcard - .* or in array/subscript [*]
