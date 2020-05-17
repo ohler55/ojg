@@ -1,7 +1,18 @@
 
 - path
- - first func call approach, second stack
-  - try in Descent Frag
+ - alternative
+  - one func in expr
+   - one stack of data value to cover all frags
+   - mark start for each frag
+   - descent add to stack
+    - when rest is called it marks start and evals that frag
+    - when done back up on frags
+   - need to associate frag with item on the stack
+    - can push frag onto stack
+     - when popping back up check previous
+     - if another frag then drop current and use new one
+     - if value then frag should be applied to it after sliding the frag up to replace the value
+
  - test print
  - Expr funcs to build
 

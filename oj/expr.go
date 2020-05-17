@@ -33,7 +33,9 @@ func (x Expr) GetNodes(n Node) (result []Node) {
 }
 
 func (x Expr) First(n interface{}) (result interface{}) {
-	// TBD
+	if 0 < len(x) {
+		result, _ = x[0].first(n, n, x[1:])
+	}
 	return
 }
 

@@ -44,3 +44,29 @@ func (f Child) get(top, data interface{}, rest Expr) (results []interface{}) {
 	}
 	return
 }
+
+func (f Child) first(top, data interface{}, rest Expr) (result interface{}, found bool) {
+	switch td := data.(type) {
+	case map[string]interface{}:
+		if v, has := td[string(f)]; has {
+			if 0 < len(rest) {
+				result, found = rest[0].first(top, v, rest[1:])
+			} else {
+				result = v
+				found = true
+			}
+		}
+	case Object:
+		if v, has := td[string(f)]; has {
+			if 0 < len(rest) {
+				result, found = rest[0].first(top, v, rest[1:])
+			} else {
+				result = v
+				found = true
+			}
+		}
+	default:
+		// TBD use reflections for map or struct
+	}
+	return
+}

@@ -3,7 +3,6 @@
 package oj_test
 
 import (
-	"fmt"
 	"sort"
 	"testing"
 
@@ -57,13 +56,21 @@ func TestOjExprGet(t *testing.T) {
 		jv, _ := result[j].(int)
 		return iv < jv
 	})
-	fmt.Printf("*** %s\n", oj.JSON(result, 2))
 	tt.Equal(t, []interface{}{213, 223, 233, 243}, result)
+	/*
+		x = oj.X().D().C("a").W().C("c").C("d")
+		data = buildTree(4, 3, 0)
+		//fmt.Printf("*** %s\n", oj.JSON(data, 2))
+		result = x.Get(data)
+		fmt.Printf("*** %s\n", oj.JSON(result, 2))
+	*/
+}
 
-	x = oj.X().D().C("a").W().C("c").C("d")
-	data = buildTree(4, 3, 0)
-	//fmt.Printf("*** %s\n", oj.JSON(data, 2))
-	result = x.Get(data)
-	fmt.Printf("*** %s\n", oj.JSON(result, 2))
-
+func TestOjExprFirst(t *testing.T) {
+	data := buildTree(4, 2, 0)
+	x := oj.R().C("a").W().C("b")
+	result := x.First(data)
+	i, _ := result.(int)
+	tt.Equal(t, 1, i/100)
+	tt.Equal(t, 2, i%10)
 }

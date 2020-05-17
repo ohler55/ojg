@@ -59,3 +59,59 @@ func (f Wildcard) get(top, data interface{}, rest Expr) (results []interface{}) 
 	}
 	return
 }
+
+func (f Wildcard) first(top, data interface{}, rest Expr) (result interface{}, found bool) {
+	switch td := data.(type) {
+	case map[string]interface{}:
+		for _, v := range td {
+			if 0 < len(rest) {
+				if result, found = rest[0].first(top, v, rest[1:]); found {
+					break
+				}
+			} else {
+				result = v
+				found = true
+				break
+			}
+		}
+	case Object:
+		for _, v := range td {
+			if 0 < len(rest) {
+				if result, found = rest[0].first(top, v, rest[1:]); found {
+					break
+				}
+			} else {
+				result = v
+				found = true
+				break
+			}
+		}
+	case []interface{}:
+		for _, v := range td {
+			if 0 < len(rest) {
+				if result, found = rest[0].first(top, v, rest[1:]); found {
+					break
+				}
+			} else {
+				result = v
+				found = true
+				break
+			}
+		}
+	case Array:
+		for _, v := range td {
+			if 0 < len(rest) {
+				if result, found = rest[0].first(top, v, rest[1:]); found {
+					break
+				}
+			} else {
+				result = v
+				found = true
+				break
+			}
+		}
+	default:
+		// TBD use reflections for map or struct
+	}
+	return
+}

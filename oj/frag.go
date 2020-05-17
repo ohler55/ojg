@@ -11,4 +11,5 @@ type Frag interface {
 	Append(buf []byte, bracket, first bool) []byte
 
 	get(top, data interface{}, rest Expr) []interface{}
+	first(top, data interface{}, rest Expr) (result interface{}, found bool)
 }

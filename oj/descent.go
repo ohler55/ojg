@@ -90,3 +90,78 @@ func (f Descent) get(top, data interface{}, rest Expr) (results []interface{}) {
 	}
 	return
 }
+
+func (f Descent) first(top, data interface{}, rest Expr) (result interface{}, found bool) {
+	if 0 < len(rest) {
+		stack := make([]interface{}, 0, 32)
+		stack = append(stack, data)
+		r := rest[0]
+		r2 := rest[1:]
+		var v interface{}
+		for 0 < len(stack) {
+			v = stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			switch tv := v.(type) {
+			case map[string]interface{}:
+				if result, found = r.first(top, v, r2); found {
+					// Free up anything still on the stack.
+					stack = stack[0:cap(stack)]
+					for i := len(stack) - 1; 0 <= i; i-- {
+						stack[i] = nil
+					}
+					return
+				}
+				for _, v2 := range tv {
+					stack = append(stack, v2)
+				}
+			case Object:
+				if result, found = r.first(top, v, r2); found {
+					// Free up anything still on the stack.
+					stack = stack[0:cap(stack)]
+					for i := len(stack) - 1; 0 <= i; i-- {
+						stack[i] = nil
+					}
+					return
+				}
+				for _, v2 := range tv {
+					stack = append(stack, v2)
+				}
+			case []interface{}:
+				if result, found = r.first(top, v, r2); found {
+					// Free up anything still on the stack.
+					stack = stack[0:cap(stack)]
+					for i := len(stack) - 1; 0 <= i; i-- {
+						stack[i] = nil
+					}
+					return
+				}
+				for _, v2 := range tv {
+					stack = append(stack, v2)
+				}
+			case Array:
+				if result, found = r.first(top, v, r2); found {
+					// Free up anything still on the stack.
+					stack = stack[0:cap(stack)]
+					for i := len(stack) - 1; 0 <= i; i-- {
+						stack[i] = nil
+					}
+					return
+				}
+				for _, v2 := range tv {
+					stack = append(stack, v2)
+				}
+			default:
+				// TBD use reflections for map or struct
+			}
+		}
+		// Free up anything still on the stack.
+		stack = stack[0:cap(stack)]
+		for i := len(stack) - 1; 0 <= i; i-- {
+			stack[i] = nil
+		}
+	} else {
+		result = data
+		found = true
+	}
+	return
+}
