@@ -11,22 +11,3 @@ type Bracket byte
 func (f Bracket) Append(buf []byte, bracket, first bool) []byte {
 	return buf
 }
-
-func (f Bracket) get(top, data interface{}, rest Expr) (results []interface{}) {
-	if 0 < len(rest) {
-		results = rest[0].get(top, data, rest[1:])
-	} else {
-		results = append(results, data)
-	}
-	return
-}
-
-func (f Bracket) first(top, data interface{}, rest Expr) (result interface{}, found bool) {
-	if 0 < len(rest) {
-		result, found = rest[0].first(top, data, rest[1:])
-	} else {
-		result = data
-		found = true
-	}
-	return
-}

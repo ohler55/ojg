@@ -579,8 +579,9 @@ func jsonPathGetBenchmarks() {
 }
 
 func treeGet(b *testing.B) {
-	p := tree.MustParsePath("..a.*.c.d")
-	native := buildTree(10, 3, 0)
+	//p := tree.MustParsePath("..a.*.c.d")
+	p := tree.MustParsePath("*.a.*.c")
+	native := buildTree(10, 4, 0)
 	data, _ := tree.FromNative(native)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -589,11 +590,14 @@ func treeGet(b *testing.B) {
 }
 
 func ojGet(b *testing.B) {
-	p := oj.X().D().C("a").W().C("c").C("d")
-	data := buildTree(10, 3, 0)
+	//p := oj.D().C("a").W().C("c").C("d")
+	p := oj.W().C("a").W().C("c")
+	data := buildTree(10, 4, 0)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		_ = p.Get(data)
+		//x := p.Get(data)
+		//fmt.Printf("*** %s\n", oj.JSON(x))
 	}
 }
 
@@ -670,11 +674,23 @@ const sampleJSON = `[
 `
 
 func buildTree(size, depth, iv int) interface{} {
+	if depth%2 == 0 {
+		list := []interface{}{}
+		for i := 0; i < size; i++ {
+			nv := iv*10 + i + 1
+			if 1 < depth {
+				list = append(list, buildTree(size, depth-1, nv))
+			} else {
+				list = append(list, nv)
+			}
+		}
+		return list
+	}
 	obj := map[string]interface{}{}
 	for i := 0; i < size; i++ {
 		k := string([]byte{'a' + byte(i)})
 		nv := iv*10 + i + 1
-		if 0 < depth {
+		if 1 < depth {
 			obj[k] = buildTree(size, depth-1, nv)
 		} else {
 			obj[k] = nv

@@ -3,6 +3,7 @@
 package oj_test
 
 import (
+	"fmt"
 	"sort"
 	"testing"
 
@@ -11,11 +12,23 @@ import (
 )
 
 func buildTree(size, depth, iv int) interface{} {
+	if depth%2 == 0 {
+		list := []interface{}{}
+		for i := 0; i < size; i++ {
+			nv := iv*10 + i + 1
+			if 1 < depth {
+				list = append(list, buildTree(size, depth-1, nv))
+			} else {
+				list = append(list, nv)
+			}
+		}
+		return list
+	}
 	obj := map[string]interface{}{}
 	for i := 0; i < size; i++ {
 		k := string([]byte{'a' + byte(i)})
 		nv := iv*10 + i + 1
-		if 0 < depth {
+		if 1 < depth {
 			obj[k] = buildTree(size, depth-1, nv)
 		} else {
 			obj[k] = nv
@@ -39,7 +52,7 @@ func TestOjExprBuild(t *testing.T) {
 }
 
 func TestOjExprGet(t *testing.T) {
-	data := buildTree(4, 2, 0)
+	data := buildTree(4, 3, 0)
 	x := oj.R().C("a").W().C("b")
 	result := x.Get(data)
 	sort.Slice(result, func(i, j int) bool {
@@ -49,14 +62,16 @@ func TestOjExprGet(t *testing.T) {
 	})
 	tt.Equal(t, []interface{}{112, 122, 132, 142}, result)
 
-	x = oj.R().D().C("b").W().C("c")
-	result = x.Get(data)
-	sort.Slice(result, func(i, j int) bool {
-		iv, _ := result[i].(int)
-		jv, _ := result[j].(int)
-		return iv < jv
-	})
-	tt.Equal(t, []interface{}{213, 223, 233, 243}, result)
+	/*
+		x = oj.R().D().C("b").W().C("c")
+		result = x.Get(data)
+		sort.Slice(result, func(i, j int) bool {
+			iv, _ := result[i].(int)
+			jv, _ := result[j].(int)
+			return iv < jv
+		})
+		tt.Equal(t, []interface{}{213, 223, 233, 243}, result)
+	*/
 	/*
 		x = oj.X().D().C("a").W().C("c").C("d")
 		data = buildTree(4, 3, 0)
@@ -67,10 +82,20 @@ func TestOjExprGet(t *testing.T) {
 }
 
 func TestOjExprFirst(t *testing.T) {
-	data := buildTree(4, 2, 0)
+	data := buildTree(4, 3, 0)
 	x := oj.R().C("a").W().C("b")
 	result := x.First(data)
 	i, _ := result.(int)
 	tt.Equal(t, 1, i/100)
 	tt.Equal(t, 2, i%10)
+}
+
+func xTestOjExprDev(t *testing.T) {
+	data := buildTree(4, 3, 0)
+	//x := oj.W().C("b")
+	x := oj.C("a").W().C("c")
+
+	result := x.Get(data)
+	fmt.Printf("*** data: %s\n", oj.JSON(data, 2))
+	fmt.Printf("*** results: %s\n", oj.JSON(result))
 }

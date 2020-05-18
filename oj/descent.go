@@ -17,6 +17,7 @@ func (f Descent) Append(buf []byte, bracket, first bool) []byte {
 	return buf
 }
 
+/*
 func (f Descent) get(top, data interface{}, rest Expr) (results []interface{}) {
 	if 0 < len(rest) {
 		stack := make([]interface{}, 0, 32)
@@ -165,3 +166,4 @@ func (f Descent) first(top, data interface{}, rest Expr) (result interface{}, fo
 	}
 	return
 }
+*/

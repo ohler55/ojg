@@ -12,22 +12,3 @@ func (f Root) Append(buf []byte, bracket, first bool) []byte {
 	buf = append(buf, '$')
 	return buf
 }
-
-func (f Root) get(top, _ interface{}, rest Expr) (results []interface{}) {
-	if 0 < len(rest) {
-		results = rest[0].get(top, top, rest[1:])
-	} else {
-		results = append(results, top)
-	}
-	return
-}
-
-func (f Root) first(top, _ interface{}, rest Expr) (result interface{}, found bool) {
-	if 0 < len(rest) {
-		result, found = rest[0].first(top, top, rest[1:])
-	} else {
-		result = top
-		found = true
-	}
-	return
-}
