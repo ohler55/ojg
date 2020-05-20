@@ -76,6 +76,14 @@ func C(key string) Expr {
 	return Expr{Child(key)}
 }
 
+func (x Expr) A() Expr {
+	return append(x, At('@'))
+}
+
+func (x Expr) At() Expr {
+	return append(x, At('@'))
+}
+
 func (x Expr) B() Expr {
 	return append(x, Bracket(' '))
 }
@@ -94,6 +102,14 @@ func (x Expr) W() Expr {
 
 func (x Expr) Wildcard() Expr {
 	return append(x, Wildcard('*'))
+}
+
+func (x Expr) N(n int) Expr {
+	return append(x, Nth(n))
+}
+
+func (x Expr) Nth(n int) Expr {
+	return append(x, Nth(n))
 }
 
 func (x Expr) R() Expr {
@@ -184,6 +200,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 
 	stack := make([]interface{}, 0, 64)
 	stack = append(stack, data)
+
 	f := x[0]
 	fi := 0 // frag index
 	stack = append(stack, fi)
@@ -232,6 +249,48 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				}
 			default:
 				// TBD try reflection
+			}
+		case Nth:
+			i := int(tf)
+			switch tv := prev.(type) {
+			case []interface{}:
+				if i < 0 {
+					i = len(tv) + i
+				}
+				var v interface{}
+				if 0 < i && i < len(tv) {
+					v = tv[i]
+				}
+				if fi == len(x)-1 { // last one
+					results = append(results, v)
+				} else {
+					switch v.(type) {
+					case map[string]interface{}, []interface{}, Object, Array:
+						stack = append(stack, v)
+					}
+					fi++
+					f = x[fi]
+					stack = append(stack, x[fi])
+				}
+			case Array:
+				if i < 0 {
+					i = len(tv) + i
+				}
+				var v interface{}
+				if 0 < i && i < len(tv) {
+					v = tv[i]
+				}
+				if fi == len(x)-1 { // last one
+					results = append(results, v)
+				} else {
+					switch v.(type) {
+					case map[string]interface{}, []interface{}, Object, Array:
+						stack = append(stack, v)
+					}
+					fi++
+					f = x[fi]
+					stack = append(stack, x[fi])
+				}
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
@@ -316,7 +375,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				f = x[fi]
 				stack = append(stack, fi)
 			}
-		case Bracket:
+		case At, Bracket:
 			if fi == len(x)-1 { // last one
 				results = append(results, prev)
 			} else {
@@ -396,6 +455,48 @@ func (x Expr) First(data interface{}) interface{} {
 				}
 			default:
 				// TBD try reflection
+			}
+		case Nth:
+			i := int(tf)
+			switch tv := prev.(type) {
+			case []interface{}:
+				if i < 0 {
+					i = len(tv) + i
+				}
+				var v interface{}
+				if 0 < i && i < len(tv) {
+					v = tv[i]
+				}
+				if fi == len(x)-1 { // last one
+					return v
+				} else {
+					switch v.(type) {
+					case map[string]interface{}, []interface{}, Object, Array:
+						stack = append(stack, v)
+					}
+					fi++
+					f = x[fi]
+					stack = append(stack, x[fi])
+				}
+			case Array:
+				if i < 0 {
+					i = len(tv) + i
+				}
+				var v interface{}
+				if 0 < i && i < len(tv) {
+					v = tv[i]
+				}
+				if fi == len(x)-1 { // last one
+					return v
+				} else {
+					switch v.(type) {
+					case map[string]interface{}, []interface{}, Object, Array:
+						stack = append(stack, v)
+					}
+					fi++
+					f = x[fi]
+					stack = append(stack, x[fi])
+				}
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
@@ -477,7 +578,7 @@ func (x Expr) First(data interface{}) interface{} {
 			fi++
 			f = x[fi]
 			stack = append(stack, fi)
-		case Bracket:
+		case At, Bracket:
 			if fi == len(x)-1 { // last one
 				return prev
 			}

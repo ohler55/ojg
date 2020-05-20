@@ -2,12 +2,12 @@
 
 package oj
 
-// Root represents a root $ in a JSON path representation.
-type Root byte
+// At is the @ in a JSON path representation.
+type At byte
 
 // Append a fragment string representation of the fragment to the buffer
 // then returning the expanded buffer.
-func (f Root) Append(buf []byte, bracket, first bool) []byte {
-	buf = append(buf, '$')
+func (f At) Append(buf []byte, bracket, first bool) []byte {
+	buf = append(buf, '@')
 	return buf
 }
