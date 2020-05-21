@@ -2,17 +2,22 @@
 
 package oj
 
+// Expr is a JSON path expression composed of fragments.
 type Expr []Frag
 
 const (
-	fragIndexMask = 0x0000ffff
-	descentFlag   = 0x00010000
+	fragIndexMask    = 0x0000ffff
+	descentFlag      = 0x00010000
+	descentChildFlag = 0x00020000
 )
 
+// String returns a string representation of the expression.
 func (x Expr) String() string {
 	return string(x.Append(nil))
 }
 
+// Append a string representation of the expression to a byte slice and return
+// the expanded buffer.
 func (x Expr) Append(buf []byte) []byte {
 	bracket := false
 	for i, frag := range x {
@@ -23,16 +28,6 @@ func (x Expr) Append(buf []byte) []byte {
 		buf = frag.Append(buf, bracket, i == 0)
 	}
 	return buf
-}
-
-func (x Expr) GetNodes(n Node) (result []Node) {
-	// TBD
-	return
-}
-
-func (x Expr) FirstNode(n Node) (result Node) {
-	// TBD
-	return
 }
 
 // Set a child node value.
@@ -56,76 +51,134 @@ func (x Expr) DelOne(n interface{}) {
 	// TBD
 }
 
+// X creates an empty Expr.
 func X() Expr {
 	return Expr{}
 }
 
+// R creates an Expr with a Root fragment.
 func R() Expr {
 	return Expr{Root('$')}
 }
 
+// B creates an Expr with a Bracket fragment.
 func B() Expr {
 	return Expr{Bracket(' ')}
 }
 
+// D creates an Expr with a recursive Descent fragment.
+func D() Expr {
+	return Expr{Descent('.')}
+}
+
+// W creates an Expr with a Wildcard fragment.
 func W() Expr {
 	return Expr{Wildcard('*')}
 }
 
+// C creates an Expr with a Child fragment.
 func C(key string) Expr {
 	return Expr{Child(key)}
 }
 
+// N creates an Expr with an Nth fragment.
+func N(n int) Expr {
+	return Expr{Nth(n)}
+}
+
+// U creates an Expr with an Union fragment.
+func U(keys []string, indexes []int) Expr {
+	return Expr{&Union{Keys: keys, Indexes: indexes}}
+}
+
+// S creates an Expr with a Slice fragment.
+func S(start, end, step int) Expr {
+	return Expr{&Slice{Start: start, End: end, Step: step}}
+}
+
+// A appends an At fragment to the Expr.
 func (x Expr) A() Expr {
 	return append(x, At('@'))
 }
 
+// At appends an At fragment to the Expr.
 func (x Expr) At() Expr {
 	return append(x, At('@'))
 }
 
+// B appends a Bracket fragment to the Expr.
 func (x Expr) B() Expr {
 	return append(x, Bracket(' '))
 }
 
+// C appends a Child fragment to the Expr.
 func (x Expr) C(key string) Expr {
 	return append(x, Child(key))
 }
 
+// Child appends a Child fragment to the Expr.
 func (x Expr) Child(key string) Expr {
 	return append(x, Child(key))
 }
 
+// W appends a Wildcard fragment to the Expr.
 func (x Expr) W() Expr {
 	return append(x, Wildcard('*'))
 }
 
+// Wildcard appends a Wildcard fragment to the Expr.
 func (x Expr) Wildcard() Expr {
 	return append(x, Wildcard('*'))
 }
 
+// N appends an Nth fragment to the Expr.
 func (x Expr) N(n int) Expr {
 	return append(x, Nth(n))
 }
 
+// Nth appends an Nth fragment to the Expr.
 func (x Expr) Nth(n int) Expr {
 	return append(x, Nth(n))
 }
 
+// R appends a Root fragment to the Expr.
 func (x Expr) R() Expr {
 	return append(x, Root('$'))
 }
 
+// Root appends a Root fragment to the Expr.
 func (x Expr) Root() Expr {
 	return append(x, Root('$'))
 }
 
+// D appends a recursive Descent fragment to the Expr.
 func (x Expr) D() Expr {
 	return append(x, Descent('.'))
 }
 
+// Descent appends a recursive Descent fragment to the Expr.
 func (x Expr) Descent() Expr {
 	return append(x, Descent('.'))
+}
+
+// U appends a Union fragment to the Expr.
+func (x Expr) U(keys []string, indexes []int) Expr {
+	return append(x, &Union{Keys: keys, Indexes: indexes})
+}
+
+// Union appends a Union fragment to the Expr.
+func (x Expr) Union(keys []string, indexes []int) Expr {
+	return append(x, &Union{Keys: keys, Indexes: indexes})
+}
+
+// S appends a Slice fragment to the Expr.
+func (x Expr) S(start, end, step int) Expr {
+	return append(x, &Slice{Start: start, End: end, Step: step})
+}
+
+// Slice appends a Slice fragment to the Expr.
+func (x Expr) Slice(start, end, step int) Expr {
+	return append(x, &Slice{Start: start, End: end, Step: step})
 }
 
 // The easy way to implement the Get is to have each fragment handle the
@@ -136,61 +189,7 @@ func (x Expr) Descent() Expr {
 // might find a complex approach to the solution. Its twice as fast as the
 // recursive function call approach.
 
-// [map,a] - down
-// [map,a,map,b] - down
-//   append result
-// [map,a,b] - down
-// [map,a] - up
-// []
-
-// [map,*] - down
-// [map,*,a-map,b-map,c-map,d-map,a] - down
-// [map,*,a-map,b-map,c-map,d-map,a,map,b] - down
-//   append result
-// [map,*,a-map,b-map,c-map,d-map,a,b] - down
-//   up
-// [map,*,a-map,b-map,c-map,d-map,a] - up
-//   remove d-map and a
-//   append a if prev is not a frag
-//   down
-// [map,*,a-map,b-map,c-map,a] - down
-// [map,*,a-map,b-map,c-map,a,c-map,b] - down
-//   append result
-//   up
-// ...
-// [map,*,a-map,a] - down
-// [map,*,a-map,a,a-map,b] - down
-//   append result
-//   up
-// [map,*,a-map,a] - up
-//   remove a-map and a
-//   prev is a frag so fi-- and remove 2 from stack
-// [map,*] - up
-//   remove 2
-// []
-
-// [map,*]
-// [*,a-map,b-map,c-map,d-map,a]
-// [*,a-map,b-map,c-map,a,d-a-map,b]
-//   append d-a-map[b]
-// [*,a-map,b-map,c-map,a,b]
-// [*,a-map,b-map,c-map,a]
-// [*,a-map,b-map,a,c-a-map,b]
-// ...
-// [*,a]
-// [*,a,a-a-map,b]
-//   append a-a-map[b]
-// [*,a,b]
-// [*,a]
-// [*]
-// []
-
-// TBD on each iteration
-// if [..., data, frag]
-//   process data by frag
-// if [..., frag, frag]
-//   frag is finished so fi-- and pop
-
+// Get the elements of the data identified by the path.
 func (x Expr) Get(data interface{}) (results []interface{}) {
 	if len(x) == 0 {
 		return
@@ -213,7 +212,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			f = x[fi]
 			continue
 		}
-		stack[len(stack)-2] = fi
+		stack[len(stack)-2] = stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
 		switch tf := f.(type) {
 		case Child:
@@ -270,7 +269,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					}
 					fi++
 					f = x[fi]
-					stack = append(stack, x[fi])
+					stack = append(stack, fi)
 				}
 			case Array:
 				if i < 0 {
@@ -289,7 +288,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					}
 					fi++
 					f = x[fi]
-					stack = append(stack, x[fi])
+					stack = append(stack, fi)
 				}
 			}
 		case Wildcard:
@@ -308,7 +307,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					}
 					fi++
 					f = x[fi]
-					stack = append(stack, x[fi])
+					stack = append(stack, fi)
 				}
 			case []interface{}:
 				if fi == len(x)-1 { // last one
@@ -322,7 +321,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					}
 					fi++
 					f = x[fi]
-					stack = append(stack, x[fi])
+					stack = append(stack, fi)
 				}
 			case Object:
 				if fi == len(x)-1 { // last one
@@ -338,7 +337,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					}
 					fi++
 					f = x[fi]
-					stack = append(stack, x[fi])
+					stack = append(stack, fi)
 				}
 			case Array:
 				if fi == len(x)-1 { // last one
@@ -354,18 +353,100 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					}
 					fi++
 					f = x[fi]
-					stack = append(stack, x[fi])
+					stack = append(stack, fi)
 				}
 			}
 		case Descent:
-
-			// TBD if index is unmasked then do next
-			//   if masked then iterate with unmasked self
-
-			// TBD like wildcard but put self at end of one pass on next for another pass
-			//  how to avoid iterating more than one on maps?
-			//  first next frag, how to indicate the second pass?
-			//   maybe negative index in stack to indicate alt
+			di, _ := stack[len(stack)-1].(int)
+			top := (di & descentChildFlag) == 0
+			// first pass expands, second continues evaluation
+			if (di & descentFlag) == 0 {
+				self := false
+				switch tv := prev.(type) {
+				case map[string]interface{}:
+					// Put prev back and slide fi.
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					if fi == len(x)-1 { // last one
+						for _, v = range tv {
+							results = append(results, v)
+						}
+					}
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
+							self = true
+						}
+					}
+				case []interface{}:
+					// Put prev back and slide fi.
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					if fi == len(x)-1 { // last one
+						for _, v = range tv {
+							results = append(results, v)
+						}
+					}
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
+							self = true
+						}
+					}
+				case Object:
+					// Put prev back and slide fi.
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					if fi == len(x)-1 { // last one
+						for _, v = range tv {
+							results = append(results, v)
+						}
+					}
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
+							self = true
+						}
+					}
+				case Array:
+					// Put prev back and slide fi.
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					if fi == len(x)-1 { // last one
+						for _, v = range tv {
+							results = append(results, v)
+						}
+					}
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
+							self = true
+						}
+					}
+				}
+				if self {
+					stack = append(stack, fi|descentChildFlag)
+				} else if fi < len(x)-1 {
+					fi++
+					f = x[fi]
+					stack = append(stack, fi)
+				}
+			} else {
+				if fi == len(x)-1 { // last one
+					if top {
+						results = append(results, prev)
+					}
+				} else {
+					stack = append(stack, prev)
+					fi++
+					f = x[fi]
+					stack = append(stack, fi)
+				}
+			}
 		case Root:
 			if fi == len(x)-1 { // last one
 				results = append(results, data)
@@ -394,6 +475,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 	return
 }
 
+// First element of the data identified by the path.
 func (x Expr) First(data interface{}) interface{} {
 	if len(x) == 0 {
 		return nil
@@ -421,7 +503,7 @@ func (x Expr) First(data interface{}) interface{} {
 			f = x[fi]
 			continue
 		}
-		stack[len(stack)-2] = fi
+		stack[len(stack)-2] = stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
 		switch tf := f.(type) {
 		case Child:
@@ -476,7 +558,7 @@ func (x Expr) First(data interface{}) interface{} {
 					}
 					fi++
 					f = x[fi]
-					stack = append(stack, x[fi])
+					stack = append(stack, fi)
 				}
 			case Array:
 				if i < 0 {
@@ -495,7 +577,7 @@ func (x Expr) First(data interface{}) interface{} {
 					}
 					fi++
 					f = x[fi]
-					stack = append(stack, x[fi])
+					stack = append(stack, fi)
 				}
 			}
 		case Wildcard:
@@ -514,7 +596,7 @@ func (x Expr) First(data interface{}) interface{} {
 					}
 					fi++
 					f = x[fi]
-					stack = append(stack, x[fi])
+					stack = append(stack, fi)
 				}
 			case []interface{}:
 				if fi == len(x)-1 { // last one
@@ -530,7 +612,7 @@ func (x Expr) First(data interface{}) interface{} {
 					}
 					fi++
 					f = x[fi]
-					stack = append(stack, x[fi])
+					stack = append(stack, fi)
 				}
 			case Object:
 				if fi == len(x)-1 { // last one
@@ -546,7 +628,7 @@ func (x Expr) First(data interface{}) interface{} {
 					}
 					fi++
 					f = x[fi]
-					stack = append(stack, x[fi])
+					stack = append(stack, fi)
 				}
 			case Array:
 				if fi == len(x)-1 { // last one
@@ -562,14 +644,100 @@ func (x Expr) First(data interface{}) interface{} {
 					}
 					fi++
 					f = x[fi]
-					stack = append(stack, x[fi])
+					stack = append(stack, fi)
 				}
 			}
 		case Descent:
-			// TBD like wildcard but put self at end of one pass on next for another pass
-			//  how to avoid iterating more than one on maps?
-			//  first next frag, how to indicate the second pass?
-			//   maybe negative index in stack to indicate alt
+			di, _ := stack[len(stack)-1].(int)
+			top := (di & descentChildFlag) == 0
+			// first pass expands, second continues evaluation
+			if (di & descentFlag) == 0 {
+				self := false
+				switch tv := prev.(type) {
+				case map[string]interface{}:
+					// Put prev back and slide fi.
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					if fi == len(x)-1 { // last one
+						for _, v = range tv {
+							return v
+						}
+					}
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
+							self = true
+						}
+					}
+				case []interface{}:
+					// Put prev back and slide fi.
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					if fi == len(x)-1 { // last one
+						if 0 < len(tv) {
+							return tv[0]
+						}
+					}
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
+							self = true
+						}
+					}
+				case Object:
+					// Put prev back and slide fi.
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					if fi == len(x)-1 { // last one
+						for _, v = range tv {
+							return v
+						}
+					}
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
+							self = true
+						}
+					}
+				case Array:
+					// Put prev back and slide fi.
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					if fi == len(x)-1 { // last one
+						if 0 < len(tv) {
+							return tv[0]
+						}
+					}
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
+							self = true
+						}
+					}
+				}
+				if self {
+					stack = append(stack, fi|descentChildFlag)
+				} else if fi < len(x)-1 {
+					fi++
+					f = x[fi]
+					stack = append(stack, fi)
+				}
+			} else {
+				if fi == len(x)-1 { // last one
+					if top {
+						return prev
+					}
+				} else {
+					stack = append(stack, prev)
+					fi++
+					f = x[fi]
+					stack = append(stack, fi)
+				}
+			}
 		case Root:
 			if fi == len(x)-1 { // last one
 				return data

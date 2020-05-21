@@ -102,6 +102,25 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 		default:
 			eq = false
 		}
+	case []oj.Node:
+		switch ta := actual.(type) {
+		case []oj.Node:
+			eq = true
+			for i := 0; i < len(te); i++ {
+				if len(ta) <= i {
+					eq = false
+					break
+				}
+				if eq = Equal(t, te[i], ta[i], args...); !eq {
+					break
+				}
+			}
+			if eq && len(te) != len(ta) {
+				eq = false
+			}
+		default:
+			eq = false
+		}
 	case map[string]interface{}:
 		switch ta := actual.(type) {
 		case map[string]interface{}:

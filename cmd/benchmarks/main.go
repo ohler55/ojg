@@ -579,19 +579,19 @@ func jsonPathGetBenchmarks() {
 }
 
 func treeGet(b *testing.B) {
-	//p := tree.MustParsePath("..a.*.c.d")
-	p := tree.MustParsePath("*.a.*.c")
+	p := tree.MustParsePath("*..a.*.c")
 	native := buildTree(10, 4, 0)
 	data, _ := tree.FromNative(native)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		_ = p.Get(data, data)
+		//x := p.Get(data, data)
+		//fmt.Printf("*** %v\n", x)
 	}
 }
 
 func ojGet(b *testing.B) {
-	//p := oj.D().C("a").W().C("c").C("d")
-	p := oj.W().C("a").W().C("c")
+	p := oj.D().C("a").W().C("c")
 	data := buildTree(10, 4, 0)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
