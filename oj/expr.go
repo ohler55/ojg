@@ -87,13 +87,13 @@ func N(n int) Expr {
 }
 
 // U creates an Expr with an Union fragment.
-func U(keys []string, indexes []int) Expr {
-	return Expr{&Union{Keys: keys, Indexes: indexes}}
+func U(keys ...interface{}) Expr {
+	return Expr{NewUnion(keys...)}
 }
 
 // S creates an Expr with a Slice fragment.
-func S(start, end, step int) Expr {
-	return Expr{&Slice{Start: start, End: end, Step: step}}
+func S(start int, rest ...int) Expr {
+	return Expr{Slice(append([]int{start}, rest...))}
 }
 
 // A appends an At fragment to the Expr.
@@ -162,23 +162,23 @@ func (x Expr) Descent() Expr {
 }
 
 // U appends a Union fragment to the Expr.
-func (x Expr) U(keys []string, indexes []int) Expr {
-	return append(x, &Union{Keys: keys, Indexes: indexes})
+func (x Expr) U(keys ...interface{}) Expr {
+	return append(x, NewUnion(keys...))
 }
 
 // Union appends a Union fragment to the Expr.
-func (x Expr) Union(keys []string, indexes []int) Expr {
-	return append(x, &Union{Keys: keys, Indexes: indexes})
+func (x Expr) Union(keys ...interface{}) Expr {
+	return append(x, NewUnion(keys...))
 }
 
 // S appends a Slice fragment to the Expr.
-func (x Expr) S(start, end, step int) Expr {
-	return append(x, &Slice{Start: start, End: end, Step: step})
+func (x Expr) S(start int, rest ...int) Expr {
+	return append(x, Slice(append([]int{start}, rest...)))
 }
 
 // Slice appends a Slice fragment to the Expr.
-func (x Expr) Slice(start, end, step int) Expr {
-	return append(x, &Slice{Start: start, End: end, Step: step})
+func (x Expr) Slice(start int, rest ...int) Expr {
+	return append(x, Slice(append([]int{start}, rest...)))
 }
 
 // The easy way to implement the Get is to have each fragment handle the
@@ -186,8 +186,9 @@ func (x Expr) Slice(start, end, step int) Expr {
 // though so instead a psuedo call stack is implemented here that grows and
 // shrinks as the getting takes place. The fragment index if placed on the
 // stack as well mostly for a small degree of simplicity in what a few people
-// might find a complex approach to the solution. Its twice as fast as the
-// recursive function call approach.
+// might find a complex approach to the solution. Its at least twice as fast
+// as the recursive function call approach and in some cases such as the
+// recursive descent more than an order of magnitude faster.
 
 // Get the elements of the data identified by the path.
 func (x Expr) Get(data interface{}) (results []interface{}) {
@@ -226,9 +227,6 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, Object, Array:
 							stack = append(stack, v)
-							fi++
-							f = x[fi]
-							stack = append(stack, fi)
 						}
 					}
 				}
@@ -240,14 +238,12 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, Object, Array:
 							stack = append(stack, v)
-							fi++
-							f = x[fi]
-							stack = append(stack, fi)
 						}
 					}
 				}
 			default:
 				// TBD try reflection
+				continue
 			}
 		case Nth:
 			i := int(tf)
@@ -257,7 +253,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					i = len(tv) + i
 				}
 				var v interface{}
-				if 0 < i && i < len(tv) {
+				if 0 <= i && i < len(tv) {
 					v = tv[i]
 				}
 				if fi == len(x)-1 { // last one
@@ -267,16 +263,13 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					case map[string]interface{}, []interface{}, Object, Array:
 						stack = append(stack, v)
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
 				}
 			case Array:
 				if i < 0 {
 					i = len(tv) + i
 				}
 				var v interface{}
-				if 0 < i && i < len(tv) {
+				if 0 <= i && i < len(tv) {
 					v = tv[i]
 				}
 				if fi == len(x)-1 { // last one
@@ -286,10 +279,10 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					case map[string]interface{}, []interface{}, Object, Array:
 						stack = append(stack, v)
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
 				}
+			default:
+				// TBD try reflection
+				continue
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
@@ -305,9 +298,6 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 							stack = append(stack, v)
 						}
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
 				}
 			case []interface{}:
 				if fi == len(x)-1 { // last one
@@ -319,9 +309,6 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 							stack = append(stack, v)
 						}
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
 				}
 			case Object:
 				if fi == len(x)-1 { // last one
@@ -335,9 +322,6 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 							stack = append(stack, v)
 						}
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
 				}
 			case Array:
 				if fi == len(x)-1 { // last one
@@ -351,10 +335,10 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 							stack = append(stack, v)
 						}
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
 				}
+			default:
+				// TBD try reflection
+				continue
 			}
 		case Descent:
 			di, _ := stack[len(stack)-1].(int)
@@ -430,10 +414,6 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				}
 				if self {
 					stack = append(stack, fi|descentChildFlag)
-				} else if fi < len(x)-1 {
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
 				}
 			} else {
 				if fi == len(x)-1 { // last one
@@ -442,9 +422,6 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					}
 				} else {
 					stack = append(stack, prev)
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
 				}
 			}
 		case Root:
@@ -452,15 +429,180 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				results = append(results, data)
 			} else {
 				stack = append(stack, data)
-				fi++
-				f = x[fi]
-				stack = append(stack, fi)
 			}
 		case At, Bracket:
 			if fi == len(x)-1 { // last one
 				results = append(results, prev)
 			} else {
 				stack = append(stack, prev)
+			}
+		case Union:
+			for _, u := range tf {
+				switch tu := u.(type) {
+				case string:
+					var has bool
+					switch tv := prev.(type) {
+					case map[string]interface{}:
+						if v, has = tv[string(tu)]; has {
+							if fi == len(x)-1 { // last one
+								results = append(results, v)
+							} else {
+								switch v.(type) {
+								case map[string]interface{}, []interface{}, Object, Array:
+									stack = append(stack, v)
+								}
+							}
+						}
+					case Object:
+						if v, has = tv[string(tu)]; has {
+							if fi == len(x)-1 { // last one
+								results = append(results, v)
+							} else {
+								switch v.(type) {
+								case map[string]interface{}, []interface{}, Object, Array:
+									stack = append(stack, v)
+								}
+							}
+						}
+					default:
+						// TBD try reflection
+						continue
+					}
+				case int64:
+					i := int(tu)
+					switch tv := prev.(type) {
+					case []interface{}:
+						if i < 0 {
+							i = len(tv) + i
+						}
+						var v interface{}
+						if 0 < i && i < len(tv) {
+							v = tv[i]
+						}
+						if fi == len(x)-1 { // last one
+							results = append(results, v)
+						} else {
+							switch v.(type) {
+							case map[string]interface{}, []interface{}, Object, Array:
+								stack = append(stack, v)
+							}
+						}
+					case Array:
+						if i < 0 {
+							i = len(tv) + i
+						}
+						var v interface{}
+						if 0 < i && i < len(tv) {
+							v = tv[i]
+						}
+						if fi == len(x)-1 { // last one
+							results = append(results, v)
+						} else {
+							switch v.(type) {
+							case map[string]interface{}, []interface{}, Object, Array:
+								stack = append(stack, v)
+							}
+						}
+					default:
+						// TBD reflection
+						continue
+					}
+				}
+			}
+		case Slice:
+			start := 0
+			end := -1
+			step := 1
+			if 0 < len(tf) {
+				start = tf[0]
+			}
+			if 1 < len(tf) {
+				end = tf[1]
+			}
+			if 2 < len(tf) {
+				step = tf[2]
+			}
+			switch tv := prev.(type) {
+			case []interface{}:
+				if start < 0 {
+					start = len(tv) + start
+				}
+				if end < 0 {
+					end = len(tv) + end + 1
+				}
+				if start < 0 || end < 0 || len(tv) <= start || len(tv) < end || step == 0 {
+					continue
+				}
+				var v interface{}
+				if 0 < step {
+					for i := start; i < end; i += step {
+						v = tv[i]
+						if fi == len(x)-1 { // last one
+							results = append(results, v)
+						} else {
+							switch v.(type) {
+							case map[string]interface{}, []interface{}, Object, Array:
+								stack = append(stack, v)
+							}
+						}
+					}
+				} else {
+					for i := start; end < i; i += step {
+						v = tv[i]
+						if fi == len(x)-1 { // last one
+							results = append(results, v)
+						} else {
+							switch v.(type) {
+							case map[string]interface{}, []interface{}, Object, Array:
+								stack = append(stack, v)
+							}
+						}
+					}
+				}
+			case Array:
+				if start < 0 {
+					start = len(tv) + start
+				}
+				if end < 0 {
+					end = len(tv) + end + 1
+				}
+				if start < 0 || end < 0 || len(tv) <= start || len(tv) < end || step == 0 {
+					continue
+				}
+				var v interface{}
+				if 0 < step {
+					for i := start; i < end; i += step {
+						v = tv[i]
+						if fi == len(x)-1 { // last one
+							results = append(results, v)
+						} else {
+							switch v.(type) {
+							case map[string]interface{}, []interface{}, Object, Array:
+								stack = append(stack, v)
+							}
+						}
+					}
+				} else {
+					for i := start; end < i; i += step {
+						v = tv[i]
+						if fi == len(x)-1 { // last one
+							results = append(results, v)
+						} else {
+							switch v.(type) {
+							case map[string]interface{}, []interface{}, Object, Array:
+								stack = append(stack, v)
+							}
+						}
+					}
+				}
+			default:
+				// TBD try reflection
+				continue
+			}
+			// TBD
+		}
+		if fi < len(x)-1 {
+			if _, ok := stack[len(stack)-1].(int); !ok {
 				fi++
 				f = x[fi]
 				stack = append(stack, fi)
@@ -517,9 +659,6 @@ func (x Expr) First(data interface{}) interface{} {
 					switch v.(type) {
 					case map[string]interface{}, []interface{}, Object, Array:
 						stack = append(stack, v)
-						fi++
-						f = x[fi]
-						stack = append(stack, fi)
 					}
 				}
 			case Object:
@@ -530,9 +669,6 @@ func (x Expr) First(data interface{}) interface{} {
 					switch v.(type) {
 					case map[string]interface{}, []interface{}, Object, Array:
 						stack = append(stack, v)
-						fi++
-						f = x[fi]
-						stack = append(stack, fi)
 					}
 				}
 			default:
@@ -551,14 +687,10 @@ func (x Expr) First(data interface{}) interface{} {
 				}
 				if fi == len(x)-1 { // last one
 					return v
-				} else {
-					switch v.(type) {
-					case map[string]interface{}, []interface{}, Object, Array:
-						stack = append(stack, v)
-					}
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
+				}
+				switch v.(type) {
+				case map[string]interface{}, []interface{}, Object, Array:
+					stack = append(stack, v)
 				}
 			case Array:
 				if i < 0 {
@@ -570,14 +702,10 @@ func (x Expr) First(data interface{}) interface{} {
 				}
 				if fi == len(x)-1 { // last one
 					return v
-				} else {
-					switch v.(type) {
-					case map[string]interface{}, []interface{}, Object, Array:
-						stack = append(stack, v)
-					}
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
+				}
+				switch v.(type) {
+				case map[string]interface{}, []interface{}, Object, Array:
+					stack = append(stack, v)
 				}
 			}
 		case Wildcard:
@@ -594,9 +722,6 @@ func (x Expr) First(data interface{}) interface{} {
 							stack = append(stack, v)
 						}
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
 				}
 			case []interface{}:
 				if fi == len(x)-1 { // last one
@@ -610,9 +735,6 @@ func (x Expr) First(data interface{}) interface{} {
 							stack = append(stack, v)
 						}
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
 				}
 			case Object:
 				if fi == len(x)-1 { // last one
@@ -626,9 +748,6 @@ func (x Expr) First(data interface{}) interface{} {
 							stack = append(stack, v)
 						}
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
 				}
 			case Array:
 				if fi == len(x)-1 { // last one
@@ -642,9 +761,6 @@ func (x Expr) First(data interface{}) interface{} {
 							stack = append(stack, v)
 						}
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
 				}
 			}
 		case Descent:
@@ -721,10 +837,6 @@ func (x Expr) First(data interface{}) interface{} {
 				}
 				if self {
 					stack = append(stack, fi|descentChildFlag)
-				} else if fi < len(x)-1 {
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
 				}
 			} else {
 				if fi == len(x)-1 { // last one
@@ -733,9 +845,6 @@ func (x Expr) First(data interface{}) interface{} {
 					}
 				} else {
 					stack = append(stack, prev)
-					fi++
-					f = x[fi]
-					stack = append(stack, fi)
 				}
 			}
 		case Root:
@@ -743,17 +852,124 @@ func (x Expr) First(data interface{}) interface{} {
 				return data
 			}
 			stack = append(stack, data)
-			fi++
-			f = x[fi]
-			stack = append(stack, fi)
 		case At, Bracket:
 			if fi == len(x)-1 { // last one
 				return prev
 			}
 			stack = append(stack, prev)
-			fi++
-			f = x[fi]
-			stack = append(stack, fi)
+		case Union:
+			for _, u := range tf {
+				switch tu := u.(type) {
+				case string:
+					var has bool
+					switch tv := prev.(type) {
+					case map[string]interface{}:
+						if v, has = tv[string(tu)]; has {
+							if fi == len(x)-1 { // last one
+								return v
+							}
+							switch v.(type) {
+							case map[string]interface{}, []interface{}, Object, Array:
+								stack = append(stack, v)
+							}
+						}
+					case Object:
+						if v, has = tv[string(tu)]; has {
+							if fi == len(x)-1 { // last one
+								return v
+							}
+							switch v.(type) {
+							case map[string]interface{}, []interface{}, Object, Array:
+								stack = append(stack, v)
+							}
+						}
+					default:
+						// TBD try reflection
+						continue
+					}
+				case int64:
+					i := int(tu)
+					switch tv := prev.(type) {
+					case []interface{}:
+						if i < 0 {
+							i = len(tv) + i
+						}
+						var v interface{}
+						if 0 < i && i < len(tv) {
+							v = tv[i]
+						}
+						if fi == len(x)-1 { // last one
+							return v
+						}
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
+						}
+					case Array:
+						if i < 0 {
+							i = len(tv) + i
+						}
+						var v interface{}
+						if 0 < i && i < len(tv) {
+							v = tv[i]
+						}
+						if fi == len(x)-1 { // last one
+							return v
+						}
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
+						}
+					default:
+						// TBD reflection
+						continue
+					}
+				}
+			}
+		case Slice:
+			start := 0
+			if 0 < len(tf) {
+				start = tf[0]
+			}
+			switch tv := prev.(type) {
+			case []interface{}:
+				if start < 0 {
+					start = len(tv) + start
+				}
+				if start < 0 || len(tv) <= start {
+					continue
+				}
+				v := tv[start]
+				if fi == len(x)-1 { // last one
+					return v
+				}
+				switch v.(type) {
+				case map[string]interface{}, []interface{}, Object, Array:
+					stack = append(stack, v)
+				}
+			case Array:
+				if start < 0 {
+					start = len(tv) + start
+				}
+				if start < 0 || len(tv) <= start {
+					continue
+				}
+				v := tv[start]
+				if fi == len(x)-1 { // last one
+					return v
+				}
+				switch v.(type) {
+				case Object, Array:
+					stack = append(stack, v)
+				}
+			}
+		}
+		if fi < len(x)-1 {
+			if _, ok := stack[len(stack)-1].(int); !ok {
+				fi++
+				f = x[fi]
+				stack = append(stack, fi)
+			}
 		}
 	}
 	return nil

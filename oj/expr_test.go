@@ -64,11 +64,11 @@ func buildNodeTree(size, depth, iv int) oj.Node {
 }
 
 func TestOjExprBuild(t *testing.T) {
-	x := oj.X().D().C("abc").W().N(3)
-	tt.Equal(t, "..abc.*[3]", x.String())
+	x := oj.X().D().C("abc").W().N(3).U(2, "x").S(1, 5, 2).S(1, 5).S(1)
+	tt.Equal(t, "..abc.*[3][2,'x'][1:5:2][1:5][1:]", x.String())
 
-	x = oj.R().Descent().Child("abc").Wildcard().Nth(3)
-	tt.Equal(t, "$..abc.*[3]", x.String())
+	x = oj.R().Descent().Child("abc").Wildcard().Nth(3).Union(2, "x").Slice(1, 5, 2).Slice(1, 5).Slice(1)
+	tt.Equal(t, "$..abc.*[3][2,'x'][1:5:2][1:5][1:]", x.String())
 
 	x = oj.B().Descent().Child("abc").Wildcard()
 	tt.Equal(t, "[..]['abc'][*]", x.String())
@@ -100,6 +100,19 @@ func TestOjExprGet(t *testing.T) {
 		return iv < jv
 	})
 	tt.Equal(t, []interface{}{122, 222, 322, 422}, result)
+
+	x = oj.U(1, "a").U("b", 2).U("c", 3)
+	result = x.Get(data)
+	tt.Equal(t, []interface{}{133}, result)
+
+	x = oj.C("a").S(1, -1, 2).C("a")
+	result = x.Get(data)
+	sort.Slice(result, func(i, j int) bool {
+		iv, _ := result[i].(int)
+		jv, _ := result[j].(int)
+		return iv < jv
+	})
+	tt.Equal(t, []interface{}{121, 141}, result)
 }
 
 func TestOjExprGetNodes(t *testing.T) {
@@ -164,9 +177,9 @@ func xTestOjExprDev(t *testing.T) {
 			"c": 3,
 		}
 	*/
-	x := oj.D().N(1).C("b")
+	x := oj.C("a").S(1, -1, 2).C("a")
 
-	result := x.First(data)
-	fmt.Printf("*** data: %s\n", oj.JSON(data, 2))
+	result := x.Get(data)
+	//fmt.Printf("*** data: %s\n", oj.JSON(data, 2))
 	fmt.Printf("*** results: %s\n", oj.JSON(result))
 }

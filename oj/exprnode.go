@@ -38,9 +38,6 @@ func (x Expr) GetNodes(n Node) (results []Node) {
 						switch v.(type) {
 						case Object, Array:
 							stack = append(stack, v)
-							fi++
-							f = x[fi]
-							stack = append(stack, Int(fi))
 						}
 					}
 				}
@@ -62,9 +59,6 @@ func (x Expr) GetNodes(n Node) (results []Node) {
 					case Object, Array:
 						stack = append(stack, v)
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, Int(fi))
 				}
 			}
 		case Wildcard:
@@ -81,9 +75,6 @@ func (x Expr) GetNodes(n Node) (results []Node) {
 							stack = append(stack, v)
 						}
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, Int(fi))
 				}
 			case Array:
 				if fi == int64(len(x))-1 { // last one
@@ -97,9 +88,6 @@ func (x Expr) GetNodes(n Node) (results []Node) {
 							stack = append(stack, v)
 						}
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, Int(fi))
 				}
 			}
 		case Descent:
@@ -144,10 +132,6 @@ func (x Expr) GetNodes(n Node) (results []Node) {
 				}
 				if self {
 					stack = append(stack, Int(fi|descentChildFlag))
-				} else if fi < int64(len(x))-1 {
-					fi++
-					f = x[fi]
-					stack = append(stack, Int(fi))
 				}
 			} else {
 				if fi == int64(len(x))-1 { // last one
@@ -156,9 +140,6 @@ func (x Expr) GetNodes(n Node) (results []Node) {
 					}
 				} else {
 					stack = append(stack, prev)
-					fi++
-					f = x[fi]
-					stack = append(stack, Int(fi))
 				}
 			}
 		case Root:
@@ -166,15 +147,62 @@ func (x Expr) GetNodes(n Node) (results []Node) {
 				results = append(results, n)
 			} else {
 				stack = append(stack, n)
-				fi++
-				f = x[fi]
-				stack = append(stack, Int(fi))
 			}
 		case At, Bracket:
 			if fi == int64(len(x))-1 { // last one
 				results = append(results, prev)
 			} else {
 				stack = append(stack, prev)
+			}
+		case Union:
+			for _, u := range tf {
+				switch tu := u.(type) {
+				case string:
+					var has bool
+					switch tv := prev.(type) {
+					case Object:
+						if v, has = tv[string(tu)]; has {
+							if fi == int64(len(x))-1 { // last one
+								results = append(results, v)
+							} else {
+								switch v.(type) {
+								case Object, Array:
+									stack = append(stack, v)
+								}
+							}
+						}
+					default:
+						// TBD try reflection
+						continue
+					}
+				case int64:
+					i := int(tu)
+					switch tv := prev.(type) {
+					case Array:
+						if i < 0 {
+							i = len(tv) + i
+						}
+						var v Node
+						if 0 < i && i < len(tv) {
+							v = tv[i]
+						}
+						if fi == int64(len(x))-1 { // last one
+							results = append(results, v)
+						} else {
+							switch v.(type) {
+							case Object, Array:
+								stack = append(stack, v)
+							}
+						}
+					default:
+						// TBD reflection
+						continue
+					}
+				}
+			}
+		}
+		if fi < int64(len(x))-1 {
+			if _, ok := stack[len(stack)-1].(Int); !ok {
 				fi++
 				f = x[fi]
 				stack = append(stack, Int(fi))
@@ -229,9 +257,6 @@ func (x Expr) FirstNode(n Node) (result Node) {
 					switch v.(type) {
 					case Object, Array:
 						stack = append(stack, v)
-						fi++
-						f = x[fi]
-						stack = append(stack, Int(fi))
 					}
 				}
 			}
@@ -252,9 +277,6 @@ func (x Expr) FirstNode(n Node) (result Node) {
 					case Object, Array:
 						stack = append(stack, v)
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, Int(fi))
 				}
 			}
 		case Wildcard:
@@ -271,9 +293,6 @@ func (x Expr) FirstNode(n Node) (result Node) {
 							stack = append(stack, v)
 						}
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, Int(fi))
 				}
 			case Array:
 				if fi == int64(len(x))-1 { // last one
@@ -287,9 +306,6 @@ func (x Expr) FirstNode(n Node) (result Node) {
 							stack = append(stack, v)
 						}
 					}
-					fi++
-					f = x[fi]
-					stack = append(stack, Int(fi))
 				}
 			}
 		case Descent:
@@ -334,10 +350,6 @@ func (x Expr) FirstNode(n Node) (result Node) {
 				}
 				if self {
 					stack = append(stack, Int(fi|descentChildFlag))
-				} else if fi < int64(len(x))-1 {
-					fi++
-					f = x[fi]
-					stack = append(stack, Int(fi))
 				}
 			} else {
 				if fi == int64(len(x))-1 { // last one
@@ -346,9 +358,6 @@ func (x Expr) FirstNode(n Node) (result Node) {
 					}
 				} else {
 					stack = append(stack, prev)
-					fi++
-					f = x[fi]
-					stack = append(stack, Int(fi))
 				}
 			}
 		case Root:
@@ -356,17 +365,62 @@ func (x Expr) FirstNode(n Node) (result Node) {
 				return n
 			}
 			stack = append(stack, n)
-			fi++
-			f = x[fi]
-			stack = append(stack, Int(fi))
 		case At, Bracket:
 			if fi == int64(len(x))-1 { // last one
 				return prev
 			}
 			stack = append(stack, prev)
-			fi++
-			f = x[fi]
-			stack = append(stack, Int(fi))
+		case Union:
+			for _, u := range tf {
+				switch tu := u.(type) {
+				case string:
+					var has bool
+					switch tv := prev.(type) {
+					case Object:
+						if v, has = tv[string(tu)]; has {
+							if fi == int64(len(x))-1 { // last one
+								return v
+							}
+							switch v.(type) {
+							case Object, Array:
+								stack = append(stack, v)
+							}
+						}
+					default:
+						// TBD try reflection
+						continue
+					}
+				case int64:
+					i := int(tu)
+					switch tv := prev.(type) {
+					case Array:
+						if i < 0 {
+							i = len(tv) + i
+						}
+						var v Node
+						if 0 < i && i < len(tv) {
+							v = tv[i]
+						}
+						if fi == int64(len(x))-1 { // last one
+							return v
+						}
+						switch v.(type) {
+						case Object, Array:
+							stack = append(stack, v)
+						}
+					default:
+						// TBD reflection
+						continue
+					}
+				}
+			}
+		}
+		if fi < int64(len(x))-1 {
+			if _, ok := stack[len(stack)-1].(Int); !ok {
+				fi++
+				f = x[fi]
+				stack = append(stack, Int(fi))
+			}
 		}
 	}
 	return nil

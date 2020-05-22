@@ -1,15 +1,8 @@
 
 - path
- - [,] union (names or numbers) - U
-  - test
- - [start:end:step] slice - S
-  - test
  - ?() filter - F
  - () script (might not need this unless the script is the same as ?())
   - [(@.length-1)]
-
-- implement all but filter/script
-- filter is a new merge
 
 - filter
  - operators
