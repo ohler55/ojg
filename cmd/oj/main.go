@@ -44,7 +44,7 @@ usage: %s [<options>] [@<extraction>]... [<json-file>]...
 
 	var files []string
 	for _, arg := range flag.Args() {
-		if strings.HasPrefix(arg, "@") {
+		if strings.HasPrefix(arg, "@") || strings.HasPrefix(arg, "$") {
 			// TBD an extract
 		} else {
 			files = append(files, arg)

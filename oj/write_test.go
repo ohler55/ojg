@@ -52,11 +52,11 @@ func TestOjString(t *testing.T) {
 		{value: oj.Array{oj.Time(tm)}, expect: "[1588879759.123456789]", options: &oj.Options{TimeFormat: "second"}},
 		{value: oj.Array{oj.Time(tm)}, expect: `[{"@":1588879759123456789}]`, options: &oj.Options{TimeWrap: "@"}},
 		{value: map[string]interface{}{"t": true, "x": nil}, expect: "{\"t\":true}", options: &oj.Options{OmitNil: true}},
-		{value: map[string]interface{}{"t": true, "f": false}, expect: "{\n  \"f\":false,\n  \"t\":true\n}", options: &oj.Options{Sort: true, Indent: 2}},
-		{value: map[string]interface{}{"t": true}, expect: "{\n  \"t\":true\n}", options: &oj.Options{Indent: 2}},
+		{value: map[string]interface{}{"t": true, "f": false}, expect: "{\n  \"f\": false,\n  \"t\": true\n}", options: &oj.Options{Sort: true, Indent: 2}},
+		{value: map[string]interface{}{"t": true}, expect: "{\n  \"t\": true\n}", options: &oj.Options{Indent: 2}},
 		{value: oj.Object{"t": oj.True, "x": nil}, expect: "{\"t\":true}", options: &oj.Options{OmitNil: true}},
-		{value: oj.Object{"t": oj.True}, expect: "{\n  \"t\":true\n}", options: &oj.Options{Indent: 2}},
-		{value: oj.Object{"t": oj.True}, expect: "{\n  \"t\":true\n}", options: &oj.Options{Indent: 2, Sort: true}},
+		{value: oj.Object{"t": oj.True}, expect: "{\n  \"t\": true\n}", options: &oj.Options{Indent: 2}},
+		{value: oj.Object{"t": oj.True}, expect: "{\n  \"t\": true\n}", options: &oj.Options{Indent: 2, Sort: true}},
 
 		{value: &simon{x: 3}, expect: `{"type":"simon","x":3}`, options: &oj.Options{Sort: true}},
 	} {

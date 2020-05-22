@@ -59,6 +59,9 @@ func (p *NodeParser) Parse(buf []byte, args ...interface{}) (node Node, err erro
 		p.starts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
+		for i := len(p.stack) - 1; 0 <= i; i-- {
+			p.stack = nil
+		}
 		p.stack = p.stack[0:0]
 		p.nstack = p.nstack[:0]
 		p.starts = p.starts[:0]
@@ -72,6 +75,10 @@ func (p *NodeParser) Parse(buf []byte, args ...interface{}) (node Node, err erro
 		p.ri = 0
 	}
 	err = p.parseBuffer(buf, true)
+	for i := len(p.stack) - 1; 0 <= i; i-- {
+		p.stack = nil
+	}
+	p.stack = p.stack[:0]
 	return
 }
 
@@ -103,6 +110,9 @@ func (p *NodeParser) ParseReader(r io.Reader, args ...interface{}) (node Node, e
 		p.starts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
+		for i := len(p.stack) - 1; 0 <= i; i-- {
+			p.stack = nil
+		}
 		p.stack = p.stack[0:0]
 		p.nstack = p.nstack[:0]
 		p.starts = p.starts[:0]
@@ -117,6 +127,9 @@ func (p *NodeParser) ParseReader(r io.Reader, args ...interface{}) (node Node, e
 	buf = buf[:cnt]
 	if err != nil {
 		if err != io.EOF {
+			for i := len(p.stack) - 1; 0 <= i; i-- {
+				p.stack = nil
+			}
 			return
 		}
 		eof = true
@@ -128,7 +141,7 @@ func (p *NodeParser) ParseReader(r io.Reader, args ...interface{}) (node Node, e
 	}
 	for {
 		if err = p.parseBuffer(buf, eof); err != nil {
-			return
+			break
 		}
 		if eof {
 			break
@@ -138,11 +151,15 @@ func (p *NodeParser) ParseReader(r io.Reader, args ...interface{}) (node Node, e
 		buf = buf[:cnt]
 		if err != nil {
 			if err != io.EOF {
-				return
+				break
 			}
 			eof = true
 		}
 	}
+	for i := len(p.stack) - 1; 0 <= i; i-- {
+		p.stack = nil
+	}
+	p.stack = p.stack[0:0]
 	return
 }
 

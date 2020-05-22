@@ -1,4 +1,27 @@
 
+- path
+ - ?() filter - F
+ - () script (might not need this unless the script is the same as ?())
+  - [(@.length-1)]
+
+- filter
+ - operators
+  - ==, !=, >, >=, !, &&, || =~
+  - + - * /
+  - length
+ - values
+  - path is starting with @ or $
+  - string, number, bool, null
+  - group () or just the order
+
+- could allow mix of bracket and dot
+ - would need a tag to remember which was used
+ - or just allow in parse'
+
+ - test print
+ - Expr funcs to build
+
+
 - docs and unit tests for oj
 
 - cmd/oj
@@ -16,11 +39,8 @@
  - oj.X().C("foo").A().C("bar")
  - build path with jp.Child("foo").Any().Child("bar")
   - each returns a jp.Expr , []jp.Frag and appends
- - jp.Expr{fp.Child("foo"), fp.Any{}}
- - jp.Parse("foo.*.bar")
-
-
-
+ - oj.Expr{fp.Child("foo"), fp.Any{}}
+ - oj.ParsePath("foo.*.bar")
 
 - ojg/doc.go
  - JSON tools
@@ -46,6 +66,7 @@
 	// SetFirst(path string, val Node) error
 	// Remove(key string) []Node
 	// RemoveFirst(key string) Node
+ - root - $
  - current - @
  - child - .foo
  - wildcard - .* or in array/subscript [*]
