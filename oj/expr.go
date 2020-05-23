@@ -61,6 +61,11 @@ func R() Expr {
 	return Expr{Root('$')}
 }
 
+// A creates an Expr with a At (@) fragment.
+func A() Expr {
+	return Expr{At('@')}
+}
+
 // B creates an Expr with a Bracket fragment.
 func B() Expr {
 	return Expr{Bracket(' ')}
