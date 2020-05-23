@@ -13,8 +13,8 @@ import (
 
 func TestObjectString(t *testing.T) {
 	oj.Sort = true
-	o := oj.Object{"a": oj.Int(3), "b": oj.Object{"c": oj.Int(5)}, "d": oj.Int(7)}
-	tt.Equal(t, `{"a":3,"b":{"c":5},"d":7}`, o.String())
+	o := oj.Object{"a": oj.Int(3), "b": oj.Object{"c": oj.Int(5)}, "d": oj.Int(7), "n": nil}
+	tt.Equal(t, `{"a":3,"b":{"c":5},"d":7,"n":null}`, o.String())
 
 	oj.Sort = false
 	o = oj.Object{"a": nil, "b": oj.Int(7)}
@@ -23,7 +23,7 @@ func TestObjectString(t *testing.T) {
 }
 
 func TestObjectSimplify(t *testing.T) {
-	o := oj.Object{"a": oj.Int(3), "b": oj.Int(7)}
+	o := oj.Object{"a": oj.Int(3), "b": oj.Int(7), "n": nil}
 	simple := o.Simplify()
 
 	tt.Equal(t, "map[string]interface {}", fmt.Sprintf("%T", simple))
@@ -32,7 +32,7 @@ func TestObjectSimplify(t *testing.T) {
 }
 
 func TestObjectAlter(t *testing.T) {
-	o := oj.Object{"a": oj.Int(3), "b": oj.Int(7)}
+	o := oj.Object{"a": oj.Int(3), "b": oj.Int(7), "n": nil}
 	alt := o.Alter()
 
 	tt.Equal(t, "map[string]interface {}", fmt.Sprintf("%T", alt))
@@ -43,11 +43,11 @@ func TestObjectAlter(t *testing.T) {
 
 func TestObjectDup(t *testing.T) {
 	oj.Sort = true
-	o := oj.Object{"a": oj.Int(3), "b": oj.Int(7)}
+	o := oj.Object{"a": oj.Int(3), "b": oj.Int(7), "n": nil}
 
 	dup := o.Dup()
 	tt.NotNil(t, dup)
-	tt.Equal(t, `{"a":3,"b":7}`, dup.String())
+	tt.Equal(t, `{"a":3,"b":7,"n":null}`, dup.String())
 }
 
 func TestObjectEmpty(t *testing.T) {

@@ -64,7 +64,11 @@ func (n Object) Alter() interface{} {
 	if n != nil {
 		simple = *(*map[string]interface{})(unsafe.Pointer(&n))
 		for k, m := range n {
-			simple[k] = m.Alter()
+			if m == nil {
+				simple[k] = nil
+			} else {
+				simple[k] = m.Alter()
+			}
 		}
 	}
 	return simple
@@ -76,7 +80,11 @@ func (n Object) Simplify() interface{} {
 	if n != nil {
 		dup = map[string]interface{}{}
 		for k, m := range n {
-			dup[k] = m.Simplify()
+			if m == nil {
+				dup[k] = m
+			} else {
+				dup[k] = m.Simplify()
+			}
 		}
 	}
 	return dup
@@ -88,7 +96,11 @@ func (n Object) Dup() Node {
 	if n != nil {
 		o = Object{}
 		for k, m := range n {
-			o[k] = m.Dup()
+			if m == nil {
+				o[k] = nil
+			} else {
+				o[k] = m.Dup()
+			}
 		}
 	}
 	return o

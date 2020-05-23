@@ -33,7 +33,11 @@ func (n Array) Alter() interface{} {
 	if n != nil {
 		simple = *(*[]interface{})(unsafe.Pointer(&n))
 		for i, m := range n {
-			simple[i] = m.Alter()
+			if m == nil {
+				simple[i] = nil
+			} else {
+				simple[i] = m.Alter()
+			}
 		}
 	}
 	return simple
@@ -45,7 +49,11 @@ func (n Array) Simplify() interface{} {
 	if n != nil {
 		dup = make([]interface{}, 0, len(n))
 		for _, m := range n {
-			dup = append(dup, m.Simplify())
+			if m == nil {
+				dup = append(dup, nil)
+			} else {
+				dup = append(dup, m.Simplify())
+			}
 		}
 	}
 	return dup
