@@ -17,17 +17,17 @@ func TestArrayString(t *testing.T) {
 }
 
 func TestArraySimplify(t *testing.T) {
-	a := oj.Array{oj.Int(3), oj.Int(7)}
+	a := oj.Array{oj.Int(3), oj.Int(7), nil}
 	simple := a.Simplify()
 
-	tt.Equal(t, "[]interface {} [3 7]", fmt.Sprintf("%T %v", simple, simple))
+	tt.Equal(t, "[]interface {} [3 7 <nil>]", fmt.Sprintf("%T %v", simple, simple))
 }
 
 func TestArrayAlter(t *testing.T) {
-	a := oj.Array{oj.Int(3), oj.Int(7)}
+	a := oj.Array{oj.Int(3), oj.Int(7), nil}
 	alt := a.Alter()
 
-	tt.Equal(t, "[]interface {} [3 7]", fmt.Sprintf("%T %v", alt, alt))
+	tt.Equal(t, "[]interface {} [3 7 <nil>]", fmt.Sprintf("%T %v", alt, alt))
 
 	aa := alt.([]interface{})
 	tt.Equal(t, "int64 3  int64 7", fmt.Sprintf("%T %v  %T %v", aa[0], aa[0], aa[1], aa[1]))
