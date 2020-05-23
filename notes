@@ -6,23 +6,8 @@
   - [(@.length-1)]
 
 - filter (just and equation or maybe a script)
- - eval(v) bool
- - or eval(stack, list) stack
-  - fewer fuction calls
-
- - operators (const)
-  - ==, !=, >, >=, !, &&, || =~
-  - + - * /
-  - length
- - values
-  - path is starting with @ or $
-  - string, number, bool, null
-  - equation
-   - left, right, op
-    - op, args ...interface{}
-   - Eval(list interface{}) interface{}
-    - could be object in the future or maybe other?
-   - Filter(interface{}) bool
+- NewScript(string) (*Script, error)
+ - parse([]byte)
 
 - could allow mix of bracket and dot
  - would need a tag to remember which was used

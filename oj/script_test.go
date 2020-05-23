@@ -18,8 +18,7 @@ func scriptBenchData(size int64) interface{} {
 }
 
 func TestOjScriptDev(t *testing.T) {
-	var s oj.Script
-	s = s.Foo()
+	s := oj.Foo()
 	data := []interface{}{
 		map[string]interface{}{
 			"a": 1,
@@ -32,15 +31,18 @@ func TestOjScriptDev(t *testing.T) {
 			"c": 6,
 		},
 	}
-	fmt.Printf("*** data: %s\n", oj.JSON(data))
+	//fmt.Printf("*** data: %s\n", oj.JSON(data))
 	stack := []interface{}{}
-	stack = oj.Filter(s).Eval(stack, data)
+	stack = s.Eval(stack, data)
 	fmt.Printf("*** stack after: %s\n", oj.JSON(stack))
+	//fmt.Printf("*** script string: %s\n", s.String())
+	s = oj.Foo2()
+	fmt.Printf("*** script string: %s\n", s.String())
 }
 
 func BenchmarkOjScriptDev(b *testing.B) {
-	var s oj.Script
-	s = s.Foo()
+
+	s := oj.Foo()
 	data := scriptBenchData(100)
 	stack := []interface{}{}
 	b.ReportAllocs()
@@ -48,7 +50,7 @@ func BenchmarkOjScriptDev(b *testing.B) {
 	//fmt.Printf("*** data: %s\n", oj.JSON(data))
 	for n := 0; n < b.N; n++ {
 		stack = stack[:0]
-		stack = oj.Filter(s).Eval(stack, data)
+		stack = s.Eval(stack, data)
 		//fmt.Printf("*** stack: %s\n", oj.JSON(stack))
 	}
 }

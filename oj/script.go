@@ -2,32 +2,43 @@
 
 package oj
 
+import (
+	"fmt"
+	"strconv"
+)
+
 const (
 	equal  = "=="
 	length = "length"
 )
 
 var (
-	eq     = &op{prec: 3, code: '=', name: "=="}
-	neq    = &op{prec: 3, code: 'n', name: "!="}
-	lt     = &op{prec: 3, code: '<', name: "<"}
-	gt     = &op{prec: 3, code: '>', name: ">"}
-	lte    = &op{prec: 3, code: 'l', name: "<="}
-	gte    = &op{prec: 3, code: 'g', name: ">="}
-	or     = &op{prec: 4, code: '|', name: "||"}
-	and    = &op{prec: 4, code: '&', name: "&&"}
-	not    = &op{prec: 0, code: '!', name: "!"}
-	add    = &op{prec: 2, code: '+', name: "+"}
-	sub    = &op{prec: 2, code: '-', name: "-"}
-	mult   = &op{prec: 1, code: '*', name: "*"}
-	divide = &op{prec: 1, code: '/', name: "/"}
+	eq     = &op{prec: 3, code: '=', name: "==", cnt: 2}
+	neq    = &op{prec: 3, code: 'n', name: "!=", cnt: 2}
+	lt     = &op{prec: 3, code: '<', name: "<", cnt: 2}
+	gt     = &op{prec: 3, code: '>', name: ">", cnt: 2}
+	lte    = &op{prec: 3, code: 'l', name: "<=", cnt: 2}
+	gte    = &op{prec: 3, code: 'g', name: ">=", cnt: 2}
+	or     = &op{prec: 4, code: '|', name: "||", cnt: 2}
+	and    = &op{prec: 4, code: '&', name: "&&", cnt: 2}
+	not    = &op{prec: 0, code: '!', name: "!", cnt: 1}
+	add    = &op{prec: 2, code: '+', name: "+", cnt: 2}
+	sub    = &op{prec: 2, code: '-', name: "-", cnt: 2}
+	mult   = &op{prec: 1, code: '*', name: "*", cnt: 2}
+	divide = &op{prec: 1, code: '/', name: "/", cnt: 2}
 	// TBD add more as desired
 )
 
 type op struct {
 	name string
 	prec byte
+	cnt  byte
 	code byte
+}
+
+type precBuf struct {
+	prec byte
+	buf  []byte
 }
 
 // String returns the op name.
@@ -36,21 +47,64 @@ func (o *op) String() string {
 }
 
 // Script represents JSON Path script used in filters as well.
-type Script []interface{}
+type Script struct {
+	template []interface{}
+	stack    []interface{}
+}
 
-type Filter Script
+// Filter is a script used as a filter.
+type Filter struct {
+	Script
+}
+
+// String representation of the filter.
+func (f *Filter) String() string {
+	return string(f.Append([]byte{'?'}))
+}
 
 // Append a fragment string representation of the fragment to the buffer
 // then returning the expanded buffer.
-func (s Script) Append(buf []byte) []byte {
+func (s *Script) Append(buf []byte) []byte {
+	buf = append(buf, '(')
+	if 0 < len(s.template) {
+		bstack := make([]interface{}, len(s.template))
+		copy(bstack, s.template)
 
-	// TBD
+		for i := len(bstack) - 1; 0 <= i; i-- {
+			o, _ := bstack[i].(*op)
+			if o == nil {
+				continue
+			}
+			var left interface{}
+			var right interface{}
+			if 1 < len(bstack)-i {
+				left = bstack[i+1]
+			}
+			if 2 < len(bstack)-i {
+				right = bstack[i+2]
+			}
+			bstack[i] = s.appendOp(o, left, right)
+			if i+int(o.cnt)+1 <= len(bstack) {
+				copy(bstack[i+1:], bstack[i+int(o.cnt)+1:])
+			}
+		}
+		if pb, _ := bstack[0].(*precBuf); pb == nil {
+			buf = append(buf, "??"...)
+		} else {
+			buf = append(buf, pb.buf...)
+		}
+	}
+	buf = append(buf, ')')
 
 	return buf
 }
 
-func (f Filter) Eval(stack []interface{}, data interface{}) []interface{} {
-	estack := make([]interface{}, len(f))
+// String representation of the script.
+func (s *Script) String() string {
+	return string(s.Append([]byte{}))
+}
+
+func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 	// Checking the type each iteration adds 2.5% but allows code not to be
 	// duplicated and not to call a separate function. Using just one function
 	// call for each iteration adds 6.5%.
@@ -72,9 +126,9 @@ func (f Filter) Eval(stack []interface{}, data interface{}) []interface{} {
 			v = td[vi]
 		}
 		// Eval filter for each member of the list.
-		copy(estack, f)
+		copy(s.stack, s.template)
 		// resolve all expr members
-		for i, ev := range estack {
+		for i, ev := range s.stack {
 			// Normalize into nil, bool, int64, float64, and string early so
 			// that each comparison doen't have to.
 		Normalize:
@@ -90,213 +144,210 @@ func (f Filter) Eval(stack []interface{}, data interface{}) []interface{} {
 						var c Child
 						if c, ok = x[1].(Child); ok {
 							ev = m[string(c)]
-							estack[i] = ev
+							s.stack[i] = ev
 							goto Normalize
 						}
 					}
 				}
 				ev = x.First(v)
-				estack[i] = ev
+				s.stack[i] = ev
 				goto Normalize
 			case int:
-				estack[i] = int64(x)
+				s.stack[i] = int64(x)
 			case int8:
-				estack[i] = int64(x)
+				s.stack[i] = int64(x)
 			case int16:
-				estack[i] = int64(x)
+				s.stack[i] = int64(x)
 			case int32:
-				estack[i] = int64(x)
+				s.stack[i] = int64(x)
 			case uint:
-				estack[i] = int64(x)
+				s.stack[i] = int64(x)
 			case uint8:
-				estack[i] = int64(x)
+				s.stack[i] = int64(x)
 			case uint16:
-				estack[i] = int64(x)
+				s.stack[i] = int64(x)
 			case uint32:
-				estack[i] = int64(x)
+				s.stack[i] = int64(x)
 			case uint64:
-				estack[i] = int64(x)
+				s.stack[i] = int64(x)
 			case float32:
-				estack[i] = float64(x)
+				s.stack[i] = float64(x)
 			case Bool:
-				estack[i] = bool(x)
+				s.stack[i] = bool(x)
 			case String:
-				estack[i] = string(x)
+				s.stack[i] = string(x)
 			case Int:
-				estack[i] = int64(x)
+				s.stack[i] = int64(x)
 			case Float:
-				estack[i] = float64(x)
+				s.stack[i] = float64(x)
 
 			default:
 				// Any other type are already simplified or are not
 				// handled and will fail later.
 			}
 		}
-		for i := len(estack) - 1; 0 <= i; i-- {
-			o, _ := estack[i].(*op)
+		for i := len(s.stack) - 1; 0 <= i; i-- {
+			o, _ := s.stack[i].(*op)
 			if o == nil {
 				// a value, not an op
 				continue
 			}
 			var left interface{}
 			var right interface{}
-			var acnt int
-			if 1 < len(estack)-i {
-				left = estack[i+1]
-				acnt++
+			if 1 < len(s.stack)-i {
+				left = s.stack[i+1]
 			}
-			if 2 < len(estack)-i {
-				right = estack[i+2]
-				acnt++
+			if 2 < len(s.stack)-i {
+				right = s.stack[i+2]
 			}
 			switch o.code {
 			case eq.code:
-				estack[i] = left == right
+				s.stack[i] = left == right
 			case neq.code:
-				estack[i] = left != right
+				s.stack[i] = left != right
 			case lt.code:
 				switch tl := left.(type) {
 				case int64:
 					tr, ok := right.(int64)
-					estack[i] = ok && tl < tr
+					s.stack[i] = ok && tl < tr
 				case float64:
 					tr, ok := right.(float64)
-					estack[i] = ok && tl < tr
+					s.stack[i] = ok && tl < tr
 				case string:
 					tr, ok := right.(string)
-					estack[i] = ok && tl < tr
+					s.stack[i] = ok && tl < tr
 				default:
-					estack[i] = false
+					s.stack[i] = false
 				}
 			case gt.code:
 				switch tl := left.(type) {
 				case int64:
 					tr, ok := right.(int64)
-					estack[i] = ok && tl > tr
+					s.stack[i] = ok && tl > tr
 				case float64:
 					tr, ok := right.(float64)
-					estack[i] = ok && tl > tr
+					s.stack[i] = ok && tl > tr
 				case string:
 					tr, ok := right.(string)
-					estack[i] = ok && tl > tr
+					s.stack[i] = ok && tl > tr
 				default:
-					estack[i] = false
+					s.stack[i] = false
 				}
 			case lte.code:
 				switch tl := left.(type) {
 				case int64:
 					tr, ok := right.(int64)
-					estack[i] = ok && tl <= tr
+					s.stack[i] = ok && tl <= tr
 				case float64:
 					tr, ok := right.(float64)
-					estack[i] = ok && tl <= tr
+					s.stack[i] = ok && tl <= tr
 				case string:
 					tr, ok := right.(string)
-					estack[i] = ok && tl <= tr
+					s.stack[i] = ok && tl <= tr
 				default:
-					estack[i] = false
+					s.stack[i] = false
 				}
 			case gte.code:
 				switch tl := left.(type) {
 				case int64:
 					tr, ok := right.(int64)
-					estack[i] = ok && tl >= tr
+					s.stack[i] = ok && tl >= tr
 				case float64:
 					tr, ok := right.(float64)
-					estack[i] = ok && tl >= tr
+					s.stack[i] = ok && tl >= tr
 				case string:
 					tr, ok := right.(string)
-					estack[i] = ok && tl >= tr
+					s.stack[i] = ok && tl >= tr
 				default:
-					estack[i] = false
+					s.stack[i] = false
 				}
 			case or.code:
 				// If one is a boolean true then true.
 				lb, _ := left.(bool)
 				rb, _ := right.(bool)
-				estack[i] = lb || rb
+				s.stack[i] = lb || rb
 			case and.code:
 				// If both is a boolean true then true else false.
 				lb, _ := left.(bool)
 				rb, _ := right.(bool)
-				estack[i] = lb && rb
+				s.stack[i] = lb && rb
 			case not.code:
 				lb, _ := left.(bool)
-				estack[i] = !lb
+				s.stack[i] = !lb
 			case add.code:
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
 					case int64:
-						estack[i] = tl + tr
+						s.stack[i] = tl + tr
 					case float64:
-						estack[i] = float64(tl) + tr
+						s.stack[i] = float64(tl) + tr
 					default:
-						estack[i] = nil
+						s.stack[i] = nil
 					}
 				case float64:
 					switch tr := right.(type) {
 					case int64:
-						estack[i] = tl + float64(tr)
+						s.stack[i] = tl + float64(tr)
 					case float64:
-						estack[i] = tl + tr
+						s.stack[i] = tl + tr
 					default:
-						estack[i] = nil
+						s.stack[i] = nil
 					}
 				case string:
 					if tr, ok := right.(string); ok {
-						estack[i] = tl + tr
+						s.stack[i] = tl + tr
 					} else {
-						estack[i] = nil
+						s.stack[i] = nil
 					}
 				default:
-					estack[i] = false
+					s.stack[i] = false
 				}
 			case sub.code:
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
 					case int64:
-						estack[i] = tl - tr
+						s.stack[i] = tl - tr
 					case float64:
-						estack[i] = float64(tl) - tr
+						s.stack[i] = float64(tl) - tr
 					default:
-						estack[i] = nil
+						s.stack[i] = nil
 					}
 				case float64:
 					switch tr := right.(type) {
 					case int64:
-						estack[i] = tl - float64(tr)
+						s.stack[i] = tl - float64(tr)
 					case float64:
-						estack[i] = tl - tr
+						s.stack[i] = tl - tr
 					default:
-						estack[i] = nil
+						s.stack[i] = nil
 					}
 				default:
-					estack[i] = false
+					s.stack[i] = false
 				}
 			case mult.code:
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
 					case int64:
-						estack[i] = tl * tr
+						s.stack[i] = tl * tr
 					case float64:
-						estack[i] = float64(tl) * tr
+						s.stack[i] = float64(tl) * tr
 					default:
-						estack[i] = nil
+						s.stack[i] = nil
 					}
 				case float64:
 					switch tr := right.(type) {
 					case int64:
-						estack[i] = tl * float64(tr)
+						s.stack[i] = tl * float64(tr)
 					case float64:
-						estack[i] = tl * tr
+						s.stack[i] = tl * tr
 					default:
-						estack[i] = nil
+						s.stack[i] = nil
 					}
 				default:
-					estack[i] = false
+					s.stack[i] = false
 				}
 			case divide.code:
 				switch tl := left.(type) {
@@ -304,55 +355,140 @@ func (f Filter) Eval(stack []interface{}, data interface{}) []interface{} {
 					switch tr := right.(type) {
 					case int64:
 						if tr != 0 {
-							estack[i] = tl / tr
+							s.stack[i] = tl / tr
 						} else {
-							estack[i] = nil
+							s.stack[i] = nil
 						}
 					case float64:
 						if tr != 0.0 {
-							estack[i] = float64(tl) / tr
+							s.stack[i] = float64(tl) / tr
 						} else {
-							estack[i] = nil
+							s.stack[i] = nil
 						}
 					default:
-						estack[i] = nil
+						s.stack[i] = nil
 					}
 				case float64:
 					switch tr := right.(type) {
 					case int64:
 						if tr != 0 {
-							estack[i] = tl / float64(tr)
+							s.stack[i] = tl / float64(tr)
 						} else {
-							estack[i] = nil
+							s.stack[i] = nil
 						}
 					case float64:
 						if tr != 0.0 {
-							estack[i] = tl / tr
+							s.stack[i] = tl / tr
 						} else {
-							estack[i] = nil
+							s.stack[i] = nil
 						}
 					default:
-						estack[i] = nil
+						s.stack[i] = nil
 					}
 				default:
-					estack[i] = false
+					s.stack[i] = false
 				}
+				if i+int(o.cnt)+1 <= len(s.stack) {
+					copy(s.stack[i+1:], s.stack[i+int(o.cnt)+1:])
+				}
+				// TBD slide tail
 			}
 		}
-		if b, _ := estack[0].(bool); b {
+		if b, _ := s.stack[0].(bool); b {
 			stack = append(stack, v)
 		}
 	}
-	for i, _ := range estack {
-		estack[i] = nil
+	for i, _ := range s.stack {
+		s.stack[i] = nil
 	}
 	return stack
 }
 
+func (s *Script) appendOp(o *op, left, right interface{}) (pb *precBuf) {
+	pb = &precBuf{prec: o.prec}
+	switch o.code {
+	case not.code:
+		pb.buf = append(pb.buf, o.name...)
+		pb.buf = s.appendValue(pb.buf, left, o.prec)
+	default:
+		pb.buf = s.appendValue(pb.buf, left, o.prec)
+		pb.buf = append(pb.buf, ' ')
+		pb.buf = append(pb.buf, o.name...)
+		pb.buf = append(pb.buf, ' ')
+		pb.buf = s.appendValue(pb.buf, right, o.prec)
+	}
+	return
+}
+
+func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
+	switch tv := v.(type) {
+	case string:
+		buf = append(buf, '\'')
+		buf = append(buf, tv...)
+		buf = append(buf, '\'')
+	case int64:
+		buf = append(buf, strconv.FormatInt(tv, 10)...)
+	case int:
+		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+	case int8:
+		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+	case int16:
+		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+	case int32:
+		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+	case uint:
+		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+	case uint8:
+		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+	case uint16:
+		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+	case uint32:
+		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+	case uint64:
+		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+	case float32:
+		buf = append(buf, strconv.FormatFloat(float64(tv), 'g', -1, 32)...)
+	case float64:
+		buf = append(buf, strconv.FormatFloat(tv, 'g', -1, 64)...)
+	case bool:
+		if tv {
+			buf = append(buf, "true"...)
+		} else {
+			buf = append(buf, "false"...)
+		}
+	case Expr:
+		buf = tv.Append(buf)
+	case *precBuf:
+		if prec <= tv.prec {
+			buf = append(buf, '(')
+			buf = append(buf, tv.buf...)
+			buf = append(buf, ')')
+		} else {
+			buf = append(buf, tv.buf...)
+		}
+
+	case fmt.Stringer:
+		buf = append(buf, tv.String()...)
+	default:
+		buf = append(buf, fmt.Sprintf("%v", v)...)
+	}
+	return buf
+}
+
 // TBD remove
-func (s Script) Foo() Script {
-	s = append(s, lt)
-	s = append(s, A().C("a"))
-	s = append(s, int64(52))
+func Foo() *Script {
+	s := &Script{}
+	s.template = append(s.template, lt)
+	s.template = append(s.template, A().C("a"))
+	s.template = append(s.template, int64(52))
+	s.stack = make([]interface{}, len(s.template))
+
+	return s
+}
+
+func Foo2() *Script {
+	s := &Script{template: []interface{}{or, lt, A().C("a"), int64(52), eq, A().W().C("x"), "cool"}}
+	s.stack = make([]interface{}, len(s.template))
+
 	return s
 }
