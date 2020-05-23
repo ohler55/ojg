@@ -52,8 +52,8 @@ func (s Script) Append(buf []byte) []byte {
 func (f Filter) Eval(stack []interface{}, data interface{}) []interface{} {
 	estack := make([]interface{}, len(f))
 	// Checking the type each iteration adds 2.5% but allows code not to be
-	// duplicated and not to call a separate function. The function call adds
-	// ??.
+	// duplicated and not to call a separate function. Using just one function
+	// call for each iteration adds 6.5%.
 	var dlen int
 	switch td := data.(type) {
 	case []interface{}:
@@ -349,31 +349,10 @@ func (f Filter) Eval(stack []interface{}, data interface{}) []interface{} {
 	return stack
 }
 
+// TBD remove
 func (s Script) Foo() Script {
 	s = append(s, lt)
 	s = append(s, A().C("a"))
 	s = append(s, int64(52))
 	return s
 }
-
-// TBD if list then walk and check each one
-//  stack based again
-//  [op, value, value]
-//  [op, value, op, value, value, op, value, value]
-// start from end and walk back to op
-//  [&&, ==, @.foo, 3, >, 4, @.bar]
-//  [&&, ==, @.foo, 3, true]
-//  [&&, true, true]
-
-// build like Expr
-// Script(@.foo, ==, 3, &&, 4 < @.bar)
-//  [@.foo, 3, ==]
-//  [&&, @.foo, 3, ==]
-//  [&&, @.foo, 3, ==, 4, @.bar, <]
-// Script(@.foo, ==, 3, &&, (, 4 < @.bar, ) )
-
-// bytes are ( and ), maybe + * - /
-
-// should op be []byte{precedence,code,string} or a struct?
-
-// startb out as public for ops then make private after parser is ready
