@@ -7,11 +7,6 @@ import (
 	"strconv"
 )
 
-const (
-	equal  = "=="
-	length = "length"
-)
-
 var (
 	eq     = &op{prec: 3, code: '=', name: "==", cnt: 2}
 	neq    = &op{prec: 3, code: 'n', name: "!=", cnt: 2}
@@ -26,7 +21,7 @@ var (
 	sub    = &op{prec: 2, code: '-', name: "-", cnt: 2}
 	mult   = &op{prec: 1, code: '*', name: "*", cnt: 2}
 	divide = &op{prec: 1, code: '/', name: "/", cnt: 2}
-	// TBD add more as desired
+	get    = &op{prec: 0, code: 'G', name: "get", cnt: 1}
 )
 
 type op struct {
@@ -394,7 +389,7 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 			stack = append(stack, v)
 		}
 	}
-	for i, _ := range s.stack {
+	for i := range s.stack {
 		s.stack[i] = nil
 	}
 	return stack

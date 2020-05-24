@@ -379,9 +379,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
 					if fi == len(x)-1 { // last one
-						for _, v = range tv {
-							results = append(results, v)
-						}
+						results = append(results, tv...)
 					}
 					for _, v = range tv {
 						switch v.(type) {
