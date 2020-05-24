@@ -1,22 +1,15 @@
 
 - tasks before release
- - script parser
  - expr Set
  - expr Del
  - path parser
+  - script parser
  - reflect for path and script
  - unit tests
  - docs
   - examples
  - remove tree (maybe create separate benchmark repo)
 
-
-- path
- - ?() filter - F
-  - F(string)
-
-- NewScript(string) (*Script, error)
- - parse([]byte)
 
 - could allow mix of bracket and dot
  - would need a tag to remember which was used

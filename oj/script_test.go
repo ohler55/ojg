@@ -3,10 +3,10 @@
 package oj_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/ohler55/ojg/oj"
+	"github.com/ohler55/ojg/tt"
 )
 
 func scriptBenchData(size int64) interface{} {
@@ -18,7 +18,6 @@ func scriptBenchData(size int64) interface{} {
 }
 
 func TestOjScriptDev(t *testing.T) {
-	s := oj.Foo()
 	data := []interface{}{
 		map[string]interface{}{
 			"a": 1,
@@ -31,18 +30,23 @@ func TestOjScriptDev(t *testing.T) {
 			"c": 6,
 		},
 	}
+	e := oj.Or(
+		oj.Lt(oj.Get(oj.A().C("a")), oj.ConstInt(52)),
+		oj.Eq(oj.Get(oj.A().C("x")), oj.ConstString("cool")),
+	)
+	tt.Equal(t, "(@.a < 52 || @.x == 'cool')", e.String())
+	s := e.Script()
+	tt.Equal(t, "(@.a < 52 || @.x == 'cool')", s.String())
+	f := e.Filter()
+	tt.Equal(t, "[?(@.a < 52 || @.x == 'cool')]", f.String())
+
 	//fmt.Printf("*** data: %s\n", oj.JSON(data))
-	stack := []interface{}{}
-	stack = s.Eval(stack, data)
-	fmt.Printf("*** stack after: %s\n", oj.JSON(stack))
-	//fmt.Printf("*** script string: %s\n", s.String())
-	s = oj.Foo2()
-	fmt.Printf("*** script string: %s\n", s.String())
+	stack := s.Eval([]interface{}{}, data)
+	tt.Equal(t, `[{"a":1,"b":2,"c":3}]`, oj.JSON(stack, &oj.Options{Sort: true}))
 }
 
 func BenchmarkOjScriptDev(b *testing.B) {
-
-	s := oj.Foo()
+	s := oj.Lt(oj.Get(oj.A().C("a")), oj.ConstInt(52)).Script()
 	data := scriptBenchData(100)
 	stack := []interface{}{}
 	b.ReportAllocs()

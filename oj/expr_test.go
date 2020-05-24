@@ -113,6 +113,10 @@ func TestOjExprGet(t *testing.T) {
 		return iv < jv
 	})
 	tt.Equal(t, []interface{}{121, 141}, result)
+
+	x = oj.C("a").F(oj.Gt(oj.Get(oj.A().C("a")), oj.ConstInt(135))).C("b")
+	result = x.Get(data)
+	tt.Equal(t, []interface{}{142}, result)
 }
 
 func TestOjExprGetNodes(t *testing.T) {
@@ -177,7 +181,7 @@ func xTestOjExprDev(t *testing.T) {
 			"c": 3,
 		}
 	*/
-	x := oj.C("a").S(1, -1, 2).C("a")
+	x := oj.C("a").F(oj.Gt(oj.Get(oj.A().C("a")), oj.ConstInt(135))).C("b")
 
 	result := x.Get(data)
 	//fmt.Printf("*** data: %s\n", oj.JSON(data, 2))

@@ -66,30 +66,19 @@ func B() Expr {
 	return Expr{Bracket(' ')}
 }
 
+// C creates an Expr with a Child fragment.
+func C(key string) Expr {
+	return Expr{Child(key)}
+}
+
 // D creates an Expr with a recursive Descent fragment.
 func D() Expr {
 	return Expr{Descent('.')}
 }
 
 // F creates an Expr with a Filter fragment.
-func F() Expr {
-	// TBD pass in script
-	return Expr{Filter{}}
-}
-
-// R creates an Expr with a Root fragment.
-func R() Expr {
-	return Expr{Root('$')}
-}
-
-// W creates an Expr with a Wildcard fragment.
-func W() Expr {
-	return Expr{Wildcard('*')}
-}
-
-// C creates an Expr with a Child fragment.
-func C(key string) Expr {
-	return Expr{Child(key)}
+func F(e *Equation) Expr {
+	return Expr{e.Filter()}
 }
 
 // N creates an Expr with an Nth fragment.
@@ -97,14 +86,24 @@ func N(n int) Expr {
 	return Expr{Nth(n)}
 }
 
-// U creates an Expr with an Union fragment.
-func U(keys ...interface{}) Expr {
-	return Expr{NewUnion(keys...)}
+// R creates an Expr with a Root fragment.
+func R() Expr {
+	return Expr{Root('$')}
 }
 
 // S creates an Expr with a Slice fragment.
 func S(start int, rest ...int) Expr {
 	return Expr{Slice(append([]int{start}, rest...))}
+}
+
+// U creates an Expr with an Union fragment.
+func U(keys ...interface{}) Expr {
+	return Expr{NewUnion(keys...)}
+}
+
+// W creates an Expr with a Wildcard fragment.
+func W() Expr {
+	return Expr{Wildcard('*')}
 }
 
 // A appends an At fragment to the Expr.
@@ -132,14 +131,24 @@ func (x Expr) Child(key string) Expr {
 	return append(x, Child(key))
 }
 
-// W appends a Wildcard fragment to the Expr.
-func (x Expr) W() Expr {
-	return append(x, Wildcard('*'))
+// D appends a recursive Descent fragment to the Expr.
+func (x Expr) D() Expr {
+	return append(x, Descent('.'))
 }
 
-// Wildcard appends a Wildcard fragment to the Expr.
-func (x Expr) Wildcard() Expr {
-	return append(x, Wildcard('*'))
+// Descent appends a recursive Descent fragment to the Expr.
+func (x Expr) Descent() Expr {
+	return append(x, Descent('.'))
+}
+
+// F appends a Filter fragment to the Expr.
+func (x Expr) F(e *Equation) Expr {
+	return append(x, e.Filter())
+}
+
+// Filter appends a Filter fragment to the Expr.
+func (x Expr) Filter(e *Equation) Expr {
+	return append(x, e.Filter())
 }
 
 // N appends an Nth fragment to the Expr.
@@ -162,14 +171,14 @@ func (x Expr) Root() Expr {
 	return append(x, Root('$'))
 }
 
-// D appends a recursive Descent fragment to the Expr.
-func (x Expr) D() Expr {
-	return append(x, Descent('.'))
+// S appends a Slice fragment to the Expr.
+func (x Expr) S(start int, rest ...int) Expr {
+	return append(x, Slice(append([]int{start}, rest...)))
 }
 
-// Descent appends a recursive Descent fragment to the Expr.
-func (x Expr) Descent() Expr {
-	return append(x, Descent('.'))
+// Slice appends a Slice fragment to the Expr.
+func (x Expr) Slice(start int, rest ...int) Expr {
+	return append(x, Slice(append([]int{start}, rest...)))
 }
 
 // U appends a Union fragment to the Expr.
@@ -182,14 +191,14 @@ func (x Expr) Union(keys ...interface{}) Expr {
 	return append(x, NewUnion(keys...))
 }
 
-// S appends a Slice fragment to the Expr.
-func (x Expr) S(start int, rest ...int) Expr {
-	return append(x, Slice(append([]int{start}, rest...)))
+// W appends a Wildcard fragment to the Expr.
+func (x Expr) W() Expr {
+	return append(x, Wildcard('*'))
 }
 
-// Slice appends a Slice fragment to the Expr.
-func (x Expr) Slice(start int, rest ...int) Expr {
-	return append(x, Slice(append([]int{start}, rest...)))
+// Wildcard appends a Wildcard fragment to the Expr.
+func (x Expr) Wildcard() Expr {
+	return append(x, Wildcard('*'))
 }
 
 // The easy way to implement the Get is to have each fragment handle the
@@ -608,6 +617,8 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				// TBD try reflection
 				continue
 			}
+		case *Filter:
+			stack = tf.Eval(stack, prev)
 			// TBD
 		}
 		if fi < len(x)-1 {

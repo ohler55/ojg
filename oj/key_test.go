@@ -16,7 +16,6 @@ func TestKey(t *testing.T) {
 	tt.Equal(t, "sample", k.Alter(), "Alter()")
 	tt.Equal(t, "sample", k.Simplify(), "Simplify()")
 	dup := k.Dup()
-	fmt.Sprintf("%T %s", dup, dup)
 	tt.Equal(t, "oj.Key sample", fmt.Sprintf("%T %s", dup, dup), "Dup()")
 	tt.Equal(t, false, k.Empty(), "Empty()")
 }

@@ -476,21 +476,3 @@ func (s *Script) parse(buf []byte, i int) (end int, err error) {
 
 	return
 }
-
-// TBD remove
-func Foo() *Script {
-	s := &Script{}
-	s.template = append(s.template, lt)
-	s.template = append(s.template, A().C("a"))
-	s.template = append(s.template, int64(52))
-	s.stack = make([]interface{}, len(s.template))
-
-	return s
-}
-
-func Foo2() *Script {
-	s := &Script{template: []interface{}{or, lt, A().C("a"), int64(52), eq, A().W().C("x"), "cool"}}
-	s.stack = make([]interface{}, len(s.template))
-
-	return s
-}
