@@ -17,7 +17,6 @@ type NodeParser struct {
 	nstack    []Node
 	starts    []int
 	cb        func(Node) bool
-	icb       func(interface{}) bool
 	ri        int // read index for null, false, and true
 	line      int
 	noff      int // Offset of last newline from start of buf. Can be negative when using a reader.

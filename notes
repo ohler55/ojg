@@ -1,26 +1,21 @@
 
-- path
- - ?() filter - F
- - () script (might not need this unless the script is the same as ?())
-  - [(@.length-1)]
+- tasks before release
+ - expr Set
+ - expr Del
+ - path parser
+  - script parser
+ - reflect for path and script
+ - unit tests
+ - docs
+  - examples
+ - remove tree (maybe create separate benchmark repo)
 
-- filter
- - operators
-  - ==, !=, >, >=, !, &&, || =~
-  - + - * /
-  - length
- - values
-  - path is starting with @ or $
-  - string, number, bool, null
-  - group () or just the order
 
 - could allow mix of bracket and dot
  - would need a tag to remember which was used
  - or just allow in parse'
 
- - test print
- - Expr funcs to build
-
+ - test print after parser
 
 - docs and unit tests for oj
 

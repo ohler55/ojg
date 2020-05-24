@@ -19,7 +19,7 @@ type WithList struct {
 type Setter struct {
 	a int64
 	b string
-	s *Setter
+	//s *Setter
 }
 
 func (s *Setter) String() string {
