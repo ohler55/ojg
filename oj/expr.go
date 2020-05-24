@@ -56,11 +56,6 @@ func X() Expr {
 	return Expr{}
 }
 
-// R creates an Expr with a Root fragment.
-func R() Expr {
-	return Expr{Root('$')}
-}
-
 // A creates an Expr with a At (@) fragment.
 func A() Expr {
 	return Expr{At('@')}
@@ -74,6 +69,17 @@ func B() Expr {
 // D creates an Expr with a recursive Descent fragment.
 func D() Expr {
 	return Expr{Descent('.')}
+}
+
+// F creates an Expr with a Filter fragment.
+func F() Expr {
+	// TBD pass in script
+	return Expr{Filter{}}
+}
+
+// R creates an Expr with a Root fragment.
+func R() Expr {
+	return Expr{Root('$')}
 }
 
 // W creates an Expr with a Wildcard fragment.

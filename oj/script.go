@@ -52,14 +52,10 @@ type Script struct {
 	stack    []interface{}
 }
 
-// Filter is a script used as a filter.
-type Filter struct {
-	Script
-}
-
-// String representation of the filter.
-func (f *Filter) String() string {
-	return string(f.Append([]byte{'?'}))
+func NewScript(str string) (s *Script, err error) {
+	s = &Script{}
+	_, err = s.parse([]byte(str), 0)
+	return
 }
 
 // Append a fragment string representation of the fragment to the buffer
@@ -125,7 +121,7 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 		case Array:
 			v = td[vi]
 		}
-		// Eval filter for each member of the list.
+		// Eval script for each member of the list.
 		copy(s.stack, s.template)
 		// resolve all expr members
 		for i, ev := range s.stack {
@@ -473,6 +469,17 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 		buf = append(buf, fmt.Sprintf("%v", v)...)
 	}
 	return buf
+}
+
+// parse the buf and return the script along with the next buf index. Used for
+// NewScript as well as Expr (JSON path) parsing.
+func (s *Script) parse(buf []byte, i int) (end int, err error) {
+
+	// TBD expect a ( and )
+	//  parse directly to array or build a tree first?
+	//  need to keep track of parens in any case
+
+	return
 }
 
 // TBD remove

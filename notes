@@ -1,11 +1,20 @@
 
+- tasks before release
+ - script parser
+ - expr Set
+ - expr Del
+ - path parser
+ - reflect for path and script
+ - unit tests
+ - docs
+  - examples
+ - remove tree (maybe create separate benchmark repo)
+
+
 - path
  - ?() filter - F
-  - F(Script)
- - () script (might not need this unless the script is the same as ?())
-  - [(@.length-1)]
+  - F(string)
 
-- filter (just and equation or maybe a script)
 - NewScript(string) (*Script, error)
  - parse([]byte)
 
@@ -13,9 +22,7 @@
  - would need a tag to remember which was used
  - or just allow in parse'
 
- - test print
- - Expr funcs to build
-
+ - test print after parser
 
 - docs and unit tests for oj
 
