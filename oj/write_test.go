@@ -24,7 +24,7 @@ func (s *simon) Simplify() interface{} {
 	}
 }
 
-func TestOjString(t *testing.T) {
+func TestString(t *testing.T) {
 	opt := &oj.Options{}
 	tm := time.Date(2020, time.May, 7, 19, 29, 19, 123456789, time.UTC)
 	for i, d := range []data{
@@ -74,7 +74,7 @@ func TestOjString(t *testing.T) {
 	}
 }
 
-func TestOjWrite(t *testing.T) {
+func TestWrite(t *testing.T) {
 	var b strings.Builder
 
 	err := oj.Write(&b, []interface{}{true, false})
@@ -99,7 +99,7 @@ func TestOjWrite(t *testing.T) {
 	tt.Equal(t, "[\n  false,\n  true\n]", b.String())
 }
 
-func TestOjColor(t *testing.T) {
+func TestColor(t *testing.T) {
 	opt := &oj.Options{
 		Color: true,
 		// use visible character to make it easier to verify

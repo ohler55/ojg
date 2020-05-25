@@ -11,7 +11,7 @@ import (
 	"github.com/ohler55/ojg/tt"
 )
 
-func TestValidateString(t *testing.T) {
+func TestValidatorValidateString(t *testing.T) {
 	for i, d := range []data{
 		{src: "null"},
 		{src: "true"},
@@ -80,7 +80,7 @@ true
 	}
 }
 
-func TestValidateReader(t *testing.T) {
+func TestValidatorValidateReader(t *testing.T) {
 	r := strings.NewReader("[true,[false,[null],123],456]")
 	err := oj.ValidateReader(r)
 	tt.Nil(t, err)
@@ -96,7 +96,7 @@ func TestValidateReader(t *testing.T) {
 	tt.Nil(t, err)
 }
 
-func TestValidateResuse(t *testing.T) {
+func TestValidatorValidateResuse(t *testing.T) {
 	var v oj.Validator
 	err := v.Validate([]byte("[true,[false,[null],123],456]"))
 	tt.Nil(t, err)
@@ -109,7 +109,7 @@ func TestValidateResuse(t *testing.T) {
 	tt.Nil(t, err)
 }
 
-func TestValidateBOM(t *testing.T) {
+func TestValidatorValidateBOM(t *testing.T) {
 	var v oj.Validator
 	err := v.Validate([]byte("\xef\xbb\xbf[true]"))
 	tt.Nil(t, err)

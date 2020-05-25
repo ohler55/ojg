@@ -22,13 +22,13 @@ func (s *silly) Simplify() interface{} {
 	return map[string]interface{}{"type": "silly", "val": s.val}
 }
 
-func TestOjDecomposeReflectNumbers(t *testing.T) {
+func TestDecomposeReflectNumbers(t *testing.T) {
 	a := []interface{}{int8(-8), int16(-16), int32(-32), uint(0), uint8(8), uint16(16), uint32(32), uint64(64), float32(3.2)}
 	v := oj.Decompose(a)
 	tt.Equal(t, []interface{}{-8, -16, -32, 0, 8, 16, 32, 64, 3.2}, v)
 }
 
-func TestOjDecomposeReflectStruct(t *testing.T) {
+func TestDecomposeReflectStruct(t *testing.T) {
 	d := Dummy{Val: 3, Nest: &Dummy{Val: 2}}
 	v := oj.Decompose(&d)
 	tt.Equal(t, map[string]interface{}{"type": "Dummy", "val": 3, "nest": map[string]interface{}{"type": "Dummy", "val": 2}}, v)
@@ -44,13 +44,13 @@ func TestOjDecomposeReflectStruct(t *testing.T) {
 	}, v)
 }
 
-func TestOjDecomposeReflectComplex(t *testing.T) {
+func TestDecomposeReflectComplex(t *testing.T) {
 	c := complex(1.2, 3.4)
 	v := oj.Decompose(c)
 	tt.Equal(t, map[string]interface{}{"type": "complex", "real": 1.2, "imag": 3.4}, v)
 }
 
-func TestOjDecomposeReflectMap(t *testing.T) {
+func TestDecomposeReflectMap(t *testing.T) {
 	m := map[int]int{1: 1, 2: 4, 3: 9}
 	v := oj.Decompose(m)
 	tt.Equal(t, map[string]interface{}{"1": 1, "2": 4, "3": 9}, v)
@@ -60,7 +60,7 @@ func TestOjDecomposeReflectMap(t *testing.T) {
 	tt.Equal(t, map[string]interface{}{"1": 1, "2": 4, "3": 9}, v)
 }
 
-func TestOjDecomposeReflectArray(t *testing.T) {
+func TestDecomposeReflectArray(t *testing.T) {
 	a := []*Dummy{{Val: 1}, {Val: 2}, {Val: 3}}
 	v := oj.Decompose(a)
 	tt.Equal(t, []interface{}{
@@ -70,25 +70,25 @@ func TestOjDecomposeReflectArray(t *testing.T) {
 	}, v)
 }
 
-func TestOjDecomposeReflectOdd(t *testing.T) {
+func TestDecomposeReflectOdd(t *testing.T) {
 	odd := []interface{}{func() {}, nil}
 	v := oj.Decompose(odd)
 	tt.Equal(t, []interface{}{nil, nil}, v)
 }
 
-func TestOjDecomposeReflectSimplifier(t *testing.T) {
+func TestDecomposeReflectSimplifier(t *testing.T) {
 	s := silly{val: 3}
 	v := oj.Decompose(&s)
 	tt.Equal(t, map[string]interface{}{"type": "silly", "val": 3}, v)
 }
 
-func TestOjAlterReflectNumbers(t *testing.T) {
+func TestAlterReflectNumbers(t *testing.T) {
 	a := []interface{}{int8(-8), int16(-16), int32(-32), uint(0), uint8(8), uint16(16), uint32(32), uint64(64), float32(3.2)}
 	v := oj.Alter(a)
 	tt.Equal(t, []interface{}{-8, -16, -32, 0, 8, 16, 32, 64, 3.2}, v)
 }
 
-func TestOjAlterReflectStruct(t *testing.T) {
+func TestAlterReflectStruct(t *testing.T) {
 	d := Dummy{Val: 3, Nest: &Dummy{Val: 2}}
 	v := oj.Alter(&d)
 	tt.Equal(t, map[string]interface{}{"type": "Dummy", "val": 3, "nest": map[string]interface{}{"type": "Dummy", "val": 2}}, v)
@@ -104,13 +104,13 @@ func TestOjAlterReflectStruct(t *testing.T) {
 	}, v)
 }
 
-func TestOjAlterReflectComplex(t *testing.T) {
+func TestAlterReflectComplex(t *testing.T) {
 	c := complex(1.2, 3.4)
 	v := oj.Alter(c)
 	tt.Equal(t, map[string]interface{}{"type": "complex", "real": 1.2, "imag": 3.4}, v)
 }
 
-func TestOjAlterReflectMap(t *testing.T) {
+func TestAlterReflectMap(t *testing.T) {
 	m := map[int]int{1: 1, 2: 4, 3: 9}
 	v := oj.Alter(m)
 	tt.Equal(t, map[string]interface{}{"1": 1, "2": 4, "3": 9}, v)
@@ -120,7 +120,7 @@ func TestOjAlterReflectMap(t *testing.T) {
 	tt.Equal(t, map[string]interface{}{"1": 1, "2": 4, "3": 9}, v)
 }
 
-func TestOjAlterReflectArray(t *testing.T) {
+func TestAlterReflectArray(t *testing.T) {
 	a := []*Dummy{{Val: 1}, {Val: 2}, {Val: 3}}
 	v := oj.Alter(a)
 	tt.Equal(t, []interface{}{
@@ -130,13 +130,13 @@ func TestOjAlterReflectArray(t *testing.T) {
 	}, v)
 }
 
-func TestOjAlterReflectOdd(t *testing.T) {
+func TestAlterReflectOdd(t *testing.T) {
 	odd := []interface{}{func() {}, nil}
 	v := oj.Alter(odd)
 	tt.Equal(t, []interface{}{nil, nil}, v)
 }
 
-func TestOjAlterReflectSimplifier(t *testing.T) {
+func TestAlterReflectSimplifier(t *testing.T) {
 	s := silly{val: 3}
 	v := oj.Alter(&s)
 	tt.Equal(t, map[string]interface{}{"type": "silly", "val": 3}, v)

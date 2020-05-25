@@ -45,7 +45,7 @@ func sillyRecompose(data map[string]interface{}) (interface{}, error) {
 	return &s, nil
 }
 
-func TestOjRecomposeBasic(t *testing.T) {
+func TestRecomposeBasic(t *testing.T) {
 	src := map[string]interface{}{
 		"type": "Dummy",
 		"val":  3,
@@ -66,7 +66,7 @@ func TestOjRecomposeBasic(t *testing.T) {
 	tt.Equal(t, []interface{}{-8, -16, -32, 0, 8, 16, 32, 64, 1.2, map[string]interface{}{}}, d.Nest)
 }
 
-func TestOjRecomposeNode(t *testing.T) {
+func TestRecomposeNode(t *testing.T) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	src := map[string]interface{}{
 		"type": "Dummy",
@@ -85,7 +85,7 @@ func TestOjRecomposeNode(t *testing.T) {
 	tt.Equal(t, []interface{}{-8, true, 1.2, "abc", map[string]interface{}{"big": "123", "time": tm}}, d.Nest)
 }
 
-func TestOjRecomposeFunc(t *testing.T) {
+func TestRecomposeFunc(t *testing.T) {
 	src := map[string]interface{}{"type": "silly", "val": 3}
 	r, err := oj.NewRecomposer("type", map[interface{}]oj.RecomposeFunc{&silly{}: sillyRecompose})
 	tt.Nil(t, err, "NewRecomposer")
@@ -97,7 +97,7 @@ func TestOjRecomposeFunc(t *testing.T) {
 	tt.Equal(t, 3, s.val)
 }
 
-func TestOjRecomposeReflect(t *testing.T) {
+func TestRecomposeReflect(t *testing.T) {
 	src := map[string]interface{}{"type": "Dummy", "val": 3, "extra": true, "fun": true}
 	r, err := oj.NewRecomposer("type", map[interface{}]oj.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
@@ -109,7 +109,7 @@ func TestOjRecomposeReflect(t *testing.T) {
 	tt.Equal(t, 3, d.Val)
 }
 
-func TestOjRecomposeAttrSetter(t *testing.T) {
+func TestRecomposeAttrSetter(t *testing.T) {
 	src := map[string]interface{}{"type": "Setter", "a": 3, "b": "bee"}
 	r, err := oj.NewRecomposer("type", map[interface{}]oj.RecomposeFunc{&Setter{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
@@ -121,7 +121,7 @@ func TestOjRecomposeAttrSetter(t *testing.T) {
 	tt.Equal(t, "Setter{a:3,b:bee}", s.String())
 }
 
-func TestOjRecomposeReflectList(t *testing.T) {
+func TestRecomposeReflectList(t *testing.T) {
 	src := map[string]interface{}{"type": "WithList", "list": []interface{}{1, 2, 3}}
 	r, err := oj.NewRecomposer("type", map[interface{}]oj.RecomposeFunc{&WithList{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
@@ -133,12 +133,12 @@ func TestOjRecomposeReflectList(t *testing.T) {
 	tt.Equal(t, "[]int [1 2 3]", fmt.Sprintf("%T %v", wl.List, wl.List))
 }
 
-func TestOjRecomposeBadMap(t *testing.T) {
+func TestRecomposeBadMap(t *testing.T) {
 	_, err := oj.NewRecomposer("type", map[interface{}]oj.RecomposeFunc{3: nil})
 	tt.NotNil(t, err, "NewRecomposer")
 }
 
-func TestOjRecomposeBadField(t *testing.T) {
+func TestRecomposeBadField(t *testing.T) {
 	src := map[string]interface{}{"type": "Dummy", "val": true}
 	r, err := oj.NewRecomposer("type", map[interface{}]oj.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
@@ -146,7 +146,7 @@ func TestOjRecomposeBadField(t *testing.T) {
 	tt.NotNil(t, err, "Recompose")
 }
 
-func TestOjRecomposeReflectListBad(t *testing.T) {
+func TestRecomposeReflectListBad(t *testing.T) {
 	src := map[string]interface{}{"type": "WithList", "list": []interface{}{1, true, 3}}
 	r, err := oj.NewRecomposer("type", map[interface{}]oj.RecomposeFunc{&WithList{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
@@ -154,7 +154,7 @@ func TestOjRecomposeReflectListBad(t *testing.T) {
 	tt.NotNil(t, err, "Recompose")
 }
 
-func TestOjRecomposeBadListItem(t *testing.T) {
+func TestRecomposeBadListItem(t *testing.T) {
 	src := map[string]interface{}{
 		"type": "Dummy",
 		"val":  3,
@@ -166,7 +166,7 @@ func TestOjRecomposeBadListItem(t *testing.T) {
 	tt.NotNil(t, err, "Recompose")
 }
 
-func TestOjRecomposeListResult(t *testing.T) {
+func TestRecomposeListResult(t *testing.T) {
 	src := []interface{}{
 		map[string]interface{}{"type": "Dummy", "val": 1},
 		map[string]interface{}{"type": "Dummy", "val": 2},
@@ -184,7 +184,7 @@ func TestOjRecomposeListResult(t *testing.T) {
 	}
 }
 
-func TestOjRecomposeListBadResult(t *testing.T) {
+func TestRecomposeListBadResult(t *testing.T) {
 	src := []interface{}{true}
 	r, err := oj.NewRecomposer("type", map[interface{}]oj.RecomposeFunc{})
 	tt.Nil(t, err, "NewRecomposer")
@@ -192,7 +192,7 @@ func TestOjRecomposeListBadResult(t *testing.T) {
 	tt.NotNil(t, err, "Recompose")
 }
 
-func TestOjRecomposeListBadTarget(t *testing.T) {
+func TestRecomposeListBadTarget(t *testing.T) {
 	r, err := oj.NewRecomposer("type", map[interface{}]oj.RecomposeFunc{})
 	tt.Nil(t, err, "NewRecomposer")
 	_, err = r.Recompose("[]", 7)

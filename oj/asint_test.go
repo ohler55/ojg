@@ -16,7 +16,7 @@ type intData struct {
 	expect   int64
 }
 
-func TestOjAsInt(t *testing.T) {
+func TestAsInt(t *testing.T) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	for _, d := range []intData{
 		{value: 3, expect: 3},

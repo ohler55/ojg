@@ -17,7 +17,7 @@ func scriptBenchData(size int64) interface{} {
 	return list
 }
 
-func TestOjScriptDev(t *testing.T) {
+func TestScriptDev(t *testing.T) {
 	data := []interface{}{
 		map[string]interface{}{
 			"a": 1,

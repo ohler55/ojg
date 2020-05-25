@@ -10,19 +10,19 @@ import (
 	"github.com/ohler55/ojg/tt"
 )
 
-func TestOjParseString(t *testing.T) {
+func TestParseString(t *testing.T) {
 	v, err := oj.ParseString("true")
 	tt.Nil(t, err)
 	tt.Equal(t, true, v)
 }
 
-func TestOjLoad(t *testing.T) {
+func TestLoad(t *testing.T) {
 	v, err := oj.Load(strings.NewReader("true"))
 	tt.Nil(t, err)
 	tt.Equal(t, true, v)
 }
 
-func TestOjValidateString(t *testing.T) {
+func TestValidateString(t *testing.T) {
 	err := oj.ValidateString("true")
 	tt.Nil(t, err)
 }

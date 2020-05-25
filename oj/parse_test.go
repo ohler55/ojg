@@ -18,7 +18,7 @@ const callbackJSON = `
 true false 123
 `
 
-func TestParseString(t *testing.T) {
+func TestParserParseString(t *testing.T) {
 	for i, d := range []data{
 		{src: "null", value: nil},
 		{src: "true", value: true},
@@ -84,7 +84,7 @@ func TestParseString(t *testing.T) {
 	}
 }
 
-func TestParseCallback(t *testing.T) {
+func TestParserParseCallback(t *testing.T) {
 	var results []byte
 	cb := func(n interface{}) bool {
 		if 0 < len(results) {
@@ -100,7 +100,7 @@ func TestParseCallback(t *testing.T) {
 	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
 }
 
-func TestParseReaderCallback(t *testing.T) {
+func TestParserParseReaderCallback(t *testing.T) {
 	var results []byte
 	cb := func(n interface{}) bool {
 		if 0 < len(results) {

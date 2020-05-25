@@ -1,13 +1,15 @@
 
 - tasks before release
  - expr Set
- - expr Del
  - path parser
   - script parser
  - reflect for path and script
  - unit tests
  - docs
   - examples
+ - cmd/oj
+  - filters
+  - match
  - remove tree (maybe create separate benchmark repo)
 
 

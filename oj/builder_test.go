@@ -9,7 +9,7 @@ import (
 	"github.com/ohler55/ojg/tt"
 )
 
-func TestOjBuilderArray(t *testing.T) {
+func TestBuilderArray(t *testing.T) {
 	var b oj.Builder
 
 	err := b.Array()
@@ -35,7 +35,7 @@ func TestOjBuilderArray(t *testing.T) {
 	tt.Equal(t, []interface{}{true, []interface{}{false}}, v)
 }
 
-func TestOjBuilderObject(t *testing.T) {
+func TestBuilderObject(t *testing.T) {
 	var b oj.Builder
 
 	err := b.Object()
@@ -62,7 +62,7 @@ func TestOjBuilderObject(t *testing.T) {
 	tt.Equal(t, map[string]interface{}{"a": true, "b": map[string]interface{}{"c": false}}, v)
 }
 
-func TestOjBuilderMixed(t *testing.T) {
+func TestBuilderMixed(t *testing.T) {
 	var b oj.Builder
 
 	b.Reset() // not needed, just making sure there are not issues
@@ -86,7 +86,7 @@ func TestOjBuilderMixed(t *testing.T) {
 	tt.Equal(t, map[string]interface{}{"a": []interface{}{true, map[string]interface{}{"x": 123}, nil}}, v)
 }
 
-func TestOjBuilderErrors(t *testing.T) {
+func TestBuilderErrors(t *testing.T) {
 	var b oj.Builder
 
 	err := b.Object("bad")
