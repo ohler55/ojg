@@ -301,7 +301,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 							i = len(tv) + i
 						}
 						var v interface{}
-						if 0 < i && i < len(tv) {
+						if 0 <= i && i < len(tv) {
 							v = tv[i]
 						}
 						if fi == len(x)-1 { // last one
@@ -317,7 +317,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 							i = len(tv) + i
 						}
 						var v interface{}
-						if 0 < i && i < len(tv) {
+						if 0 <= i && i < len(tv) {
 							v = tv[i]
 						}
 						if fi == len(x)-1 { // last one
@@ -426,7 +426,6 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			}
 		case *Filter:
 			stack = tf.Eval(stack, prev)
-			// TBD
 		}
 		if fi < len(x)-1 {
 			if _, ok := stack[len(stack)-1].(int); !ok {
@@ -509,7 +508,7 @@ func (x Expr) First(data interface{}) interface{} {
 					i = len(tv) + i
 				}
 				var v interface{}
-				if 0 < i && i < len(tv) {
+				if 0 <= i && i < len(tv) {
 					v = tv[i]
 				}
 				if fi == len(x)-1 { // last one
@@ -524,7 +523,7 @@ func (x Expr) First(data interface{}) interface{} {
 					i = len(tv) + i
 				}
 				var v interface{}
-				if 0 < i && i < len(tv) {
+				if 0 <= i && i < len(tv) {
 					v = tv[i]
 				}
 				if fi == len(x)-1 { // last one
@@ -722,7 +721,7 @@ func (x Expr) First(data interface{}) interface{} {
 							i = len(tv) + i
 						}
 						var v interface{}
-						if 0 < i && i < len(tv) {
+						if 0 <= i && i < len(tv) {
 							v = tv[i]
 						}
 						if fi == len(x)-1 { // last one
@@ -737,7 +736,7 @@ func (x Expr) First(data interface{}) interface{} {
 							i = len(tv) + i
 						}
 						var v interface{}
-						if 0 < i && i < len(tv) {
+						if 0 <= i && i < len(tv) {
 							v = tv[i]
 						}
 						if fi == len(x)-1 { // last one
@@ -790,6 +789,8 @@ func (x Expr) First(data interface{}) interface{} {
 					stack = append(stack, v)
 				}
 			}
+		case *Filter:
+			stack = tf.Eval(stack, prev)
 		}
 		if fi < len(x)-1 {
 			if _, ok := stack[len(stack)-1].(int); !ok {

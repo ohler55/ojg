@@ -1,12 +1,11 @@
 
 - tasks before release
- - expr Set
  - path parser
   - script parser
+  - examples and tests
  - reflect for path and script
  - unit tests
  - docs
-  - examples
  - cmd/oj
   - filters
   - match
