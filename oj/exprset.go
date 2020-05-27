@@ -159,28 +159,24 @@ func (x Expr) Set(data, value interface{}) error {
 		case Wildcard:
 			switch tv := prev.(type) {
 			case map[string]interface{}:
-				if tf == '*' {
-					var k string
-					if fi == len(x)-1 { // last one
-						if value == delFlag {
-							for k = range tv {
-								delete(tv, k)
-							}
-						} else {
-							for k, v = range tv {
-								tv[k] = value
-							}
+				var k string
+				if fi == len(x)-1 { // last one
+					if value == delFlag {
+						for k = range tv {
+							delete(tv, k)
 						}
 					} else {
-						for _, v = range tv {
-							switch v.(type) {
-							case map[string]interface{}, []interface{}, Object, Array:
-								stack = append(stack, v)
-							}
+						for k, v = range tv {
+							tv[k] = value
 						}
 					}
 				} else {
-					return fmt.Errorf("can not follow array wildcard on an object at %s", x[:fi+1])
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
+						}
+					}
 				}
 			case []interface{}:
 				if fi == len(x)-1 { // last one
@@ -200,28 +196,24 @@ func (x Expr) Set(data, value interface{}) error {
 					}
 				}
 			case Object:
-				if tf == '*' {
-					var k string
-					if fi == len(x)-1 { // last one
-						if value == delFlag {
-							for k = range tv {
-								delete(tv, k)
-							}
-						} else {
-							for k, v = range tv {
-								tv[k] = nodeValue
-							}
+				var k string
+				if fi == len(x)-1 { // last one
+					if value == delFlag {
+						for k = range tv {
+							delete(tv, k)
 						}
 					} else {
-						for _, v = range tv {
-							switch v.(type) {
-							case Object, Array:
-								stack = append(stack, v)
-							}
+						for k, v = range tv {
+							tv[k] = nodeValue
 						}
 					}
 				} else {
-					return fmt.Errorf("can not follow array wildcard on an object at %s", x[:fi+1])
+					for _, v = range tv {
+						switch v.(type) {
+						case Object, Array:
+							stack = append(stack, v)
+						}
+					}
 				}
 			case Array:
 				if fi == len(x)-1 { // last one
@@ -605,30 +597,26 @@ func (x Expr) SetOne(data, value interface{}) error {
 		case Wildcard:
 			switch tv := prev.(type) {
 			case map[string]interface{}:
-				if tf == '*' {
-					var k string
-					if fi == len(x)-1 { // last one
-						if value == delFlag {
-							for k = range tv {
-								delete(tv, k)
-								return nil
-							}
-						} else {
-							for k, v = range tv {
-								tv[k] = value
-								return nil
-							}
+				var k string
+				if fi == len(x)-1 { // last one
+					if value == delFlag {
+						for k = range tv {
+							delete(tv, k)
+							return nil
 						}
 					} else {
-						for _, v = range tv {
-							switch v.(type) {
-							case map[string]interface{}, []interface{}, Object, Array:
-								stack = append(stack, v)
-							}
+						for k, v = range tv {
+							tv[k] = value
+							return nil
 						}
 					}
 				} else {
-					return fmt.Errorf("can not follow array wildcard on an object at %s", x[:fi+1])
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
+						}
+					}
 				}
 			case []interface{}:
 				if fi == len(x)-1 { // last one
@@ -649,30 +637,26 @@ func (x Expr) SetOne(data, value interface{}) error {
 					}
 				}
 			case Object:
-				if tf == '*' {
-					var k string
-					if fi == len(x)-1 { // last one
-						if value == delFlag {
-							for k = range tv {
-								delete(tv, k)
-								return nil
-							}
-						} else {
-							for k, v = range tv {
-								tv[k] = nodeValue
-								return nil
-							}
+				var k string
+				if fi == len(x)-1 { // last one
+					if value == delFlag {
+						for k = range tv {
+							delete(tv, k)
+							return nil
 						}
 					} else {
-						for _, v = range tv {
-							switch v.(type) {
-							case Object, Array:
-								stack = append(stack, v)
-							}
+						for k, v = range tv {
+							tv[k] = nodeValue
+							return nil
 						}
 					}
 				} else {
-					return fmt.Errorf("can not follow array wildcard on an object at %s", x[:fi+1])
+					for _, v = range tv {
+						switch v.(type) {
+						case Object, Array:
+							stack = append(stack, v)
+						}
+					}
 				}
 			case Array:
 				if fi == len(x)-1 { // last one

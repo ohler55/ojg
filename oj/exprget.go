@@ -114,17 +114,15 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 		case Wildcard:
 			switch tv := prev.(type) {
 			case map[string]interface{}:
-				if tf == '*' {
-					if fi == len(x)-1 { // last one
-						for _, v = range tv {
-							results = append(results, v)
-						}
-					} else {
-						for _, v = range tv {
-							switch v.(type) {
-							case map[string]interface{}, []interface{}, Object, Array:
-								stack = append(stack, v)
-							}
+				if fi == len(x)-1 { // last one
+					for _, v = range tv {
+						results = append(results, v)
+					}
+				} else {
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
 						}
 					}
 				}
@@ -140,17 +138,15 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					}
 				}
 			case Object:
-				if tf == '*' {
-					if fi == len(x)-1 { // last one
-						for _, v = range tv {
-							results = append(results, v)
-						}
-					} else {
-						for _, v = range tv {
-							switch v.(type) {
-							case map[string]interface{}, []interface{}, Object, Array:
-								stack = append(stack, v)
-							}
+				if fi == len(x)-1 { // last one
+					for _, v = range tv {
+						results = append(results, v)
+					}
+				} else {
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
 						}
 					}
 				}
@@ -541,17 +537,15 @@ func (x Expr) First(data interface{}) interface{} {
 		case Wildcard:
 			switch tv := prev.(type) {
 			case map[string]interface{}:
-				if tf == '*' {
-					if fi == len(x)-1 { // last one
-						for _, v = range tv {
-							return v
-						}
-					} else {
-						for _, v = range tv {
-							switch v.(type) {
-							case map[string]interface{}, []interface{}, Object, Array:
-								stack = append(stack, v)
-							}
+				if fi == len(x)-1 { // last one
+					for _, v = range tv {
+						return v
+					}
+				} else {
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
 						}
 					}
 				}
@@ -569,17 +563,15 @@ func (x Expr) First(data interface{}) interface{} {
 					}
 				}
 			case Object:
-				if tf == '*' {
-					if fi == len(x)-1 { // last one
-						for _, v = range tv {
-							return v
-						}
-					} else {
-						for _, v = range tv {
-							switch v.(type) {
-							case map[string]interface{}, []interface{}, Object, Array:
-								stack = append(stack, v)
-							}
+				if fi == len(x)-1 { // last one
+					for _, v = range tv {
+						return v
+					}
+				} else {
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, Object, Array:
+							stack = append(stack, v)
 						}
 					}
 				}
