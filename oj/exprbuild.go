@@ -53,7 +53,10 @@ func U(keys ...interface{}) Expr {
 }
 
 // W creates an Expr with a Wildcard fragment.
-func W() Expr {
+func W(onArray ...bool) Expr {
+	if 0 < len(onArray) && onArray[0] {
+		return Expr{Wildcard('#')}
+	}
 	return Expr{Wildcard('*')}
 }
 
@@ -143,7 +146,10 @@ func (x Expr) Union(keys ...interface{}) Expr {
 }
 
 // W appends a Wildcard fragment to the Expr.
-func (x Expr) W() Expr {
+func (x Expr) W(onArray ...bool) Expr {
+	if 0 < len(onArray) && onArray[0] {
+		return append(x, Wildcard('#'))
+	}
 	return append(x, Wildcard('*'))
 }
 

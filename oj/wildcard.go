@@ -9,7 +9,7 @@ type Wildcard byte
 // Append a fragment string representation of the fragment to the buffer
 // then returning the expanded buffer.
 func (f Wildcard) Append(buf []byte, bracket, first bool) []byte {
-	if bracket {
+	if bracket || f == '#' {
 		buf = append(buf, "[*]"...)
 	} else {
 		if !first {
