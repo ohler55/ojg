@@ -11,18 +11,10 @@
   - match
  - remove tree (maybe create separate benchmark repo)
 
-- expr parser
- - modes like the json parser
- - oj.X().Parse([]byte)
- - oj.X(x ...interface{}) (Expr, error)
-  - []byte
-  - string
-  - empty
- - oj.ParseExpr or oj.ExprParse
-
-- could allow mix of bracket and dot
- - would need a tag to remember which was used
- - or just allow in parse'
+- ParseExpr
+ - union
+ - filter recursive but only 1 level
+  - limit frag types on filter paths (no filters)
 
  - test print after parser
 

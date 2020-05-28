@@ -8,7 +8,7 @@ type Child string
 // Append a fragment string representation of the fragment to the buffer
 // then returning the expanded buffer.
 func (f Child) Append(buf []byte, bracket, first bool) []byte {
-	if bracket {
+	if bracket || !f.tokenOk() {
 		buf = append(buf, "['"...)
 		buf = append(buf, string(f)...)
 		buf = append(buf, "']"...)
@@ -19,4 +19,13 @@ func (f Child) Append(buf []byte, bracket, first bool) []byte {
 		buf = append(buf, string(f)...)
 	}
 	return buf
+}
+
+func (f Child) tokenOk() bool {
+	for _, b := range []byte(f) {
+		if tokenMap[b] == '.' {
+			return false
+		}
+	}
+	return true
 }

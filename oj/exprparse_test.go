@@ -31,6 +31,15 @@ func TestExprParse(t *testing.T) {
 		{src: "abc[0].def", expect: "abc[0].def"},
 		{src: "abc[2].def", expect: "abc[2].def"},
 		{src: "abc[-2].def", expect: "abc[-2].def"},
+		{src: "abc[0:]", expect: "abc[:]"},
+		{src: "abc[:]", expect: "abc[:]"},
+		{src: "abc[:-1]", expect: "abc[:]"},
+		{src: "abc[1:]", expect: "abc[1:]"},
+		{src: "abc[1:3]", expect: "abc[1:3]"},
+		{src: "abc[1:-1:2]", expect: "abc[1::2]"},
+		{src: "$['abc']", expect: "$.abc"},
+		{src: "$['a b']", expect: "$['a b']"},
+		{src: "$['ぴーたー']", expect: "$.ぴーたー"},
 	} {
 		x, err := oj.ParseExprString(d.src)
 		if 0 < len(d.err) {
