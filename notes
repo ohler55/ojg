@@ -6,15 +6,14 @@
  - reflect for path and script
  - unit tests
  - docs
+ - CI - travis or somethign else?
  - cmd/oj
   - filters
   - match
  - remove tree (maybe create separate benchmark repo)
 
 - ParseExpr
- - union
- - filter recursive but only 1 level
-  - limit frag types on filter paths (no filters)
+ - filter
 
  - test print after parser
 

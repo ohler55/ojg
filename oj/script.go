@@ -49,7 +49,7 @@ type Script struct {
 
 func NewScript(str string) (s *Script, err error) {
 	s = &Script{}
-	_, err = s.parse([]byte(str), 0)
+	err = s.Parse([]byte(str))
 	return
 }
 
@@ -464,15 +464,4 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 		buf = append(buf, fmt.Sprintf("%v", v)...)
 	}
 	return buf
-}
-
-// parse the buf and return the script along with the next buf index. Used for
-// NewScript as well as Expr (JSON path) parsing.
-func (s *Script) parse(buf []byte, i int) (end int, err error) {
-
-	// TBD expect a ( and )
-	//  parse directly to array or build a tree first?
-	//  need to keep track of parens in any case
-
-	return
 }

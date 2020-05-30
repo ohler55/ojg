@@ -9,7 +9,7 @@ type Filter struct {
 
 func NewFilter(str string) (f *Filter, err error) {
 	f = &Filter{}
-	_, err = f.parse([]byte(str), 0)
+	err = f.Parse([]byte(str))
 	return
 }
 
