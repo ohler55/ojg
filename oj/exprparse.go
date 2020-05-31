@@ -5,25 +5,6 @@ package oj
 import "fmt"
 
 const (
-	startMode        = 's' // new expression
-	fragMode         = 'f' // new fragment should be next
-	dot2Mode         = 'o' // just read 2 dots
-	openMode         = '[' // last read a [
-	closeMode        = ']' // expect a ]
-	childMode        = 'c' // reading a child fragment
-	numMode          = '#'
-	numDoneMode      = 'D'
-	quoteMode        = 'q'
-	quote2Mode       = 'Q'
-	esc2Mode         = 'E'
-	filterMode       = '?' // scan filter until matching )
-	filterQuoteMode  = '\''
-	filterQuote2Mode = '"'
-	filterEscMode    = '1'
-	filterEsc2Mode   = '2'
-	unionMode        = 'u'
-	closeCommaMode   = ',' // expect a ] or comma
-
 	//   0123456789abcdef0123456789abcdef
 	tokenMap = "" +
 		"................................" + // 0x00
@@ -34,20 +15,40 @@ const (
 		"oooooooooooooooooooooooooooooooo" + // 0xa0
 		"oooooooooooooooooooooooooooooooo" + // 0xc0
 		"oooooooooooooooooooooooooooooooo" //   0xe0
+
+	// o for an operatio
+	// v for a value start character
+	// - could be either
+	//   0123456789abcdef0123456789abcdef
+	eqMap = "" +
+		"................................" + // 0x00
+		".ov.v.ovv.oo.-.ovvvvvvvvvv..ooo." + // 0x20
+		"v..............................." + // 0x40
+		"......v.......v.....v.......o.o." + // 0x60
+		"................................" + // 0x80
+		"................................" + // 0xa0
+		"................................" + // 0xc0
+		"................................" //   0xe0
 )
 
 // Performance is less a concern with Expr parsing as it is usually done just
 // once if performance is important. Alternatively, an Expr can be built using
-// function calls or bare structs. Parsing is more for convenience.
+// function calls or bare structs. Parsing is more for convenience. Using this
+// approach over modes only adds 10% so a reasonable penalty for
+// maintainability.
 type xparser struct {
-	// TBD try with xparser as an arg.
-	fun   func(b byte) error
-	x     Expr
-	token []byte
-	slice []int
-	num   int
-	depth int
-	union []interface{}
+	// Using a xparser function adds 50% overhead so pass the xparser as an
+	// arg instead.
+	fun      func(*xparser, byte) error
+	x        Expr
+	token    []byte
+	slice    []int
+	num      int
+	depth    int
+	union    []interface{}
+	eqs      []*Equation
+	opName   []byte
+	isFilter bool
 }
 
 // ParseExpr parses a string into an Expr.
@@ -63,63 +64,63 @@ func ParseExpr(buf []byte) (Expr, error) {
 }
 
 func (xp *xparser) parse(buf []byte) (err error) {
-	xp.fun = xp.startFun
+	xp.fun = startFun
 	for i, b := range buf {
-		if err = xp.fun(b); err != nil {
+		if err = xp.fun(xp, b); err != nil {
 			return fmt.Errorf("%s at %d in %q", err, i, buf)
 			break
 		}
 	}
-	return xp.fun(0)
+	return xp.fun(xp, 0)
 }
 
-func (xp *xparser) startFun(b byte) (err error) {
+func startFun(xp *xparser, b byte) (err error) {
 	switch b {
 	case '$':
 		xp.x = append(xp.x, Root('$'))
-		xp.fun = xp.fragFun
+		xp.fun = fragFun
 	case '@':
 		xp.x = append(xp.x, At('@'))
-		xp.fun = xp.fragFun
+		xp.fun = fragFun
 	case '[':
 		xp.x = append(xp.x, Bracket(' '))
-		xp.fun = xp.openFun
+		xp.fun = openFun
 	default:
 		if tokenMap[b] == '.' {
 			err = fmt.Errorf("an expression can not start with a '%c'", b)
 		}
 		xp.token = xp.token[:0]
 		xp.token = append(xp.token, b)
-		xp.fun = xp.childFun
+		xp.fun = childFun
 	}
 	return nil
 }
 
-func (xp *xparser) fragFun(b byte) (err error) {
+func fragFun(xp *xparser, b byte) (err error) {
 	switch b {
 	case 0:
 	case '.':
-		xp.fun = xp.dotFun
+		xp.fun = dotFun
 	case '[':
-		xp.fun = xp.openFun
+		xp.fun = openFun
 	default:
 		err = fmt.Errorf("expected a '.' or a '['")
 	}
 	return
 }
 
-func (xp *xparser) childFun(b byte) (err error) {
+func childFun(xp *xparser, b byte) (err error) {
 	switch b {
 	case 0:
 		xp.x = append(xp.x, Child(xp.token))
 	case '.':
 		xp.x = append(xp.x, Child(xp.token))
 		xp.token = xp.token[:0]
-		xp.fun = xp.dotFun
+		xp.fun = dotFun
 	case '[':
 		xp.x = append(xp.x, Child(xp.token))
 		xp.token = xp.token[:0]
-		xp.fun = xp.openFun
+		xp.fun = openFun
 	default:
 		if tokenMap[b] == '.' {
 			err = fmt.Errorf("a '%c' character can not be in a non-bracketed child", b)
@@ -129,51 +130,48 @@ func (xp *xparser) childFun(b byte) (err error) {
 	return
 }
 
-func (xp *xparser) openFun(b byte) (err error) {
+func openFun(xp *xparser, b byte) (err error) {
 	switch b {
 	case ' ':
 		// keep going
 	case '*':
 		xp.x = append(xp.x, Wildcard('#'))
-		xp.fun = xp.closeFun
+		xp.fun = closeFun
 	case '\'':
 		xp.token = xp.token[:0]
-		xp.fun = xp.quoteFun
+		xp.fun = quoteFun
 	case '"':
 		xp.token = xp.token[:0]
-		xp.fun = xp.quote2Fun
+		xp.fun = quote2Fun
 	case '-':
-		xp.fun = xp.negFun
+		xp.fun = negFun
 	case '0':
 		xp.num = 0
-		xp.fun = xp.zeroFun
+		xp.fun = zeroFun
 	case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		xp.num = int(b - '0')
-		xp.fun = xp.numFun
+		xp.fun = numFun
 	case ':':
 		xp.slice = xp.slice[:0]
 		xp.slice = append(xp.slice, 0)
-		xp.fun = xp.colonFun
+		xp.fun = colonFun
 	case '?':
-		xp.token = xp.token[:0]
-		xp.token = append(xp.token, b)
-		xp.depth = 0
-		xp.fun = xp.filterFun
+		xp.fun = filterFun
+		xp.isFilter = true
 	case '(':
-		xp.token = xp.token[:0]
-		xp.token = append(xp.token, b)
 		xp.depth = 1
-		xp.fun = xp.filterFun
+		xp.fun = scriptFun
+		xp.isFilter = false
 	default:
 		err = fmt.Errorf("a '%c' can not follow a '['", b)
 	}
 	return
 }
 
-func (xp *xparser) closeFun(b byte) (err error) {
+func closeFun(xp *xparser, b byte) (err error) {
 	switch b {
 	case ']':
-		xp.fun = xp.fragFun
+		xp.fun = fragFun
 	case ' ':
 		// keep going
 	default:
@@ -182,7 +180,7 @@ func (xp *xparser) closeFun(b byte) (err error) {
 	return
 }
 
-func (xp *xparser) closeCommaFun(b byte) (err error) {
+func closeCommaFun(xp *xparser, b byte) (err error) {
 	// used after a close quote only
 	switch b {
 	case ' ':
@@ -196,79 +194,74 @@ func (xp *xparser) closeCommaFun(b byte) (err error) {
 			xp.x[len(xp.x)-1] = u
 			xp.union = xp.union[:0]
 		}
-		xp.fun = xp.fragFun
+		xp.fun = fragFun
 	case ',':
 		c, _ := xp.x[len(xp.x)-1].(Child)
 		xp.union = append(xp.union, string(c))
 		xp.x = xp.x[:len(xp.x)-1]
-		xp.fun = xp.unionFun
+		xp.fun = unionFun
 	default:
 		err = fmt.Errorf("expected a ']'")
 	}
 	return
 }
 
-func (xp *xparser) quoteFun(b byte) (err error) {
+func quoteFun(xp *xparser, b byte) (err error) {
 	switch b {
 	case '\\':
-		xp.fun = xp.escFun
+		xp.fun = escFun
 	case '\'':
 		xp.x = append(xp.x, Child(xp.token))
-		xp.fun = xp.closeCommaFun
+		xp.fun = closeCommaFun
 	default:
 		xp.token = append(xp.token, b)
 	}
 	return
 }
 
-func (xp *xparser) quote2Fun(b byte) (err error) {
+func quote2Fun(xp *xparser, b byte) (err error) {
 	switch b {
 	case '\\':
-		xp.fun = xp.esc2Fun
+		xp.fun = esc2Fun
 	case '"':
 		xp.x = append(xp.x, Child(xp.token))
-		xp.fun = xp.closeCommaFun
+		xp.fun = closeCommaFun
 	default:
 		xp.token = append(xp.token, b)
 	}
 	return
 }
 
-func (xp *xparser) escFun(b byte) (err error) {
+func escFun(xp *xparser, b byte) (err error) {
 	if b != '\'' {
 		xp.token = append(xp.token, '\\')
 	}
 	xp.token = append(xp.token, b)
-	xp.fun = xp.quoteFun
+	xp.fun = quoteFun
 	return
 }
 
-func (xp *xparser) esc2Fun(b byte) (err error) {
+func esc2Fun(xp *xparser, b byte) (err error) {
 	if b != '"' {
 		xp.token = append(xp.token, '\\')
 	}
 	xp.token = append(xp.token, b)
-	xp.fun = xp.quote2Fun
+	xp.fun = quote2Fun
 	return
 }
 
-func (xp *xparser) filterFun(b byte) (err error) {
-	// TBD
-	return
-}
-
-func (xp *xparser) colonFun(b byte) (err error) {
+func colonFun(xp *xparser, b byte) (err error) {
 	switch b {
 	case ' ':
 		// keep going
 	case '-':
-		xp.fun = xp.negFun
+		xp.fun = negFun
 	case '0':
 		xp.num = 0
-		xp.fun = xp.zeroFun
+		xp.fun = zeroFun
 	case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		xp.num = int(b - '0')
-		xp.fun = xp.numFun
+		xp.fun = numFun
 	case ']':
 		if 0 < len(xp.slice) {
 			xp.slice = append(xp.slice, -1)
@@ -279,46 +272,47 @@ func (xp *xparser) colonFun(b byte) (err error) {
 		} else {
 			xp.x = append(xp.x, Nth(xp.num))
 		}
-		xp.fun = xp.fragFun
+		xp.fun = fragFun
 	default:
 		err = fmt.Errorf("invalid slice format")
 	}
 	return
 }
 
-func (xp *xparser) negFun(b byte) (err error) {
+func negFun(xp *xparser, b byte) (err error) {
 	switch b {
 	case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		xp.num = -int(b - '0')
-		xp.fun = xp.numFun
+		xp.fun = numFun
 	default:
 		err = fmt.Errorf("parse expression failed")
 	}
 	return
 }
 
-func (xp *xparser) zeroFun(b byte) (err error) {
+func zeroFun(xp *xparser, b byte) (err error) {
 	switch b {
 	case ' ':
-		xp.fun = xp.numDoneFun
+		xp.fun = numDoneFun
 	case ']':
 		xp.closeNumBracket()
 	case ',':
 		xp.union = append(xp.union, 0)
-		xp.fun = xp.unionFun
+		xp.fun = unionFun
 	case ':':
 		if 2 < len(xp.slice) {
 			err = fmt.Errorf("too many numbers in the slice")
 		}
 		xp.slice = append(xp.slice, 0)
-		xp.fun = xp.colonFun
+		xp.fun = colonFun
 	default:
 		err = fmt.Errorf("unexpected character")
 	}
 	return
 }
 
-func (xp *xparser) numFun(b byte) (err error) {
+func numFun(xp *xparser, b byte) (err error) {
+	fmt.Printf("*** numFun %c depth: %d - %d\n", b, xp.depth, len(xp.eqs))
 	switch b {
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		if 0 <= xp.num {
@@ -327,25 +321,72 @@ func (xp *xparser) numFun(b byte) (err error) {
 			xp.num = xp.num*10 - int(b-'0')
 		}
 	case ' ':
-		xp.fun = xp.numDoneFun
+		if 0 < len(xp.eqs) {
+			e := xp.eqs[len(xp.eqs)-1]
+			if e.o == nil {
+				e.result = xp.num
+				xp.fun = opFun
+			} else {
+				e.right = &Equation{result: xp.num}
+				xp.fun = eqCloseFun
+			}
+		} else {
+			xp.fun = numDoneFun
+		}
 	case ']':
 		xp.closeNumBracket()
 	case ',':
 		xp.union = append(xp.union, xp.num)
-		xp.fun = xp.unionFun
+		xp.fun = unionFun
 	case ':':
 		if 2 < len(xp.slice) {
 			err = fmt.Errorf("too many numbers in the slice")
 		}
 		xp.slice = append(xp.slice, xp.num)
-		xp.fun = xp.colonFun
+		xp.fun = colonFun
+	case ')':
+		xp.depth--
+		if 0 < len(xp.eqs) {
+			fmt.Printf("*** len eqs: %d\n", len(xp.eqs))
+			e := xp.eqs[len(xp.eqs)-1]
+			if e.o == nil {
+				e.result = xp.num
+			} else {
+				e.right = &Equation{result: xp.num}
+			}
+			if xp.depth <= 0 {
+				if xp.isFilter {
+					xp.x = append(xp.x, e.Filter())
+				} else {
+					xp.x = append(xp.x, &ScriptFrag{Script: e.Script()})
+				}
+				xp.fun = closeScriptFun
+			} else {
+				xp.fun = opFun
+			}
+		} else {
+			err = fmt.Errorf("invalid syntax")
+		}
 	default:
-		err = fmt.Errorf("invalid number")
+		if 0 < len(xp.eqs) && eqMap[b] == 'o' {
+			fmt.Printf("*** start op with %c\n", b)
+			e := xp.eqs[len(xp.eqs)-1]
+			if e.o == nil {
+				e.result = xp.num
+			} else {
+				e.right = &Equation{result: xp.num}
+			}
+			xp.token = xp.token[:0]
+			xp.token = append(xp.token, b)
+			xp.fun = opFun
+		} else {
+			err = fmt.Errorf("invalid number")
+		}
 	}
 	return
 }
 
-func (xp *xparser) numDoneFun(b byte) (err error) {
+func numDoneFun(xp *xparser, b byte) (err error) {
 	switch b {
 	case ' ':
 		// keep going
@@ -353,13 +394,13 @@ func (xp *xparser) numDoneFun(b byte) (err error) {
 		xp.closeNumBracket()
 	case ',':
 		xp.union = append(xp.union, xp.num)
-		xp.fun = xp.unionFun
+		xp.fun = unionFun
 	case ':':
 		if 2 < len(xp.slice) {
 			err = fmt.Errorf("too many numbers in the slice")
 		}
 		xp.slice = append(xp.slice, xp.num)
-		xp.fun = xp.colonFun
+		xp.fun = colonFun
 	default:
 		err = fmt.Errorf("invalid number")
 	}
@@ -382,27 +423,27 @@ func (xp *xparser) closeNumBracket() {
 	} else {
 		xp.x = append(xp.x, Nth(xp.num))
 	}
-	xp.fun = xp.fragFun
+	xp.fun = fragFun
 }
 
-func (xp *xparser) unionFun(b byte) (err error) {
+func unionFun(xp *xparser, b byte) (err error) {
 	switch b {
 	case ' ':
 		// keep going
 	case '\'':
 		xp.token = xp.token[:0]
-		xp.fun = xp.quoteFun
+		xp.fun = quoteFun
 	case '"':
 		xp.token = xp.token[:0]
-		xp.fun = xp.quote2Fun
+		xp.fun = quote2Fun
 	case '-':
-		xp.fun = xp.negFun
+		xp.fun = negFun
 	case '0':
 		xp.num = 0
-		xp.fun = xp.zeroFun
+		xp.fun = zeroFun
 	case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		xp.num = int(b - '0')
-		xp.fun = xp.numFun
+		xp.fun = numFun
 	case ']':
 		u := make(Union, len(xp.union))
 		copy(u, xp.union)
@@ -412,14 +453,14 @@ func (xp *xparser) unionFun(b byte) (err error) {
 	return
 }
 
-func (xp *xparser) dotFun(b byte) (err error) {
+func dotFun(xp *xparser, b byte) (err error) {
 	switch b {
 	case '.':
 		xp.x = append(xp.x, Descent('.'))
-		xp.fun = xp.dot2Fun
+		xp.fun = dot2Fun
 	case '*':
 		xp.x = append(xp.x, Wildcard('*'))
-		xp.fun = xp.fragFun
+		xp.fun = fragFun
 	case '[':
 		err = fmt.Errorf("unexpected '[' after a '.'")
 	default:
@@ -428,16 +469,16 @@ func (xp *xparser) dotFun(b byte) (err error) {
 		}
 		xp.token = xp.token[:0]
 		xp.token = append(xp.token, b)
-		xp.fun = xp.childFun
+		xp.fun = childFun
 	}
 	return
 }
 
-func (xp *xparser) dot2Fun(b byte) (err error) {
+func dot2Fun(xp *xparser, b byte) (err error) {
 	switch b {
 	case '*':
 		xp.x = append(xp.x, Wildcard('*'))
-		xp.fun = xp.fragFun
+		xp.fun = fragFun
 	case '[':
 		err = fmt.Errorf("a '[' can not follow '..'")
 	default:
@@ -446,428 +487,141 @@ func (xp *xparser) dot2Fun(b byte) (err error) {
 		}
 		xp.token = xp.token[:0]
 		xp.token = append(xp.token, b)
-		xp.fun = xp.childFun
+		xp.fun = childFun
 	}
 	return
 }
 
-/*
-func (xp *xparser) parsex(buf []byte) (err error) {
-	mode := startMode
-	for i, b := range buf {
-		switch mode {
-		case startMode:
-			switch b {
-			case '$':
-				xp.x = append(xp.x, Root('$'))
-				mode = fragMode
-			case '@':
-				xp.x = append(xp.x, At('@'))
-				mode = fragMode
-			case '[':
-				xp.x = append(xp.x, Bracket(' '))
-				mode = openMode
-			default:
-				if tokenMap[b] == '.' {
-					return fmt.Errorf("an expression can not start with a '%c'at %d in %q", b, i, buf)
-				}
-				xp.token = xp.token[:0]
-				xp.token = append(xp.token, b)
-				mode = childMode
-			}
-		case childMode:
-			switch b {
-			case '.':
-				xp.x = append(xp.x, Child(xp.token))
-				mode = dotMode
-			case '[':
-				xp.x = append(xp.x, Child(xp.token))
-				mode = openMode
-			default:
-				if tokenMap[b] == '.' {
-					return fmt.Errorf("a '%c' character can not be in a non-bracketed child at %d in %q", b, i, buf)
-				}
-				xp.token = append(xp.token, b)
-			}
-		case dotMode:
-			switch b {
-			case '.':
-				xp.x = append(xp.x, Descent('.'))
-				mode = dot2Mode
-			case '*':
-				xp.x = append(xp.x, Wildcard('*'))
-				mode = fragMode
-			case '[':
-				return fmt.Errorf("unexpected '[' after a '.' at %d in %q", i, buf)
-			default:
-				if tokenMap[b] == '.' {
-					return fmt.Errorf("a '%c' character can not be in a non-bracketed child at %d in %q", b, i, buf)
-				}
-				xp.token = xp.token[:0]
-				xp.token = append(xp.token, b)
-				mode = childMode
-			}
-		case dot2Mode:
-			switch b {
-			case '*':
-				xp.x = append(xp.x, Wildcard('*'))
-				mode = fragMode
-			case '[':
-				return fmt.Errorf("a '[' can not follow '..' at %d in %q", i, buf)
-			default:
-				if tokenMap[b] == '.' {
-					return fmt.Errorf("a '%c' can not follow a '..' at %d in %q", b, i, buf)
-				}
-				xp.token = xp.token[:0]
-				xp.token = append(xp.token, b)
-				mode = childMode
-			}
-		case fragMode:
-			switch b {
-			case '.':
-				mode = dotMode
-			case '[':
-				mode = openMode
-			default:
-				return fmt.Errorf("expected a '.' or a '[' at %d in %q", i, buf)
-			}
-		case openMode:
-			switch b {
-			case ' ':
-				// keep going
-			case '*':
-				xp.x = append(xp.x, Wildcard('#'))
-				mode = closeMode
-			case '\'':
-				xp.token = xp.token[:0]
-				mode = quoteMode
-			case '"':
-				xp.token = xp.token[:0]
-				mode = quote2Mode
-			case '-':
-				mode = negMode
-			case '0':
-				xp.num = 0
-				mode = zeroMode
-			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				xp.num = int(b - '0')
-				mode = numMode
-			case ':':
-				xp.slice = xp.slice[:0]
-				xp.slice = append(xp.slice, 0)
-				mode = colonMode
-			case '?':
-				xp.token = xp.token[:0]
-				xp.token = append(xp.token, b)
-				xp.depth = 0
-				mode = filterMode
-			case '(':
-				xp.token = xp.token[:0]
-				xp.token = append(xp.token, b)
-				xp.depth = 1
-				mode = filterMode
-			default:
-				return fmt.Errorf("a '%c' can not follow a '[' at %d in %q", b, i, buf)
-			}
-		case closeMode:
-			switch b {
-			case ']':
-				mode = fragMode
-			case ' ':
-				// keep going
-			default:
-				return fmt.Errorf("expected a ']' at %d in %q", i, buf)
-			}
-		case zeroMode:
-			switch b {
-			case ' ':
-				mode = numDoneMode
-			case ']':
-				if 0 < len(xp.slice) {
-					xp.slice = append(xp.slice, 0)
-					ia := make([]int, len(xp.slice))
-					copy(ia, xp.slice)
-					xp.slice = xp.slice[:0]
-					xp.x = append(xp.x, Slice(ia))
-				} else if 0 < len(xp.union) {
-					xp.union = append(xp.union, 0)
-					u := make(Union, len(xp.union))
-					copy(u, xp.union)
-					xp.x = append(xp.x, u)
-					xp.union = xp.union[:0]
-				} else {
-					xp.x = append(xp.x, Nth(0))
-				}
-				mode = fragMode
-			case ',':
-				xp.union = append(xp.union, 0)
-				mode = unionMode
-			case ':':
-				if 2 < len(xp.slice) {
-					return fmt.Errorf("too many numbers in the slice at %d in %q", i, buf)
-				}
-				xp.slice = append(xp.slice, 0)
-				mode = colonMode
-			default:
-				return fmt.Errorf("unexpected character at %d in %q", i, buf)
-			}
-		case colonMode:
-			switch b {
-			case ' ':
-				// keep going
-			case '-':
-				mode = negMode
-			case '0':
-				xp.num = 0
-				mode = zeroMode
-			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				xp.num = int(b - '0')
-				mode = numMode
-			case ']':
-				if 0 < len(xp.slice) {
-					xp.slice = append(xp.slice, -1)
-					ia := make([]int, len(xp.slice))
-					copy(ia, xp.slice)
-					xp.slice = xp.slice[:0]
-					xp.x = append(xp.x, Slice(ia))
-				} else {
-					xp.x = append(xp.x, Nth(xp.num))
-				}
-				mode = fragMode
-			default:
-				return fmt.Errorf("invalid slice format at %d in %q", i, buf)
-			}
-		case negMode:
-			switch b {
-			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				xp.num = -int(b - '0')
-				mode = numMode
-			default:
-				return fmt.Errorf("parse expression failed at %d in %q", i, buf)
-			}
-		case numMode:
-			switch b {
-			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				if 0 <= xp.num {
-					xp.num = xp.num*10 + int(b-'0')
-				} else {
-					xp.num = xp.num*10 - int(b-'0')
-				}
-			case ' ':
-				mode = numDoneMode
-			case ']':
-				if 0 < len(xp.slice) {
-					xp.slice = append(xp.slice, xp.num)
-					ia := make([]int, len(xp.slice))
-					copy(ia, xp.slice)
-					xp.slice = xp.slice[:0]
-					xp.x = append(xp.x, Slice(ia))
-				} else if 0 < len(xp.union) {
-					xp.union = append(xp.union, xp.num)
-					u := make(Union, len(xp.union))
-					copy(u, xp.union)
-					xp.x = append(xp.x, u)
-					xp.union = xp.union[:0]
-				} else {
-					xp.x = append(xp.x, Nth(xp.num))
-				}
-				mode = fragMode
-			case ',':
-				xp.union = append(xp.union, xp.num)
-				mode = unionMode
-			case ':':
-				if 2 < len(xp.slice) {
-					return fmt.Errorf("too many numbers in the slice at %d in %q", i, buf)
-				}
-				xp.slice = append(xp.slice, xp.num)
-				mode = colonMode
-			default:
-				return fmt.Errorf("invalid number at %d in %q", i, buf)
-			}
-		case numDoneMode:
-			switch b {
-			case ' ':
-				// keep going
-			case ']':
-				if 0 < len(xp.slice) {
-					xp.slice = append(xp.slice, xp.num)
-					ia := make([]int, len(xp.slice))
-					copy(ia, xp.slice)
-					xp.slice = xp.slice[:0]
-					xp.x = append(xp.x, Slice(ia))
-				} else if 0 < len(xp.union) {
-					xp.union = append(xp.union, xp.num)
-					u := make(Union, len(xp.union))
-					copy(u, xp.union)
-					xp.x = append(xp.x, u)
-					xp.union = xp.union[:0]
-				} else {
-					xp.x = append(xp.x, Nth(xp.num))
-				}
-				mode = fragMode
-			case ',':
-				xp.union = append(xp.union, xp.num)
-				mode = unionMode
-			case ':':
-				if 2 < len(xp.slice) {
-					return fmt.Errorf("too many numbers in the slice at %d in %q", i, buf)
-				}
-				xp.slice = append(xp.slice, xp.num)
-				mode = colonMode
-			default:
-				return fmt.Errorf("invalid number at %d in %q", i, buf)
-			}
-		case quoteMode:
-			switch b {
-			case '\\':
-				mode = escMode
-			case '\'':
-				xp.x = append(xp.x, Child(xp.token))
-				mode = closeCommaMode
-			default:
-				xp.token = append(xp.token, b)
-			}
-		case escMode:
-			if b != '\'' {
-				xp.token = append(xp.token, '\\')
-			}
-			xp.token = append(xp.token, b)
-			mode = quoteMode
-		case quote2Mode:
-			switch b {
-			case '\\':
-				mode = esc2Mode
-			case '"':
-				xp.x = append(xp.x, Child(xp.token))
-				mode = closeCommaMode
-			default:
-				xp.token = append(xp.token, b)
-			}
-		case esc2Mode:
-			if b != '"' {
-				xp.token = append(xp.token, '\\')
-			}
-			xp.token = append(xp.token, b)
-			mode = quoteMode
-		case unionMode:
-			switch b {
-			case ' ':
-				// keep going
-			case '\'':
-				xp.token = xp.token[:0]
-				mode = quoteMode
-			case '"':
-				xp.token = xp.token[:0]
-				mode = quote2Mode
-			case '-':
-				mode = negMode
-			case '0':
-				xp.num = 0
-				mode = zeroMode
-			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				xp.num = int(b - '0')
-				mode = numMode
-			case ']':
-				u := make(Union, len(xp.union))
-				copy(u, xp.union)
-				xp.x = append(xp.x, u)
-				xp.union = xp.union[:0]
-			}
-		case closeCommaMode:
-			// used after a close quote only
-			switch b {
-			case ' ':
-				// keep going
-			case ']':
-				if 0 < len(xp.union) {
-					c, _ := xp.x[len(xp.x)-1].(Child)
-					xp.union = append(xp.union, string(c))
-					u := make(Union, len(xp.union))
-					copy(u, xp.union)
-					xp.x[len(xp.x)-1] = u
-					xp.union = xp.union[:0]
-				}
-				mode = fragMode
-			case ',':
-				c, _ := xp.x[len(xp.x)-1].(Child)
-				xp.union = append(xp.union, string(c))
-				xp.x = xp.x[:len(xp.x)-1]
-				mode = unionMode
-			default:
-				return fmt.Errorf("expected a ']' at %d in %q", i, buf)
-			}
-		case filterMode:
-			switch b {
-			case ' ':
-				// keep going
-			case '(':
-				xp.depth++
-				xp.token = append(xp.token, b)
-			case ')':
-				xp.depth--
-				xp.token = append(xp.token, b)
-				if xp.depth <= 0 {
-					if xp.token[0] == '?' {
-						f := &Filter{}
-						if err := f.Parse(xp.token[1:]); err != nil {
-							return fmt.Errorf("%s at %d in %q", err, i, buf)
-						}
-						xp.x = append(xp.x, f)
-					} else {
-						sf := &ScriptFrag{}
-						if err := sf.Parse(xp.token); err != nil {
-							return fmt.Errorf("%s at %d in %q", err, i, buf)
-						}
-						xp.x = append(xp.x, sf)
-					}
-					mode = closeMode
-				}
-			case '\'':
-				mode = filterQuoteMode
-				xp.token = append(xp.token, b)
-			case '"':
-				mode = filterQuote2Mode
-				xp.token = append(xp.token, b)
-			default:
-				xp.token = append(xp.token, b)
-			}
-		case filterQuoteMode:
-			switch b {
-			case '\\':
-				mode = filterEscMode
-			case '\'':
-				mode = filterMode
-			}
-			xp.token = append(xp.token, b)
-		case filterEscMode:
-			xp.token = append(xp.token, b)
-			mode = quoteMode
-		case filterQuote2Mode:
-			switch b {
-			case '\\':
-				mode = filterEsc2Mode
-			case '"':
-				mode = filterMode
-			}
-			xp.token = append(xp.token, b)
-		case filterEsc2Mode:
-			xp.token = append(xp.token, b)
-			mode = quote2Mode
-
-		}
+func filterFun(xp *xparser, b byte) (err error) {
+	if b != '(' {
+		err = fmt.Errorf("a filter must begin with '?('")
 	}
-	switch mode {
-	case childMode:
-		if 0 < len(xp.token) {
-			xp.x = append(xp.x, Child(xp.token))
-		}
-	case fragMode:
-		// normal termination
+	xp.fun = scriptFun
+	xp.depth = 1
+	return
+}
+
+func scriptFun(xp *xparser, b byte) (err error) {
+	// starts after the ( which was already read
+	fmt.Printf("*** scriptFun %c\n", b)
+
+	switch b {
+	case ' ':
+		// Skip spaces waiting for value start then create equation.
+	case '-':
+		xp.eqs = append(xp.eqs, &Equation{})
+		xp.fun = negFun
+		// TBD
 	default:
-		return fmt.Errorf("path not terminated for %q", buf)
-
-		// TBD error on modes expecting a completion
+		if eqMap[b] == 'v' {
+			xp.eqs = append(xp.eqs, &Equation{})
+			xp.startValue(b)
+		} else {
+			err = fmt.Errorf("invalid equation value")
+		}
 	}
 	return
 }
-*/
+
+func opFun(xp *xparser, b byte) (err error) {
+	fmt.Printf("*** opFun %c len: %d\n", b, len(xp.eqs))
+	switch b {
+	case ' ':
+		// keep going
+	case ')':
+		xp.depth--
+		e := xp.eqs[len(xp.eqs)-1]
+		xp.eqs = xp.eqs[:len(xp.eqs)-1]
+		if xp.depth <= 0 {
+			if xp.isFilter {
+				xp.x = append(xp.x, e.Filter())
+			} else {
+				xp.x = append(xp.x, &ScriptFrag{Script: e.Script()})
+			}
+			xp.fun = closeScriptFun
+		} else {
+			if e.o == nil {
+				// no change in fun
+			} else {
+				// TBD add to parent right
+			}
+		}
+		// TBD close equation, set in parent, pop bsaed on prec
+	default:
+		switch eqMap[b] {
+		case 'o':
+			xp.token = append(xp.token, b)
+		case 'v', '-':
+			fmt.Printf("*** opFun value %c len: %d\n", b, len(xp.eqs))
+			e := xp.eqs[len(xp.eqs)-1]
+			if e.o = opMap[string(xp.token)]; e.o == nil {
+				err = fmt.Errorf("invalid operation, %q", xp.token)
+			}
+			if e.left == nil {
+				e.left = &Equation{result: e.result}
+				e.result = nil
+			}
+			// TBD copy result to left if left is nil
+			xp.token = xp.token[:0]
+			xp.startValue(b)
+		default:
+			err = fmt.Errorf("invalid operation or value")
+		}
+	}
+	return
+}
+
+func eqCloseFun(xp *xparser, b byte) (err error) {
+	fmt.Printf("*** eqCloseFun %c\n", b)
+	switch b {
+	case ' ':
+		// keep going
+	case ')':
+		// TBD close equation, set in parent, pop
+	default:
+		// if op byte then compare precidence
+		//  if xx then create equation before and set current as left
+		//  else current right becomes left (or result) or new equation
+		// TBD
+		err = fmt.Errorf("????")
+	}
+	// TBD
+	return
+}
+
+func closeScriptFun(xp *xparser, b byte) (err error) {
+	fmt.Printf("*** closeScriptFun %c\n", b)
+	switch b {
+	case ' ':
+		// keep going
+	case ']':
+		xp.fun = fragFun
+	default:
+		err = fmt.Errorf("espected at ']'")
+	}
+	return
+}
+
+func (xp *xparser) startValue(b byte) {
+	fmt.Printf("*** start value %c - %d\n", b, len(xp.eqs))
+	switch b {
+	case '-':
+		xp.fun = negFun
+	case '0':
+		xp.num = 0
+		xp.fun = zeroFun
+	case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+		xp.num = int(b - '0')
+		xp.fun = numFun
+	case '\'':
+	case '"':
+	case 'n': // null
+	case 't': // true
+	case 'f': // false
+	case '@':
+	case '$':
+	case '(':
+	}
+	// TBD
+	return
+}

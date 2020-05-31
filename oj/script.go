@@ -22,6 +22,22 @@ var (
 	mult   = &op{prec: 1, code: '*', name: "*", cnt: 2}
 	divide = &op{prec: 1, code: '/', name: "/", cnt: 2}
 	get    = &op{prec: 0, code: 'G', name: "get", cnt: 1}
+
+	opMap = map[string]*op{
+		eq.name:     eq,
+		neq.name:    neq,
+		lt.name:     lt,
+		gt.name:     gt,
+		lte.name:    lte,
+		gte.name:    gte,
+		or.name:     or,
+		and.name:    and,
+		not.name:    not,
+		add.name:    add,
+		sub.name:    sub,
+		mult.name:   mult,
+		divide.name: divide,
+	}
 )
 
 type op struct {
@@ -80,7 +96,7 @@ func (s *Script) Append(buf []byte) []byte {
 			}
 		}
 		if pb, _ := bstack[0].(*precBuf); pb == nil {
-			buf = append(buf, "??"...)
+			buf = s.appendValue(buf, bstack[0], 0)
 		} else {
 			buf = append(buf, pb.buf...)
 		}
@@ -464,4 +480,9 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 		buf = append(buf, fmt.Sprintf("%v", v)...)
 	}
 	return buf
+}
+
+func (s *Script) Parse(buf []byte) (err error) {
+	fmt.Printf("*** script parse %q\n", buf)
+	return
 }

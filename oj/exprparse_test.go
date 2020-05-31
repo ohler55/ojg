@@ -62,11 +62,11 @@ func TestExprParse(t *testing.T) {
 	}
 }
 
-func xTestExprParseDev(t *testing.T) {
-	x, err := oj.ParseExprString("@.abc")
+func TestExprParseDev(t *testing.T) {
+	x, err := oj.ParseExprString("@[?(12<13)]")
 	tt.Nil(t, err)
 	tt.NotNil(t, x)
-	tt.Equal(t, "@.abc", x.String())
+	tt.Equal(t, "@[?(12<13)]", x.String())
 }
 
 func BenchmarkExprParse(b *testing.B) {
