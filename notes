@@ -14,6 +14,11 @@
 
 - ParseExpr
  - filter
+  - handle all filter terminations
+   - child
+   - bracket
+   - pretty much all
+  - handle complex eq
 
  - test print after parser
 

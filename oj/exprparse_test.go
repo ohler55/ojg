@@ -45,7 +45,11 @@ func TestExprParse(t *testing.T) {
 		{src: "$['a','b']", expect: "$['a','b']"},
 		{src: "$[ 1, 'a' , 2 ,'b' ]", expect: "$[1,'a',2,'b']"},
 
-		//{src: "$[?(@.x == 'abc')]", expect: "$[?(@.x == 'abc')]"},
+		{src: "$[?(@.x == 'abc')]", expect: "$[?(@.x == 'abc')]"},
+		{src: "$[?(@.x<123)]", expect: "$[?(@.x < 123)]"},
+		{src: "$[?(@.x == 3)]", expect: "$[?(@.x == 3)]"},
+		{src: "$[?(@.*.xyz==true)]", expect: "$[?(@.*.xyz == true)]"},
+		{src: "$[?(@.x[?(@.a == true)].b == false)].z", expect: "$[?(@.x[?(@.a == true)].b == false)].z"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
@@ -62,11 +66,11 @@ func TestExprParse(t *testing.T) {
 	}
 }
 
-func TestExprParseDev(t *testing.T) {
-	x, err := oj.ParseExprString("@[?(12<13)]")
+func xTestExprParseDev(t *testing.T) {
+	x, err := oj.ParseExprString(`@[?(@.abc == "xyz")]`)
 	tt.Nil(t, err)
 	tt.NotNil(t, x)
-	tt.Equal(t, "@[?(12<13)]", x.String())
+	tt.Equal(t, "@[?(@.abc == 'xyz')]", x.String())
 }
 
 func BenchmarkExprParse(b *testing.B) {
