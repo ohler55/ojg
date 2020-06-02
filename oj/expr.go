@@ -21,5 +21,10 @@ func (x Expr) Append(buf []byte) []byte {
 		}
 		buf = frag.Append(buf, bracket, i == 0)
 	}
+	if 0 < len(x) {
+		if _, ok := x[len(x)-1].(Descent); ok {
+			buf = append(buf, '.')
+		}
+	}
 	return buf
 }

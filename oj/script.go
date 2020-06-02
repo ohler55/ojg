@@ -483,6 +483,17 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 }
 
 func (s *Script) Parse(buf []byte) (err error) {
-	fmt.Printf("*** script parse %q\n", buf)
+	xp := &xparser{}
+	xp.xa = append(xp.xa, Expr{})
+	if err = xp.parse(buf, true); err == nil {
+		if x := xp.xa[0]; 0 < len(x) {
+			switch frag := x[0].(type) {
+			case *ScriptFrag:
+				*s = *frag.Script
+			case *Filter:
+				*s = frag.Script
+			}
+		}
+	}
 	return
 }

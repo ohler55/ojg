@@ -13,11 +13,15 @@
  - remove tree (maybe create separate benchmark repo)
 
 - ParseExpr
+ - need stack for brackets in script
  - filter
   - handle all filter terminations
-   - child
-   - bracket
-   - pretty much all
+   - union
+   - nth
+   - slice
+   - root
+   - at
+   - filter
   - handle complex eq
 
  - test print after parser

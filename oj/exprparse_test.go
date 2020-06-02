@@ -44,12 +44,7 @@ func TestExprParse(t *testing.T) {
 		{src: "$[1,2]", expect: "$[1,2]"},
 		{src: "$['a','b']", expect: "$['a','b']"},
 		{src: "$[ 1, 'a' , 2 ,'b' ]", expect: "$[1,'a',2,'b']"},
-
 		{src: "$[?(@.x == 'abc')]", expect: "$[?(@.x == 'abc')]"},
-		{src: "$[?(@.x<123)]", expect: "$[?(@.x < 123)]"},
-		{src: "$[?(@.x == 3)]", expect: "$[?(@.x == 3)]"},
-		{src: "$[?(@.*.xyz==true)]", expect: "$[?(@.*.xyz == true)]"},
-		{src: "$[?(@.x[?(@.a == true)].b == false)].z", expect: "$[?(@.x[?(@.a == true)].b == false)].z"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)

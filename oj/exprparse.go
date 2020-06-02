@@ -2,7 +2,10 @@
 
 package oj
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 // TBD remove after implemented and tested
 const debug = false
@@ -52,6 +55,7 @@ type xparser struct {
 	eqs      []*Equation
 	opName   []byte
 	isFilter bool
+	script   bool
 }
 
 // ParseExpr parses a string into an Expr.
@@ -63,12 +67,23 @@ func ParseExprString(s string) (x Expr, err error) {
 func ParseExpr(buf []byte) (Expr, error) {
 	xp := &xparser{}
 	xp.xa = append(xp.xa, Expr{})
-	err := xp.parse(buf)
+	err := xp.parse(buf, false)
 	return xp.xa[0], err
 }
 
-func (xp *xparser) parse(buf []byte) (err error) {
-	xp.fun = startFun
+func (xp *xparser) parse(buf []byte, script bool) (err error) {
+	if script {
+		buf = bytes.TrimSpace(buf)
+		if len(buf) < 2 || buf[0] != '(' {
+			return fmt.Errorf("a script must start with a '('")
+		}
+		xp.depth = 1
+		xp.isFilter = false
+		xp.script = true
+		xp.fun = scriptFun
+	} else {
+		xp.fun = startFun
+	}
 	for i, b := range buf {
 		if err = xp.fun(xp, b); err != nil {
 			return fmt.Errorf("%s at %d in %q", err, i, buf)
@@ -80,7 +95,7 @@ func (xp *xparser) parse(buf []byte) (err error) {
 
 func startFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** startFun %c\n", b)
+		fmt.Printf("*** startFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case '$':
@@ -105,7 +120,7 @@ func startFun(xp *xparser, b byte) (err error) {
 
 func fragFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** fragFun %c\n", b)
+		fmt.Printf("*** fragFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case 0:
@@ -113,7 +128,18 @@ func fragFun(xp *xparser, b byte) (err error) {
 		xp.fun = dotFun
 	case '[':
 		xp.fun = openFun
+	case ')':
+		err = xp.closeParen()
 	default:
+		if 0 < len(xp.eqs) {
+			if eqMap[b] == 'o' || b == ' ' { // an operation char or space
+				x := xp.xa[len(xp.xa)-1]
+				xp.xa = xp.xa[:len(xp.xa)-1]
+				_ = xp.setEqValue(x)
+				xp.fun = opFun
+				return
+			}
+		}
 		err = fmt.Errorf("expected a '.' or a '['")
 	}
 	return
@@ -121,7 +147,7 @@ func fragFun(xp *xparser, b byte) (err error) {
 
 func childFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** childFun %c\n", b)
+		fmt.Printf("*** childFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case 0:
@@ -138,21 +164,7 @@ func childFun(xp *xparser, b byte) (err error) {
 		if tokenMap[b] == '.' {
 			if 1 < len(xp.xa) { // processing an Expr in a Filter
 				if eqMap[b] == 'o' || b == ' ' { // an operation char or space
-					xp.exprAppend(Child(xp.token))
-					xp.token = xp.token[:0]
-					e := xp.eqs[len(xp.eqs)-1]
-					x := xp.popExpr()
-					if e.o == nil {
-						e.left = &Equation{o: get, left: &Equation{result: x}}
-					} else {
-						e.right = &Equation{o: get, left: &Equation{result: x}}
-						// TBD close if needed
-						//xp.fun = eqCloseFun
-					}
-					if b != ' ' {
-						xp.token = append(xp.token, b)
-					}
-					xp.fun = opFun
+					xp.bracketCloseEq(b)
 					return
 				}
 			}
@@ -166,7 +178,7 @@ func childFun(xp *xparser, b byte) (err error) {
 
 func openFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** openFun %c\n", b)
+		fmt.Printf("*** openFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case ' ':
@@ -207,7 +219,7 @@ func openFun(xp *xparser, b byte) (err error) {
 
 func closeFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** closeFun %c\n", b)
+		fmt.Printf("*** closeFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case ']':
@@ -222,7 +234,7 @@ func closeFun(xp *xparser, b byte) (err error) {
 
 func closeCommaFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** closeCommaFun %c\n", b)
+		fmt.Printf("*** closeCommaFun '%c' 0x%02x\n", b, b)
 	}
 	// used after a close quote only
 	switch b {
@@ -253,7 +265,7 @@ func closeCommaFun(xp *xparser, b byte) (err error) {
 
 func quoteFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** quoteFun %c\n", b)
+		fmt.Printf("*** quoteFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case '\\':
@@ -275,7 +287,7 @@ func quoteFun(xp *xparser, b byte) (err error) {
 
 func quote2Fun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** quote2Fun %c\n", b)
+		fmt.Printf("*** quote2Fun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case '\\':
@@ -297,7 +309,7 @@ func quote2Fun(xp *xparser, b byte) (err error) {
 
 func escFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** escFun %c\n", b)
+		fmt.Printf("*** escFun '%c' 0x%02x\n", b, b)
 	}
 	if b != '\'' {
 		xp.token = append(xp.token, '\\')
@@ -309,7 +321,7 @@ func escFun(xp *xparser, b byte) (err error) {
 
 func esc2Fun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** esc2Fun %c\n", b)
+		fmt.Printf("*** esc2Fun '%c' 0x%02x\n", b, b)
 	}
 	if b != '"' {
 		xp.token = append(xp.token, '\\')
@@ -321,7 +333,7 @@ func esc2Fun(xp *xparser, b byte) (err error) {
 
 func colonFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** colonFun %c\n", b)
+		fmt.Printf("*** colonFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case ' ':
@@ -353,7 +365,7 @@ func colonFun(xp *xparser, b byte) (err error) {
 
 func negFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** negFun %c\n", b)
+		fmt.Printf("*** negFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case '1', '2', '3', '4', '5', '6', '7', '8', '9':
@@ -367,7 +379,7 @@ func negFun(xp *xparser, b byte) (err error) {
 
 func zeroFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** zeroFun %c\n", b)
+		fmt.Printf("*** zeroFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case ' ':
@@ -393,7 +405,7 @@ func zeroFun(xp *xparser, b byte) (err error) {
 
 func numFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** numFun %c\n", b)
+		fmt.Printf("*** numFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
@@ -425,7 +437,7 @@ func numFun(xp *xparser, b byte) (err error) {
 
 func numDoneFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** numDoneFun %c\n", b)
+		fmt.Printf("*** numDoneFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case ' ':
@@ -449,7 +461,7 @@ func numDoneFun(xp *xparser, b byte) (err error) {
 
 func unionFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** unionFun %c\n", b)
+		fmt.Printf("*** unionFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case ' ':
@@ -479,7 +491,7 @@ func unionFun(xp *xparser, b byte) (err error) {
 
 func dotFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** dotFun %c\n", b)
+		fmt.Printf("*** dotFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case '.':
@@ -503,7 +515,7 @@ func dotFun(xp *xparser, b byte) (err error) {
 
 func dot2Fun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** dot2Fun %c\n", b)
+		fmt.Printf("*** dot2Fun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case '*':
@@ -512,6 +524,15 @@ func dot2Fun(xp *xparser, b byte) (err error) {
 	case '[':
 		err = fmt.Errorf("a '[' can not follow '..'")
 	default:
+		if 0 < len(xp.eqs) {
+			if eqMap[b] == 'o' || b == ' ' { // an operation char or space
+				x := xp.xa[len(xp.xa)-1]
+				xp.xa = xp.xa[:len(xp.xa)-1]
+				_ = xp.setEqValue(x)
+				xp.fun = opFun
+				return
+			}
+		}
 		if tokenMap[b] == '.' {
 			err = fmt.Errorf("a '%c' can not follow a '..'", b)
 		}
@@ -524,7 +545,7 @@ func dot2Fun(xp *xparser, b byte) (err error) {
 
 func filterFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** filterFun %c\n", b)
+		fmt.Printf("*** filterFun '%c' 0x%02x\n", b, b)
 	}
 	if b != '(' {
 		err = fmt.Errorf("a filter must begin with '?('")
@@ -536,7 +557,7 @@ func filterFun(xp *xparser, b byte) (err error) {
 
 func scriptFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** scriptFun %c\n", b)
+		fmt.Printf("*** scriptFun '%c' 0x%02x\n", b, b)
 	}
 	// starts after the ( which was already read
 	switch b {
@@ -559,7 +580,7 @@ func scriptFun(xp *xparser, b byte) (err error) {
 
 func opFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** opFun %c\n", b)
+		fmt.Printf("*** opFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case ' ':
@@ -607,7 +628,7 @@ func opFun(xp *xparser, b byte) (err error) {
 
 func eqCloseFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** eqCloseFun %c\n", b)
+		fmt.Printf("*** eqCloseFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case ' ':
@@ -627,22 +648,30 @@ func eqCloseFun(xp *xparser, b byte) (err error) {
 
 func closeScriptFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** closeScriptFun %c\n", b)
+		fmt.Printf("*** closeScriptFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
+	case 0:
+		if !xp.script {
+			err = fmt.Errorf("expected a ']'")
+		}
 	case ' ':
 		// keep going
 	case ']':
-		xp.fun = fragFun
+		if 1 < len(xp.xa) { // processing an Expr in a Filter
+			xp.bracketCloseEq(b)
+		} else {
+			xp.fun = fragFun
+		}
 	default:
-		err = fmt.Errorf("espected at ']'")
+		err = fmt.Errorf("expected a ']'")
 	}
 	return
 }
 
 func falseFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** falseFun %c\n", b)
+		fmt.Printf("*** falseFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case 'a', 'l', 's', 'e':
@@ -656,14 +685,14 @@ func falseFun(xp *xparser, b byte) (err error) {
 			err = fmt.Errorf("expected 'false', not '%s'", xp.token)
 		}
 	default:
-		err = fmt.Errorf("espected 'false'")
+		err = fmt.Errorf("expected 'false'")
 	}
 	return
 }
 
 func trueFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** trueFun %c\n", b)
+		fmt.Printf("*** trueFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case 'r', 'u', 'e':
@@ -677,14 +706,14 @@ func trueFun(xp *xparser, b byte) (err error) {
 			err = fmt.Errorf("expected 'true', not '%s'", xp.token)
 		}
 	default:
-		err = fmt.Errorf("espected 'true'")
+		err = fmt.Errorf("expected 'true'")
 	}
 	return
 }
 
 func nullFun(xp *xparser, b byte) (err error) {
 	if debug {
-		fmt.Printf("*** nullFun %c\n", b)
+		fmt.Printf("*** nullFun '%c' 0x%02x\n", b, b)
 	}
 	switch b {
 	case 'u', 'l':
@@ -698,7 +727,7 @@ func nullFun(xp *xparser, b byte) (err error) {
 			err = fmt.Errorf("expected 'null', not '%s'", xp.token)
 		}
 	default:
-		err = fmt.Errorf("espected 'null'")
+		err = fmt.Errorf("expected 'null'")
 	}
 	return
 }
@@ -808,6 +837,27 @@ func (xp *xparser) numCloseParen() (err error) {
 	return
 }
 
+func (xp *xparser) closeParen() (err error) {
+	xp.depth--
+	if 0 < len(xp.eqs) {
+		fmt.Printf("*** closeParens - eqs: %v\n", xp.eqs)
+		e := xp.eqs[len(xp.eqs)-1]
+		if xp.depth <= 0 {
+			if xp.isFilter {
+				xp.exprAppend(e.Filter())
+			} else {
+				xp.exprAppend(&ScriptFrag{Script: e.Script()})
+			}
+			xp.fun = closeScriptFun
+		} else {
+			xp.fun = opFun
+		}
+	} else {
+		err = fmt.Errorf("invalid syntax")
+	}
+	return
+}
+
 func (xp *xparser) numDefault(b byte) (err error) {
 	if 0 < len(xp.eqs) && eqMap[b] == 'o' {
 		_ = xp.setEqValue(xp.num)
@@ -832,4 +882,24 @@ func (xp *xparser) setEqValue(v interface{}) (e *Equation) {
 
 func (xp *xparser) exprAppend(f Frag) {
 	xp.xa[len(xp.xa)-1] = append(xp.xa[len(xp.xa)-1], f)
+}
+
+func (xp *xparser) bracketCloseEq(b byte) {
+	//fmt.Printf("*** brackCloseEq - %s\n", JSON(xp.eqs))
+	xp.exprAppend(Child(xp.token))
+	xp.token = xp.token[:0]
+	e := xp.eqs[len(xp.eqs)-1]
+	x := xp.popExpr()
+	if e.o == nil {
+		e.left = &Equation{o: get, left: &Equation{result: x}}
+	} else {
+		e.right = &Equation{o: get, left: &Equation{result: x}}
+		//fmt.Printf("*** brackCloseEq right - %d  %s\n", len(xp.eqs), JSON(xp.eqs))
+		// TBD close if needed
+		//xp.fun = eqCloseFun
+	}
+	if b != ' ' && b != ']' {
+		xp.token = append(xp.token, b)
+	}
+	xp.fun = opFun
 }
