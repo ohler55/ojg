@@ -43,6 +43,7 @@ func TestExprParse(t *testing.T) {
 		{src: "$['ぴーたー']", expect: "$.ぴーたー"},
 		{src: "$[1,2]", expect: "$[1,2]"},
 		{src: "$['a','b']", expect: "$['a','b']"},
+		{src: "$[1,'a']", expect: "$[1,'a']"},
 		{src: "$[ 1, 'a' , 2 ,'b' ]", expect: "$[1,'a',2,'b']"},
 		{src: "$[?(@.x == 'abc')]", expect: "$[?(@.x == 'abc')]"},
 	} {

@@ -55,6 +55,13 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@.*.xyz==true)", expect: "(@.*.xyz == true)"},
 		{src: "(@.x.* == 3)", expect: "(@.x.* == 3)"},
 		{src: "(@.. == 3)", expect: "(@.. == 3)"},
+		{src: "(@[3] == 3)", expect: "(@[3] == 3)"},
+		{src: "(@[3,4] == 3)", expect: "(@[3,4] == 3)"},
+		{src: "(@[3,'four'] == 3)", expect: "(@[3,'four'] == 3)"},
+		{src: "(@[1:5] == 3)", expect: "(@[1:5] == 3)"},
+		{src: "(@ == 3)", expect: "(@ == 3)"},
+		{src: "($ == 3)", expect: "($ == 3)"},
+		//{src: "(3 == @.x)", expect: "(@ == $)"},
 		// TBD more variations
 
 		// TBD advanced
@@ -80,9 +87,9 @@ func TestScriptParse(t *testing.T) {
 func TestScriptDev(t *testing.T) {
 	var s oj.Script
 
-	err := s.Parse([]byte("(@.. < 3)"))
+	err := s.Parse([]byte("(3 < @.x)"))
 	tt.Nil(t, err)
-	tt.Equal(t, "(@.. < 3)", s.String())
+	tt.Equal(t, "(3 < @.x)", s.String())
 }
 
 func BenchmarkOjScriptDev(b *testing.B) {

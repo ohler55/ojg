@@ -16,12 +16,7 @@
  - need stack for brackets in script
  - filter
   - handle all filter terminations
-   - union
-   - nth
-   - slice
-   - root
-   - at
-   - filter
+   - path as second value
   - handle complex eq
 
  - test print after parser

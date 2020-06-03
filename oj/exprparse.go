@@ -166,6 +166,15 @@ func childFun(xp *xparser, b byte) (err error) {
 				if eqMap[b] == 'o' || b == ' ' { // an operation char or space
 					xp.bracketCloseEq(b)
 					return
+				} else if b == ')' {
+					fmt.Printf("*** eqs: %v  xa: %v\n", xp.eqs, xp.xa)
+					//e := xp.eqs[len(xp.eqs)-1]
+					//e.right = &Equation{result: xp.xa[0]}
+					//fmt.Printf("*** eqs: %v  xa: %v\n", xp.eqs, xp.xa)
+					// TBD if right == nil then add filter
+					xp.depth--
+					xp.fun = closeScriptFun
+					return
 				}
 			}
 			err = fmt.Errorf("a '%c' character can not be in a non-bracketed child", b)
@@ -272,8 +281,13 @@ func quoteFun(xp *xparser, b byte) (err error) {
 		xp.fun = escFun
 	case '\'':
 		if 0 < len(xp.eqs) {
-			_ = xp.setEqValue(string(xp.token))
-			xp.fun = opFun
+			if 0 < len(xp.union) {
+				xp.exprAppend(Child(xp.token))
+				xp.fun = closeCommaFun
+			} else {
+				_ = xp.setEqValue(string(xp.token))
+				xp.fun = opFun
+			}
 		} else {
 			xp.exprAppend(Child(xp.token))
 			xp.fun = closeCommaFun
