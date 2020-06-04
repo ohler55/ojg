@@ -2,10 +2,7 @@
 
 package oj
 
-import (
-	"bytes"
-	"fmt"
-)
+import "fmt"
 
 // TBD remove after implemented and tested
 const debug = false
@@ -43,6 +40,9 @@ const (
 // approach over modes only adds 10% so a reasonable penalty for
 // maintainability.
 type xparser struct {
+	buf []byte
+	pos int
+
 	// Using a xparser function adds 50% overhead so pass the xparser as an
 	// arg instead.
 	fun      func(*xparser, byte) error
@@ -64,7 +64,150 @@ func ParseExprString(s string) (x Expr, err error) {
 }
 
 // ParseExpr parses a []byte into an Expr.
-func ParseExpr(buf []byte) (Expr, error) {
+func ParseExpr(buf []byte) (x Expr, err error) {
+	xp := &xparser{buf: buf}
+	x, err = xp.readExpr()
+	if err == nil && xp.pos < len(buf) {
+		err = fmt.Errorf("parse error")
+	}
+	if err != nil {
+		err = fmt.Errorf("%s at %d in %s", err, xp.pos, buf)
+	}
+	return
+}
+
+func (xp *xparser) readExpr() (x Expr, err error) {
+	xp.where("readExpr")
+	x = Expr{}
+	var f Frag
+	first := true
+	lastDescent := false
+	for {
+		if f, err = xp.nextFrag(first, lastDescent); err != nil || f == nil {
+			return
+		}
+		first = false
+		if _, ok := f.(Descent); ok {
+			lastDescent = true
+		} else {
+			lastDescent = false
+		}
+		x = append(x, f)
+	}
+	return
+}
+
+func (xp *xparser) nextFrag(first, lastDescent bool) (f Frag, err error) {
+	xp.where("nextFrag")
+	if xp.pos < len(xp.buf) {
+		b := xp.buf[xp.pos]
+		xp.pos++
+		switch b {
+		case '$':
+			if first {
+				f = Root('$')
+			}
+		case '@':
+			if first {
+				f = At('@')
+			}
+		case '.':
+			f, err = xp.afterDot()
+		case '[':
+			f, err = xp.afterBracket()
+		default:
+			if first || lastDescent {
+				xp.pos--
+				f, err = xp.afterDot()
+			}
+		}
+		// Any other character is the end of the Expr, figure out later if
+		// that is an error.
+	}
+	return
+}
+
+func (xp *xparser) afterDot() (Frag, error) {
+	xp.where("afterDot")
+	if len(xp.buf) <= xp.pos {
+		return nil, fmt.Errorf("not terminated")
+	}
+	var token []byte
+	b := xp.buf[xp.pos]
+	xp.pos++
+	switch b {
+	case '*':
+		return Wildcard('*'), nil
+	case '.':
+		return Descent('.'), nil
+	default:
+		if tokenMap[b] == '.' {
+			return nil, fmt.Errorf("an expression fragment can not start with a '%c'", b)
+		}
+		token = append(token, b)
+	}
+	for xp.pos < len(xp.buf) {
+		b := xp.buf[xp.pos]
+		xp.pos++
+		if tokenMap[b] == '.' {
+			xp.pos--
+			break
+		}
+		token = append(token, b)
+	}
+	return Child(token), nil
+}
+
+func (xp *xparser) afterBracket() (Frag, error) {
+	xp.where("afterBracket")
+	if len(xp.buf) <= xp.pos {
+		return nil, fmt.Errorf("not terminated")
+	}
+	b := xp.buf[xp.pos]
+	xp.pos++
+	switch b {
+	case '*':
+		// expect ]
+		if len(xp.buf) <= xp.pos {
+			return nil, fmt.Errorf("not terminated")
+		}
+		b := xp.buf[xp.pos]
+		xp.pos++
+		if b != ']' {
+			return nil, fmt.Errorf("not terminated")
+		}
+		return Wildcard('#'), nil
+	case '\'':
+		// TBD
+	case '"':
+		// TBD
+	case '?':
+		// TBD
+	case '-':
+		// TBD
+	case '0': // or other digits, also -
+		// TBD nth, slice, or union
+	case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+		// TBD
+	default:
+
+	}
+	return nil, nil
+}
+
+func (xp *xparser) where(fun string) {
+	if debug {
+		var b byte
+		if xp.pos < len(xp.buf) {
+			b = xp.buf[xp.pos]
+		}
+		fmt.Printf("*** %s - %d %c\n", fun, xp.pos, b)
+	}
+}
+
+/*
+// ParseExpr parses a []byte into an Expr.
+func ParseExprX(buf []byte) (Expr, error) {
 	xp := &xparser{}
 	xp.xa = append(xp.xa, Expr{})
 	err := xp.parse(buf, false)
@@ -917,3 +1060,4 @@ func (xp *xparser) bracketCloseEq(b byte) {
 	}
 	xp.fun = opFun
 }
+*/
