@@ -71,9 +71,7 @@ func TestScriptParse(t *testing.T) {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
 		}
-		var s oj.Script
-
-		err := s.Parse([]byte(d.src))
+		s, err := oj.NewScript(d.src)
 		if 0 < len(d.err) {
 			tt.NotNil(t, err, d.src)
 			tt.Equal(t, d.err, err.Error(), i, ": ", d.src)
@@ -85,9 +83,7 @@ func TestScriptParse(t *testing.T) {
 }
 
 func TestScriptDev(t *testing.T) {
-	var s oj.Script
-
-	err := s.Parse([]byte("(3 < @.x)"))
+	s, err := oj.NewScript("(3 < @.x)")
 	tt.Nil(t, err)
 	tt.Equal(t, "(3 < @.x)", s.String())
 }

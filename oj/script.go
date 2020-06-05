@@ -64,9 +64,19 @@ type Script struct {
 }
 
 func NewScript(str string) (s *Script, err error) {
-	s = &Script{}
-	err = s.Parse([]byte(str))
-	return
+	xp := &xparser{buf: []byte(str)}
+	if len(xp.buf) == 0 || xp.buf[0] != '(' {
+		return nil, fmt.Errorf("a script must start with a '('")
+	}
+	xp.pos = 1
+	eq, err := xp.readEquation()
+	if err == nil && xp.pos < len(xp.buf) {
+		err = fmt.Errorf("parse error")
+	}
+	if err != nil {
+		err = fmt.Errorf("%s at %d in %s", err, xp.pos, xp.buf)
+	}
+	return eq.Script(), nil
 }
 
 // Append a fragment string representation of the fragment to the buffer
@@ -480,23 +490,4 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 		buf = append(buf, fmt.Sprintf("%v", v)...)
 	}
 	return buf
-}
-
-func (s *Script) Parse(buf []byte) (err error) {
-	/*
-		xp := &xparser{}
-		xp.xa = append(xp.xa, Expr{})
-		if err = xp.parse(buf, true); err == nil {
-			if x := xp.xa[0]; 0 < len(x) {
-				switch frag := x[0].(type) {
-				case *ScriptFrag:
-					*s = *frag.Script
-				case *Filter:
-					*s = frag.Script
-				}
-			}
-		}
-	*/
-	// TBD
-	return
 }
