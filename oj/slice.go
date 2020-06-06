@@ -16,7 +16,18 @@ func (f Slice) Append(buf []byte, _, _ bool) []byte {
 			if 0 < i {
 				buf = append(buf, ':')
 			}
-			buf = append(buf, strconv.FormatInt(int64(n), 10)...)
+			switch i {
+			case 0:
+				if n != 0 {
+					buf = append(buf, strconv.FormatInt(int64(n), 10)...)
+				}
+			case 1:
+				if n != -1 {
+					buf = append(buf, strconv.FormatInt(int64(n), 10)...)
+				}
+			default:
+				buf = append(buf, strconv.FormatInt(int64(n), 10)...)
+			}
 			if 2 <= i {
 				break
 			}

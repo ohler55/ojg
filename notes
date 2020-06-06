@@ -6,17 +6,15 @@
  - reflect for path and script
  - unit tests
  - docs
+ - CI - travis or something else?
  - cmd/oj
   - filters
   - match
  - remove tree (maybe create separate benchmark repo)
 
-
-- could allow mix of bracket and dot
- - would need a tag to remember which was used
- - or just allow in parse'
-
- - test print after parser
+- ParseExpr
+ - remove debug helper
+  - maybe after coverage
 
 - docs and unit tests for oj
 

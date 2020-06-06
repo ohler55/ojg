@@ -22,6 +22,22 @@ var (
 	mult   = &op{prec: 1, code: '*', name: "*", cnt: 2}
 	divide = &op{prec: 1, code: '/', name: "/", cnt: 2}
 	get    = &op{prec: 0, code: 'G', name: "get", cnt: 1}
+
+	opMap = map[string]*op{
+		eq.name:     eq,
+		neq.name:    neq,
+		lt.name:     lt,
+		gt.name:     gt,
+		lte.name:    lte,
+		gte.name:    gte,
+		or.name:     or,
+		and.name:    and,
+		not.name:    not,
+		add.name:    add,
+		sub.name:    sub,
+		mult.name:   mult,
+		divide.name: divide,
+	}
 )
 
 type op struct {
@@ -48,9 +64,19 @@ type Script struct {
 }
 
 func NewScript(str string) (s *Script, err error) {
-	s = &Script{}
-	_, err = s.parse([]byte(str), 0)
-	return
+	xp := &xparser{buf: []byte(str)}
+	if len(xp.buf) == 0 || xp.buf[0] != '(' {
+		return nil, fmt.Errorf("a script must start with a '('")
+	}
+	xp.pos = 1
+	eq, err := xp.readEquation()
+	if err == nil && xp.pos < len(xp.buf) {
+		err = fmt.Errorf("parse error")
+	}
+	if err != nil {
+		err = fmt.Errorf("%s at %d in %s", err, xp.pos, xp.buf)
+	}
+	return eq.Script(), nil
 }
 
 // Append a fragment string representation of the fragment to the buffer
@@ -80,7 +106,7 @@ func (s *Script) Append(buf []byte) []byte {
 			}
 		}
 		if pb, _ := bstack[0].(*precBuf); pb == nil {
-			buf = append(buf, "??"...)
+			buf = s.appendValue(buf, bstack[0], 0)
 		} else {
 			buf = append(buf, pb.buf...)
 		}
@@ -450,7 +476,7 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 	case Expr:
 		buf = tv.Append(buf)
 	case *precBuf:
-		if prec <= tv.prec {
+		if prec < tv.prec {
 			buf = append(buf, '(')
 			buf = append(buf, tv.buf...)
 			buf = append(buf, ')')
@@ -464,15 +490,4 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 		buf = append(buf, fmt.Sprintf("%v", v)...)
 	}
 	return buf
-}
-
-// parse the buf and return the script along with the next buf index. Used for
-// NewScript as well as Expr (JSON path) parsing.
-func (s *Script) parse(buf []byte, i int) (end int, err error) {
-
-	// TBD expect a ( and )
-	//  parse directly to array or build a tree first?
-	//  need to keep track of parens in any case
-
-	return
 }

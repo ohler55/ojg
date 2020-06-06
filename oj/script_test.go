@@ -3,6 +3,7 @@
 package oj_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/ohler55/ojg/oj"
@@ -17,7 +18,7 @@ func scriptBenchData(size int64) interface{} {
 	return list
 }
 
-func TestScriptDev(t *testing.T) {
+func TestScriptEval(t *testing.T) {
 	data := []interface{}{
 		map[string]interface{}{
 			"a": 1,
@@ -43,6 +44,51 @@ func TestScriptDev(t *testing.T) {
 	//fmt.Printf("*** data: %s\n", oj.JSON(data))
 	stack := s.Eval([]interface{}{}, data)
 	tt.Equal(t, `[{"a":1,"b":2,"c":3}]`, oj.JSON(stack, &oj.Options{Sort: true}))
+}
+
+func TestScriptParse(t *testing.T) {
+	for i, d := range []xdata{
+		{src: "(@.x == 'abc')", expect: "(@.x == 'abc')"},
+		{src: "(@.x<5)", expect: "(@.x < 5)"},
+		{src: "(@.x<123)", expect: "(@.x < 123)"},
+		{src: "(@.x == 3)", expect: "(@.x == 3)"},
+		{src: "(@.*.xyz==true)", expect: "(@.*.xyz == true)"},
+		{src: "(@.x.* == 3)", expect: "(@.x.* == 3)"},
+		{src: "(@.. == 3)", expect: "(@.. == 3)"},
+		{src: "(@[3] == 3)", expect: "(@[3] == 3)"},
+		{src: "(@[3,4] == 3)", expect: "(@[3,4] == 3)"},
+		{src: "(@[3,'four'] == 3)", expect: "(@[3,'four'] == 3)"},
+		{src: "(@[1:5] == 3)", expect: "(@[1:5] == 3)"},
+		{src: "(@ == 3)", expect: "(@ == 3)"},
+		{src: "($ == 3.4e-3)", expect: "($ == 0.0034)"},
+		{src: "($ == 3e-3)", expect: "($ == 0.003)"},
+		{src: "(3 == @.x)", expect: "(3 == @.x)"},
+		{src: "(@ == $)", expect: "(@ == $)"},
+		{src: "(@.x[?(@.a == true)].b == false)", expect: "(@.x[?(@.a == true)].b == false)"},
+		{src: "(@.x[?(@.a == 5)] == 11)", expect: "(@.x[?(@.a == 5)] == 11)"},
+		{src: "((@.x == 3) || (@.y > 5))", expect: "(@.x == 3 || @.y > 5)"},
+		{src: "(@.x < 3 && @.x > 1 || @.z == 3)", expect: "(@.x < 3 && @.x > 1 || @.z == 3)"},
+		{src: "(!(3 == @.x))", expect: "(!(3 == @.x))"},
+	} {
+		if testing.Verbose() {
+			fmt.Printf("... %s\n", d.src)
+		}
+		s, err := oj.NewScript(d.src)
+		if 0 < len(d.err) {
+			tt.NotNil(t, err, d.src)
+			tt.Equal(t, d.err, err.Error(), i, ": ", d.src)
+		} else {
+			tt.Nil(t, err, d.src)
+			tt.Equal(t, d.expect, s.String(), i, ": ", d.src)
+		}
+	}
+}
+
+func TestScriptDev(t *testing.T) {
+	src := "(!(@.x == 2))"
+	s, err := oj.NewScript(src)
+	tt.Nil(t, err)
+	tt.Equal(t, src, s.String())
 }
 
 func BenchmarkOjScriptDev(b *testing.B) {
