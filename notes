@@ -6,18 +6,14 @@
  - reflect for path and script
  - unit tests
  - docs
- - CI - travis or somethign else?
+ - CI - travis or something else?
  - cmd/oj
   - filters
   - match
  - remove tree (maybe create separate benchmark repo)
 
 - ParseExpr
- - need stack for brackets in script
- - filter
-  - handle all filter terminations
-   - path as second value
-  - handle complex eq
+ - complex equations with no parens
 
  - test print after parser
 

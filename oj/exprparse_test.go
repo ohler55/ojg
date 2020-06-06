@@ -70,7 +70,7 @@ func TestExprParse(t *testing.T) {
 }
 
 func xTestExprParseDev(t *testing.T) {
-	x, err := oj.ParseExprString(`$[?(@.x == 'abc')]`)
+	x, err := oj.ParseExprString(`abc[1:]`)
 	tt.Nil(t, err)
 	tt.NotNil(t, x)
 	tt.Equal(t, "abc..def", x.String())

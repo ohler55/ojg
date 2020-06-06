@@ -61,12 +61,14 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@[1:5] == 3)", expect: "(@[1:5] == 3)"},
 		{src: "(@ == 3)", expect: "(@ == 3)"},
 		{src: "($ == 3)", expect: "($ == 3)"},
-		//{src: "(3 == @.x)", expect: "(@ == $)"},
-		// TBD more variations
+		{src: "(3 == @.x)", expect: "(3 == @.x)"},
+		{src: "(@ == $)", expect: "(@ == $)"},
+		{src: "(@.x[?(@.a == true)].b == false)", expect: "(@.x[?(@.a == true)].b == false)"},
+		{src: "(@.x[?(@.a == 5)] == 11)", expect: "(@.x[?(@.a == 5)] == 11)"},
+		{src: "((@.x == 3) || (@.y > 5))", expect: "(@.x == 3 || @.y > 5)"},
 
-		// TBD advanced
-		//{src: "(@.x[?(@.a == true)].b == false)", expect: "(@.x[?(@.a == true)].b == false)"},
-		//{src: "(@.x[?(@.a == 5)] == 11)", expect: "(@.x[?(@.a == 5)] == 11)"},
+		// TBD complex expressions
+
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
@@ -82,8 +84,8 @@ func TestScriptParse(t *testing.T) {
 	}
 }
 
-func TestScriptDev(t *testing.T) {
-	s, err := oj.NewScript("(3 < @.x)")
+func xTestScriptDev(t *testing.T) {
+	s, err := oj.NewScript("((@.x == 3) || (@.y > 5))")
 	tt.Nil(t, err)
 	tt.Equal(t, "(3 < @.x)", s.String())
 }

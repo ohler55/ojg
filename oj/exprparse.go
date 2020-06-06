@@ -57,7 +57,7 @@ type xparser struct {
 
 // TBD remove after implemented and tested
 func (xp *xparser) where(fun string) {
-	if true {
+	if false {
 		var b byte
 		if xp.pos < len(xp.buf) {
 			b = xp.buf[xp.pos]
@@ -123,10 +123,16 @@ func (xp *xparser) nextFrag(first, lastDescent bool) (f Frag, err error) {
 			f, err = xp.afterDot()
 		case '[':
 			f, err = xp.afterBracket()
+		case ']':
+			// done
 		default:
 			xp.pos--
-			if first || lastDescent {
-				f, err = xp.afterDot()
+			if tokenMap[b] == 'o' {
+				if first {
+					f, err = xp.afterDot()
+				} else if lastDescent {
+					f, err = xp.afterDotDot()
+				}
 			}
 		}
 		// Any other character is the end of the Expr, figure out later if
@@ -154,6 +160,30 @@ func (xp *xparser) afterDot() (Frag, error) {
 		}
 		token = append(token, b)
 	}
+	for xp.pos < len(xp.buf) {
+		b := xp.buf[xp.pos]
+		xp.pos++
+		if tokenMap[b] == '.' {
+			xp.pos--
+			break
+		}
+		token = append(token, b)
+	}
+	return Child(token), nil
+}
+
+func (xp *xparser) afterDotDot() (Frag, error) {
+	xp.where("afterDotDot")
+	if len(xp.buf) <= xp.pos {
+		return nil, fmt.Errorf("not terminated")
+	}
+	var token []byte
+	b := xp.buf[xp.pos]
+	xp.pos++
+	if tokenMap[b] == '.' {
+		return nil, fmt.Errorf("an expression fragment can not start with a '%c'", b)
+	}
+	token = append(token, b)
 	for xp.pos < len(xp.buf) {
 		b := xp.buf[xp.pos]
 		xp.pos++
@@ -444,18 +474,18 @@ func (xp *xparser) readEqValue() (eq *Equation, err error) {
 			return
 		}
 		eq = &Equation{result: s}
-	case 'n': // null
+	case 'n':
 		if err = xp.readEqToken([]byte("null")); err != nil {
 			return
 		}
 		eq = &Equation{result: nil}
-	case 't': // true
+	case 't':
 		if err = xp.readEqToken([]byte("true")); err != nil {
 			return
 		}
 		eq = &Equation{result: true}
 
-	case 'f': // false
+	case 'f':
 		if err = xp.readEqToken([]byte("false")); err != nil {
 			return
 		}
@@ -465,7 +495,8 @@ func (xp *xparser) readEqValue() (eq *Equation, err error) {
 		x, err = xp.readExpr()
 		eq = &Equation{result: x}
 	case '(':
-		// TBD new equation
+		xp.pos++
+		eq, err = xp.readEquation()
 	default:
 
 	}
