@@ -2,7 +2,10 @@
 
 package oj
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 const (
 	//   0123456789abcdef0123456789abcdef
@@ -55,17 +58,6 @@ type xparser struct {
 	script   bool
 }
 
-// TBD remove after implemented and tested
-func (xp *xparser) where(fun string) {
-	if false {
-		var b byte
-		if xp.pos < len(xp.buf) {
-			b = xp.buf[xp.pos]
-		}
-		fmt.Printf("*** %s - %d '%c'\n", fun, xp.pos, b)
-	}
-}
-
 // ParseExpr parses a string into an Expr.
 func ParseExprString(s string) (x Expr, err error) {
 	return ParseExpr([]byte(s))
@@ -85,7 +77,6 @@ func ParseExpr(buf []byte) (x Expr, err error) {
 }
 
 func (xp *xparser) readExpr() (x Expr, err error) {
-	xp.where("readExpr")
 	x = Expr{}
 	var f Frag
 	first := true
@@ -106,7 +97,6 @@ func (xp *xparser) readExpr() (x Expr, err error) {
 }
 
 func (xp *xparser) nextFrag(first, lastDescent bool) (f Frag, err error) {
-	xp.where("nextFrag")
 	if xp.pos < len(xp.buf) {
 		b := xp.buf[xp.pos]
 		xp.pos++
@@ -142,7 +132,6 @@ func (xp *xparser) nextFrag(first, lastDescent bool) (f Frag, err error) {
 }
 
 func (xp *xparser) afterDot() (Frag, error) {
-	xp.where("afterDot")
 	if len(xp.buf) <= xp.pos {
 		return nil, fmt.Errorf("not terminated")
 	}
@@ -173,7 +162,6 @@ func (xp *xparser) afterDot() (Frag, error) {
 }
 
 func (xp *xparser) afterDotDot() (Frag, error) {
-	xp.where("afterDotDot")
 	if len(xp.buf) <= xp.pos {
 		return nil, fmt.Errorf("not terminated")
 	}
@@ -197,7 +185,6 @@ func (xp *xparser) afterDotDot() (Frag, error) {
 }
 
 func (xp *xparser) afterBracket() (Frag, error) {
-	xp.where("afterBracket")
 	if len(xp.buf) <= xp.pos {
 		return nil, fmt.Errorf("not terminated")
 	}
@@ -291,14 +278,74 @@ func (xp *xparser) readInt(b byte) (int, byte, error) {
 	return i, b, nil
 }
 
-func (xp *xparser) readNum(b byte) (interface{}, byte, error) {
-	// TBD read number, sections for each part adding to a buf, then parse
-	//  simple mask will miss 123-2
-	return nil, b, nil
+func (xp *xparser) readNum(b byte) (interface{}, error) {
+	var num []byte
+
+	num = append(num, b)
+	// Read digits first
+	for xp.pos < len(xp.buf) {
+		b = xp.buf[xp.pos]
+		if b < '0' || '9' < b {
+			break
+		}
+		num = append(num, b)
+		xp.pos++
+	}
+	switch b {
+	case '.':
+		num = append(num, b)
+		xp.pos++
+		for xp.pos < len(xp.buf) {
+			b = xp.buf[xp.pos]
+			if b < '0' || '9' < b {
+				break
+			}
+			num = append(num, b)
+			xp.pos++
+		}
+		if b == 'e' || b == 'E' {
+			xp.pos++
+			num = append(num, b)
+			if len(xp.buf) <= xp.pos {
+				return 0, fmt.Errorf("expected a number")
+			}
+			b = xp.buf[xp.pos]
+		} else {
+			f, err := strconv.ParseFloat(string(num), 64)
+			return f, err
+		}
+	case 'e', 'E':
+		xp.pos++
+		if len(xp.buf) <= xp.pos {
+			return 0, fmt.Errorf("expected a number")
+		}
+		num = append(num, b)
+		b = xp.buf[xp.pos]
+	default:
+		i, err := strconv.ParseInt(string(num), 10, 64)
+		return int(i), err
+	}
+	if b == '+' || b == '-' {
+		num = append(num, b)
+		xp.pos++
+		if len(xp.buf) <= xp.pos {
+			return 0, fmt.Errorf("expected a number")
+		}
+	}
+	for xp.pos < len(xp.buf) {
+		b = xp.buf[xp.pos]
+		if b < '0' || '9' < b {
+			break
+		}
+		num = append(num, b)
+		xp.pos++
+	}
+	f, err := strconv.ParseFloat(string(num), 64)
+
+	return f, err
 }
 
 func (xp *xparser) readSlice(i int) (Frag, error) {
-	xp.where("readSlice")
 	if len(xp.buf) <= xp.pos {
 		return nil, fmt.Errorf("not terminated")
 	}
@@ -343,7 +390,6 @@ func (xp *xparser) readSlice(i int) (Frag, error) {
 }
 
 func (xp *xparser) readUnion(v interface{}, b byte) (Frag, error) {
-	xp.where("readUnion")
 	if len(xp.buf) <= xp.pos {
 		return nil, fmt.Errorf("not terminated")
 	}
@@ -422,7 +468,6 @@ func (xp *xparser) readFilter() (*Filter, error) {
 }
 
 func (xp *xparser) readEquation() (eq *Equation, err error) {
-	xp.where("readEquation")
 	if len(xp.buf) <= xp.pos {
 		return nil, fmt.Errorf("not terminated")
 	}
@@ -431,6 +476,7 @@ func (xp *xparser) readEquation() (eq *Equation, err error) {
 	b := xp.nextNonSpace()
 	if b == '!' {
 		eq.o = not
+		xp.pos++
 		if eq.left, err = xp.readEqValue(); err != nil {
 			return
 		}
@@ -445,28 +491,42 @@ func (xp *xparser) readEquation() (eq *Equation, err error) {
 	if eq.right, err = xp.readEqValue(); err != nil {
 		return
 	}
-	b = xp.nextNonSpace()
-	if b == ')' {
-		xp.pos++
-		return
+	for {
+		b = xp.nextNonSpace()
+		if b == ')' {
+			xp.pos++
+			return
+		}
+		var o *op
+		if o, err = xp.readEqOp(); err != nil {
+			return
+		}
+		if eq.o.prec <= o.prec {
+			eq = &Equation{left: eq, o: o}
+			if eq.right, err = xp.readEqValue(); err != nil {
+				return
+			}
+		} else {
+			eq.right = &Equation{left: eq.right, o: o}
+			if eq.right.right, err = xp.readEqValue(); err != nil {
+				return
+			}
+		}
 	}
-
-	// TBD read untill op or )
 	return
 
 }
 
 func (xp *xparser) readEqValue() (eq *Equation, err error) {
-	xp.where("readEqValue")
 	b := xp.nextNonSpace()
 	switch b {
 	case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-		var i int
+		var v interface{}
 		xp.pos++
-		if i, _, err = xp.readInt(b); err != nil {
+		if v, err = xp.readNum(b); err != nil {
 			return
 		}
-		eq = &Equation{result: i}
+		eq = &Equation{result: v}
 	case '\'', '"':
 		xp.pos++
 		var s string
@@ -498,13 +558,12 @@ func (xp *xparser) readEqValue() (eq *Equation, err error) {
 		xp.pos++
 		eq, err = xp.readEquation()
 	default:
-
+		err = fmt.Errorf("expected a value")
 	}
 	return
 }
 
 func (xp *xparser) readEqToken(token []byte) (err error) {
-	xp.where("readEqToken")
 	for _, t := range token {
 		if len(xp.buf) <= xp.pos || xp.buf[xp.pos] != t {
 			return fmt.Errorf("expected %s", token)
@@ -515,7 +574,6 @@ func (xp *xparser) readEqToken(token []byte) (err error) {
 }
 
 func (xp *xparser) readEqOp() (o *op, err error) {
-	xp.where("readEqOp")
 	var token []byte
 	b := xp.nextNonSpace()
 	for {

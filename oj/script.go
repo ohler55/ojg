@@ -476,7 +476,7 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 	case Expr:
 		buf = tv.Append(buf)
 	case *precBuf:
-		if prec <= tv.prec {
+		if prec < tv.prec {
 			buf = append(buf, '(')
 			buf = append(buf, tv.buf...)
 			buf = append(buf, ')')

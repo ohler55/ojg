@@ -13,9 +13,8 @@
  - remove tree (maybe create separate benchmark repo)
 
 - ParseExpr
- - complex equations with no parens
-
- - test print after parser
+ - remove debug helper
+  - maybe after coverage
 
 - docs and unit tests for oj
 
