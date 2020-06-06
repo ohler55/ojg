@@ -52,9 +52,7 @@ func TestExprParse(t *testing.T) {
 		{src: "$[1,'a']", expect: "$[1,'a']"},
 		{src: "$[1,'a',2,'b']", expect: "$[1,'a',2,'b']"},
 		{src: "$[ 1, 'a' , 2 ,'b' ]", expect: "$[1,'a',2,'b']"},
-		/*
-			{src: "$[?(@.x == 'abc')]", expect: "$[?(@.x == 'abc')]"},
-		*/
+		{src: "$[?(@.x == 'abc')]", expect: "$[?(@.x == 'abc')]"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
@@ -72,7 +70,7 @@ func TestExprParse(t *testing.T) {
 }
 
 func xTestExprParseDev(t *testing.T) {
-	x, err := oj.ParseExprString(`@..xxx`)
+	x, err := oj.ParseExprString(`$[?(@.x == 'abc')]`)
 	tt.Nil(t, err)
 	tt.NotNil(t, x)
 	tt.Equal(t, "abc..def", x.String())

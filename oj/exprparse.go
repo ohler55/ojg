@@ -57,7 +57,7 @@ type xparser struct {
 
 // TBD remove after implemented and tested
 func (xp *xparser) where(fun string) {
-	if false {
+	if true {
 		var b byte
 		if xp.pos < len(xp.buf) {
 			b = xp.buf[xp.pos]
@@ -79,7 +79,7 @@ func ParseExpr(buf []byte) (x Expr, err error) {
 		err = fmt.Errorf("parse error")
 	}
 	if err != nil {
-		err = fmt.Errorf("%s at %d in %s", err, xp.pos, buf)
+		err = fmt.Errorf("%s at %d in %s", err, xp.pos+1, buf)
 	}
 	return
 }
@@ -124,8 +124,8 @@ func (xp *xparser) nextFrag(first, lastDescent bool) (f Frag, err error) {
 		case '[':
 			f, err = xp.afterBracket()
 		default:
+			xp.pos--
 			if first || lastDescent {
-				xp.pos--
 				f, err = xp.afterDot()
 			}
 		}
@@ -261,6 +261,12 @@ func (xp *xparser) readInt(b byte) (int, byte, error) {
 	return i, b, nil
 }
 
+func (xp *xparser) readNum(b byte) (interface{}, byte, error) {
+	// TBD read number, sections for each part adding to a buf, then parse
+	//  simple mask will miss 123-2
+	return nil, b, nil
+}
+
 func (xp *xparser) readSlice(i int) (Frag, error) {
 	xp.where("readSlice")
 	if len(xp.buf) <= xp.pos {
@@ -365,6 +371,144 @@ func (xp *xparser) readStr(term byte) (string, error) {
 	return string(xp.buf[start : xp.pos-1]), nil
 }
 
+func (xp *xparser) readFilter() (*Filter, error) {
+	if len(xp.buf) <= xp.pos {
+		return nil, fmt.Errorf("not terminated")
+	}
+	b := xp.buf[xp.pos]
+	xp.pos++
+	if b != '(' {
+		return nil, fmt.Errorf("expected a '(' in filter")
+	}
+	eq, err := xp.readEquation()
+	if len(xp.buf) <= xp.pos || xp.buf[xp.pos] != ']' {
+		return nil, fmt.Errorf("not terminated")
+	}
+	xp.pos++
+	if err == nil {
+		return eq.Filter(), nil
+	}
+	return nil, err
+}
+
+func (xp *xparser) readEquation() (eq *Equation, err error) {
+	xp.where("readEquation")
+	if len(xp.buf) <= xp.pos {
+		return nil, fmt.Errorf("not terminated")
+	}
+	eq = &Equation{}
+
+	b := xp.nextNonSpace()
+	if b == '!' {
+		eq.o = not
+		if eq.left, err = xp.readEqValue(); err != nil {
+			return
+		}
+		return
+	}
+	if eq.left, err = xp.readEqValue(); err != nil {
+		return
+	}
+	if eq.o, err = xp.readEqOp(); err != nil {
+		return
+	}
+	if eq.right, err = xp.readEqValue(); err != nil {
+		return
+	}
+	b = xp.nextNonSpace()
+	if b == ')' {
+		xp.pos++
+		return
+	}
+
+	// TBD read untill op or )
+	return
+
+}
+
+func (xp *xparser) readEqValue() (eq *Equation, err error) {
+	xp.where("readEqValue")
+	b := xp.nextNonSpace()
+	switch b {
+	case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+		var i int
+		xp.pos++
+		if i, _, err = xp.readInt(b); err != nil {
+			return
+		}
+		eq = &Equation{result: i}
+	case '\'', '"':
+		xp.pos++
+		var s string
+		if s, err = xp.readStr(b); err != nil {
+			return
+		}
+		eq = &Equation{result: s}
+	case 'n': // null
+		if err = xp.readEqToken([]byte("null")); err != nil {
+			return
+		}
+		eq = &Equation{result: nil}
+	case 't': // true
+		if err = xp.readEqToken([]byte("true")); err != nil {
+			return
+		}
+		eq = &Equation{result: true}
+
+	case 'f': // false
+		if err = xp.readEqToken([]byte("false")); err != nil {
+			return
+		}
+		eq = &Equation{result: false}
+	case '@', '$':
+		var x Expr
+		x, err = xp.readExpr()
+		eq = &Equation{result: x}
+	case '(':
+		// TBD new equation
+	default:
+
+	}
+	return
+}
+
+func (xp *xparser) readEqToken(token []byte) (err error) {
+	xp.where("readEqToken")
+	for _, t := range token {
+		if len(xp.buf) <= xp.pos || xp.buf[xp.pos] != t {
+			return fmt.Errorf("expected %s", token)
+		}
+		xp.pos++
+	}
+	return nil
+}
+
+func (xp *xparser) readEqOp() (o *op, err error) {
+	xp.where("readEqOp")
+	var token []byte
+	b := xp.nextNonSpace()
+	for {
+		if eqMap[b] != 'o' {
+			break
+		}
+		token = append(token, b)
+		if b == '-' && 1 < len(token) {
+			err = fmt.Errorf("%q is not a valid operation", token)
+			return
+		}
+		xp.pos++
+		if len(xp.buf) <= xp.pos {
+			err = fmt.Errorf("equation not terminated")
+		}
+		b = xp.buf[xp.pos]
+	}
+	o = opMap[string(token)]
+	if o == nil {
+		err = fmt.Errorf("%q is not a valid operation", token)
+	}
+	return
+}
+
 func (xp *xparser) skipSpace() (b byte) {
 	for xp.pos < len(xp.buf) {
 		b = xp.buf[xp.pos]
@@ -376,29 +520,13 @@ func (xp *xparser) skipSpace() (b byte) {
 	return
 }
 
-func (xp *xparser) readFilter() (*Filter, error) {
-	if len(xp.buf) <= xp.pos {
-		return nil, fmt.Errorf("not terminated")
+func (xp *xparser) nextNonSpace() (b byte) {
+	for xp.pos < len(xp.buf) {
+		b = xp.buf[xp.pos]
+		if b != ' ' {
+			break
+		}
+		xp.pos++
 	}
-	b := xp.buf[xp.pos]
-	xp.pos++
-	if b != '(' {
-		return nil, fmt.Errorf("expected a '(' in filter")
-	}
-	eq, err := xp.readEquation()
-	if err == nil {
-		return eq.Filter(), nil
-	}
-	return nil, err
-}
-
-func (xp *xparser) readEquation() (*Equation, error) {
-	xp.where("readEquation")
-	if len(xp.buf) <= xp.pos {
-		return nil, fmt.Errorf("not terminated")
-	}
-
-	// TBD read value, then op then value
-
-	return nil, nil
+	return
 }

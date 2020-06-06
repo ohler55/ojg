@@ -48,8 +48,8 @@ func TestScriptEval(t *testing.T) {
 
 func TestScriptParse(t *testing.T) {
 	for i, d := range []xdata{
-		{src: "(@.x<5)", expect: "(@.x < 5)"},
 		{src: "(@.x == 'abc')", expect: "(@.x == 'abc')"},
+		{src: "(@.x<5)", expect: "(@.x < 5)"},
 		{src: "(@.x<123)", expect: "(@.x < 123)"},
 		{src: "(@.x == 3)", expect: "(@.x == 3)"},
 		{src: "(@.*.xyz==true)", expect: "(@.*.xyz == true)"},
