@@ -76,19 +76,19 @@ type Options struct {
 	// SyntaxColor is the color for syntax in the JSON output.
 	SyntaxColor string
 
-	// KeyColor is the color for key in the JSON output.
+	// KeyColor is the color for a key in the JSON output.
 	KeyColor string
 
-	// NullColor is the color for null in the JSON output.
+	// NullColor is the color for a null in the JSON output.
 	NullColor string
 
-	// BoolColor is the color for bool in the JSON output.
+	// BoolColor is the color for a bool in the JSON output.
 	BoolColor string
 
-	// NumberColor is the color for number in the JSON output.
+	// NumberColor is the color for a number in the JSON output.
 	NumberColor string
 
-	// StringColor is the color for string in the JSON output.
+	// StringColor is the color for a string in the JSON output.
 	StringColor string
 
 	buf []byte

@@ -1,40 +1,22 @@
 
 - tasks before release
- - path parser
-  - script parser
-  - examples and tests
  - reflect for path and script
  - unit tests
  - docs
  - CI - travis or something else?
- - cmd/oj
-  - filters
-  - match
  - remove tree (maybe create separate benchmark repo)
-
-- ParseExpr
- - remove debug helper
-  - maybe after coverage
-
-- docs and unit tests for oj
 
 - cmd/oj
   -colors list of colors or maybe map?
-  -x extract expression (JSON Path)
-   - also bare arg starting with @
-  -m match against (if a match return whole json)
-
- -colors normal:blue:-:-:red:green
+   -p (palette) key=red
+   -key red
 
 - examples
 
-- path
- - oj.Path().Child("foo").Any().Child("bar")
- - oj.X().C("foo").A().C("bar")
- - build path with jp.Child("foo").Any().Child("bar")
-  - each returns a jp.Expr , []jp.Frag and appends
- - oj.Expr{fp.Child("foo"), fp.Any{}}
- - oj.ParsePath("foo.*.bar")
+- next/todo
+ - regex op =~
+ - scripts
+ - cmd/oj palette
 
 - ojg/doc.go
  - JSON tools
@@ -60,16 +42,6 @@
 	// SetFirst(path string, val Node) error
 	// Remove(key string) []Node
 	// RemoveFirst(key string) Node
- - root - $
- - current - @
- - child - .foo
- - wildcard - .* or in array/subscript [*]
- - decendent (recursive) - ..
- - filter - [?()]
-  - include || and &&, ==, !=, <=, >= <, >, (=~ for regex)
-  - strings can be "" or ''
- - slice - [start:end:step]
- - union - [,]
 
 Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)] matches items whose description starts with cat (case-insensitive).
 

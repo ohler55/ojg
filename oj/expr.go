@@ -2,7 +2,10 @@
 
 package oj
 
-// Expr is a JSON path expression composed of fragments.
+// Expr is a JSON path expression composed of fragments. An Expr implements
+// JSONPath as described by https://goessner.net/articles/JsonPath. Where the
+// definition is unclear Oj has implemented the description based on the best
+// judgement of the author.
 type Expr []Frag
 
 // String returns a string representation of the expression.

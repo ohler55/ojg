@@ -121,6 +121,16 @@ func (s *Script) String() string {
 	return string(s.Append([]byte{}))
 }
 
+func (s *Script) Match(data interface{}) bool {
+	stack := []interface{}{}
+	if node, ok := data.(Node); ok {
+		stack = s.Eval(stack, Array{node})
+	} else {
+		stack = s.Eval(stack, []interface{}{data})
+	}
+	return 0 < len(stack)
+}
+
 func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 	// Checking the type each iteration adds 2.5% but allows code not to be
 	// duplicated and not to call a separate function. Using just one function
