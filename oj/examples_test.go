@@ -21,7 +21,7 @@ func ExampleParseString() {
 }
 
 func ExampleParser_Parse() {
-	// The parser can be reused for better performance by reuse of buffers.
+	// The parser can be reused for better performance by reusing buffers.
 	var p oj.Parser
 	v, err := p.Parse([]byte(`{"a": 1, "b":[2,3,4]}`))
 	if err == nil {
@@ -34,7 +34,7 @@ func ExampleParser_Parse() {
 }
 
 func ExampleParser_ParseReader() {
-	// The parser can be reused for better performance by reuse of buffers.
+	// The parser can be reused for better performance by reusing buffers.
 	var p oj.Parser
 	v, err := p.ParseReader(strings.NewReader(`{"a": 1, "b":[2,3,4]}`))
 	if err == nil {
@@ -62,7 +62,7 @@ func ExampleParser_Parse_callback() {
 }
 
 func ExampleNodeParser_Parse() {
-	// The parser can be reused for better performance by reuse of buffers.
+	// The parser can be reused for better performance by reusing buffers.
 	var p oj.NodeParser
 	v, err := p.Parse([]byte(`{"a": 1, "b":[2,3,4]}`))
 	if err == nil {
@@ -135,4 +135,28 @@ func ExampleBuilder() {
 	v := b.Result()
 	fmt.Println(oj.JSON(v))
 	// Output: {"a":[true,{"x":123},null]}
+}
+
+func ExampleParseExprString() {
+	data := map[string]interface{}{
+		"a": []interface{}{
+			map[string]interface{}{"x": 1, "y": 2, "z": 3},
+			map[string]interface{}{"x": 1, "y": 4, "z": 9},
+		},
+		"b": []interface{}{
+			map[string]interface{}{"x": 4, "y": 5, "z": 6},
+			map[string]interface{}{"x": 16, "y": 25, "z": 36},
+		},
+	}
+	x, err := oj.ParseExprString("b[?(@.y > 10)].x")
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	fmt.Println(x.String())
+	result := x.Get(data)
+	fmt.Println(oj.JSON(result))
+	// Output:
+	// b[?(@.y > 10)].x
+	// [16]
 }

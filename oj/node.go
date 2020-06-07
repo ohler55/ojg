@@ -6,6 +6,7 @@ import (
 	"fmt"
 )
 
+// Node is the interface for typed generic data.
 type Node interface {
 	fmt.Stringer
 

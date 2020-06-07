@@ -75,8 +75,6 @@ func NewScript(str string) (s *Script, err error) {
 		err = fmt.Errorf("parse error")
 	}
 	if err != nil {
-		// TBD
-		//err = fmt.Errorf("%s at %d in %s", err, xp.pos, xp.buf)
 		return nil, fmt.Errorf("%s at %d in %s", err, xp.pos, xp.buf)
 	}
 	return eq.Script(), nil
@@ -424,7 +422,6 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 				if i+int(o.cnt)+1 <= len(s.stack) {
 					copy(s.stack[i+1:], s.stack[i+int(o.cnt)+1:])
 				}
-				// TBD slide tail
 			}
 		}
 		if b, _ := s.stack[0].(bool); b {

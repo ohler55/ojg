@@ -44,7 +44,7 @@ type xparser struct {
 	pos int
 }
 
-// ParseExpr parses a string into an Expr.
+// ParseExprString parses a string into an Expr.
 func ParseExprString(s string) (x Expr, err error) {
 	return ParseExpr([]byte(s))
 }
