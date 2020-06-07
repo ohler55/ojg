@@ -166,7 +166,7 @@ func (x Expr) Set(data, value interface{}) error {
 							delete(tv, k)
 						}
 					} else {
-						for k, v = range tv {
+						for k = range tv {
 							tv[k] = value
 						}
 					}
@@ -203,7 +203,7 @@ func (x Expr) Set(data, value interface{}) error {
 							delete(tv, k)
 						}
 					} else {
-						for k, v = range tv {
+						for k = range tv {
 							tv[k] = nodeValue
 						}
 					}
@@ -605,7 +605,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 							return nil
 						}
 					} else {
-						for k, v = range tv {
+						for k = range tv {
 							tv[k] = value
 							return nil
 						}
@@ -645,7 +645,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 							return nil
 						}
 					} else {
-						for k, v = range tv {
+						for k = range tv {
 							tv[k] = nodeValue
 							return nil
 						}

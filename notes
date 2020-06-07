@@ -6,17 +6,20 @@
  - CI - travis or something else?
  - remove tree (maybe create separate benchmark repo)
 
+- examples
+
+----------------
+- next/todo
+ - regex op =~
+ - scripts
+ - cmd/oj palette
+
+-------------
 - cmd/oj
   -colors list of colors or maybe map?
    -p (palette) key=red
    -key red
 
-- examples
-
-- next/todo
- - regex op =~
- - scripts
- - cmd/oj palette
 
 - ojg/doc.go
  - JSON tools

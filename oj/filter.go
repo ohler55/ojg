@@ -20,7 +20,7 @@ func NewFilter(str string) (f *Filter, err error) {
 		err = fmt.Errorf("parse error")
 	}
 	if err != nil {
-		err = fmt.Errorf("%s at %d in %s", err, xp.pos, xp.buf)
+		return nil, fmt.Errorf("%s at %d in %s", err, xp.pos, xp.buf)
 	}
 	return eq.Filter(), nil
 }

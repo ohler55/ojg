@@ -42,20 +42,6 @@ const (
 type xparser struct {
 	buf []byte
 	pos int
-
-	// Using a xparser function adds 50% overhead so pass the xparser as an
-	// arg instead.
-	fun      func(*xparser, byte) error
-	xa       []Expr
-	token    []byte
-	slice    []int
-	num      int
-	depth    int
-	union    []interface{}
-	eqs      []*Equation
-	opName   []byte
-	isFilter bool
-	script   bool
 }
 
 // ParseExpr parses a string into an Expr.
@@ -93,7 +79,6 @@ func (xp *xparser) readExpr() (x Expr, err error) {
 		}
 		x = append(x, f)
 	}
-	return
 }
 
 func (xp *xparser) nextFrag(first, lastDescent bool) (f Frag, err error) {
@@ -426,7 +411,6 @@ func (xp *xparser) readUnion(v interface{}, b byte) (Frag, error) {
 			return nil, fmt.Errorf("invalid union syntax")
 		}
 	}
-	return f, nil
 }
 
 func (xp *xparser) readStr(term byte) (string, error) {
@@ -477,9 +461,12 @@ func (xp *xparser) readEquation() (eq *Equation, err error) {
 	if b == '!' {
 		eq.o = not
 		xp.pos++
-		if eq.left, err = xp.readEqValue(); err != nil {
-			return
+		eq.left, err = xp.readEqValue()
+		b := xp.nextNonSpace()
+		if b != ')' {
+			return nil, fmt.Errorf("not terminated")
 		}
+		xp.pos++
 		return
 	}
 	if eq.left, err = xp.readEqValue(); err != nil {
@@ -513,8 +500,6 @@ func (xp *xparser) readEquation() (eq *Equation, err error) {
 			}
 		}
 	}
-	return
-
 }
 
 func (xp *xparser) readEqValue() (eq *Equation, err error) {

@@ -69,11 +69,11 @@ func TestExprParse(t *testing.T) {
 	}
 }
 
-func xTestExprParseDev(t *testing.T) {
+func TestExprParseDev(t *testing.T) {
 	x, err := oj.ParseExprString(`abc[1:]`)
 	tt.Nil(t, err)
 	tt.NotNil(t, x)
-	tt.Equal(t, "abc..def", x.String())
+	tt.Equal(t, "abc[1:]", x.String())
 }
 
 func BenchmarkExprParse(b *testing.B) {

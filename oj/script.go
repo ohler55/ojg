@@ -63,6 +63,7 @@ type Script struct {
 	stack    []interface{}
 }
 
+// NewScript parses the string argument and returns a script or an error.
 func NewScript(str string) (s *Script, err error) {
 	xp := &xparser{buf: []byte(str)}
 	if len(xp.buf) == 0 || xp.buf[0] != '(' {
@@ -74,7 +75,9 @@ func NewScript(str string) (s *Script, err error) {
 		err = fmt.Errorf("parse error")
 	}
 	if err != nil {
-		err = fmt.Errorf("%s at %d in %s", err, xp.pos, xp.buf)
+		// TBD
+		//err = fmt.Errorf("%s at %d in %s", err, xp.pos, xp.buf)
+		return nil, fmt.Errorf("%s at %d in %s", err, xp.pos, xp.buf)
 	}
 	return eq.Script(), nil
 }
@@ -121,6 +124,8 @@ func (s *Script) String() string {
 	return string(s.Append([]byte{}))
 }
 
+// Match returns true if the script returns true when evaluated against the
+// data argument.
 func (s *Script) Match(data interface{}) bool {
 	stack := []interface{}{}
 	if node, ok := data.(Node); ok {
@@ -131,6 +136,7 @@ func (s *Script) Match(data interface{}) bool {
 	return 0 < len(stack)
 }
 
+// Eval is primarily used by the Expr parser but is public for testing.
 func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 	// Checking the type each iteration adds 2.5% but allows code not to be
 	// duplicated and not to call a separate function. Using just one function
