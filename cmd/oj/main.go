@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
 )
 
@@ -18,8 +19,8 @@ var (
 
 	// If true wrap extracts with an array.
 	wrapExtract = false
-	extracts    = []oj.Expr{}
-	matches     = []*oj.Script{}
+	extracts    = []jp.Expr{}
+	matches     = []*jp.Script{}
 )
 
 func init() {
@@ -70,12 +71,12 @@ follows the oj.Script format.
 		}
 		switch arg[0] {
 		case '@', '$':
-			x, err := oj.ParseExprString(arg)
+			x, err := jp.ParseString(arg)
 			if err == nil {
 				extracts = append(extracts, x)
 			}
 		case '(':
-			script, err := oj.NewScript(arg)
+			script, err := jp.NewScript(arg)
 			if err == nil {
 				matches = append(matches, script)
 			}
@@ -162,7 +163,7 @@ func (xv exValue) String() string {
 }
 
 func (xv exValue) Set(s string) error {
-	x, err := oj.ParseExprString(s)
+	x, err := jp.ParseString(s)
 	if err == nil {
 		extracts = append(extracts, x)
 	}
@@ -177,7 +178,7 @@ func (mv matchValue) String() string {
 }
 
 func (mv matchValue) Set(s string) error {
-	script, err := oj.NewScript(s)
+	script, err := jp.NewScript(s)
 	if err == nil {
 		matches = append(matches, script)
 	}

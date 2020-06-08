@@ -5,6 +5,8 @@ package oj
 import (
 	"strconv"
 	"time"
+
+	"github.com/ohler55/ojg/gen"
 )
 
 // AsInt convert the value provided to an int64. If conversion is not possible
@@ -85,7 +87,7 @@ func AsInt(v interface{}, defaults ...int64) (i int64) {
 			i = tv.UnixNano()
 		}
 
-	case Bool:
+	case gen.Bool:
 		if 1 < len(defaults) {
 			i = defaults[1]
 		} else if tv {
@@ -93,24 +95,24 @@ func AsInt(v interface{}, defaults ...int64) (i int64) {
 		} else {
 			i = 0
 		}
-	case Int:
+	case gen.Int:
 		i = int64(tv)
-	case Float:
+	case gen.Float:
 		i = int64(tv)
 		if float64(i) != float64(tv) {
 			if 1 < len(defaults) {
 				i = defaults[1]
 			}
 		}
-	case String:
+	case gen.String:
 		i = AsInt(string(tv), defaults...)
-	case Time:
+	case gen.Time:
 		if 1 < len(defaults) {
 			i = defaults[1]
 		} else {
 			i = time.Time(tv).UnixNano()
 		}
-	case Big:
+	case gen.Big:
 		return AsInt(string(tv), defaults...)
 
 	default:

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
 )
@@ -29,7 +30,7 @@ func TestAsInt(t *testing.T) {
 		{value: uint16(3), expect: 3},
 		{value: uint32(3), expect: 3},
 		{value: uint64(3), expect: 3},
-		{value: oj.Int(3), expect: 3},
+		{value: gen.Int(3), expect: 3},
 
 		{value: nil, expect: 0},
 		{value: nil, expect: 5, defaults: []int64{4, 5}},
@@ -38,10 +39,10 @@ func TestAsInt(t *testing.T) {
 		{value: false, expect: 0},
 		{value: true, expect: 1, defaults: []int64{4}},
 		{value: true, expect: 5, defaults: []int64{4, 5}},
-		{value: oj.True, expect: 1},
-		{value: oj.False, expect: 0},
-		{value: oj.True, expect: 1, defaults: []int64{4}},
-		{value: oj.True, expect: 5, defaults: []int64{4, 5}},
+		{value: gen.True, expect: 1},
+		{value: gen.False, expect: 0},
+		{value: gen.True, expect: 1, defaults: []int64{4}},
+		{value: gen.True, expect: 5, defaults: []int64{4, 5}},
 
 		{value: 3.1, expect: 3},
 		{value: 3.2, expect: 3, defaults: []int64{4}},
@@ -49,9 +50,9 @@ func TestAsInt(t *testing.T) {
 		{value: float32(3.1), expect: 3},
 		{value: float32(3.2), expect: 3, defaults: []int64{4}},
 		{value: float32(3.3), expect: 5, defaults: []int64{4, 5}},
-		{value: oj.Float(3.1), expect: 3},
-		{value: oj.Float(3.2), expect: 3, defaults: []int64{4}},
-		{value: oj.Float(3.3), expect: 5, defaults: []int64{4, 5}},
+		{value: gen.Float(3.1), expect: 3},
+		{value: gen.Float(3.2), expect: 3, defaults: []int64{4}},
+		{value: gen.Float(3.3), expect: 5, defaults: []int64{4, 5}},
 
 		{value: "3", expect: 3},
 		{value: "3", expect: 3, defaults: []int64{4}},
@@ -62,15 +63,15 @@ func TestAsInt(t *testing.T) {
 		{value: "3.1", expect: 3},
 		{value: "3.2", expect: 4, defaults: []int64{4}},
 		{value: "3.3", expect: 5, defaults: []int64{4, 5}},
-		{value: oj.String("3"), expect: 3},
-		{value: oj.String("3x"), expect: 5, defaults: []int64{4, 5}},
-		{value: oj.Big("3"), expect: 3},
+		{value: gen.String("3"), expect: 3},
+		{value: gen.String("3x"), expect: 5, defaults: []int64{4, 5}},
+		{value: gen.Big("3"), expect: 3},
 
 		{value: tm, expect: 1586709244123456789},
 		{value: tm, expect: 1586709244123456789, defaults: []int64{4}},
 		{value: tm, expect: 5, defaults: []int64{4, 5}},
-		{value: oj.Time(tm), expect: 1586709244123456789},
-		{value: oj.Time(tm), expect: 5, defaults: []int64{4, 5}},
+		{value: gen.Time(tm), expect: 1586709244123456789},
+		{value: gen.Time(tm), expect: 5, defaults: []int64{4, 5}},
 
 		{value: []interface{}{}, expect: 0},
 		{value: []interface{}{}, expect: 4, defaults: []int64{4, 5}},

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/ohler55/ojg/oj"
+	"github.com/ohler55/ojg/gen"
 )
 
 type call struct {
@@ -62,7 +62,7 @@ func asInt(v interface{}) (i int64, ok bool) {
 		i = int64(tv)
 	case uint64:
 		i = int64(tv)
-	case oj.Int:
+	case gen.Int:
 		i = int64(tv)
 	default:
 		ok = false
@@ -77,7 +77,7 @@ func asFloat(v interface{}) (f float64, ok bool) {
 		f = float64(tv)
 	case float64:
 		f = tv
-	case oj.Float:
+	case gen.Float:
 		f = float64(tv)
 	default:
 		ok = false
@@ -90,7 +90,7 @@ func asString(v interface{}) (s string, ok bool) {
 	switch tv := v.(type) {
 	case string:
 		s = tv
-	case oj.String:
+	case gen.String:
 		s = string(tv)
 	default:
 		ok = false

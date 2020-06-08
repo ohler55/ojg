@@ -1,13 +1,11 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package oj
+package gen
 
 import (
 	"fmt"
 	"io"
 	"unicode/utf8"
-
-	"github.com/ohler55/ojg/gen"
 )
 
 const (
@@ -43,10 +41,11 @@ const (
 // buffer reuse for a performance advantage.
 type Parser struct {
 	tmp       []byte // used for numbers and strings
+	stack     []byte // { or [
 	runeBytes []byte
-	stack     []interface{}
+	nstack    []Node
 	starts    []int
-	cb        func(interface{}) bool
+	cb        func(Node) bool
 	ri        int // read index for null, false, and true
 	line      int
 	noff      int // Offset of last newline from start of buf. Can be negative when using a reader.
@@ -61,39 +60,38 @@ type Parser struct {
 	NoComment bool
 }
 
-// Parse a JSON string in to simple types. An error is returned if not valid JSON.
-func (p *Parser) Parse(buf []byte, args ...interface{}) (data interface{}, err error) {
-	var callback func(interface{}) bool
+func (p *Parser) Parse(buf []byte, args ...interface{}) (node Node, err error) {
+	var callback func(Node) bool
 
 	for _, a := range args {
 		switch ta := a.(type) {
 		case bool:
 			p.NoComment = ta
-		case func(interface{}) bool:
+		case func(Node) bool:
 			callback = ta
 			p.onlyOne = false
-		default:
-			return nil, fmt.Errorf("a %T is not a valid option type", a)
 		}
 	}
 	if callback == nil {
 		p.onlyOne = true
-		callback = func(n interface{}) bool {
-			data = n
+		callback = func(n Node) bool {
+			node = n
 			return false // tells the parser to stop
 		}
 	}
 	p.cb = callback
 	if cap(p.tmp) < tmpMinSize { // indicates not initialized
 		p.tmp = make([]byte, 0, tmpMinSize)
-		p.stack = make([]interface{}, 0, 64)
+		p.stack = make([]byte, 0, stackMinSize)
+		p.nstack = make([]Node, 0, 64)
 		p.starts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
 		for i := len(p.stack) - 1; 0 <= i; i-- {
 			p.stack = nil
 		}
-		p.stack = p.stack[:0]
+		p.stack = p.stack[0:0]
+		p.nstack = p.nstack[:0]
 		p.starts = p.starts[:0]
 	}
 	p.noff = -1
@@ -113,23 +111,21 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (data interface{}, err e
 }
 
 // ParseReader a JSON io.Reader. An error is returned if not valid JSON.
-func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node interface{}, err error) {
-	var callback func(interface{}) bool
+func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node Node, err error) {
+	var callback func(Node) bool
 
 	for _, a := range args {
 		switch ta := a.(type) {
 		case bool:
 			p.NoComment = ta
-		case func(interface{}) bool:
+		case func(Node) bool:
 			callback = ta
 			p.onlyOne = false
-		default:
-			return nil, fmt.Errorf("a %T is not a valid option type", a)
 		}
 	}
 	if callback == nil {
 		p.onlyOne = true
-		callback = func(n interface{}) bool {
+		callback = func(n Node) bool {
 			node = n
 			return false // tells the parser to stop
 		}
@@ -137,11 +133,16 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node interface{}
 	p.cb = callback
 	if cap(p.tmp) < tmpMinSize { // indicates not initialized
 		p.tmp = make([]byte, 0, tmpMinSize)
-		p.stack = make([]interface{}, 0, 64)
+		p.stack = make([]byte, 0, stackMinSize)
+		p.nstack = make([]Node, 0, 64)
 		p.starts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
-		p.stack = p.stack[:0]
+		for i := len(p.stack) - 1; 0 <= i; i-- {
+			p.stack = nil
+		}
+		p.stack = p.stack[0:0]
+		p.nstack = p.nstack[:0]
 		p.starts = p.starts[:0]
 	}
 	p.noff = -1
@@ -154,6 +155,9 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node interface{}
 	buf = buf[:cnt]
 	if err != nil {
 		if err != io.EOF {
+			for i := len(p.stack) - 1; 0 <= i; i-- {
+				p.stack = nil
+			}
 			return
 		}
 		eof = true
@@ -165,7 +169,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node interface{}
 	}
 	for {
 		if err = p.parseBuffer(buf, eof); err != nil {
-			return
+			break
 		}
 		if eof {
 			break
@@ -175,11 +179,15 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node interface{}
 		buf = buf[:cnt]
 		if err != nil {
 			if err != io.EOF {
-				return
+				break
 			}
 			eof = true
 		}
 	}
+	for i := len(p.stack) - 1; 0 <= i; i-- {
+		p.stack = nil
+	}
+	p.stack = p.stack[0:0]
 	return
 }
 
@@ -219,17 +227,18 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.nextMode = afterMode
 				p.tmp = p.tmp[0:0]
 			case '[':
-				p.starts = append(p.starts, len(p.stack))
-				p.stack = append(p.stack, emptySlice)
+				p.stack = append(p.stack, '[')
+				p.starts = append(p.starts, len(p.nstack))
+				p.nstack = append(p.nstack, EmptyArray)
 			case ']':
 				if err := p.arrayEnd(); err != nil {
 					return err
 				}
 			case '{':
-				p.starts = append(p.starts, -1)
+				p.stack = append(p.stack, '{')
 				p.mode = keyMode
-				n := map[string]interface{}{}
-				p.stack = append(p.stack, n)
+				n := Object{}
+				p.nstack = append(p.nstack, n)
 			case '}':
 				if err := p.objectEnd(); err != nil {
 					return err
@@ -251,7 +260,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.line++
 				p.noff = p.off
 			case ',':
-				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
+				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
@@ -304,7 +313,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			}
 			if 3 <= p.ri {
 				p.mode = afterMode
-				p.iadd(nil)
+				p.nadd(nil)
 			}
 		case falseMode:
 			p.ri++
@@ -313,7 +322,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			}
 			if 4 <= p.ri {
 				p.mode = afterMode
-				p.iadd(false)
+				p.nadd(Bool(false))
 			}
 		case trueMode:
 			p.ri++
@@ -322,7 +331,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			}
 			if 3 <= p.ri {
 				p.mode = afterMode
-				p.iadd(true)
+				p.nadd(Bool(true))
 			}
 		case negMode:
 			switch b {
@@ -351,7 +360,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 					return err
 				}
 			case ',':
-				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
+				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
@@ -395,7 +404,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 					return err
 				}
 			case ',':
-				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
+				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
@@ -446,7 +455,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 					return err
 				}
 			case ',':
-				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
+				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
@@ -508,7 +517,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 					return err
 				}
 			case ',':
-				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
+				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
@@ -543,9 +552,9 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			case '"':
 				p.mode = p.nextMode
 				if p.mode == colonMode {
-					p.stack = append(p.stack, gen.Key(p.tmp))
+					p.nstack = append(p.nstack, Key(p.tmp))
 				} else {
-					p.iadd(string(p.tmp))
+					p.nadd(String(string(p.tmp)))
 				}
 			default:
 				p.tmp = append(p.tmp, b)
@@ -626,9 +635,9 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.mode = valueMode
 			}
 		}
-		if len(p.starts) == 0 && (p.mode == afterMode || p.mode == keyMode) {
-			p.cb(p.stack[0])
-			p.stack = p.stack[:0]
+		if len(p.stack) == 0 && (p.mode == afterMode || p.mode == keyMode) {
+			p.cb(p.nstack[0])
+			p.nstack = p.nstack[:0]
 			if p.onlyOne {
 				p.mode = spaceMode
 			} else {
@@ -639,15 +648,15 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 	if last {
 		switch p.mode {
 		case afterMode, valueMode:
-			if 0 < len(p.stack) {
-				p.cb(p.stack[0])
+			if 0 < len(p.nstack) {
+				p.cb(p.nstack[0])
 			}
 		case zeroMode, digitMode, fracMode, expMode:
 			if err := p.appendNum(); err != nil {
 				return err
 			}
-			if 0 < len(p.stack) {
-				p.cb(p.stack[0])
+			if 0 < len(p.nstack) {
+				p.cb(p.nstack[0])
 			}
 		case spaceMode:
 			// just reading white space
@@ -667,26 +676,26 @@ func (p *Parser) newError(format string, args ...interface{}) error {
 	}
 }
 
-func (p *Parser) iadd(n interface{}) {
-	if 2 <= len(p.stack) {
-		if k, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
-			obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
+func (p *Parser) nadd(n Node) {
+	if 2 <= len(p.nstack) {
+		if k, ok := p.nstack[len(p.nstack)-1].(Key); ok {
+			obj, _ := p.nstack[len(p.nstack)-2].(Object)
 			obj[string(k)] = n
-			p.stack = p.stack[0 : len(p.stack)-1]
+			p.nstack = p.nstack[0 : len(p.nstack)-1]
 
 			return
 		}
 	}
-	p.stack = append(p.stack, n)
+	p.nstack = append(p.nstack, n)
 }
 
 func (p *Parser) appendNum() error {
 	if 0 < len(p.num.bigBuf) {
-		p.iadd(string(p.num.asBig()))
+		p.nadd(Big(p.num.asBig()))
 	} else if p.num.frac == 0 && p.num.exp == 0 {
-		p.iadd(p.num.asInt())
+		p.nadd(Int(p.num.asInt()))
 	} else if f, err := p.num.asFloat(); err == nil {
-		p.iadd(f)
+		p.nadd(Float(f))
 	} else {
 		return err
 	}
@@ -694,40 +703,41 @@ func (p *Parser) appendNum() error {
 }
 
 func (p *Parser) arrayEnd() error {
-	depth := len(p.starts)
+	depth := len(p.stack)
 	if depth == 0 {
 		return p.newError("too many closes")
 	}
 	depth--
-	if p.starts[depth] < 0 {
+	if p.stack[depth] != '[' {
 		return p.newError("unexpected array close")
 	}
+	p.stack = p.stack[0:depth]
 	p.mode = afterMode
 	start := p.starts[len(p.starts)-1] + 1
 	p.starts = p.starts[:len(p.starts)-1]
-	size := len(p.stack) - start
-	n := make([]interface{}, size)
-	copy(n, p.stack[start:len(p.stack)])
-	p.stack = p.stack[0 : start-1]
-	p.iadd(n)
+	size := len(p.nstack) - start
+	n := Array(make([]Node, size))
+	copy(n, p.nstack[start:len(p.nstack)])
+	p.nstack = p.nstack[0 : start-1]
+	p.nadd(n)
 
 	return nil
 }
 
 func (p *Parser) objectEnd() error {
-	depth := len(p.starts)
+	depth := len(p.stack)
 	if depth == 0 {
 		return p.newError("too many closes")
 	}
 	depth--
-	if 0 <= p.starts[depth] {
+	if p.stack[depth] != '{' {
 		return p.newError("unexpected object close")
 	}
-	p.starts = p.starts[0:depth]
+	p.stack = p.stack[0:depth]
 	p.mode = afterMode
-	n := p.stack[len(p.stack)-1]
-	p.stack = p.stack[:len(p.stack)-1]
-	p.iadd(n)
+	n := p.nstack[len(p.nstack)-1]
+	p.nstack = p.nstack[:len(p.nstack)-1]
+	p.nadd(n)
 
 	return nil
 }

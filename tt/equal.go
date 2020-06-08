@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ohler55/ojg/oj"
+	"github.com/ohler55/ojg/gen"
 )
 
 func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bool) {
@@ -19,28 +19,28 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 		switch ta := actual.(type) {
 		case bool:
 			eq = te == ta
-		case oj.Bool:
+		case gen.Bool:
 			eq = te == bool(ta)
 		default:
 			eq = false
 		}
-	case oj.Bool:
+	case gen.Bool:
 		switch ta := actual.(type) {
-		case oj.Bool:
+		case gen.Bool:
 			eq = bool(te) == bool(ta)
 		default:
 			eq = false
 		}
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, oj.Int:
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, gen.Int:
 		x, _ := asInt(expect)
 		a, ok := asInt(actual)
 		eq = x == a && ok
-	case float32, float64, oj.Float:
+	case float32, float64, gen.Float:
 		x, _ := asFloat(expect)
 		a, ok := asFloat(actual)
 		eq = x == a && ok
-	case oj.Big:
-		x, _ := actual.(oj.Big)
+	case gen.Big:
+		x, _ := actual.(gen.Big)
 		eq = te == x
 	case string:
 		x, _ := asString(expect)
@@ -58,7 +58,7 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 	case time.Time:
 		tm, _ := actual.(time.Time)
 		eq = tm == te
-	case oj.String:
+	case gen.String:
 		x, _ := asString(expect)
 		a, ok := asString(actual)
 		eq = x == a && ok
@@ -78,14 +78,14 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 			if eq && len(te) != len(ta) {
 				eq = false
 			}
-		case oj.Array:
+		case gen.Array:
 			eq = Equal(t, expect, ta.Simplify(), args...)
 		default:
 			eq = false
 		}
-	case oj.Array:
+	case gen.Array:
 		switch ta := actual.(type) {
-		case oj.Array:
+		case gen.Array:
 			eq = true
 			for i := 0; i < len(te); i++ {
 				if len(ta) <= i {
@@ -102,9 +102,9 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 		default:
 			eq = false
 		}
-	case []oj.Node:
+	case []gen.Node:
 		switch ta := actual.(type) {
-		case []oj.Node:
+		case []gen.Node:
 			eq = true
 			for i := 0; i < len(te); i++ {
 				if len(ta) <= i {
@@ -136,14 +136,14 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 			if eq && len(te) != len(ta) {
 				eq = false
 			}
-		case oj.Object:
+		case gen.Object:
 			eq = Equal(t, expect, ta.Simplify(), args...)
 		default:
 			eq = false
 		}
-	case oj.Object:
+	case gen.Object:
 		switch ta := actual.(type) {
-		case oj.Object:
+		case gen.Object:
 			eq = true
 			for k, ve := range te {
 				va, has := ta[k]

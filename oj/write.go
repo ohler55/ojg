@@ -9,6 +9,9 @@ import (
 	"strconv"
 	"time"
 	"unicode/utf8"
+
+	"github.com/ohler55/ojg/conv"
+	"github.com/ohler55/ojg/gen"
 )
 
 const (
@@ -101,7 +104,7 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 		} else {
 			o.buf = append(o.buf, []byte("false")...)
 		}
-	case Bool:
+	case gen.Bool:
 		if td {
 			o.buf = append(o.buf, []byte("true")...)
 		} else {
@@ -128,46 +131,46 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint64:
 		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
-	case Int:
+	case gen.Int:
 		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 
 	case float32:
 		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 32))...)
 	case float64:
 		o.buf = append(o.buf, []byte(strconv.FormatFloat(td, 'g', -1, 64))...)
-	case Float:
+	case gen.Float:
 		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 64))...)
 
 	case string:
 		o.buildString(td)
-	case String:
+	case gen.String:
 		o.buildString(string(td))
 
 	case time.Time:
 		o.buildTime(td)
-	case Time:
+	case gen.Time:
 		o.buildTime(time.Time(td))
 
 	case []interface{}:
 		err = o.buildSimpleArray(td, depth)
-	case Array:
+	case gen.Array:
 		err = o.buildArray(td, depth)
 
 	case map[string]interface{}:
 		err = o.buildSimpleObject(td, depth)
-	case Object:
+	case gen.Object:
 		err = o.buildObject(td, depth)
 
 	default:
-		if g, _ := data.(Genericer); g != nil {
+		if g, _ := data.(conv.Genericer); g != nil {
 			return o.buildJSON(g.Generic(), depth)
 		}
-		if simp, _ := data.(Simplifier); simp != nil {
+		if simp, _ := data.(conv.Simplifier); simp != nil {
 			data = simp.Simplify()
 			return o.buildJSON(data, depth)
 		}
 		if 0 < len(o.CreateKey) {
-			return o.buildJSON(Decompose(data), depth)
+			return o.buildJSON(conv.Decompose(data), depth)
 		} else {
 			o.buildString(fmt.Sprintf("%v", td))
 		}
@@ -253,7 +256,7 @@ func (o *Options) buildTime(t time.Time) {
 	}
 }
 
-func (o *Options) buildArray(n Array, depth int) (err error) {
+func (o *Options) buildArray(n gen.Array, depth int) (err error) {
 	o.buf = append(o.buf, '[')
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
@@ -340,7 +343,7 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) (err error) {
 	return
 }
 
-func (o *Options) buildObject(n Object, depth int) (err error) {
+func (o *Options) buildObject(n gen.Object, depth int) (err error) {
 	o.buf = append(o.buf, '{')
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1

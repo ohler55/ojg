@@ -7,6 +7,9 @@ import (
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/ohler55/ojg/conv"
+	"github.com/ohler55/ojg/gen"
 )
 
 func (o *Options) cbuildJSON(data interface{}, depth int) (err error) {
@@ -22,7 +25,7 @@ func (o *Options) cbuildJSON(data interface{}, depth int) (err error) {
 		} else {
 			o.buf = append(o.buf, []byte("false")...)
 		}
-	case Bool:
+	case gen.Bool:
 		o.buf = append(o.buf, o.BoolColor...)
 		if td {
 			o.buf = append(o.buf, []byte("true")...)
@@ -60,7 +63,7 @@ func (o *Options) cbuildJSON(data interface{}, depth int) (err error) {
 	case uint64:
 		o.buf = append(o.buf, o.NumberColor...)
 		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
-	case Int:
+	case gen.Int:
 		o.buf = append(o.buf, o.NumberColor...)
 		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 
@@ -70,44 +73,44 @@ func (o *Options) cbuildJSON(data interface{}, depth int) (err error) {
 	case float64:
 		o.buf = append(o.buf, o.NumberColor...)
 		o.buf = append(o.buf, []byte(strconv.FormatFloat(td, 'g', -1, 64))...)
-	case Float:
+	case gen.Float:
 		o.buf = append(o.buf, o.NumberColor...)
 		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 64))...)
 
 	case string:
 		o.buf = append(o.buf, o.StringColor...)
 		o.buildString(td)
-	case String:
+	case gen.String:
 		o.buf = append(o.buf, o.StringColor...)
 		o.buildString(string(td))
 
 	case time.Time:
 		o.buf = append(o.buf, o.StringColor...)
 		o.buildTime(td)
-	case Time:
+	case gen.Time:
 		o.buf = append(o.buf, o.StringColor...)
 		o.buildTime(time.Time(td))
 
 	case []interface{}:
 		err = o.cbuildSimpleArray(td, depth)
-	case Array:
+	case gen.Array:
 		err = o.cbuildArray(td, depth)
 
 	case map[string]interface{}:
 		err = o.cbuildSimpleObject(td, depth)
-	case Object:
+	case gen.Object:
 		err = o.cbuildObject(td, depth)
 
 	default:
-		if g, _ := data.(Genericer); g != nil {
+		if g, _ := data.(conv.Genericer); g != nil {
 			return o.cbuildJSON(g.Generic(), depth)
 		}
-		if simp, _ := data.(Simplifier); simp != nil {
+		if simp, _ := data.(conv.Simplifier); simp != nil {
 			data = simp.Simplify()
 			return o.cbuildJSON(data, depth)
 		}
 		if 0 < len(o.CreateKey) {
-			return o.cbuildJSON(Decompose(data), depth)
+			return o.cbuildJSON(conv.Decompose(data), depth)
 		} else {
 			o.buildString(fmt.Sprintf("%v", td))
 		}
@@ -119,7 +122,7 @@ func (o *Options) cbuildJSON(data interface{}, depth int) (err error) {
 	return
 }
 
-func (o *Options) cbuildArray(n Array, depth int) (err error) {
+func (o *Options) cbuildArray(n gen.Array, depth int) (err error) {
 	o.buf = append(o.buf, o.SyntaxColor...)
 	o.buf = append(o.buf, '[')
 
@@ -196,7 +199,7 @@ func (o *Options) cbuildSimpleArray(n []interface{}, depth int) (err error) {
 	return
 }
 
-func (o *Options) cbuildObject(n Object, depth int) (err error) {
+func (o *Options) cbuildObject(n gen.Object, depth int) (err error) {
 	o.buf = append(o.buf, o.SyntaxColor...)
 	o.buf = append(o.buf, '{')
 

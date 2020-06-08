@@ -13,6 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ohler55/ojg/conv"
+	"github.com/ohler55/ojg/gen"
+	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
 
 	"gitlab.com/uhn/core/pkg/tree"
@@ -24,7 +27,7 @@ func main() {
 	testing.Init()
 	flag.Parse()
 	tree.Sort = false
-	oj.TimeFormat = "nano"
+	gen.TimeFormat = "nano"
 
 	jsonPathGetBenchmarks()
 	jsonPathFirstBenchmarks()
@@ -97,7 +100,7 @@ func ojGenAlter(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	for n := 0; n < b.N; n++ {
 		native := benchmarkData(tm)
-		_ = oj.GenAlter(native)
+		_ = conv.GenAlter(native)
 	}
 }
 
@@ -105,7 +108,7 @@ func ojGenerify(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	for n := 0; n < b.N; n++ {
 		native := benchmarkData(tm)
-		_ = oj.Generify(native)
+		_ = conv.Generify(native)
 	}
 }
 
@@ -201,7 +204,7 @@ func treeJSONSort(b *testing.B) {
 
 func ojJSON(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := oj.Alter(benchmarkData(tm))
+	data := conv.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -211,7 +214,7 @@ func ojJSON(b *testing.B) {
 
 func ojJSON2(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := oj.Alter(benchmarkData(tm))
+	data := conv.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true, Indent: 2}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -221,7 +224,7 @@ func ojJSON2(b *testing.B) {
 
 func ojJSONSort(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := oj.Alter(benchmarkData(tm))
+	data := conv.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -231,7 +234,7 @@ func ojJSONSort(b *testing.B) {
 
 func ojWrite(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := oj.Alter(benchmarkData(tm))
+	data := conv.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true}
 	var buf strings.Builder
 	b.ResetTimer()
@@ -244,7 +247,7 @@ func ojWrite(b *testing.B) {
 
 func ojWrite2(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := oj.Alter(benchmarkData(tm))
+	data := conv.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true, Indent: 2}
 	var buf strings.Builder
 	b.ResetTimer()
@@ -257,7 +260,7 @@ func ojWrite2(b *testing.B) {
 
 func ojWriteSort(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := oj.Alter(benchmarkData(tm))
+	data := conv.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
 	var buf strings.Builder
 	b.ResetTimer()
@@ -511,7 +514,7 @@ func ojParseReader(b *testing.B) {
 }
 
 func genParseReader(b *testing.B) {
-	var p oj.NodeParser
+	var p gen.Parser
 	f, err := os.Open("test/sample.json")
 	if err != nil {
 		fmt.Printf("Failed to read test/sample.json. %s\n", err)
@@ -543,7 +546,7 @@ func ojParse(b *testing.B) {
 }
 
 func genParse(b *testing.B) {
-	p := &oj.NodeParser{}
+	p := &gen.Parser{}
 	for n := 0; n < b.N; n++ {
 		_, _ = p.Parse([]byte(sampleJSON))
 		//_, err := p.Parse([]byte(sampleJSON))
@@ -591,7 +594,7 @@ func treeGet(b *testing.B) {
 }
 
 func ojGet(b *testing.B) {
-	p := oj.D().C("a").W().C("c")
+	p := jp.D().C("a").W().C("c")
 	data := buildTree(10, 4, 0)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -633,7 +636,7 @@ func treeGetOne(b *testing.B) {
 }
 
 func ojFirst(b *testing.B) {
-	p := oj.X().D().C("a").W().C("c").C("d")
+	p := jp.X().D().C("a").W().C("c").C("d")
 	data := buildTree(10, 3, 0)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
