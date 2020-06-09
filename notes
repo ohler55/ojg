@@ -12,12 +12,12 @@
   - Recomposer.Recompose()
  - AsInt and others
 
-- converters
- - AsInt
- - AsBool
- - AsString
- - AsTime
- - AsFloat
+- converters (is there a better name than conv?)
+ - Int
+ - Bool
+ - String
+ - Time
+ - Float
 
 - can Node be moved to a separate directory?
  - only use path to dig, not methods off of Node?
