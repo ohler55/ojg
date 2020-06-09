@@ -1,13 +1,13 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package conv_test
+package alt_test
 
 import (
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/ohler55/ojg/conv"
+	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/tt"
 )
@@ -57,7 +57,7 @@ func TestRecomposeBasic(t *testing.T) {
 			map[string]interface{}{},
 		},
 	}
-	r, err := conv.NewRecomposer("type", map[interface{}]conv.RecomposeFunc{&Dummy{}: nil})
+	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
 	var v interface{}
 	v, err = r.Recompose(src)
@@ -76,7 +76,7 @@ func TestRecomposeNode(t *testing.T) {
 			gen.Object{"big": gen.Big("123"), "time": gen.Time(tm)},
 		},
 	}
-	r, err := conv.NewRecomposer("type", map[interface{}]conv.RecomposeFunc{&Dummy{}: nil})
+	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
 	var v interface{}
 	v, err = r.Recompose(src)
@@ -88,7 +88,7 @@ func TestRecomposeNode(t *testing.T) {
 
 func TestRecomposeFunc(t *testing.T) {
 	src := map[string]interface{}{"type": "silly", "val": 3}
-	r, err := conv.NewRecomposer("type", map[interface{}]conv.RecomposeFunc{&silly{}: sillyRecompose})
+	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&silly{}: sillyRecompose})
 	tt.Nil(t, err, "NewRecomposer")
 	var v interface{}
 	v, err = r.Recompose(src)
@@ -100,7 +100,7 @@ func TestRecomposeFunc(t *testing.T) {
 
 func TestRecomposeReflect(t *testing.T) {
 	src := map[string]interface{}{"type": "Dummy", "val": 3, "extra": true, "fun": true}
-	r, err := conv.NewRecomposer("type", map[interface{}]conv.RecomposeFunc{&Dummy{}: nil})
+	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
 	var v interface{}
 	v, err = r.Recompose(src)
@@ -112,7 +112,7 @@ func TestRecomposeReflect(t *testing.T) {
 
 func TestRecomposeAttrSetter(t *testing.T) {
 	src := map[string]interface{}{"type": "Setter", "a": 3, "b": "bee"}
-	r, err := conv.NewRecomposer("type", map[interface{}]conv.RecomposeFunc{&Setter{}: nil})
+	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Setter{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
 	var v interface{}
 	v, err = r.Recompose(src)
@@ -124,7 +124,7 @@ func TestRecomposeAttrSetter(t *testing.T) {
 
 func TestRecomposeReflectList(t *testing.T) {
 	src := map[string]interface{}{"type": "WithList", "list": []interface{}{1, 2, 3}}
-	r, err := conv.NewRecomposer("type", map[interface{}]conv.RecomposeFunc{&WithList{}: nil})
+	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&WithList{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
 	var v interface{}
 	v, err = r.Recompose(src)
@@ -135,13 +135,13 @@ func TestRecomposeReflectList(t *testing.T) {
 }
 
 func TestRecomposeBadMap(t *testing.T) {
-	_, err := conv.NewRecomposer("type", map[interface{}]conv.RecomposeFunc{3: nil})
+	_, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{3: nil})
 	tt.NotNil(t, err, "NewRecomposer")
 }
 
 func TestRecomposeBadField(t *testing.T) {
 	src := map[string]interface{}{"type": "Dummy", "val": true}
-	r, err := conv.NewRecomposer("type", map[interface{}]conv.RecomposeFunc{&Dummy{}: nil})
+	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
 	_, err = r.Recompose(src)
 	tt.NotNil(t, err, "Recompose")
@@ -149,7 +149,7 @@ func TestRecomposeBadField(t *testing.T) {
 
 func TestRecomposeReflectListBad(t *testing.T) {
 	src := map[string]interface{}{"type": "WithList", "list": []interface{}{1, true, 3}}
-	r, err := conv.NewRecomposer("type", map[interface{}]conv.RecomposeFunc{&WithList{}: nil})
+	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&WithList{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
 	_, err = r.Recompose(src)
 	tt.NotNil(t, err, "Recompose")
@@ -161,7 +161,7 @@ func TestRecomposeBadListItem(t *testing.T) {
 		"val":  3,
 		"nest": []interface{}{func() {}},
 	}
-	r, err := conv.NewRecomposer("type", map[interface{}]conv.RecomposeFunc{&Dummy{}: nil})
+	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
 	_, err = r.Recompose(src)
 	tt.NotNil(t, err, "Recompose")
@@ -172,7 +172,7 @@ func TestRecomposeListResult(t *testing.T) {
 		map[string]interface{}{"type": "Dummy", "val": 1},
 		map[string]interface{}{"type": "Dummy", "val": 2},
 	}
-	r, err := conv.NewRecomposer("type", map[interface{}]conv.RecomposeFunc{&Dummy{}: nil})
+	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
 	var v interface{}
 	v, err = r.Recompose(src, []*Dummy{})
@@ -187,14 +187,14 @@ func TestRecomposeListResult(t *testing.T) {
 
 func TestRecomposeListBadResult(t *testing.T) {
 	src := []interface{}{true}
-	r, err := conv.NewRecomposer("type", map[interface{}]conv.RecomposeFunc{})
+	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{})
 	tt.Nil(t, err, "NewRecomposer")
 	_, err = r.Recompose(src, []*Dummy{})
 	tt.NotNil(t, err, "Recompose")
 }
 
 func TestRecomposeListBadTarget(t *testing.T) {
-	r, err := conv.NewRecomposer("type", map[interface{}]conv.RecomposeFunc{})
+	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{})
 	tt.Nil(t, err, "NewRecomposer")
 	_, err = r.Recompose("[]", 7)
 	tt.NotNil(t, err, "Recompose")

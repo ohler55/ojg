@@ -340,36 +340,26 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.mode = dotMode
 			case ' ', '\t', '\r':
 				p.mode = afterMode
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 			case '\n':
 				p.line++
 				p.noff = p.off
 				p.mode = afterMode
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 			case ',':
 				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
 				}
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 			case ']':
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 				if err := p.arrayEnd(); err != nil {
 					return err
 				}
 			case '}':
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 				if err := p.objectEnd(); err != nil {
 					return err
 				}
@@ -384,36 +374,26 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.mode = dotMode
 			case ' ', '\t', '\r':
 				p.mode = afterMode
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 			case '\n':
 				p.line++
 				p.noff = p.off
 				p.mode = afterMode
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 			case ',':
 				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
 				}
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 			case ']':
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 				if err := p.arrayEnd(); err != nil {
 					return err
 				}
 			case '}':
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 				if err := p.objectEnd(); err != nil {
 					return err
 				}
@@ -435,36 +415,26 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.mode = expSignMode
 			case ' ', '\t', '\r':
 				p.mode = afterMode
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 			case '\n':
 				p.line++
 				p.noff = p.off
 				p.mode = afterMode
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 			case ',':
 				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
 				}
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 			case ']':
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 				if err := p.arrayEnd(); err != nil {
 					return err
 				}
 			case '}':
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 				if err := p.objectEnd(); err != nil {
 					return err
 				}
@@ -497,36 +467,26 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.num.addExp(b)
 			case ' ', '\t', '\r':
 				p.mode = afterMode
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 			case '\n':
 				p.line++
 				p.noff = p.off
 				p.mode = afterMode
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 			case ',':
 				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
 					p.mode = keyMode
 				} else {
 					p.mode = valueMode
 				}
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 			case ']':
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 				if err := p.arrayEnd(); err != nil {
 					return err
 				}
 			case '}':
-				if err := p.appendNum(); err != nil {
-					return err
-				}
+				p.appendNum()
 				if err := p.objectEnd(); err != nil {
 					return err
 				}
@@ -643,9 +603,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.cb(p.stack[0])
 			}
 		case zeroMode, digitMode, fracMode, expMode:
-			if err := p.appendNum(); err != nil {
-				return err
-			}
+			p.appendNum()
 			if 0 < len(p.stack) {
 				p.cb(p.stack[0])
 			}
@@ -680,17 +638,14 @@ func (p *Parser) iadd(n interface{}) {
 	p.stack = append(p.stack, n)
 }
 
-func (p *Parser) appendNum() error {
+func (p *Parser) appendNum() {
 	if 0 < len(p.num.bigBuf) {
 		p.iadd(string(p.num.asBig()))
 	} else if p.num.frac == 0 && p.num.exp == 0 {
 		p.iadd(p.num.asInt())
-	} else if f, err := p.num.asFloat(); err == nil {
-		p.iadd(f)
 	} else {
-		return err
+		p.iadd(p.num.asFloat())
 	}
-	return nil
 }
 
 func (p *Parser) arrayEnd() error {

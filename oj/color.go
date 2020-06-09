@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ohler55/ojg/conv"
+	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
 )
 
@@ -102,15 +102,15 @@ func (o *Options) cbuildJSON(data interface{}, depth int) (err error) {
 		err = o.cbuildObject(td, depth)
 
 	default:
-		if g, _ := data.(conv.Genericer); g != nil {
+		if g, _ := data.(alt.Genericer); g != nil {
 			return o.cbuildJSON(g.Generic(), depth)
 		}
-		if simp, _ := data.(conv.Simplifier); simp != nil {
+		if simp, _ := data.(alt.Simplifier); simp != nil {
 			data = simp.Simplify()
 			return o.cbuildJSON(data, depth)
 		}
 		if 0 < len(o.CreateKey) {
-			return o.cbuildJSON(conv.Decompose(data), depth)
+			return o.cbuildJSON(alt.Decompose(data), depth)
 		} else {
 			o.buildString(fmt.Sprintf("%v", td))
 		}

@@ -1,13 +1,13 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package oj_test
+package alt_test
 
 import (
 	"testing"
 	"time"
 
+	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
-	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -17,7 +17,7 @@ type intData struct {
 	expect   int64
 }
 
-func TestAsInt(t *testing.T) {
+func TestInt(t *testing.T) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	for _, d := range []intData{
 		{value: 3, expect: 3},
@@ -35,14 +35,12 @@ func TestAsInt(t *testing.T) {
 		{value: nil, expect: 0},
 		{value: nil, expect: 5, defaults: []int64{4, 5}},
 
-		{value: true, expect: 1},
-		{value: false, expect: 0},
-		{value: true, expect: 1, defaults: []int64{4}},
-		{value: true, expect: 5, defaults: []int64{4, 5}},
-		{value: gen.True, expect: 1},
-		{value: gen.False, expect: 0},
-		{value: gen.True, expect: 1, defaults: []int64{4}},
-		{value: gen.True, expect: 5, defaults: []int64{4, 5}},
+		{value: true, expect: 0},
+		{value: true, expect: 4, defaults: []int64{4}},
+		{value: true, expect: 4, defaults: []int64{4, 5}},
+		{value: gen.True, expect: 0},
+		{value: gen.True, expect: 4, defaults: []int64{4}},
+		{value: gen.True, expect: 4, defaults: []int64{4, 5}},
 
 		{value: 3.1, expect: 3},
 		{value: 3.2, expect: 3, defaults: []int64{4}},
@@ -76,7 +74,7 @@ func TestAsInt(t *testing.T) {
 		{value: []interface{}{}, expect: 0},
 		{value: []interface{}{}, expect: 4, defaults: []int64{4, 5}},
 	} {
-		result := oj.AsInt(d.value, d.defaults...)
-		tt.Equal(t, d.expect, result, "AsInt(", d.value, d.defaults, ")")
+		result := alt.Int(d.value, d.defaults...)
+		tt.Equal(t, d.expect, result, "Int(", d.value, d.defaults, ")")
 	}
 }

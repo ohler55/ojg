@@ -10,7 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/ohler55/ojg/conv"
+	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
 )
 
@@ -162,15 +162,15 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 		err = o.buildObject(td, depth)
 
 	default:
-		if g, _ := data.(conv.Genericer); g != nil {
+		if g, _ := data.(alt.Genericer); g != nil {
 			return o.buildJSON(g.Generic(), depth)
 		}
-		if simp, _ := data.(conv.Simplifier); simp != nil {
+		if simp, _ := data.(alt.Simplifier); simp != nil {
 			data = simp.Simplify()
 			return o.buildJSON(data, depth)
 		}
 		if 0 < len(o.CreateKey) {
-			return o.buildJSON(conv.Decompose(data), depth)
+			return o.buildJSON(alt.Decompose(data), depth)
 		} else {
 			o.buildString(fmt.Sprintf("%v", td))
 		}

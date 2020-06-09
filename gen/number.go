@@ -105,7 +105,7 @@ func (n *number) asInt() int64 {
 	return i
 }
 
-func (n *number) asFloat() (float64, error) {
+func (n *number) asFloat() float64 {
 	f := float64(n.i)
 	if 0 < n.frac {
 		f += float64(n.frac) / float64(n.div)
@@ -120,7 +120,7 @@ func (n *number) asFloat() (float64, error) {
 		}
 		f *= math.Pow10(int(x))
 	}
-	return f, nil
+	return f
 }
 
 func (n *number) asBig() Big {

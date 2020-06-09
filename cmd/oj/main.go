@@ -60,7 +60,7 @@ follows the oj.Script format.
 
 `, filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
-		fmt.Fprint(os.Stderr, "\n")
+		fmt.Fprintln(os.Stderr)
 	}
 	flag.Parse()
 

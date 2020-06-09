@@ -1,6 +1,6 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package conv
+package alt
 
 // AttrSetter interface is for objects that can set attributes using the
 // SetAttr() function.

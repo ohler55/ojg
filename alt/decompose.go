@@ -1,43 +1,20 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package conv
+package alt
 
 import (
 	"fmt"
 	"math"
 	"reflect"
 	"time"
-	"unsafe"
-
-	"github.com/ohler55/ojg/gen"
 )
 
 // 23 for fraction in IEEE 754 which amounts to 7 significant digits. Use base
 // 10 so that numbers look correct when displayed in base 10.
 const fracMax = 10000000.0
 
-const (
-	Exact = Status(iota)
-	Ok
-	Fail
-)
-
-type Status int
-
-func (status Status) String() (s string) {
-	switch status {
-	case Exact:
-		s = "Exact"
-	case Ok:
-		s = "Ok"
-	case Fail:
-		s = "Fail"
-	}
-	return
-}
-
-// ConvOptions are the options available to Decompose() function.
-type ConvOptions struct {
+// Options are the options available to Decompose() function.
+type Options struct {
 
 	// CreateKey is the map element used to identify the type of a decomposed
 	// object.
@@ -51,8 +28,8 @@ type ConvOptions struct {
 	OmitNil bool
 }
 
-// DefaultConvOptions are the default options for decompsing.
-var DefaultConvOptions = ConvOptions{
+// DefaultOptions are the default options for decompsing.
+var DefaultOptions = Options{
 	CreateKey:    "type",
 	FullTypePath: false,
 	OmitNil:      true,
@@ -61,8 +38,8 @@ var DefaultConvOptions = ConvOptions{
 // Decompose creates a simple type converting non simple to simple types using
 // either the Simplify() interface or reflection. Unlike Alter() a deep copy
 // is returned leaving the original data unchanged.
-func Decompose(v interface{}, options ...*ConvOptions) interface{} {
-	opt := &DefaultConvOptions
+func Decompose(v interface{}, options ...*Options) interface{} {
+	opt := &DefaultOptions
 	if 0 < len(options) {
 		opt = options[0]
 	}
@@ -121,8 +98,8 @@ func Decompose(v interface{}, options ...*ConvOptions) interface{} {
 // using either the Simplify() interface or reflection. Unlike Decompose() map and
 // slices members are modified if necessary to assure all elements are simple
 // types.
-func Alter(v interface{}, options ...*ConvOptions) interface{} {
-	opt := &DefaultConvOptions
+func Alter(v interface{}, options ...*Options) interface{} {
+	opt := &DefaultOptions
 	if 0 < len(options) {
 		opt = options[0]
 	}
@@ -173,11 +150,11 @@ func Alter(v interface{}, options ...*ConvOptions) interface{} {
 	return v
 }
 
-func reflectData(data interface{}, opt *ConvOptions) interface{} {
+func reflectData(data interface{}, opt *Options) interface{} {
 	return reflectValue(reflect.ValueOf(data), opt)
 }
 
-func reflectValue(rv reflect.Value, opt *ConvOptions) (v interface{}) {
+func reflectValue(rv reflect.Value, opt *Options) (v interface{}) {
 	switch rv.Kind() {
 	case reflect.Invalid, reflect.Uintptr, reflect.UnsafePointer, reflect.Chan, reflect.Func, reflect.Interface:
 		v = nil
@@ -195,7 +172,7 @@ func reflectValue(rv reflect.Value, opt *ConvOptions) (v interface{}) {
 	return
 }
 
-func reflectStruct(rv reflect.Value, opt *ConvOptions) interface{} {
+func reflectStruct(rv reflect.Value, opt *Options) interface{} {
 	obj := map[string]interface{}{}
 
 	t := rv.Type()
@@ -214,7 +191,7 @@ func reflectStruct(rv reflect.Value, opt *ConvOptions) interface{} {
 	return obj
 }
 
-func reflectComplex(rv reflect.Value, opt *ConvOptions) interface{} {
+func reflectComplex(rv reflect.Value, opt *Options) interface{} {
 	c := rv.Complex()
 	obj := map[string]interface{}{
 		"real": real(c),
@@ -226,7 +203,7 @@ func reflectComplex(rv reflect.Value, opt *ConvOptions) interface{} {
 	return obj
 }
 
-func reflectMap(rv reflect.Value, opt *ConvOptions) interface{} {
+func reflectMap(rv reflect.Value, opt *Options) interface{} {
 	obj := map[string]interface{}{}
 	it := rv.MapRange()
 	for it.Next() {
@@ -240,164 +217,11 @@ func reflectMap(rv reflect.Value, opt *ConvOptions) interface{} {
 	return obj
 }
 
-func reflectArray(rv reflect.Value, opt *ConvOptions) interface{} {
+func reflectArray(rv reflect.Value, opt *Options) interface{} {
 	size := rv.Len()
 	a := make([]interface{}, size)
 	for i := size - 1; 0 <= i; i-- {
 		a[i] = Decompose(rv.Index(i).Interface(), opt)
 	}
 	return a
-}
-
-// Generify converts a value into Node compliant data. A best effort is made
-// to convert values that are not simple into generic Nodes.
-func Generify(v interface{}, options ...*ConvOptions) (n gen.Node) {
-	opt := &DefaultConvOptions
-	if 0 < len(options) {
-		opt = options[0]
-	}
-	if v != nil {
-		switch tv := v.(type) {
-		case bool:
-			n = gen.Bool(tv)
-		case gen.Bool:
-			n = tv
-		case int:
-			n = gen.Int(int64(tv))
-		case int8:
-			n = gen.Int(int64(tv))
-		case int16:
-			n = gen.Int(int64(tv))
-		case int32:
-			n = gen.Int(int64(tv))
-		case int64:
-			n = gen.Int(tv)
-		case uint:
-			n = gen.Int(int64(tv))
-		case uint8:
-			n = gen.Int(int64(tv))
-		case uint16:
-			n = gen.Int(int64(tv))
-		case uint32:
-			n = gen.Int(int64(tv))
-		case uint64:
-			n = gen.Int(int64(tv))
-		case gen.Int:
-			n = tv
-		case float32:
-			n = gen.Float(float64(tv))
-		case float64:
-			n = gen.Float(tv)
-		case gen.Float:
-			n = tv
-		case string:
-			n = gen.String(tv)
-		case gen.String:
-			n = tv
-		case time.Time:
-			n = gen.Time(tv)
-		case gen.Time:
-			n = tv
-		case []interface{}:
-			a := make(gen.Array, len(tv))
-			for i, m := range tv {
-				a[i] = Generify(m, opt)
-			}
-			n = a
-		case map[string]interface{}:
-			o := gen.Object{}
-			for k, m := range tv {
-				o[k] = Generify(m, opt)
-			}
-			n = o
-		default:
-			if g, _ := n.(Genericer); g != nil {
-				return g.Generic()
-			}
-			if simp, _ := n.(Simplifier); simp != nil {
-				return Generify(simp.Simplify(), opt)
-			}
-			return Generify(reflectData(v, opt))
-		}
-	}
-	return
-}
-
-// GenAlter converts a simple go data element into Node compliant data. A best
-// effort is made to convert values that are not simple into generic Nodes. It
-// modifies the values inplace if possible by altering the original.
-func GenAlter(v interface{}, options ...*ConvOptions) (n gen.Node) {
-	opt := &DefaultConvOptions
-	if 0 < len(options) {
-		opt = options[0]
-	}
-	if v != nil {
-		switch tv := v.(type) {
-		case bool:
-			n = gen.Bool(tv)
-		case gen.Bool:
-			n = tv
-		case int:
-			n = gen.Int(int64(tv))
-		case int8:
-			n = gen.Int(int64(tv))
-		case int16:
-			n = gen.Int(int64(tv))
-		case int32:
-			n = gen.Int(int64(tv))
-		case int64:
-			n = gen.Int(tv)
-		case uint:
-			n = gen.Int(int64(tv))
-		case uint8:
-			n = gen.Int(int64(tv))
-		case uint16:
-			n = gen.Int(int64(tv))
-		case uint32:
-			n = gen.Int(int64(tv))
-		case uint64:
-			n = gen.Int(int64(tv))
-		case gen.Int:
-			n = tv
-		case float32:
-			n = gen.Float(float64(tv))
-		case float64:
-			n = gen.Float(tv)
-		case gen.Float:
-			n = tv
-		case string:
-			n = gen.String(tv)
-		case gen.String:
-			n = tv
-		case time.Time:
-			n = gen.Time(tv)
-		case gen.Time:
-			n = tv
-		case []interface{}:
-			a := *(*gen.Array)(unsafe.Pointer(&tv))
-			for i, m := range tv {
-				a[i] = GenAlter(m)
-			}
-			n = a
-		case gen.Array:
-			n = tv
-		case map[string]interface{}:
-			o := *(*gen.Object)(unsafe.Pointer(&tv))
-			for k, m := range tv {
-				o[k] = GenAlter(m, opt)
-			}
-			n = o
-		case gen.Object:
-			n = tv
-		default:
-			if g, _ := n.(Genericer); g != nil {
-				return g.Generic()
-			}
-			if simp, _ := n.(Simplifier); simp != nil {
-				return GenAlter(simp.Simplify(), opt)
-			}
-			return GenAlter(reflectData(v, opt))
-		}
-	}
-	return
 }

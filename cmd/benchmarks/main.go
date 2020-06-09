@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ohler55/ojg/conv"
+	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
@@ -100,7 +100,7 @@ func ojGenAlter(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	for n := 0; n < b.N; n++ {
 		native := benchmarkData(tm)
-		_ = conv.GenAlter(native)
+		_ = alt.GenAlter(native)
 	}
 }
 
@@ -108,7 +108,7 @@ func ojGenerify(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	for n := 0; n < b.N; n++ {
 		native := benchmarkData(tm)
-		_ = conv.Generify(native)
+		_ = alt.Generify(native)
 	}
 }
 
@@ -204,7 +204,7 @@ func treeJSONSort(b *testing.B) {
 
 func ojJSON(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := conv.Alter(benchmarkData(tm))
+	data := alt.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -214,7 +214,7 @@ func ojJSON(b *testing.B) {
 
 func ojJSON2(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := conv.Alter(benchmarkData(tm))
+	data := alt.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true, Indent: 2}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -224,7 +224,7 @@ func ojJSON2(b *testing.B) {
 
 func ojJSONSort(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := conv.Alter(benchmarkData(tm))
+	data := alt.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -234,7 +234,7 @@ func ojJSONSort(b *testing.B) {
 
 func ojWrite(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := conv.Alter(benchmarkData(tm))
+	data := alt.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true}
 	var buf strings.Builder
 	b.ResetTimer()
@@ -247,7 +247,7 @@ func ojWrite(b *testing.B) {
 
 func ojWrite2(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := conv.Alter(benchmarkData(tm))
+	data := alt.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true, Indent: 2}
 	var buf strings.Builder
 	b.ResetTimer()
@@ -260,7 +260,7 @@ func ojWrite2(b *testing.B) {
 
 func ojWriteSort(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := conv.Alter(benchmarkData(tm))
+	data := alt.Alter(benchmarkData(tm))
 	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
 	var buf strings.Builder
 	b.ResetTimer()
