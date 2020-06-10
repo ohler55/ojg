@@ -10,14 +10,14 @@
  - encode object and recover
   - Decompose()
   - Recomposer.Recompose()
- - AsInt and others
+ - alt.Int and others
 
 - converters (is there a better name than conv?)
- - Int
- - Bool
- - String
+ + Int
+ + Bool
+ + String
  - Time
- - Float
+ + Float
 
 - can Node be moved to a separate directory?
  - only use path to dig, not methods off of Node?
