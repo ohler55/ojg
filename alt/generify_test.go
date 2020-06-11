@@ -6,29 +6,27 @@ import (
 	"testing"
 
 	"github.com/ohler55/ojg/alt"
+	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/tt"
 )
 
-type Dummy struct {
-	Val  int
-	Nest interface{}
+func TestGenerifyNumbers(t *testing.T) {
+	a := []interface{}{int8(-8), int16(-16), int32(-32), uint(0), uint8(8), uint16(16), uint32(32), uint64(64), float32(3.5)}
+	v := alt.Generify(a)
+	tt.Equal(t, gen.Array{
+		gen.Int(-8),
+		gen.Int(-16),
+		gen.Int(-32),
+		gen.Int(0),
+		gen.Int(8),
+		gen.Int(16),
+		gen.Int(32),
+		gen.Int(64),
+		gen.Float(3.5)}, v)
 }
 
-type silly struct {
-	val int
-}
-
-func (s *silly) Simplify() interface{} {
-	return map[string]interface{}{"type": "silly", "val": s.val}
-}
-
-func TestDecomposeNumbers(t *testing.T) {
-	a := []interface{}{int8(-8), int16(-16), int32(-32), uint(0), uint8(8), uint16(16), uint32(32), uint64(64), float32(3.2)}
-	v := alt.Decompose(a)
-	tt.Equal(t, []interface{}{-8, -16, -32, 0, 8, 16, 32, 64, 3.2}, v)
-}
-
-func TestDecomposeStruct(t *testing.T) {
+/*
+func TestGenerifyStruct(t *testing.T) {
 	d := Dummy{Val: 3, Nest: &Dummy{Val: 2}}
 	v := alt.Decompose(&d)
 	tt.Equal(t, map[string]interface{}{"type": "Dummy", "val": 3, "nest": map[string]interface{}{"type": "Dummy", "val": 2}}, v)
@@ -44,13 +42,13 @@ func TestDecomposeStruct(t *testing.T) {
 	}, v)
 }
 
-func TestDecomposeComplex(t *testing.T) {
+func TestGenerifyComplex(t *testing.T) {
 	c := complex(1.2, 3.4)
 	v := alt.Decompose(c)
 	tt.Equal(t, map[string]interface{}{"type": "complex", "real": 1.2, "imag": 3.4}, v)
 }
 
-func TestDecomposeMap(t *testing.T) {
+func TestGenerifyMap(t *testing.T) {
 	m := map[int]int{1: 1, 2: 4, 3: 9}
 	v := alt.Decompose(m)
 	tt.Equal(t, map[string]interface{}{"1": 1, "2": 4, "3": 9}, v)
@@ -60,7 +58,7 @@ func TestDecomposeMap(t *testing.T) {
 	tt.Equal(t, map[string]interface{}{"1": 1, "2": 4, "3": 9}, v)
 }
 
-func TestDecomposeArray(t *testing.T) {
+func TestGenerifyArray(t *testing.T) {
 	a := []*Dummy{{Val: 1}, {Val: 2}, {Val: 3}}
 	v := alt.Decompose(a)
 	tt.Equal(t, []interface{}{
@@ -70,13 +68,13 @@ func TestDecomposeArray(t *testing.T) {
 	}, v)
 }
 
-func TestDecomposeOdd(t *testing.T) {
+func TestGenerifyOdd(t *testing.T) {
 	odd := []interface{}{func() {}, nil}
 	v := alt.Decompose(odd)
 	tt.Equal(t, []interface{}{nil, nil}, v)
 }
 
-func TestDecomposeSimplifier(t *testing.T) {
+func TestGenerifySimplifier(t *testing.T) {
 	s := silly{val: 3}
 	v := alt.Decompose(&s)
 	tt.Equal(t, map[string]interface{}{"type": "silly", "val": 3}, v)
@@ -141,3 +139,4 @@ func TestAlterSimplifier(t *testing.T) {
 	v := alt.Alter(&s)
 	tt.Equal(t, map[string]interface{}{"type": "silly", "val": 3}, v)
 }
+*/

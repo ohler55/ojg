@@ -35,12 +35,13 @@ func Time(v interface{}, defaults ...time.Time) (t time.Time) {
 			case uint64:
 				t = time.Unix(0, int64(tv)).UTC()
 			case float32:
-				secs := int64(tv)
-				nano := int64((tv - float32(secs)) * float32(time.Second))
-				t = time.Unix(secs, nano).UTC()
+				// Only good to minutes.
+				secs := int64(tv) / 60 * 60
+				t = time.Unix(secs, 0).UTC()
 			case float64:
 				secs := int64(tv)
-				nano := int64((tv - float64(secs)) * float64(time.Second))
+				// Only good to microseconds, not nanoseconds.
+				nano := int64((float64(tv)-float64(secs))*float64(time.Second)) / 1000 * 1000
 				t = time.Unix(secs, nano).UTC()
 			case string:
 				var err error
@@ -54,7 +55,8 @@ func Time(v interface{}, defaults ...time.Time) (t time.Time) {
 				t = time.Unix(0, int64(tv)).UTC()
 			case gen.Float:
 				secs := int64(tv)
-				nano := int64((float64(tv) - float64(secs)) * float64(time.Second))
+				// Only good to useconds, not nanoseconds.
+				nano := int64((float64(tv)-float64(secs))*float64(time.Second)) / 1000 * 1000
 				t = time.Unix(secs, nano).UTC()
 			case gen.String:
 				var err error

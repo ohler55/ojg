@@ -18,6 +18,8 @@ import (
 // value.
 func Float(v interface{}, defaults ...float64) (f float64) {
 	switch tf := v.(type) {
+	case float64:
+		f = tf
 	case float32:
 		f = float64(tf)
 	case gen.Float:
@@ -47,13 +49,9 @@ func Float(v interface{}, defaults ...float64) (f float64) {
 				f = float64(tv)
 			case uint64:
 				f = float64(tv)
-			case float32:
-				f = float64(tv)
-			case float64:
-				f = tv
 			case string:
 				var err error
-				if f, err = strconv.ParseFloat(tv, 64); err == nil {
+				if f, err = strconv.ParseFloat(tv, 64); err != nil {
 					if 0 < len(defaults) {
 						f = defaults[0]
 					}
@@ -65,8 +63,6 @@ func Float(v interface{}, defaults ...float64) (f float64) {
 				f = float64(sec) + float64(nano-sec*int64(time.Second))/float64(time.Second)
 
 			case gen.Int:
-				f = float64(tv)
-			case gen.Float:
 				f = float64(tv)
 			case gen.String:
 				f = Float(string(tv), defaults...)

@@ -27,6 +27,8 @@ func String(v interface{}, defaults ...string) (s string) {
 			s = defaults[1]
 		} else {
 			switch tv := v.(type) {
+			case nil:
+				s = ""
 			case bool:
 				if tv {
 					s = "true"
