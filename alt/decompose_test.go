@@ -10,8 +10,9 @@ import (
 )
 
 type Dummy struct {
-	Val  int
-	Nest interface{}
+	Val    int
+	Nest   interface{}
+	hidden int
 }
 
 type silly struct {
@@ -29,7 +30,7 @@ func TestDecomposeNumbers(t *testing.T) {
 }
 
 func TestDecomposeStruct(t *testing.T) {
-	d := Dummy{Val: 3, Nest: &Dummy{Val: 2}}
+	d := Dummy{Val: 3, Nest: &Dummy{Val: 2}, hidden: 3}
 	v := alt.Decompose(&d)
 	tt.Equal(t, map[string]interface{}{"type": "Dummy", "val": 3, "nest": map[string]interface{}{"type": "Dummy", "val": 2}}, v)
 

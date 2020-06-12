@@ -6,28 +6,8 @@
  - CI - travis or something else?
  - remove tree (maybe create separate benchmark repo)
 
-- examples
- - encode object and recover
-  - Decompose()
-  - Recomposer.Recompose()
- - alt.Int and others
-
-- converters (is there a better name than conv?)
- + Int
- + Bool
- + String
- - Time
- + Float
-
-- can Node be moved to a separate directory?
- - only use path to dig, not methods off of Node?
- - if that is possible then a separate dir for jp could be used
-
 - maybe a parser path wrapper that returns a Node
  - type assersions should always pass
-
-- generifiy replace with what ever node dir becomes if changed
- - maybe gen is best
 
 - oj
  - parser

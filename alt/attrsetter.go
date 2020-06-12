@@ -6,6 +6,6 @@ package alt
 // SetAttr() function.
 type AttrSetter interface {
 
-	// SetAttr sets an attriibute of the object associated with the path.
+	// SetAttr sets an attribute of the object associated with the path.
 	SetAttr(attr string, val interface{}) error
 }

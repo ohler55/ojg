@@ -2,7 +2,7 @@
 
 /*
 
-Package alt contains functions and type for altering values.
+Package alt contains functions and types for altering values.
 
 Conversions
 
@@ -29,7 +29,15 @@ interface defines the Generic() function as
 
 A Generify() function is used to convert values to gen.Node types.
 
-  // TBD example
+	type Genny struct {
+		val int
+	}
+	func (g *Genny) Generic() gen.Node {
+	 	return gen.Object{"type": gen.String("genny"), "val": gen.Int(g.val)}
+	}
+	ga := []*Genny{&Genny{val: 3}}
+	v := alt.Generify(ga)
+	// v: [{"type":"Genny","val":3}]
 
 Decompose
 
@@ -37,7 +45,13 @@ The Decompose() functions creates a simple type converting non simple to
 simple types using either the Simplify() interface or reflection. Unlike
 Alter() a deep copy is returned leaving the original data unchanged.
 
-  // TBD decompose example with type
+	type Sample struct {
+		Int int
+		Str string
+	}
+	sample := Sample{Int: 3, Str: "three"}
+	simple := alt.Decompose(&sample, &alt.Options{CreateKey: "^", FullTypePath: true})
+	// simple: {"^":"github.com/ohler55/ojg/alt_test/Sample","int":3,"str":"three"}
 
 Recompose
 
@@ -45,7 +59,16 @@ Recompose simple data into more complex go types using either the Recompose()
 function or the Recomposer struct that adds some efficiency by reusing
 buffers.
 
-  // TBD recompose something
+	type Sample struct {
+		Int int
+		Str string
+	}
+	r, err := alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Sample{}: nil})
+	var v interface{}
+	if err == nil {
+		v, err = r.Recompose(map[string]interface{}{"^": "Sample", "int": 3, "str": "three"})
+	}
+	// sample: {Int: 3, Str: "three"}
 
 Alter
 
@@ -53,7 +76,9 @@ The GenAlter() function converts a simple go data element into Node compliant
 data. A best effort is made to convert values that are not simple into generic
 Nodes. It modifies the values inplace if possible by altering the original.
 
-  // TBD GenAlter(v interface{}, options ...*Options) (n gen.Node) {
+	m := map[string]interface{}{"a": 1, "b": 4, "c": 9}
+	v := alt.GenAlter(m)
+	// v:  gen.Object{"a": gen.Int(1), "b": gen.Int(4), "c": gen.Int(9)}, v)
 
 */
 package alt

@@ -3,6 +3,8 @@
 package alt
 
 import (
+	"fmt"
+	"reflect"
 	"time"
 	"unsafe"
 
@@ -77,17 +79,24 @@ func Generify(v interface{}, options ...*Options) (n gen.Node) {
 		case map[string]interface{}:
 			o := gen.Object{}
 			for k, m := range tv {
-				o[k] = Generify(m, opt)
+				g := Generify(m, opt)
+				if g != nil || !opt.OmitNil {
+					o[k] = g
+				}
 			}
 			n = o
 		default:
-			if g, _ := n.(Genericer); g != nil {
+			var ok bool
+			if n, ok = v.(gen.Node); ok {
+				return
+			}
+			if g, _ := v.(Genericer); g != nil {
 				return g.Generic()
 			}
-			if simp, _ := n.(Simplifier); simp != nil {
+			if simp, _ := v.(Simplifier); simp != nil {
 				return Generify(simp.Simplify(), opt)
 			}
-			return Generify(reflectData(v, opt))
+			return reflectGenData(v, opt)
 		}
 	}
 	return
@@ -141,33 +150,119 @@ func GenAlter(v interface{}, options ...*Options) (n gen.Node) {
 			n = tv
 		case time.Time:
 			n = gen.Time(tv)
-		case gen.Time:
-			n = tv
 		case []interface{}:
 			a := *(*gen.Array)(unsafe.Pointer(&tv))
 			for i, m := range tv {
 				a[i] = GenAlter(m)
 			}
 			n = a
-		case gen.Array:
-			n = tv
 		case map[string]interface{}:
 			o := *(*gen.Object)(unsafe.Pointer(&tv))
 			for k, m := range tv {
-				o[k] = GenAlter(m, opt)
+				g := GenAlter(m, opt)
+				if g != nil || !opt.OmitNil {
+					o[k] = g
+				}
 			}
 			n = o
-		case gen.Object:
-			n = tv
 		default:
-			if g, _ := n.(Genericer); g != nil {
+			var ok bool
+			if n, ok = v.(gen.Node); ok {
+				return
+			}
+			if g, _ := v.(Genericer); g != nil {
 				return g.Generic()
 			}
-			if simp, _ := n.(Simplifier); simp != nil {
+			if simp, _ := v.(Simplifier); simp != nil {
 				return GenAlter(simp.Simplify(), opt)
 			}
-			return GenAlter(reflectData(v, opt))
+			return reflectGenData(v, opt)
 		}
 	}
 	return
+}
+
+func reflectGenData(data interface{}, opt *Options) gen.Node {
+	return reflectGenValue(reflect.ValueOf(data), opt)
+}
+
+func reflectGenValue(rv reflect.Value, opt *Options) (v gen.Node) {
+	switch rv.Kind() {
+	case reflect.Invalid, reflect.Uintptr, reflect.UnsafePointer, reflect.Chan, reflect.Func, reflect.Interface:
+		v = nil
+	case reflect.Complex64, reflect.Complex128:
+		v = reflectGenComplex(rv, opt)
+	case reflect.Map:
+		v = reflectGenMap(rv, opt)
+	case reflect.Ptr:
+		v = reflectGenValue(rv.Elem(), opt)
+	case reflect.Slice, reflect.Array:
+		v = reflectGenArray(rv, opt)
+	case reflect.Struct:
+		v = reflectGenStruct(rv, opt)
+	}
+	return
+}
+
+func reflectGenStruct(rv reflect.Value, opt *Options) gen.Node {
+	obj := gen.Object{}
+	t := rv.Type()
+	if 0 < len(opt.CreateKey) {
+		if opt.FullTypePath {
+			obj[opt.CreateKey] = gen.String(t.PkgPath() + "/" + t.Name())
+		} else {
+			obj[opt.CreateKey] = gen.String(t.Name())
+		}
+	}
+	for i := rv.NumField() - 1; 0 <= i; i-- {
+		name := []byte(t.Field(i).Name)
+		if len(name) == 0 || 'a' <= name[0] {
+			// not a public field
+			continue
+		}
+		name[0] = name[0] | 0x20
+		g := Generify(rv.Field(i).Interface(), opt)
+		if g != nil || !opt.OmitNil {
+			obj[string(name)] = g
+		}
+	}
+	return obj
+}
+
+func reflectGenComplex(rv reflect.Value, opt *Options) gen.Node {
+	c := rv.Complex()
+	obj := gen.Object{
+		"real": gen.Float(real(c)),
+		"imag": gen.Float(imag(c)),
+	}
+	if 0 < len(opt.CreateKey) {
+		obj[opt.CreateKey] = gen.String("complex")
+	}
+	return obj
+}
+
+func reflectGenMap(rv reflect.Value, opt *Options) gen.Node {
+	obj := gen.Object{}
+	it := rv.MapRange()
+	for it.Next() {
+		k := it.Key().Interface()
+		g := Generify(it.Value().Interface(), opt)
+		if g != nil || !opt.OmitNil {
+			if ks, ok := k.(string); ok {
+				obj[ks] = g
+			} else {
+				obj[fmt.Sprint(k)] = g
+			}
+		}
+	}
+	return obj
+}
+
+func reflectGenArray(rv reflect.Value, opt *Options) gen.Node {
+	size := rv.Len()
+	a := make(gen.Array, size)
+	for i := size - 1; 0 <= i; i-- {
+		a[i] = Generify(rv.Index(i).Interface(), opt)
+	}
+	return a
 }

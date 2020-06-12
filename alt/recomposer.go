@@ -46,9 +46,6 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) error 
 		rt = rt.Elem()
 	}
 	full := rt.PkgPath() + "/" + rt.Name()
-	if _, has := r.composers[full]; has {
-		return nil
-	}
 	// TBD could loosen this up and allow any type as long as a function is provided.
 	if rt.Kind() != reflect.Struct {
 		return fmt.Errorf("only structs can be recomposed. %s is not a struct type", rt)

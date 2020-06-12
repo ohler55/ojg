@@ -120,6 +120,10 @@ func TestRecomposeAttrSetter(t *testing.T) {
 	s, _ := v.(*Setter)
 	tt.NotNil(t, s, "check type")
 	tt.Equal(t, "Setter{a:3,b:bee}", s.String())
+
+	src = map[string]interface{}{"type": "Setter", "a": 3, "b": "bee", "c": 5}
+	_, err = r.Recompose(src)
+	tt.NotNil(t, err, "Recompose from bad source")
 }
 
 func TestRecomposeReflectList(t *testing.T) {
@@ -183,6 +187,30 @@ func TestRecomposeListResult(t *testing.T) {
 	for i, d := range da {
 		tt.Equal(t, i+1, d.Val)
 	}
+}
+
+func TestRecomposeArrayResult(t *testing.T) {
+	src := gen.Array{
+		gen.Object{"type": gen.String("Dummy"), "val": gen.Int(1)},
+		gen.Object{"type": gen.String("Dummy"), "val": gen.Int(2)},
+	}
+	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Dummy{}: nil})
+	tt.Nil(t, err, "NewRecomposer")
+	var v interface{}
+	v, err = r.Recompose(src, []*Dummy{})
+	tt.Nil(t, err, "Recompose")
+	da, _ := v.([]*Dummy)
+	tt.NotNil(t, da, "check type")
+	tt.Equal(t, 2, len(da))
+	for i, d := range da {
+		tt.Equal(t, i+1, d.Val)
+	}
+
+	src = gen.Array{
+		gen.Object{"type": gen.String("Dummy"), "nest": gen.Object{"type": gen.String("Dummy"), "val": gen.String("x")}},
+	}
+	_, err = r.Recompose(src, []*Dummy{})
+	tt.NotNil(t, err, "Recompose from bad source")
 }
 
 func TestRecomposeListBadResult(t *testing.T) {

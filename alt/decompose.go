@@ -13,28 +13,6 @@ import (
 // 10 so that numbers look correct when displayed in base 10.
 const fracMax = 10000000.0
 
-// Options are the options available to Decompose() function.
-type Options struct {
-
-	// CreateKey is the map element used to identify the type of a decomposed
-	// object.
-	CreateKey string
-
-	// FullTypePath if true will use the package and type name as the
-	// CreateKey value.
-	FullTypePath bool
-
-	// OmitNil if true omits object members that have nil values.
-	OmitNil bool
-}
-
-// DefaultOptions are the default options for decompsing.
-var DefaultOptions = Options{
-	CreateKey:    "type",
-	FullTypePath: false,
-	OmitNil:      true,
-}
-
 // Decompose creates a simple type converting non simple to simple types using
 // either the Simplify() interface or reflection. Unlike Alter() a deep copy
 // is returned leaving the original data unchanged.
@@ -80,7 +58,9 @@ func Decompose(v interface{}, options ...*Options) interface{} {
 			o := map[string]interface{}{}
 			for k, m := range tv {
 				if mv := Decompose(m); mv != nil || !opt.OmitNil {
-					o[k] = mv
+					if mv != nil || !opt.OmitNil {
+						o[k] = mv
+					}
 				}
 			}
 			v = o
@@ -137,7 +117,9 @@ func Alter(v interface{}, options ...*Options) interface{} {
 		case map[string]interface{}:
 			for k, m := range tv {
 				if mv := Alter(m); mv != nil || !opt.OmitNil {
-					tv[k] = mv
+					if mv != nil || !opt.OmitNil {
+						tv[k] = mv
+					}
 				}
 			}
 		default:
@@ -185,8 +167,15 @@ func reflectStruct(rv reflect.Value, opt *Options) interface{} {
 	}
 	for i := rv.NumField() - 1; 0 <= i; i-- {
 		name := []byte(t.Field(i).Name)
+		if len(name) == 0 || 'a' <= name[0] {
+			// not a public field
+			continue
+		}
 		name[0] = name[0] | 0x20
-		obj[string(name)] = Decompose(rv.Field(i).Interface(), opt)
+		g := Decompose(rv.Field(i).Interface(), opt)
+		if g != nil || !opt.OmitNil {
+			obj[string(name)] = g
+		}
 	}
 	return obj
 }
@@ -208,10 +197,13 @@ func reflectMap(rv reflect.Value, opt *Options) interface{} {
 	it := rv.MapRange()
 	for it.Next() {
 		k := it.Key().Interface()
-		if ks, ok := k.(string); ok {
-			obj[ks] = Decompose(it.Value().Interface())
-		} else {
-			obj[fmt.Sprint(k)] = Decompose(it.Value().Interface(), opt)
+		g := Decompose(it.Value().Interface(), opt)
+		if g != nil || !opt.OmitNil {
+			if ks, ok := k.(string); ok {
+				obj[ks] = g
+			} else {
+				obj[fmt.Sprint(k)] = g
+			}
 		}
 	}
 	return obj
