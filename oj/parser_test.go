@@ -39,6 +39,7 @@ func TestParserParseString(t *testing.T) {
 		{src: "null", value: nil},
 		{src: "true", value: true},
 		{src: "false", value: false},
+		{src: "false \n ", value: false},
 		{src: "123", value: 123},
 		{src: "-321", value: -321},
 		{src: "12.3", value: 12.3},
@@ -62,10 +63,11 @@ func TestParserParseString(t *testing.T) {
 		{src: "\xef\xbb\xbf\"xyz\"", value: "xyz"},
 
 		{src: "[]", value: []interface{}{}},
-		{src: "[0,0]", value: []interface{}{0, 0}},
+		{src: "[0,\ntrue , false,null]", value: []interface{}{0, true, false, nil}},
+		{src: `[0.1e3,"x",-1,{}]`, value: []interface{}{100.0, "x", -1, map[string]interface{}{}}},
 		{src: "[1.2,0]", value: []interface{}{1.2, 0}},
-		//{src: "[1.2e2,0.1]", value: []interface{}{1.2e2, 0.1}},
-		//{src: "[1.2e2,0]", value: []interface{}{1.2e2, 0}},
+		{src: "[1.2e2,0.1]", value: []interface{}{1.2e2, 0.1}},
+		{src: "[1.2e2,0]", value: []interface{}{1.2e2, 0}},
 		{src: "[true]", value: []interface{}{true}},
 		{src: "[true,false]", value: []interface{}{true, false}},
 		{src: "[[]]", value: []interface{}{[]interface{}{}}},
@@ -75,9 +77,10 @@ func TestParserParseString(t *testing.T) {
 
 		{src: "{}", value: map[string]interface{}{}},
 		{src: `{"abc":true}`, value: map[string]interface{}{"abc": true}},
-		{src: `{"z":0,"z2":0}`, value: map[string]interface{}{"z": 0, "z2": 0}},
+		{src: "{\"z\":0,\n\"z2\":0}", value: map[string]interface{}{"z": 0, "z2": 0}},
 		{src: `{"z":1.2,"z2":0}`, value: map[string]interface{}{"z": 1.2, "z2": 0}},
 		{src: `{"abc":{"def":3}}`, value: map[string]interface{}{"abc": map[string]interface{}{"def": 3}}},
+		{src: `{"x":1.2e3,"y":true}`, value: map[string]interface{}{"x": 1200.0, "y": true}},
 
 		{src: `{"abc": [{"x": {"y": [{"b": true}]},"z": 7}]}`,
 			value: map[string]interface{}{
@@ -104,11 +107,11 @@ func TestParserParseString(t *testing.T) {
 		{src: `1}`, expect: "too many closes at 1:2"},
 		{src: `]`, expect: "too many closes at 1:1"},
 		{src: `x`, expect: "unexpected character 'x' at 1:1"},
-		//{src: `[1,]`, expect: "too many closes at 1:4"},
+		{src: `[1,]`, expect: "unexpected character ']' at 1:4"},
 		{src: `[null x`, expect: "expected a comma or close, not 'x' at 1:7"},
 		{src: "{\n\"x\":1 ]", expect: "unexpected array close at 2:7"},
 		{src: `[1 }`, expect: "unexpected object close at 1:4"},
-		//{src: "{\n\"x\":1,}", expect: "unexpected array close at 1:8"},
+		{src: "{\n\"x\":1,}", expect: "expected a string start, not '}' at 2:7"},
 		{src: `{"x"x}`, expect: "expected a colon, not 'x' at 1:5"},
 		{src: `nuul`, expect: "expected null at 1:3"},
 		{src: `fasle`, expect: "expected false at 1:3"},
@@ -133,10 +136,11 @@ func TestParserParseString(t *testing.T) {
 		{src: `"x\u004z"`, expect: "invalid JSON unicode character 'z' at 1:8"},
 		{src: "\xef\xbb[]", expect: "expected BOM at 1:3"},
 
+		{src: "[ // a comment\n  true\n]", value: []interface{}{true}, noComment: false},
+		{src: "[ // a comment\n  true\n]", expect: "comments not allowed at 1:3", noComment: true},
 		{src: "[\n  null, // a comment\n  true\n]", value: []interface{}{nil, true}, noComment: false},
 		{src: "[\n  null, / a comment\n  true\n]", expect: "unexpected character ' ' at 2:10", noComment: false},
 		{src: "[\n  null, // a comment\n  true\n]", expect: "comments not allowed at 2:9", noComment: true},
-		//              {src: "[null // a comment\n]", expect: "xxx", noComment: true},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)

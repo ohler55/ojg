@@ -30,8 +30,10 @@ const (
 	strMode          = 's'
 	escMode          = 'e'
 	uMode            = 'u'
+	key1Mode         = 'K'
 	keyMode          = 'k'
 	colonMode        = ':'
+	commaMode        = ','
 	spaceMode        = ' '
 	commentStartMode = '/'
 	commentMode      = 'c'
@@ -87,9 +89,6 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (node Node, err error) {
 		p.starts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
-		for i := len(p.stack) - 1; 0 <= i; i-- {
-			p.stack = nil
-		}
 		p.stack = p.stack[0:0]
 		p.nstack = p.nstack[:0]
 		p.starts = p.starts[:0]
@@ -138,9 +137,6 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node Node, err e
 		p.starts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
-		for i := len(p.stack) - 1; 0 <= i; i-- {
-			p.stack = nil
-		}
 		p.stack = p.stack[0:0]
 		p.nstack = p.nstack[:0]
 		p.starts = p.starts[:0]
@@ -236,13 +232,62 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				}
 			case '{':
 				p.stack = append(p.stack, '{')
-				p.mode = keyMode
+				p.mode = key1Mode
 				n := Object{}
 				p.nstack = append(p.nstack, n)
 			case '}':
 				if err := p.objectEnd(); err != nil {
 					return err
 				}
+			case '/':
+				if p.NoComment {
+					return p.newError("comments not allowed")
+				}
+				p.nextMode = p.mode
+				p.mode = commentStartMode
+			default:
+				return p.newError("unexpected character '%c'", b)
+			}
+		case commaMode:
+			switch b {
+			case ' ', '\t', '\r':
+				// ignore and continue
+			case '\n':
+				p.line++
+				p.noff = p.off
+			case 'n':
+				p.mode = nullMode
+				p.ri = 0
+			case 'f':
+				p.mode = falseMode
+				p.ri = 0
+			case 't':
+				p.mode = trueMode
+				p.ri = 0
+			case '-':
+				p.mode = negMode
+				p.num.reset()
+				p.num.neg = true
+			case '0':
+				p.mode = zeroMode
+				p.num.reset()
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				p.mode = digitMode
+				p.num.reset()
+				p.num.i = uint64(b - '0')
+			case '"':
+				p.mode = strMode
+				p.nextMode = afterMode
+				p.tmp = p.tmp[0:0]
+			case '[':
+				p.stack = append(p.stack, '[')
+				p.starts = append(p.starts, len(p.nstack))
+				p.nstack = append(p.nstack, EmptyArray)
+			case '{':
+				p.stack = append(p.stack, '{')
+				p.mode = key1Mode
+				n := Object{}
+				p.nstack = append(p.nstack, n)
 			case '/':
 				if p.NoComment {
 					return p.newError("comments not allowed")
@@ -263,7 +308,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
-					p.mode = valueMode
+					p.mode = commaMode
 				}
 			case ']':
 				if err := p.arrayEnd(); err != nil {
@@ -276,7 +321,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			default:
 				return p.newError("expected a comma or close, not '%c'", b)
 			}
-		case keyMode:
+		case key1Mode:
 			switch b {
 			case ' ', '\t', '\r':
 				continue
@@ -293,6 +338,20 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				}
 			default:
 				return p.newError("expected a string start or object close, not '%c'", b)
+			}
+		case keyMode:
+			switch b {
+			case ' ', '\t', '\r':
+				continue
+			case '\n':
+				p.line++
+				p.noff = p.off
+			case '"':
+				p.mode = strMode
+				p.nextMode = colonMode
+				p.tmp = p.tmp[0:0]
+			default:
+				return p.newError("expected a string start, not '%c'", b)
 			}
 		case colonMode:
 			switch b {
@@ -327,7 +386,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		case trueMode:
 			p.ri++
 			if "true"[p.ri] != b {
-				return p.newError("expected false")
+				return p.newError("expected true")
 			}
 			if 3 <= p.ri {
 				p.mode = afterMode
@@ -359,7 +418,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
-					p.mode = valueMode
+					p.mode = commaMode
 				}
 				p.appendNum()
 			case ']':
@@ -393,7 +452,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
-					p.mode = valueMode
+					p.mode = commaMode
 				}
 				p.appendNum()
 			case ']':
@@ -434,7 +493,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
-					p.mode = valueMode
+					p.mode = commaMode
 				}
 				p.appendNum()
 			case ']':
@@ -486,7 +545,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
-					p.mode = valueMode
+					p.mode = commaMode
 				}
 				p.appendNum()
 			case ']':
@@ -595,7 +654,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.mode = valueMode
 			}
 		}
-		if len(p.stack) == 0 && (p.mode == afterMode || p.mode == keyMode) {
+		if len(p.stack) == 0 && p.mode == afterMode {
 			p.cb(p.nstack[0])
 			p.nstack = p.nstack[:0]
 			if p.onlyOne {
@@ -608,9 +667,11 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 	if last {
 		switch p.mode {
 		case afterMode, valueMode:
-			if 0 < len(p.nstack) {
-				p.cb(p.nstack[0])
-			}
+			/*
+				if 0 < len(p.nstack) {
+					p.cb(p.nstack[0])
+				}
+			*/
 		case zeroMode, digitMode, fracMode, expMode:
 			p.appendNum()
 			if 0 < len(p.nstack) {

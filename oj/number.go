@@ -26,6 +26,7 @@ func (n *number) reset() {
 	n.i = 0
 	n.frac = 0
 	n.div = 1
+	n.exp = 0
 	n.neg = false
 	n.negExp = false
 	if 0 < len(n.bigBuf) {

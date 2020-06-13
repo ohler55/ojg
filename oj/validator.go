@@ -131,11 +131,50 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				}
 			case '{':
 				p.stack = append(p.stack, '{')
-				p.mode = keyMode
+				p.mode = key1Mode
 			case '}':
 				if err := p.objEnd(); err != nil {
 					return err
 				}
+			case '/':
+				if p.NoComment {
+					return p.newError("comments not allowed")
+				}
+				p.nextMode = p.mode
+				p.mode = commentStartMode
+			default:
+				return p.newError("unexpected character '%c'", b)
+			}
+		case commaMode:
+			switch b {
+			case ' ', '\t', '\r':
+				// ignore and continue
+			case '\n':
+				p.line++
+				p.noff = p.off
+			case 'n':
+				p.mode = nullMode
+				p.ri = 0
+			case 'f':
+				p.mode = falseMode
+				p.ri = 0
+			case 't':
+				p.mode = trueMode
+				p.ri = 0
+			case '-':
+				p.mode = negMode
+			case '0':
+				p.mode = zeroMode
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				p.mode = digitMode
+			case '"':
+				p.mode = strMode
+				p.nextMode = afterMode
+			case '[':
+				p.stack = append(p.stack, '[')
+			case '{':
+				p.stack = append(p.stack, '{')
+				p.mode = key1Mode
 			case '/':
 				if p.NoComment {
 					return p.newError("comments not allowed")
@@ -156,7 +195,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
-					p.mode = valueMode
+					p.mode = commaMode
 				}
 			case ']':
 				if err := p.arrayEnd(); err != nil {
@@ -169,7 +208,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			default:
 				return p.newError("expected a comma or close, not '%c'", b)
 			}
-		case keyMode:
+		case key1Mode:
 			switch b {
 			case ' ', '\t', '\r':
 				// keep going
@@ -180,11 +219,22 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = strMode
 				p.nextMode = colonMode
 			case '}':
-				if err := p.objEnd(); err != nil {
-					return err
-				}
+				p.objEnd()
 			default:
 				return p.newError("expected a string start or object close, not '%c'", b)
+			}
+		case keyMode:
+			switch b {
+			case ' ', '\t', '\r':
+				// keep going
+			case '\n':
+				p.line++
+				p.noff = p.off
+			case '"':
+				p.mode = strMode
+				p.nextMode = colonMode
+			default:
+				return p.newError("expected a string start, not '%c'", b)
 			}
 		case colonMode:
 			switch b {
@@ -217,7 +267,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 		case trueMode:
 			p.ri++
 			if "true"[p.ri] != b {
-				return p.newError("expected false")
+				return p.newError("expected true")
 			}
 			if 3 <= p.ri {
 				p.mode = afterMode
@@ -245,7 +295,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
-					p.mode = valueMode
+					p.mode = commaMode
 				}
 			case ']':
 				if err := p.arrayEnd(); err != nil {
@@ -274,7 +324,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
-					p.mode = valueMode
+					p.mode = commaMode
 				}
 			case ']':
 				if err := p.arrayEnd(); err != nil {
@@ -309,7 +359,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
-					p.mode = valueMode
+					p.mode = commaMode
 				}
 			case ']':
 				if err := p.arrayEnd(); err != nil {
@@ -351,22 +401,12 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
 				} else {
-					p.mode = valueMode
+					p.mode = commaMode
 				}
 			case ']':
 				if err := p.arrayEnd(); err != nil {
 					return err
 				}
-				depth := len(p.stack)
-				if depth == 0 {
-					return p.newError("too many closes")
-				}
-				depth--
-				if p.stack[depth] != '[' {
-					return p.newError("expected an array close")
-				}
-				p.stack = p.stack[0:depth]
-				p.mode = afterMode
 			case '}':
 				if err := p.objEnd(); err != nil {
 					return err
@@ -437,7 +477,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = valueMode
 			}
 		}
-		if len(p.stack) == 0 && (p.mode == afterMode || p.mode == keyMode) {
+		if len(p.stack) == 0 && p.mode == afterMode {
 			if p.OnlyOne {
 				p.mode = spaceMode
 			} else {
@@ -450,7 +490,6 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 		case afterMode, zeroMode, digitMode, fracMode, expMode, valueMode:
 			// okay
 		default:
-			//fmt.Printf("*** final mode: %c\n", p.mode)
 			return p.newError("incomplete JSON")
 		}
 	}
