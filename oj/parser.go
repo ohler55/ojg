@@ -90,9 +90,6 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (data interface{}, err e
 		p.starts = make([]int, 0, 16)
 	} else {
 		p.tmp = p.tmp[0:0]
-		for i := len(p.stack) - 1; 0 <= i; i-- {
-			p.stack = nil
-		}
 		p.stack = p.stack[:0]
 		p.starts = p.starts[:0]
 	}
@@ -279,9 +276,8 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.nextMode = colonMode
 				p.tmp = p.tmp[0:0]
 			case '}':
-				if err := p.objectEnd(); err != nil {
-					return err
-				}
+				// If in key mode } is always okay
+				_ = p.objectEnd()
 			default:
 				return p.newError("expected a string start or object close, not '%c'", b)
 			}
@@ -318,7 +314,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		case trueMode:
 			p.ri++
 			if "true"[p.ri] != b {
-				return p.newError("expected false")
+				return p.newError("expected true")
 			}
 			if 3 <= p.ri {
 				p.mode = afterMode

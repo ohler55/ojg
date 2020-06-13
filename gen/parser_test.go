@@ -146,3 +146,9 @@ func TestParseReaderCallback(t *testing.T) {
 	tt.Nil(t, v)
 	tt.Equal(t, `1 [2] {"x":3} true false 123`, string(results))
 }
+
+func TestParseBadArg(t *testing.T) {
+	var p gen.Parser
+	_, err := p.Parse([]byte(callbackJSON), "bad")
+	tt.NotNil(t, err)
+}
