@@ -170,7 +170,8 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 			return o.buildJSON(data, depth)
 		}
 		if 0 < len(o.CreateKey) {
-			return o.buildJSON(alt.Decompose(data), depth)
+			ao := alt.Options{CreateKey: o.CreateKey, OmitNil: o.OmitNil, FullTypePath: o.FullTypePath}
+			return o.buildJSON(alt.Decompose(data, &ao), depth)
 		} else {
 			o.buildString(fmt.Sprintf("%v", td))
 		}
@@ -244,7 +245,7 @@ func (o *Options) buildTime(t time.Time) {
 		if 0 < nano {
 			o.buf = append(o.buf, []byte(fmt.Sprintf("%d.%09d", secs, nano-(secs*int64(time.Second))))...)
 		} else {
-			o.buf = append(o.buf, []byte(fmt.Sprintf("%d.%09d", secs, -nano-(secs*int64(time.Second))))...)
+			o.buf = append(o.buf, []byte(fmt.Sprintf("%d.%09d", secs, -(nano-(secs*int64(time.Second)))))...)
 		}
 	default:
 		o.buf = append(o.buf, '"')
@@ -261,13 +262,13 @@ func (o *Options) buildArray(n gen.Array, depth int) (err error) {
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		is := spaces[0:x]
 		d2 := depth + 1
 		x = d2*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		cs := spaces[0:x]
 
@@ -305,13 +306,13 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) (err error) {
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		is := spaces[0:x]
 		d2 := depth + 1
 		x = d2*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		cs := spaces[0:x]
 
@@ -345,16 +346,17 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) (err error) {
 
 func (o *Options) buildObject(n gen.Object, depth int) (err error) {
 	o.buf = append(o.buf, '{')
+	first := true
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		is := spaces[0:x]
 		d2 := depth + 1
 		x = d2*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		cs := spaces[0:x]
 		if o.Sort {
@@ -363,12 +365,14 @@ func (o *Options) buildObject(n gen.Object, depth int) (err error) {
 				keys = append(keys, k)
 			}
 			sort.Strings(keys)
-			for i, k := range keys {
+			for _, k := range keys {
 				m := n[k]
 				if m == nil && o.OmitNil {
 					continue
 				}
-				if 0 < i {
+				if first {
+					first = false
+				} else {
 					o.buf = append(o.buf, ',')
 				}
 				o.buf = append(o.buf, []byte(cs)...)
@@ -382,7 +386,6 @@ func (o *Options) buildObject(n gen.Object, depth int) (err error) {
 				}
 			}
 		} else {
-			first := true
 			for k, m := range n {
 				if m == nil && o.OmitNil {
 					continue
@@ -411,12 +414,14 @@ func (o *Options) buildObject(n gen.Object, depth int) (err error) {
 				keys = append(keys, k)
 			}
 			sort.Strings(keys)
-			for i, k := range keys {
+			for _, k := range keys {
 				m := n[k]
 				if m == nil && o.OmitNil {
 					continue
 				}
-				if 0 < i {
+				if first {
+					first = false
+				} else {
 					o.buf = append(o.buf, ',')
 				}
 				o.buildString(k)
@@ -428,7 +433,6 @@ func (o *Options) buildObject(n gen.Object, depth int) (err error) {
 				}
 			}
 		} else {
-			first := true
 			for k, m := range n {
 				if m == nil && o.OmitNil {
 					continue
@@ -455,16 +459,17 @@ func (o *Options) buildObject(n gen.Object, depth int) (err error) {
 
 func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err error) {
 	o.buf = append(o.buf, '{')
+	first := true
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		is := spaces[0:x]
 		d2 := depth + 1
 		x = d2*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		cs := spaces[0:x]
 		if o.Sort {
@@ -473,12 +478,14 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err er
 				keys = append(keys, k)
 			}
 			sort.Strings(keys)
-			for i, k := range keys {
+			for _, k := range keys {
 				m := n[k]
 				if m == nil && o.OmitNil {
 					continue
 				}
-				if 0 < i {
+				if first {
+					first = false
+				} else {
 					o.buf = append(o.buf, ',')
 				}
 				o.buf = append(o.buf, []byte(cs)...)
@@ -492,7 +499,6 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err er
 				}
 			}
 		} else {
-			first := true
 			for k, m := range n {
 				if m == nil && o.OmitNil {
 					continue
@@ -521,12 +527,14 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err er
 				keys = append(keys, k)
 			}
 			sort.Strings(keys)
-			for i, k := range keys {
+			for _, k := range keys {
 				m := n[k]
 				if m == nil && o.OmitNil {
 					continue
 				}
-				if 0 < i {
+				if first {
+					first = false
+				} else {
 					o.buf = append(o.buf, ',')
 				}
 				o.buildString(k)
@@ -538,7 +546,6 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err er
 				}
 			}
 		} else {
-			first := true
 			for k, m := range n {
 				if m == nil && o.OmitNil {
 					continue

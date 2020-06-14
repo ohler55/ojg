@@ -110,7 +110,8 @@ func (o *Options) cbuildJSON(data interface{}, depth int) (err error) {
 			return o.cbuildJSON(data, depth)
 		}
 		if 0 < len(o.CreateKey) {
-			return o.cbuildJSON(alt.Decompose(data), depth)
+			ao := alt.Options{CreateKey: o.CreateKey, OmitNil: o.OmitNil, FullTypePath: o.FullTypePath}
+			return o.cbuildJSON(alt.Decompose(data, &ao), depth)
 		} else {
 			o.buildString(fmt.Sprintf("%v", td))
 		}
@@ -132,12 +133,12 @@ func (o *Options) cbuildArray(n gen.Array, depth int) (err error) {
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		is = spaces[0:x]
 		x = d2*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		cs = spaces[0:x]
 	}
@@ -171,12 +172,12 @@ func (o *Options) cbuildSimpleArray(n []interface{}, depth int) (err error) {
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		is = spaces[0:x]
 		x = d2*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		cs = spaces[0:x]
 	}
@@ -206,15 +207,16 @@ func (o *Options) cbuildObject(n gen.Object, depth int) (err error) {
 	d2 := depth + 1
 	var is string
 	var cs string
+	first := true
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		is = spaces[0:x]
 		x = d2*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		cs = spaces[0:x]
 	}
@@ -224,12 +226,14 @@ func (o *Options) cbuildObject(n gen.Object, depth int) (err error) {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
-		for i, k := range keys {
+		for _, k := range keys {
 			m := n[k]
 			if m == nil && o.OmitNil {
 				continue
 			}
-			if 0 < i {
+			if first {
+				first = false
+			} else {
 				o.buf = append(o.buf, o.SyntaxColor...)
 				o.buf = append(o.buf, ',')
 			}
@@ -249,7 +253,6 @@ func (o *Options) cbuildObject(n gen.Object, depth int) (err error) {
 			}
 		}
 	} else {
-		first := true
 		for k, m := range n {
 			if m == nil && o.OmitNil {
 				continue
@@ -290,15 +293,16 @@ func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) (err e
 	d2 := depth + 1
 	var is string
 	var cs string
+	first := true
 	if 0 < o.Indent {
 		x := depth*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		is = spaces[0:x]
 		x = d2*o.Indent + 1
 		if len(spaces) < x {
-			x = depth*o.Indent + 1
+			x = len(spaces)
 		}
 		cs = spaces[0:x]
 	}
@@ -308,12 +312,14 @@ func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) (err e
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)
-		for i, k := range keys {
+		for _, k := range keys {
 			m := n[k]
 			if m == nil && o.OmitNil {
 				continue
 			}
-			if 0 < i {
+			if first {
+				first = false
+			} else {
 				o.buf = append(o.buf, o.SyntaxColor...)
 				o.buf = append(o.buf, ',')
 			}
@@ -333,7 +339,6 @@ func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) (err e
 			}
 		}
 	} else {
-		first := true
 		for k, m := range n {
 			if m == nil && o.OmitNil {
 				continue
