@@ -19,21 +19,6 @@ const callbackJSON = `
 true false 123
 `
 
-type shortReader struct {
-	max     int
-	pos     int
-	content []byte
-}
-
-func (r *shortReader) Read(p []byte) (n int, err error) {
-	start := r.pos
-	r.pos += len(p)
-	if r.max < r.pos {
-		return 0, fmt.Errorf("fail now")
-	}
-	return copy(p, r.content[start:]), nil
-}
-
 func TestParserParseString(t *testing.T) {
 	for i, d := range []data{
 		{src: "null", value: nil},
@@ -229,7 +214,7 @@ func TestParseBadArg(t *testing.T) {
 
 func TestParserParseReaderErrRead(t *testing.T) {
 	var p oj.Parser
-	r := shortReader{max: 20, content: []byte(callbackJSON)}
+	r := tt.ShortReader{Max: 20, Content: []byte(callbackJSON)}
 	_, err := p.ParseReader(&r)
 	tt.NotNil(t, err)
 }
@@ -245,7 +230,7 @@ func TestParserParseReaderErr(t *testing.T) {
 	_, err := p.ParseReader(iotest.DataErrReader(strings.NewReader("[1,2}")))
 	tt.NotNil(t, err)
 
-	r := shortReader{max: 5000, content: []byte("[ 123" + strings.Repeat(",  123", 120) + "]")}
+	r := tt.ShortReader{Max: 5000, Content: []byte("[ 123" + strings.Repeat(",  123", 120) + "]")}
 	_, err = p.ParseReader(&r)
 	tt.NotNil(t, err)
 }

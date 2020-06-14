@@ -163,6 +163,26 @@ func TestWrite(t *testing.T) {
 	err = oj.Write(&b, strings.Repeat("Xyz ", 63)+"\U0001D122", 2)
 	tt.Nil(t, err)
 	tt.Equal(t, 258, len(b.String()))
+
+	// Make sure a comma separator is added in unsorted-unindent mode.
+	b.Reset()
+	err = oj.Write(&b, map[string]interface{}{"t": true, "f": false})
+	tt.Nil(t, err)
+	tt.Equal(t, 20, len(b.String()))
+	b.Reset()
+	err = oj.Write(&b, gen.Object{"t": gen.True, "f": gen.False})
+	tt.Nil(t, err)
+	tt.Equal(t, 20, len(b.String()))
+
+	b.Reset()
+	opt.Sort = true
+	err = oj.Write(&b, map[string]interface{}{"t": true, "f": false}, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 20, len(b.String()))
+	b.Reset()
+	err = oj.Write(&b, gen.Object{"t": gen.True, "f": gen.False}, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 20, len(b.String()))
 }
 
 func TestWriteWide(t *testing.T) {
@@ -203,26 +223,30 @@ func TestWriteShort(t *testing.T) {
 
 	obj := map[string]interface{}{"t": true, "n": nil}
 	sobj := gen.Object{"t": gen.True, "n": nil}
-	err = oj.Write(&shortWriter{max: 7}, obj, &opt)
-	tt.NotNil(t, err)
-	err = oj.Write(&shortWriter{max: 7}, sobj, &opt)
-	tt.NotNil(t, err)
+	opt.Indent = 0
+	for i := 2; i < 19; i += 2 {
+		err = oj.Write(&shortWriter{max: i}, obj, &opt)
+		tt.NotNil(t, err)
+		err = oj.Write(&shortWriter{max: i}, sobj, &opt)
+		tt.NotNil(t, err)
 
-	opt.Sort = true
-	err = oj.Write(&shortWriter{max: 7}, obj, &opt)
-	tt.NotNil(t, err)
-	err = oj.Write(&shortWriter{max: 7}, sobj, &opt)
-	tt.NotNil(t, err)
-
+		opt.Sort = true
+		err = oj.Write(&shortWriter{max: i}, obj, &opt)
+		tt.NotNil(t, err)
+		err = oj.Write(&shortWriter{max: i}, sobj, &opt)
+		tt.NotNil(t, err)
+	}
 	opt.Indent = 2
-	err = oj.Write(&shortWriter{max: 11}, obj, &opt)
-	tt.NotNil(t, err)
-	err = oj.Write(&shortWriter{max: 11}, sobj, &opt)
-	tt.NotNil(t, err)
+	for i := 2; i < 19; i += 2 {
+		err = oj.Write(&shortWriter{max: i}, obj, &opt)
+		tt.NotNil(t, err)
+		err = oj.Write(&shortWriter{max: i}, sobj, &opt)
+		tt.NotNil(t, err)
 
-	opt.Sort = false
-	err = oj.Write(&shortWriter{max: 11}, obj, &opt)
-	tt.NotNil(t, err)
-	err = oj.Write(&shortWriter{max: 11}, sobj, &opt)
-	tt.NotNil(t, err)
+		opt.Sort = false
+		err = oj.Write(&shortWriter{max: i}, obj, &opt)
+		tt.NotNil(t, err)
+		err = oj.Write(&shortWriter{max: i}, sobj, &opt)
+		tt.NotNil(t, err)
+	}
 }

@@ -172,7 +172,7 @@ func TestValidatorValidateReaderBOM(t *testing.T) {
 
 func TestValidatorValidateReaderErrRead(t *testing.T) {
 	var v oj.Validator
-	r := shortReader{max: 20, content: []byte(callbackJSON)}
+	r := tt.ShortReader{Max: 20, Content: []byte(callbackJSON)}
 	err := v.ValidateReader(&r)
 	tt.NotNil(t, err)
 }
@@ -188,7 +188,7 @@ func TestValidatorValidateReaderErr(t *testing.T) {
 	err := v.ValidateReader(iotest.DataErrReader(strings.NewReader("[1,2}")))
 	tt.NotNil(t, err)
 
-	r := shortReader{max: 5000, content: []byte("[ 123" + strings.Repeat(",  123", 120) + "]")}
+	r := tt.ShortReader{Max: 5000, Content: []byte("[ 123" + strings.Repeat(",  123", 120) + "]")}
 	err = v.ValidateReader(&r)
 	tt.NotNil(t, err)
 }

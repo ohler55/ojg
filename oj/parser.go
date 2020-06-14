@@ -164,6 +164,11 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node interface{}
 	}
 	for {
 		if err = p.parseBuffer(buf, eof); err != nil {
+			for i := len(p.stack) - 1; 0 <= i; i-- {
+				p.stack = nil
+			}
+			p.stack = p.stack[:0]
+
 			return
 		}
 		if eof {
@@ -328,7 +333,6 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			case '}':
 				// If in key mode } is always okay
 				_ = p.objectEnd()
-				// TBD except after comma
 			default:
 				return p.newError("expected a string start or object close, not '%c'", b)
 			}
@@ -655,6 +659,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		}
 		if len(p.starts) == 0 && p.mode == afterMode {
 			p.cb(p.stack[0])
+			p.stack[0] = nil
 			p.stack = p.stack[:0]
 			if p.onlyOne {
 				p.mode = spaceMode
