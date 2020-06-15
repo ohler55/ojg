@@ -39,10 +39,10 @@ parser and builder in the oj package except for gen types.
 
 Jp
 
-- JSONPath
-- get
-- set
-- reflection
+Package jp provides JSONPath implementation that operations on simple go
+types, generic (gen package), and public struct with public members. Get, set,
+and delete operations can be evaluated on data. When needed reflection is used
+to follow a path.
 
 Alt
 

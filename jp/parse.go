@@ -567,7 +567,7 @@ func (p *parser) readEqOp() (o *op, err error) {
 		}
 		token = append(token, b)
 		if b == '-' && 1 < len(token) {
-			err = fmt.Errorf("%q is not a valid operation", token)
+			err = fmt.Errorf("'%s' is not a valid operation", token)
 			return
 		}
 		p.pos++
@@ -578,7 +578,7 @@ func (p *parser) readEqOp() (o *op, err error) {
 	}
 	o = opMap[string(token)]
 	if o == nil {
-		err = fmt.Errorf("%q is not a valid operation", token)
+		err = fmt.Errorf("'%s' is not a valid operation", token)
 	}
 	return
 }

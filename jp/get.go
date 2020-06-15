@@ -2,7 +2,9 @@
 
 package jp
 
-import "github.com/ohler55/ojg/gen"
+import (
+	"github.com/ohler55/ojg/gen"
+)
 
 const (
 	fragIndexMask    = 0x0000ffff

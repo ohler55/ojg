@@ -54,11 +54,6 @@ type precBuf struct {
 	buf  []byte
 }
 
-// String returns the op name.
-func (o *op) String() string {
-	return o.name
-}
-
 // Script represents JSON Path script used in filters as well.
 type Script struct {
 	template []interface{}
@@ -73,17 +68,14 @@ func NewScript(str string) (s *Script, err error) {
 	}
 	p.pos = 1
 	eq, err := p.readEquation()
-	if err == nil && p.pos < len(p.buf) {
-		err = fmt.Errorf("parse error")
-	}
 	if err != nil {
 		return nil, fmt.Errorf("%s at %d in %s", err, p.pos, p.buf)
 	}
 	return eq.Script(), nil
 }
 
-// Append a fragment string representation of the fragment to the buffer
-// then returning the expanded buffer.
+// Append a string representation of the fragment to the buffer and then
+// return the expanded buffer.
 func (s *Script) Append(buf []byte) []byte {
 	buf = append(buf, '(')
 	if 0 < len(s.template) {
@@ -235,9 +227,35 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 			}
 			switch o.code {
 			case eq.code:
-				s.stack[i] = left == right
+				if left == right {
+					s.stack[i] = true
+				} else {
+					s.stack[i] = false
+					switch tl := left.(type) {
+					case int64:
+						if tr, ok := right.(float64); ok {
+							s.stack[i] = ok && float64(tl) == tr
+						}
+					case float64:
+						tr, ok := right.(int64)
+						s.stack[i] = ok && tl == float64(tr)
+					}
+				}
 			case neq.code:
-				s.stack[i] = left != right
+				if left == right {
+					s.stack[i] = false
+				} else {
+					s.stack[i] = true
+					switch tl := left.(type) {
+					case int64:
+						if tr, ok := right.(float64); ok {
+							s.stack[i] = ok && float64(tl) != tr
+						}
+					case float64:
+						tr, ok := right.(int64)
+						s.stack[i] = ok && tl != float64(tr)
+					}
+				}
 			case lt.code:
 				switch tl := left.(type) {
 				case int64:
@@ -454,6 +472,8 @@ func (s *Script) appendOp(o *op, left, right interface{}) (pb *precBuf) {
 
 func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 	switch tv := v.(type) {
+	case nil:
+		buf = append(buf, "null"...)
 	case string:
 		buf = append(buf, '\'')
 		buf = append(buf, tv...)

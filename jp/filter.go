@@ -11,14 +11,13 @@ type Filter struct {
 
 func NewFilter(str string) (f *Filter, err error) {
 	p := &parser{buf: []byte(str)}
-	if len(p.buf) == 0 || p.buf[0] != '(' {
-		return nil, fmt.Errorf("a filter must start with a '('")
+	if len(p.buf) <= 5 ||
+		p.buf[0] != '[' || p.buf[1] != '?' || p.buf[2] != '(' ||
+		p.buf[len(p.buf)-2] != ')' || p.buf[len(p.buf)-1] != ']' {
+		return nil, fmt.Errorf("a filter must start with a '[?(' and end with ')]'")
 	}
-	p.pos = 1
+	p.buf = p.buf[3 : len(p.buf)-1]
 	eq, err := p.readEquation()
-	if err == nil && p.pos < len(p.buf) {
-		err = fmt.Errorf("parse error")
-	}
 	if err != nil {
 		return nil, fmt.Errorf("%s at %d in %s", err, p.pos, p.buf)
 	}

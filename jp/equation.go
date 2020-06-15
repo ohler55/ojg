@@ -3,7 +3,6 @@
 package jp
 
 import (
-	"fmt"
 	"strconv"
 )
 
@@ -167,32 +166,14 @@ func (s *Equation) Append(buf []byte, parens bool) []byte {
 
 func (s *Equation) appendValue(buf []byte, v interface{}) []byte {
 	switch tv := v.(type) {
+	case nil:
+		buf = append(buf, "null"...)
 	case string:
 		buf = append(buf, '\'')
 		buf = append(buf, tv...)
 		buf = append(buf, '\'')
 	case int64:
 		buf = append(buf, strconv.FormatInt(tv, 10)...)
-	case int:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case int8:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case int16:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case int32:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case uint:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case uint8:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case uint16:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case uint32:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case uint64:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case float32:
-		buf = append(buf, strconv.FormatFloat(float64(tv), 'g', -1, 32)...)
 	case float64:
 		buf = append(buf, strconv.FormatFloat(tv, 'g', -1, 64)...)
 	case bool:
@@ -203,11 +184,6 @@ func (s *Equation) appendValue(buf []byte, v interface{}) []byte {
 		}
 	case Expr:
 		buf = tv.Append(buf)
-
-	case fmt.Stringer:
-		buf = append(buf, tv.String()...)
-	default:
-		buf = append(buf, fmt.Sprintf("%v", v)...)
 	}
 	return buf
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
@@ -19,7 +20,7 @@ func scriptBenchData(size int64) interface{} {
 	return list
 }
 
-func TestScriptEval(t *testing.T) {
+func TestScriptBasicEval(t *testing.T) {
 	data := []interface{}{
 		map[string]interface{}{
 			"a": 1,
@@ -70,6 +71,9 @@ func TestScriptParse(t *testing.T) {
 		{src: "((@.x == 3) || (@.y > 5))", expect: "(@.x == 3 || @.y > 5)"},
 		{src: "(@.x < 3 && @.x > 1 || @.z == 3)", expect: "(@.x < 3 && @.x > 1 || @.z == 3)"},
 		{src: "(!(3 == @.x))", expect: "(!(3 == @.x))"},
+
+		{src: "@.x == 4", err: "a script must start with a '('"},
+		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 7 in (@.x ++ 4)"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
@@ -85,11 +89,84 @@ func TestScriptParse(t *testing.T) {
 	}
 }
 
-func TestScriptDev(t *testing.T) {
-	src := "(!(@.x == 2))"
-	s, err := jp.NewScript(src)
+func TestScriptMatch(t *testing.T) {
+	s, err := jp.NewScript("(@.x == 3)")
 	tt.Nil(t, err)
-	tt.Equal(t, src, s.String())
+	tt.Equal(t, true, s.Match(map[string]interface{}{"x": 3}))
+	tt.Equal(t, true, s.Match(gen.Object{"x": gen.Int(3)}))
+}
+
+func TestScriptNormalizeEval(t *testing.T) {
+	s, err := jp.NewScript("(@ == 3)")
+	tt.Nil(t, err)
+	for _, v := range []interface{}{
+		int8(3),
+		int16(3),
+		int32(3),
+		int64(3),
+		uint(3),
+		uint8(3),
+		uint16(3),
+		uint32(3),
+		uint64(3),
+		float32(3.0),
+		3.0,
+		gen.Int(3),
+		gen.Float(3.0),
+	} {
+		result := s.Eval([]interface{}{}, []interface{}{v})
+		tt.Equal(t, 1, len(result), fmt.Sprintf("%T %v", v, v))
+	}
+	s, err = jp.NewScript("(@ == 'x')")
+	tt.Nil(t, err)
+	result := s.Eval([]interface{}{}, []interface{}{"x"})
+	tt.Equal(t, 1, len(result), "string normalize")
+	result = s.Eval([]interface{}{}, gen.Array{gen.String("x")})
+	tt.Equal(t, 1, len(result), "gen.String normalize")
+
+	s, err = jp.NewScript("(@ == true)")
+	tt.Nil(t, err)
+	result = s.Eval([]interface{}{}, gen.Array{gen.True})
+	tt.Equal(t, 1, len(result), "bool normalize")
+}
+
+func TestScriptNonListEval(t *testing.T) {
+	s, err := jp.NewScript("(@ == 3)")
+	tt.Nil(t, err)
+	result := s.Eval([]interface{}{}, "bad")
+	tt.Equal(t, 0, len(result))
+}
+
+type edata struct {
+	src     string
+	value   interface{}
+	noMatch bool
+}
+
+func TestScriptEval(t *testing.T) {
+	for i, d := range []edata{
+		{src: "(@ == 3)", value: int64(3)},
+		{src: "(@ == 3)", value: 3.0},
+		{src: "(@ == 3.0)", value: int64(3)},
+		{src: "(@ == 'abc')", value: "abc"},
+		{src: "(@ != 3)", value: int64(3), noMatch: true},
+		{src: "(@ != 3)", value: int64(4)},
+		{src: "(@ != 3)", value: 3.1},
+		{src: "(@ != 3.0)", value: int64(4)},
+		{src: "(@ != 'abc')", value: "xyz"},
+	} {
+		if testing.Verbose() {
+			fmt.Printf("... %d: %s in %s\n", i, d.src, oj.JSON(d.value))
+		}
+		s, err := jp.NewScript(d.src)
+		tt.Nil(t, err)
+		result := s.Eval([]interface{}{}, []interface{}{d.value})
+		if d.noMatch {
+			tt.Equal(t, 0, len(result), d.src, " in ", d.value)
+		} else {
+			tt.Equal(t, 1, len(result), d.src, " in ", d.value)
+		}
+	}
 }
 
 func BenchmarkOjScriptDev(b *testing.B) {
