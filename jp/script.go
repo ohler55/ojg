@@ -100,9 +100,7 @@ func (s *Script) Append(buf []byte) []byte {
 				copy(bstack[i+1:], bstack[i+int(o.cnt)+1:])
 			}
 		}
-		if pb, _ := bstack[0].(*precBuf); pb == nil {
-			buf = s.appendValue(buf, bstack[0], 0)
-		} else {
+		if pb, _ := bstack[0].(*precBuf); pb != nil {
 			buf = append(buf, pb.buf...)
 		}
 	}
@@ -257,60 +255,88 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 					}
 				}
 			case lt.code:
+				s.stack[i] = false
 				switch tl := left.(type) {
 				case int64:
-					tr, ok := right.(int64)
-					s.stack[i] = ok && tl < tr
+					switch tr := right.(type) {
+					case int64:
+						s.stack[i] = tl < tr
+					case float64:
+						s.stack[i] = float64(tl) < tr
+					}
 				case float64:
-					tr, ok := right.(float64)
-					s.stack[i] = ok && tl < tr
+					switch tr := right.(type) {
+					case int64:
+						s.stack[i] = tl < float64(tr)
+					case float64:
+						s.stack[i] = tl < tr
+					}
 				case string:
 					tr, ok := right.(string)
 					s.stack[i] = ok && tl < tr
-				default:
-					s.stack[i] = false
 				}
 			case gt.code:
+				s.stack[i] = false
 				switch tl := left.(type) {
 				case int64:
-					tr, ok := right.(int64)
-					s.stack[i] = ok && tl > tr
+					switch tr := right.(type) {
+					case int64:
+						s.stack[i] = tl > tr
+					case float64:
+						s.stack[i] = float64(tl) > tr
+					}
 				case float64:
-					tr, ok := right.(float64)
-					s.stack[i] = ok && tl > tr
+					switch tr := right.(type) {
+					case int64:
+						s.stack[i] = tl > float64(tr)
+					case float64:
+						s.stack[i] = tl > tr
+					}
 				case string:
 					tr, ok := right.(string)
 					s.stack[i] = ok && tl > tr
-				default:
-					s.stack[i] = false
 				}
 			case lte.code:
+				s.stack[i] = false
 				switch tl := left.(type) {
 				case int64:
-					tr, ok := right.(int64)
-					s.stack[i] = ok && tl <= tr
+					switch tr := right.(type) {
+					case int64:
+						s.stack[i] = tl <= tr
+					case float64:
+						s.stack[i] = float64(tl) <= tr
+					}
 				case float64:
-					tr, ok := right.(float64)
-					s.stack[i] = ok && tl <= tr
+					switch tr := right.(type) {
+					case int64:
+						s.stack[i] = tl <= float64(tr)
+					case float64:
+						s.stack[i] = tl <= tr
+					}
 				case string:
 					tr, ok := right.(string)
 					s.stack[i] = ok && tl <= tr
-				default:
-					s.stack[i] = false
 				}
 			case gte.code:
+				s.stack[i] = false
 				switch tl := left.(type) {
 				case int64:
-					tr, ok := right.(int64)
-					s.stack[i] = ok && tl >= tr
+					switch tr := right.(type) {
+					case int64:
+						s.stack[i] = tl >= tr
+					case float64:
+						s.stack[i] = float64(tl) >= tr
+					}
 				case float64:
-					tr, ok := right.(float64)
-					s.stack[i] = ok && tl >= tr
+					switch tr := right.(type) {
+					case int64:
+						s.stack[i] = tl >= float64(tr)
+					case float64:
+						s.stack[i] = tl >= tr
+					}
 				case string:
 					tr, ok := right.(string)
 					s.stack[i] = ok && tl >= tr
-				default:
-					s.stack[i] = false
 				}
 			case or.code:
 				// If one is a boolean true then true.
@@ -318,7 +344,7 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 				rb, _ := right.(bool)
 				s.stack[i] = lb || rb
 			case and.code:
-				// If both is a boolean true then true else false.
+				// If both are a boolean true then true else false.
 				lb, _ := left.(bool)
 				rb, _ := right.(bool)
 				s.stack[i] = lb && rb
@@ -326,6 +352,7 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 				lb, _ := left.(bool)
 				s.stack[i] = !lb
 			case add.code:
+				s.stack[i] = nil
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
@@ -333,8 +360,6 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 						s.stack[i] = tl + tr
 					case float64:
 						s.stack[i] = float64(tl) + tr
-					default:
-						s.stack[i] = nil
 					}
 				case float64:
 					switch tr := right.(type) {
@@ -342,19 +367,14 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 						s.stack[i] = tl + float64(tr)
 					case float64:
 						s.stack[i] = tl + tr
-					default:
-						s.stack[i] = nil
 					}
 				case string:
 					if tr, ok := right.(string); ok {
 						s.stack[i] = tl + tr
-					} else {
-						s.stack[i] = nil
 					}
-				default:
-					s.stack[i] = false
 				}
 			case sub.code:
+				s.stack[i] = nil
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
@@ -362,8 +382,6 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 						s.stack[i] = tl - tr
 					case float64:
 						s.stack[i] = float64(tl) - tr
-					default:
-						s.stack[i] = nil
 					}
 				case float64:
 					switch tr := right.(type) {
@@ -371,13 +389,10 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 						s.stack[i] = tl - float64(tr)
 					case float64:
 						s.stack[i] = tl - tr
-					default:
-						s.stack[i] = nil
 					}
-				default:
-					s.stack[i] = false
 				}
 			case mult.code:
+				s.stack[i] = nil
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
@@ -385,8 +400,6 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 						s.stack[i] = tl * tr
 					case float64:
 						s.stack[i] = float64(tl) * tr
-					default:
-						s.stack[i] = nil
 					}
 				case float64:
 					switch tr := right.(type) {
@@ -394,54 +407,38 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 						s.stack[i] = tl * float64(tr)
 					case float64:
 						s.stack[i] = tl * tr
-					default:
-						s.stack[i] = nil
 					}
-				default:
-					s.stack[i] = false
 				}
 			case divide.code:
+				s.stack[i] = nil
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
 					case int64:
 						if tr != 0 {
 							s.stack[i] = tl / tr
-						} else {
-							s.stack[i] = nil
 						}
 					case float64:
 						if tr != 0.0 {
 							s.stack[i] = float64(tl) / tr
-						} else {
-							s.stack[i] = nil
+
 						}
-					default:
-						s.stack[i] = nil
 					}
 				case float64:
 					switch tr := right.(type) {
 					case int64:
 						if tr != 0 {
 							s.stack[i] = tl / float64(tr)
-						} else {
-							s.stack[i] = nil
 						}
 					case float64:
 						if tr != 0.0 {
 							s.stack[i] = tl / tr
-						} else {
-							s.stack[i] = nil
 						}
-					default:
-						s.stack[i] = nil
 					}
-				default:
-					s.stack[i] = false
 				}
-				if i+int(o.cnt)+1 <= len(s.stack) {
-					copy(s.stack[i+1:], s.stack[i+int(o.cnt)+1:])
-				}
+			}
+			if i+int(o.cnt)+1 <= len(s.stack) {
+				copy(s.stack[i+1:], s.stack[i+int(o.cnt)+1:])
 			}
 		}
 		if b, _ := s.stack[0].(bool); b {
@@ -482,24 +479,27 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 		buf = append(buf, strconv.FormatInt(tv, 10)...)
 	case int:
 		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case int8:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case int16:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case int32:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case uint:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case uint8:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case uint16:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case uint32:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case uint64:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-	case float32:
-		buf = append(buf, strconv.FormatFloat(float64(tv), 'g', -1, 32)...)
+		/*
+			// TBD is there any way to get here?
+			case int8:
+				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+			case int16:
+				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+			case int32:
+				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+			case uint:
+				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+			case uint8:
+				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+			case uint16:
+				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+			case uint32:
+				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+			case uint64:
+				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+			case float32:
+				buf = append(buf, strconv.FormatFloat(float64(tv), 'g', -1, 32)...)
+		*/
 	case float64:
 		buf = append(buf, strconv.FormatFloat(tv, 'g', -1, 64)...)
 	case bool:
@@ -518,11 +518,13 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 		} else {
 			buf = append(buf, tv.buf...)
 		}
-
-	case fmt.Stringer:
-		buf = append(buf, tv.String()...)
-	default:
-		buf = append(buf, fmt.Sprintf("%v", v)...)
+		/*
+			// TBD is there any way to get here?
+			case fmt.Stringer:
+				buf = append(buf, tv.String()...)
+			default:
+				buf = append(buf, fmt.Sprintf("%v", v)...)
+		*/
 	}
 	return buf
 }

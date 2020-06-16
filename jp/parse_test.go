@@ -28,7 +28,9 @@ func TestParse(t *testing.T) {
 		{src: "abc.def", expect: "abc.def"},
 		{src: "abc.*.def", expect: "abc.*.def"},
 		{src: "@..", expect: "@.."},
+		{src: "@..x.y", expect: "@..x.y"},
 		{src: "@.*", expect: "@.*"},
+		{src: "[1,2]", expect: "[1,2]"},
 		{src: "abc..def", expect: "abc..def"},
 		{src: "abc[*].def", expect: "abc[*].def"},
 		{src: "abc[0].def", expect: "abc[0].def"},
@@ -53,6 +55,54 @@ func TestParse(t *testing.T) {
 		{src: "$[1,'a',2,'b']", expect: "$[1,'a',2,'b']"},
 		{src: "$[ 1, 'a' , 2 ,'b' ]", expect: "$[1,'a',2,'b']"},
 		{src: "$[?(@.x == 'abc')]", expect: "$[?(@.x == 'abc')]"},
+		{src: `['a\\b']`, expect: `['a\\b']`},
+
+		{src: "$[1,'a']  ", err: "parse error at 9 in $[1,'a']  "},
+		{src: "abc.", err: "not terminated at 5 in abc."},
+		{src: "abc.+", err: "an expression fragment can not start with a '+' at 6 in abc.+"},
+		{src: "abc..+", err: "parse error at 6 in abc..+"},
+		{src: "[", err: "not terminated at 2 in ["},
+		{src: "[**", err: "not terminated at 4 in [**"},
+		{src: "['x'z]", err: "invalid bracket fragment at 6 in ['x'z]"},
+		{src: "[(x)]", err: "scripts not implemented yet at 3 in [(x)]"},
+		{src: "[-x]", err: "expected a number at 4 in [-x]"},
+		{src: "[0x]", err: "invalid bracket fragment at 4 in [0x]"},
+		{src: "[x]", err: "parse error at 3 in [x]"},
+		{src: "[?(@.x == 1.2e", err: "expected a number at 15 in [?(@.x == 1.2e"},
+		{src: "[?(@.x == 1e", err: "expected a number at 13 in [?(@.x == 1e"},
+		{src: "[?(@.x == 1e+", err: "expected a number at 14 in [?(@.x == 1e+"},
+		{src: "[-", err: "expected a number at 3 in [-"},
+		{src: "[1", err: "invalid bracket fragment at 3 in [1"},
+		{src: "[1,", err: "not terminated at 4 in [1,"},
+		{src: "[:", err: "not terminated at 3 in [:"},
+		{src: "[::", err: "not terminated at 4 in [::"},
+		{src: "[:-x", err: "invalid slice syntax at 5 in [:-x"},
+		{src: "[1:-x", err: "invalid slice syntax at 6 in [1:-x"},
+		{src: "[1::-x", err: "expected a number at 7 in [1::-x"},
+		{src: "[1:2:", err: "not terminated at 6 in [1:2:"},
+		{src: "[1:2:-x", err: "expected a number at 8 in [1:2:-x"},
+		{src: "[2,3:", err: "invalid union syntax at 6 in [2,3:"},
+		{src: "[2,3x", err: "invalid union syntax at 6 in [2,3x"},
+		{src: "[2,-", err: "expected a number at 5 in [2,-"},
+		{src: "[2,x", err: "invalid union syntax at 5 in [2,x"},
+		{src: "[?", err: "not terminated at 3 in [?"},
+		{src: "[?(", err: "not terminated at 4 in [?("},
+		{src: "[?x", err: "expected a '(' in filter at 4 in [?x"},
+		{src: "[?(@.x == 3)", err: "not terminated at 13 in [?(@.x == 3)"},
+		{src: "[?(!(@.x == -x)", err: `strconv.ParseInt: parsing "-": invalid syntax at 14 in [?(!(@.x == -x)`},
+		{src: "[?(!(@.x == 1)]", err: "not terminated at 15 in [?(!(@.x == 1)]"},
+		{src: "[?(- == 1)]", err: `strconv.ParseInt: parsing "-": invalid syntax at 5 in [?(- == 1)]`},
+		{src: "[?(2 ++ 1)]", err: "'++' is not a valid operation at 8 in [?(2 ++ 1)]"},
+		{src: "[?(2 + -)]", err: `strconv.ParseInt: parsing "-": invalid syntax at 9 in [?(2 + -)]`},
+		{src: "[?(2 + 1 ++)]", err: `'++' is not a valid operation at 12 in [?(2 + 1 ++)]`},
+		{src: "[?(2 + 1 + -)]", err: `strconv.ParseInt: parsing "-": invalid syntax at 13 in [?(2 + 1 + -)]`},
+		{src: "[?(2 + 1 * -)]", err: `strconv.ParseInt: parsing "-": invalid syntax at 13 in [?(2 + 1 * -)]`},
+		{src: "[?(@.x == trux)]", err: "expected true at 14 in [?(@.x == trux)]"},
+		{src: "[?(@.x == fx)]", err: "expected false at 12 in [?(@.x == fx)]"},
+		{src: "[?(@.x == nulx)]", err: "expected null at 14 in [?(@.x == nulx)]"},
+		{src: "[?(@.x == x)]", err: "expected a value at 11 in [?(@.x == x)]"},
+		{src: "[?(@.x -- x)]", err: "'--' is not a valid operation at 9 in [?(@.x -- x)]"},
+		{src: "[?(@.x =", err: "equation not terminated at 9 in [?(@.x ="},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
@@ -69,11 +119,11 @@ func TestParse(t *testing.T) {
 	}
 }
 
-func TestParseDev(t *testing.T) {
-	x, err := jp.ParseString(`abc[1:]`)
+func xTestParseDev(t *testing.T) {
+	x, err := jp.ParseString(`[?(@.x =`)
 	tt.Nil(t, err)
 	tt.NotNil(t, x)
-	tt.Equal(t, "abc[1:]", x.String())
+	tt.Equal(t, "", x.String())
 }
 
 func BenchmarkParse(b *testing.B) {

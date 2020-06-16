@@ -21,11 +21,10 @@ const (
 
 	// o for an operatio
 	// v for a value start character
-	// - could be either
 	//   0123456789abcdef0123456789abcdef
 	eqMap = "" +
 		"................................" + // 0x00
-		".ov.v.ovv.oo.-.ovvvvvvvvvv..ooo." + // 0x20
+		".ov.v.ovv.oo.o.ovvvvvvvvvv..ooo." + // 0x20
 		"v..............................." + // 0x40
 		"......v.......v.....v.......o.o." + // 0x60
 		"................................" + // 0x80
@@ -147,15 +146,9 @@ func (p *parser) afterDot() (Frag, error) {
 }
 
 func (p *parser) afterDotDot() (Frag, error) {
-	if len(p.buf) <= p.pos {
-		return nil, fmt.Errorf("not terminated")
-	}
 	var token []byte
 	b := p.buf[p.pos]
 	p.pos++
-	if tokenMap[b] == '.' {
-		return nil, fmt.Errorf("an expression fragment can not start with a '%c'", b)
-	}
 	token = append(token, b)
 	for p.pos < len(p.buf) {
 		b := p.buf[p.pos]
@@ -183,11 +176,7 @@ func (p *parser) afterBracket() (Frag, error) {
 		}
 		return Wildcard('#'), nil
 	case '\'', '"':
-		var err error
-		var s string
-		if s, err = p.readStr(b); err != nil {
-			return nil, err
-		}
+		s := p.readStr(b)
 		b = p.skipSpace()
 		switch b {
 		case ']':
@@ -223,8 +212,6 @@ func (p *parser) afterBracket() (Frag, error) {
 		default:
 			return nil, fmt.Errorf("invalid bracket fragment")
 		}
-	default:
-
 	}
 	return nil, nil
 }
@@ -256,6 +243,9 @@ func (p *parser) readInt(b byte) (int, byte, error) {
 		}
 		b = p.buf[p.pos]
 		p.pos++
+	}
+	if i == 0 {
+		return 0, 0, fmt.Errorf("expected a number")
 	}
 	if neg {
 		i = -i
@@ -393,9 +383,7 @@ func (p *parser) readUnion(v interface{}, b byte) (Frag, error) {
 		switch b {
 		case '\'', '"':
 			var s string
-			if s, err = p.readStr(b); err != nil {
-				return nil, err
-			}
+			s = p.readStr(b)
 			b = p.skipSpace()
 			f = append(f, s)
 		case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
@@ -413,7 +401,7 @@ func (p *parser) readUnion(v interface{}, b byte) (Frag, error) {
 	}
 }
 
-func (p *parser) readStr(term byte) (string, error) {
+func (p *parser) readStr(term byte) string {
 	start := p.pos
 	esc := false
 	for p.pos < len(p.buf) {
@@ -428,7 +416,7 @@ func (p *parser) readStr(term byte) (string, error) {
 			esc = false
 		}
 	}
-	return string(p.buf[start : p.pos-1]), nil
+	return string(p.buf[start : p.pos-1])
 }
 
 func (p *parser) readFilter() (*Filter, error) {
@@ -441,14 +429,15 @@ func (p *parser) readFilter() (*Filter, error) {
 		return nil, fmt.Errorf("expected a '(' in filter")
 	}
 	eq, err := p.readEquation()
+	if err != nil {
+		return nil, err
+	}
 	if len(p.buf) <= p.pos || p.buf[p.pos] != ']' {
 		return nil, fmt.Errorf("not terminated")
 	}
 	p.pos++
-	if err == nil {
-		return eq.Filter(), nil
-	}
-	return nil, err
+
+	return eq.Filter(), nil
 }
 
 func (p *parser) readEquation() (eq *Equation, err error) {
@@ -461,7 +450,9 @@ func (p *parser) readEquation() (eq *Equation, err error) {
 	if b == '!' {
 		eq.o = not
 		p.pos++
-		eq.left, err = p.readEqValue()
+		if eq.left, err = p.readEqValue(); err != nil {
+			return
+		}
 		b := p.nextNonSpace()
 		if b != ')' {
 			return nil, fmt.Errorf("not terminated")
@@ -515,9 +506,7 @@ func (p *parser) readEqValue() (eq *Equation, err error) {
 	case '\'', '"':
 		p.pos++
 		var s string
-		if s, err = p.readStr(b); err != nil {
-			return
-		}
+		s = p.readStr(b)
 		eq = &Equation{result: s}
 	case 'n':
 		if err = p.readEqToken([]byte("null")); err != nil {
@@ -572,7 +561,7 @@ func (p *parser) readEqOp() (o *op, err error) {
 		}
 		p.pos++
 		if len(p.buf) <= p.pos {
-			err = fmt.Errorf("equation not terminated")
+			return nil, fmt.Errorf("equation not terminated")
 		}
 		b = p.buf[p.pos]
 	}
