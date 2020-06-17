@@ -206,7 +206,7 @@ func (p *parser) afterBracket() (Frag, error) {
 		case ']':
 			return Nth(i), nil
 		case ',':
-			return p.readUnion(i, b)
+			return p.readUnion(int64(i), b)
 		case ':':
 			return p.readSlice(i)
 		default:
@@ -391,7 +391,7 @@ func (p *parser) readUnion(v interface{}, b byte) (Frag, error) {
 			if i, b, err = p.readInt(b); err != nil {
 				return nil, err
 			}
-			f = append(f, i)
+			f = append(f, int64(i))
 			if b == ' ' {
 				b = p.skipSpace()
 			}

@@ -242,14 +242,6 @@ func TestScriptEval(t *testing.T) {
 	}
 }
 
-func xTestScriptDev(t *testing.T) {
-	s, err := jp.NewScript("(@.x + @.y == 4)")
-	tt.Nil(t, err)
-	fmt.Printf("*** %s\n", s)
-	result := s.Eval([]interface{}{}, []interface{}{map[string]interface{}{"x": 1, "y": 2}})
-	fmt.Printf("*** %v\n", result)
-}
-
 func BenchmarkOjScriptDev(b *testing.B) {
 	s := jp.Lt(jp.Get(jp.A().C("a")), jp.ConstInt(52)).Script()
 	data := scriptBenchData(100)

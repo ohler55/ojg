@@ -10,12 +10,8 @@
  - type assersions should always pass
 
 - oj/jp
- - jsonpath
- - Get needs to use something otehr than int for index on stack
-
-- oj/gen
- - just the data
-
+ - Get needs to use something other than int for index on stack
+ - reflection
 
 ----------------
 - next/todo
