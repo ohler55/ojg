@@ -430,6 +430,9 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			}
 		case *Filter:
 			stack = tf.Eval(stack, prev)
+			if fi == len(x)-1 { // last one
+				results = append(results, stack[len(stack)-1])
+			}
 		}
 		if fi < len(x)-1 {
 			if _, ok := stack[len(stack)-1].(int); !ok {
@@ -795,6 +798,9 @@ func (x Expr) First(data interface{}) interface{} {
 			}
 		case *Filter:
 			stack = tf.Eval(stack, prev)
+			if fi == len(x)-1 { // last one
+				return stack[len(stack)-1]
+			}
 		}
 		if fi < len(x)-1 {
 			if _, ok := stack[len(stack)-1].(int); !ok {

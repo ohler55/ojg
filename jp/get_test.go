@@ -21,18 +21,15 @@ type testData struct {
 }
 
 func xTestDev(t *testing.T) {
-	data := buildNodeTree(4, 3, 0)
-	data = gen.Object{"x": gen.Int(1)}
+	//data := buildTree(4, 3, 0)
+	//data := buildNodeTree(4, 3, 0)
+	//data := []interface{}{int64(1), int64(2)}
+	data := []interface{}{int64(1), int64(2)}
 	//fmt.Println(oj.JSON(data, 2))
-	x, err := jp.ParseString("$")
+	x, err := jp.ParseString("[?(@ > 1)]")
 	tt.Nil(t, err)
 	results := x.Get(data)
-	sort.Slice(results, func(i, j int) bool {
-		iv, _ := results[i].(gen.Int)
-		jv, _ := results[j].(gen.Int)
-		return iv < jv
-	})
-	fmt.Printf("*** %s\n", oj.JSON(results))
+	fmt.Printf("*** %s -> %s\n", x, oj.JSON(results))
 }
 
 func inpectExpr(x jp.Expr) {
@@ -52,6 +49,7 @@ var getTestData = []*testData{
 	{path: "[1,'a']['b',2]['c',3]", expect: []interface{}{133}},
 	{path: "a[1:-1:2].a", expect: []interface{}{121, 141}},
 	{path: "a[?(@.a > 135)].b", expect: []interface{}{142}},
+	{path: "[?(@ > 1)]", expect: []interface{}{2}, data: []interface{}{int64(1), int64(2)}}, // TBD change to simple int
 	{path: "$.*[*].a", expect: []interface{}{111, 121, 131, 141, 211, 221, 231, 241, 311, 321, 331, 341, 411, 421, 431, 441}},
 	{path: "a[2].*", expect: []interface{}{131, 132, 133, 134}},
 	{path: "[*]", expect: []interface{}{1, 2, 3}, data: []interface{}{1, 2, 3}},
@@ -79,9 +77,17 @@ var (
 		{path: "[-1]", expect: []interface{}{2}, data: []interface{}{1, 2}},
 		{path: "[1,'a']", expect: []interface{}{2}, data: []interface{}{1, 2}},
 		{path: "[:2]", expect: []interface{}{1}, data: []interface{}{1, 2}},
-		//{path: "[?(@ > 1)]", expect: []interface{}{2}, data: []interface{}{int64(1), int64(2)}}, // TBD change to simple int
+		{path: "[?(@ > 1)]", expect: []interface{}{2}, data: []interface{}{int64(1), int64(2)}},  // TBD change to simple int
+		{path: "$[?(@ > 1)]", expect: []interface{}{2}, data: []interface{}{int64(1), int64(2)}}, // TBD change to simple int
 		{path: "[*]", expect: []interface{}{1}, data: []interface{}{1, 2}},
 		{path: "a.*.*", expect: []interface{}{2}, data: firstData1},
+		{path: "@.*[0].b", expect: []interface{}{2}, data: firstData1},
+		{path: "@.a[0]..", expect: []interface{}{2}, data: firstData1},
+		{path: "..", expect: []interface{}{1}, data: []interface{}{1, 2}},
+		{path: "[0,'a'][-1,'a']['b',1]", expect: []interface{}{2}, data: firstData1},
+		{path: "a[-1:2].b", expect: []interface{}{2}, data: firstData1},
+		{path: "a[-2:2].b", expect: []interface{}{nil}, data: firstData1},
+		{path: "x[:2]", expect: []interface{}{2}, data: map[string]interface{}{"x": []interface{}{2, 3}}},
 	}
 )
 
@@ -104,7 +110,7 @@ func TestExprGet(t *testing.T) {
 			jv, _ := results[j].(int)
 			return iv < jv
 		})
-		tt.Equal(t, d.expect, results)
+		tt.Equal(t, d.expect, results, i, " : ", x)
 	}
 }
 
@@ -131,7 +137,7 @@ func TestExprGetOnNode(t *testing.T) {
 		for _, n := range d.expect {
 			expect = append(expect, alt.Generify(n))
 		}
-		tt.Equal(t, expect, results)
+		tt.Equal(t, expect, results, i, " : ", x)
 	}
 }
 
@@ -143,7 +149,7 @@ func TestExprFirst(t *testing.T) {
 		x, err := jp.ParseString(d.path)
 		tt.Nil(t, err)
 		result := x.First(d.data)
-		tt.Equal(t, d.expect[0], result)
+		tt.Equal(t, d.expect[0], result, i, " : ", x)
 	}
 }
 
@@ -155,7 +161,7 @@ func TestExprFirstOnNode(t *testing.T) {
 		x, err := jp.ParseString(d.path)
 		tt.Nil(t, err)
 		result := x.First(alt.Generify(d.data))
-		tt.Equal(t, alt.Generify(d.expect[0]), result)
+		tt.Equal(t, alt.Generify(d.expect[0]), result, i, " : ", x)
 	}
 }
 
