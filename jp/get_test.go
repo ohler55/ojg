@@ -49,7 +49,7 @@ var getTestData = []*testData{
 	{path: "[1,'a']['b',2]['c',3]", expect: []interface{}{133}},
 	{path: "a[1:-1:2].a", expect: []interface{}{121, 141}},
 	{path: "a[?(@.a > 135)].b", expect: []interface{}{142}},
-	{path: "[?(@ > 1)]", expect: []interface{}{2}, data: []interface{}{int64(1), int64(2)}}, // TBD change to simple int
+	{path: "[?(@ > 1)]", expect: []interface{}{2}, data: []interface{}{1, 2}},
 	{path: "$.*[*].a", expect: []interface{}{111, 121, 131, 141, 211, 221, 231, 241, 311, 321, 331, 341, 411, 421, 431, 441}},
 	{path: "a[2].*", expect: []interface{}{131, 132, 133, 134}},
 	{path: "[*]", expect: []interface{}{1, 2, 3}, data: []interface{}{1, 2, 3}},
@@ -77,8 +77,8 @@ var (
 		{path: "[-1]", expect: []interface{}{2}, data: []interface{}{1, 2}},
 		{path: "[1,'a']", expect: []interface{}{2}, data: []interface{}{1, 2}},
 		{path: "[:2]", expect: []interface{}{1}, data: []interface{}{1, 2}},
-		{path: "[?(@ > 1)]", expect: []interface{}{2}, data: []interface{}{int64(1), int64(2)}},  // TBD change to simple int
-		{path: "$[?(@ > 1)]", expect: []interface{}{2}, data: []interface{}{int64(1), int64(2)}}, // TBD change to simple int
+		{path: "[?(@ > 1)]", expect: []interface{}{2}, data: []interface{}{1, 2}},
+		{path: "$[?(@ > 1)]", expect: []interface{}{2}, data: []interface{}{1, 2}},
 		{path: "[*]", expect: []interface{}{1}, data: []interface{}{1, 2}},
 		{path: "a.*.*", expect: []interface{}{2}, data: firstData1},
 		{path: "@.*[0].b", expect: []interface{}{2}, data: firstData1},

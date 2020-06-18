@@ -45,12 +45,12 @@ func (x Expr) Set(data, value interface{}) error {
 	stack = append(stack, data)
 
 	f := x[0]
-	fi := 0 // frag index
+	fi := fragIndex(0) // frag index
 	stack = append(stack, fi)
 
 	for 1 < len(stack) {
 		prev = stack[len(stack)-2]
-		if ii, up := prev.(int); up {
+		if ii, up := prev.(fragIndex); up {
 			stack = stack[:len(stack)-1]
 			fi = ii & fragIndexMask
 			f = x[fi]
@@ -63,7 +63,7 @@ func (x Expr) Set(data, value interface{}) error {
 			var has bool
 			switch tv := prev.(type) {
 			case map[string]interface{}:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
 						delete(tv, string(tf))
 					} else {
@@ -85,7 +85,7 @@ func (x Expr) Set(data, value interface{}) error {
 					}
 				}
 			case gen.Object:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
 						delete(tv, string(tf))
 					} else {
@@ -118,7 +118,7 @@ func (x Expr) Set(data, value interface{}) error {
 					i = len(tv) + i
 				}
 				if 0 <= i && i < len(tv) {
-					if fi == len(x)-1 { // last one
+					if int(fi) == len(x)-1 { // last one
 						if value == delFlag {
 							tv[i] = nil
 						} else {
@@ -141,7 +141,7 @@ func (x Expr) Set(data, value interface{}) error {
 					i = len(tv) + i
 				}
 				if 0 <= i && i < len(tv) {
-					if fi == len(x)-1 { // last one
+					if int(fi) == len(x)-1 { // last one
 						if value == delFlag {
 							tv[i] = nil
 						} else {
@@ -164,7 +164,7 @@ func (x Expr) Set(data, value interface{}) error {
 			switch tv := prev.(type) {
 			case map[string]interface{}:
 				var k string
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
 						for k = range tv {
 							delete(tv, k)
@@ -183,7 +183,7 @@ func (x Expr) Set(data, value interface{}) error {
 					}
 				}
 			case []interface{}:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					for i := range tv {
 						if value == delFlag {
 							tv[i] = nil
@@ -201,7 +201,7 @@ func (x Expr) Set(data, value interface{}) error {
 				}
 			case gen.Object:
 				var k string
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
 						for k = range tv {
 							delete(tv, k)
@@ -220,7 +220,7 @@ func (x Expr) Set(data, value interface{}) error {
 					}
 				}
 			case gen.Array:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					for i := range tv {
 						if value == delFlag {
 							tv[i] = nil
@@ -241,7 +241,7 @@ func (x Expr) Set(data, value interface{}) error {
 				continue
 			}
 		case Descent:
-			di, _ := stack[len(stack)-1].(int)
+			di, _ := stack[len(stack)-1].(fragIndex)
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
 				self := false
@@ -431,18 +431,18 @@ func (x Expr) Set(data, value interface{}) error {
 		case *Filter:
 			stack = tf.Eval(stack, prev)
 		case Root:
-			if fi == len(x)-1 { // last one
+			if int(fi) == len(x)-1 { // last one
 				return fmt.Errorf("can not set the root")
 			}
 			stack = append(stack, data)
 		case At, Bracket:
-			if fi == len(x)-1 { // last one
+			if int(fi) == len(x)-1 { // last one
 				return fmt.Errorf("can not set an empty expression")
 			}
 			stack = append(stack, prev)
 		}
-		if fi < len(x)-1 {
-			if _, ok := stack[len(stack)-1].(int); !ok {
+		if int(fi) < len(x)-1 {
+			if _, ok := stack[len(stack)-1].(fragIndex); !ok {
 				fi++
 				f = x[fi]
 				stack = append(stack, fi)
@@ -479,12 +479,12 @@ func (x Expr) SetOne(data, value interface{}) error {
 	stack = append(stack, data)
 
 	f := x[0]
-	fi := 0 // frag index
+	fi := fragIndex(0) // frag index
 	stack = append(stack, fi)
 
 	for 1 < len(stack) {
 		prev = stack[len(stack)-2]
-		if ii, up := prev.(int); up {
+		if ii, up := prev.(fragIndex); up {
 			stack = stack[:len(stack)-1]
 			fi = ii & fragIndexMask
 			f = x[fi]
@@ -497,7 +497,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 			var has bool
 			switch tv := prev.(type) {
 			case map[string]interface{}:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
 						delete(tv, string(tf))
 					} else {
@@ -520,7 +520,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 					}
 				}
 			case gen.Object:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
 						delete(tv, string(tf))
 					} else {
@@ -554,7 +554,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 					i = len(tv) + i
 				}
 				if 0 <= i && i < len(tv) {
-					if fi == len(x)-1 { // last one
+					if int(fi) == len(x)-1 { // last one
 						if value == delFlag {
 							tv[i] = nil
 						} else {
@@ -578,7 +578,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 					i = len(tv) + i
 				}
 				if 0 <= i && i < len(tv) {
-					if fi == len(x)-1 { // last one
+					if int(fi) == len(x)-1 { // last one
 						if value == delFlag {
 							tv[i] = nil
 						} else {
@@ -602,7 +602,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 			switch tv := prev.(type) {
 			case map[string]interface{}:
 				var k string
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
 						for k = range tv {
 							delete(tv, k)
@@ -623,7 +623,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 					}
 				}
 			case []interface{}:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					for i := range tv {
 						if value == delFlag {
 							tv[i] = nil
@@ -642,7 +642,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 				}
 			case gen.Object:
 				var k string
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
 						for k = range tv {
 							delete(tv, k)
@@ -663,7 +663,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 					}
 				}
 			case gen.Array:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					for i := range tv {
 						if value == delFlag {
 							tv[i] = nil
@@ -685,7 +685,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 				continue
 			}
 		case Descent:
-			di, _ := stack[len(stack)-1].(int)
+			di, _ := stack[len(stack)-1].(fragIndex)
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
 				self := false
@@ -875,18 +875,18 @@ func (x Expr) SetOne(data, value interface{}) error {
 		case *Filter:
 			stack = tf.Eval(stack, prev)
 		case Root:
-			if fi == len(x)-1 { // last one
+			if int(fi) == len(x)-1 { // last one
 				return fmt.Errorf("can not set the root")
 			}
 			stack = append(stack, data)
 		case At, Bracket:
-			if fi == len(x)-1 { // last one
+			if int(fi) == len(x)-1 { // last one
 				return fmt.Errorf("can not set an empty expression")
 			}
 			stack = append(stack, prev)
 		}
-		if fi < len(x)-1 {
-			if _, ok := stack[len(stack)-1].(int); !ok {
+		if int(fi) < len(x)-1 {
+			if _, ok := stack[len(stack)-1].(fragIndex); !ok {
 				fi++
 				f = x[fi]
 				stack = append(stack, fi)

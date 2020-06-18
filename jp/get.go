@@ -12,6 +12,8 @@ const (
 	descentChildFlag = 0x00020000
 )
 
+type fragIndex int
+
 // The easy way to implement the Get is to have each fragment handle the
 // getting using recursion. The overhead of a go function call is rather high
 // though so instead a psuedo call stack is implemented here that grows and
@@ -28,17 +30,18 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 	}
 	var v interface{}
 	var prev interface{}
+	var has bool
 
 	stack := make([]interface{}, 0, 64)
 	stack = append(stack, data)
 
 	f := x[0]
-	fi := 0 // frag index
+	fi := fragIndex(0) // frag index
 	stack = append(stack, fi)
 
 	for 1 < len(stack) { // must have at least a data element and a fragment index
 		prev = stack[len(stack)-2]
-		if ii, up := prev.(int); up {
+		if ii, up := prev.(fragIndex); up {
 			stack = stack[:len(stack)-1]
 			fi = ii & fragIndexMask
 			f = x[fi]
@@ -46,35 +49,26 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 		}
 		stack[len(stack)-2] = stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
+		has = false
 		switch tf := f.(type) {
 		case Child:
-			var has bool
 			switch tv := prev.(type) {
 			case map[string]interface{}:
-				if v, has = tv[string(tf)]; has {
-					if fi == len(x)-1 { // last one
-						results = append(results, v)
-					} else {
-						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-							stack = append(stack, v)
-						}
-					}
-				}
+				v, has = tv[string(tf)]
 			case gen.Object:
-				if v, has = tv[string(tf)]; has {
-					if fi == len(x)-1 { // last one
-						results = append(results, v)
-					} else {
-						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-							stack = append(stack, v)
-						}
+				v, has = tv[string(tf)]
+			default:
+				v, has = x.reflectGetChild(tv, string(tf))
+			}
+			if has {
+				if int(fi) == len(x)-1 { // last one
+					results = append(results, v)
+				} else {
+					switch v.(type) {
+					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						stack = append(stack, v)
 					}
 				}
-			default:
-				// TBD try reflection
-				continue
 			}
 		case Nth:
 			i := int(tf)
@@ -83,27 +77,23 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				if i < 0 {
 					i = len(tv) + i
 				}
-				var v interface{}
 				if 0 <= i && i < len(tv) {
 					v = tv[i]
-				}
-				if fi == len(x)-1 { // last one
-					results = append(results, v)
-				} else {
-					switch v.(type) {
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-						stack = append(stack, v)
-					}
+					has = true
 				}
 			case gen.Array:
 				if i < 0 {
 					i = len(tv) + i
 				}
-				var v interface{}
 				if 0 <= i && i < len(tv) {
 					v = tv[i]
+					has = true
 				}
-				if fi == len(x)-1 { // last one
+			default:
+				v, has = x.reflectGetNth(tv, i)
+			}
+			if has {
+				if int(fi) == len(x)-1 { // last one
 					results = append(results, v)
 				} else {
 					switch v.(type) {
@@ -111,14 +101,11 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						stack = append(stack, v)
 					}
 				}
-			default:
-				// TBD try reflection
-				continue
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
 			case map[string]interface{}:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					for _, v = range tv {
 						results = append(results, v)
 					}
@@ -131,7 +118,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					}
 				}
 			case []interface{}:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					results = append(results, tv...)
 				} else {
 					for _, v = range tv {
@@ -142,7 +129,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					}
 				}
 			case gen.Object:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					for _, v = range tv {
 						results = append(results, v)
 					}
@@ -155,7 +142,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					}
 				}
 			case gen.Array:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					for _, v = range tv {
 						results = append(results, v)
 					}
@@ -168,11 +155,19 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					}
 				}
 			default:
-				// TBD try reflection
-				continue
+				for _, v := range x.reflectGetWild(tv) {
+					if int(fi) == len(x)-1 { // last one
+						results = append(results, v)
+					} else {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							stack = append(stack, v)
+						}
+					}
+				}
 			}
 		case Descent:
-			di, _ := stack[len(stack)-1].(int)
+			di, _ := stack[len(stack)-1].(fragIndex)
 			top := (di & descentChildFlag) == 0
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
@@ -182,7 +177,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
-					if fi == len(x)-1 { // last one
+					if int(fi) == len(x)-1 { // last one
 						for _, v = range tv {
 							results = append(results, v)
 						}
@@ -198,7 +193,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
-					if fi == len(x)-1 { // last one
+					if int(fi) == len(x)-1 { // last one
 						results = append(results, tv...)
 					}
 					for _, v = range tv {
@@ -212,7 +207,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
-					if fi == len(x)-1 { // last one
+					if int(fi) == len(x)-1 { // last one
 						for _, v = range tv {
 							results = append(results, v)
 						}
@@ -228,7 +223,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
-					if fi == len(x)-1 { // last one
+					if int(fi) == len(x)-1 { // last one
 						for _, v = range tv {
 							results = append(results, v)
 						}
@@ -245,7 +240,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					stack = append(stack, fi|descentChildFlag)
 				}
 			} else {
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					if top {
 						results = append(results, prev)
 					}
@@ -254,48 +249,29 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				}
 			}
 		case Root:
-			if fi == len(x)-1 { // last one
+			if int(fi) == len(x)-1 { // last one
 				results = append(results, data)
 			} else {
 				stack = append(stack, data)
 			}
 		case At, Bracket:
-			if fi == len(x)-1 { // last one
+			if int(fi) == len(x)-1 { // last one
 				results = append(results, prev)
 			} else {
 				stack = append(stack, prev)
 			}
 		case Union:
 			for _, u := range tf {
+				has = false
 				switch tu := u.(type) {
 				case string:
-					var has bool
 					switch tv := prev.(type) {
 					case map[string]interface{}:
-						if v, has = tv[string(tu)]; has {
-							if fi == len(x)-1 { // last one
-								results = append(results, v)
-							} else {
-								switch v.(type) {
-								case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-									stack = append(stack, v)
-								}
-							}
-						}
+						v, has = tv[string(tu)]
 					case gen.Object:
-						if v, has = tv[string(tu)]; has {
-							if fi == len(x)-1 { // last one
-								results = append(results, v)
-							} else {
-								switch v.(type) {
-								case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-									stack = append(stack, v)
-								}
-							}
-						}
+						v, has = tv[string(tu)]
 					default:
-						// TBD try reflection
-						continue
+						v, has = x.reflectGetChild(tv, string(tu))
 					}
 				case int64:
 					i := int(tu)
@@ -304,37 +280,30 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						if i < 0 {
 							i = len(tv) + i
 						}
-						var v interface{}
 						if 0 <= i && i < len(tv) {
 							v = tv[i]
-						}
-						if fi == len(x)-1 { // last one
-							results = append(results, v)
-						} else {
-							switch v.(type) {
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-								stack = append(stack, v)
-							}
+							has = true
 						}
 					case gen.Array:
 						if i < 0 {
 							i = len(tv) + i
 						}
-						var v interface{}
 						if 0 <= i && i < len(tv) {
 							v = tv[i]
-						}
-						if fi == len(x)-1 { // last one
-							results = append(results, v)
-						} else {
-							switch v.(type) {
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-								stack = append(stack, v)
-							}
+							has = true
 						}
 					default:
-						// TBD reflection
-						continue
+						v, has = x.reflectGetNth(tv, i)
+					}
+				}
+				if has {
+					if int(fi) == len(x)-1 { // last one
+						results = append(results, v)
+					} else {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							stack = append(stack, v)
+						}
 					}
 				}
 			}
@@ -366,7 +335,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				if 0 < step {
 					for i := start; i < end; i += step {
 						v = tv[i]
-						if fi == len(x)-1 { // last one
+						if int(fi) == len(x)-1 { // last one
 							results = append(results, v)
 						} else {
 							switch v.(type) {
@@ -378,7 +347,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				} else {
 					for i := start; end < i; i += step {
 						v = tv[i]
-						if fi == len(x)-1 { // last one
+						if int(fi) == len(x)-1 { // last one
 							results = append(results, v)
 						} else {
 							switch v.(type) {
@@ -402,7 +371,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				if 0 < step {
 					for i := start; i < end; i += step {
 						v = tv[i]
-						if fi == len(x)-1 { // last one
+						if int(fi) == len(x)-1 { // last one
 							results = append(results, v)
 						} else {
 							switch v.(type) {
@@ -414,7 +383,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				} else {
 					for i := start; end < i; i += step {
 						v = tv[i]
-						if fi == len(x)-1 { // last one
+						if int(fi) == len(x)-1 { // last one
 							results = append(results, v)
 						} else {
 							switch v.(type) {
@@ -425,17 +394,25 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					}
 				}
 			default:
-				// TBD try reflection
-				continue
+				for _, v := range x.reflectGetSlice(tv, start, end, step) {
+					if int(fi) == len(x)-1 { // last one
+						results = append(results, v)
+					} else {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							stack = append(stack, v)
+						}
+					}
+				}
 			}
 		case *Filter:
 			stack = tf.Eval(stack, prev)
-			if fi == len(x)-1 { // last one
+			if int(fi) == len(x)-1 { // last one
 				results = append(results, stack[len(stack)-1])
 			}
 		}
-		if fi < len(x)-1 {
-			if _, ok := stack[len(stack)-1].(int); !ok {
+		if int(fi) < len(x)-1 {
+			if _, ok := stack[len(stack)-1].(fragIndex); !ok {
 				fi++
 				f = x[fi]
 				stack = append(stack, fi)
@@ -457,6 +434,7 @@ func (x Expr) First(data interface{}) interface{} {
 	}
 	var v interface{}
 	var prev interface{}
+	var has bool
 
 	stack := make([]interface{}, 0, 64)
 	defer func() {
@@ -467,12 +445,12 @@ func (x Expr) First(data interface{}) interface{} {
 	}()
 	stack = append(stack, data)
 	f := x[0]
-	fi := 0 // frag index
+	fi := fragIndex(0) // frag index
 	stack = append(stack, fi)
 
 	for 1 < len(stack) { // must have at least a data element and a fragment index
 		prev = stack[len(stack)-2]
-		if ii, up := prev.(int); up {
+		if ii, up := prev.(fragIndex); up {
 			stack = stack[:len(stack)-1]
 			fi = ii & fragIndexMask
 			f = x[fi]
@@ -480,32 +458,26 @@ func (x Expr) First(data interface{}) interface{} {
 		}
 		stack[len(stack)-2] = stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
+		has = false
 		switch tf := f.(type) {
 		case Child:
-			var has bool
 			switch tv := prev.(type) {
 			case map[string]interface{}:
-				if v, has = tv[string(tf)]; has {
-					if fi == len(x)-1 { // last one
-						return v
-					}
-					switch v.(type) {
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-						stack = append(stack, v)
-					}
-				}
+				v, has = tv[string(tf)]
 			case gen.Object:
-				if v, has = tv[string(tf)]; has {
-					if fi == len(x)-1 { // last one
-						return v
-					}
+				v, has = tv[string(tf)]
+			default:
+				v, has = x.reflectGetChild(tv, string(tf))
+			}
+			if has {
+				if int(fi) == len(x)-1 { // last one
+					return v
+				} else {
 					switch v.(type) {
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					}
 				}
-			default:
-				// TBD try reflection
 			}
 		case Nth:
 			i := int(tf)
@@ -514,26 +486,23 @@ func (x Expr) First(data interface{}) interface{} {
 				if i < 0 {
 					i = len(tv) + i
 				}
-				var v interface{}
 				if 0 <= i && i < len(tv) {
 					v = tv[i]
-				}
-				if fi == len(x)-1 { // last one
-					return v
-				}
-				switch v.(type) {
-				case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-					stack = append(stack, v)
+					has = true
 				}
 			case gen.Array:
 				if i < 0 {
 					i = len(tv) + i
 				}
-				var v interface{}
 				if 0 <= i && i < len(tv) {
 					v = tv[i]
+					has = true
 				}
-				if fi == len(x)-1 { // last one
+			default:
+				v, has = x.reflectGetNth(tv, i)
+			}
+			if has {
+				if int(fi) == len(x)-1 { // last one
 					return v
 				}
 				switch v.(type) {
@@ -544,7 +513,7 @@ func (x Expr) First(data interface{}) interface{} {
 		case Wildcard:
 			switch tv := prev.(type) {
 			case map[string]interface{}:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					for _, v = range tv {
 						return v
 					}
@@ -557,7 +526,7 @@ func (x Expr) First(data interface{}) interface{} {
 					}
 				}
 			case []interface{}:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					if 0 < len(tv) {
 						return tv[0]
 					}
@@ -570,7 +539,7 @@ func (x Expr) First(data interface{}) interface{} {
 					}
 				}
 			case gen.Object:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					for _, v = range tv {
 						return v
 					}
@@ -583,7 +552,7 @@ func (x Expr) First(data interface{}) interface{} {
 					}
 				}
 			case gen.Array:
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					for _, v = range tv {
 						return v
 					}
@@ -595,9 +564,20 @@ func (x Expr) First(data interface{}) interface{} {
 						}
 					}
 				}
+			default:
+				if v, has = x.reflectGetWildOne(tv); has {
+					if int(fi) == len(x)-1 { // last one
+						return v
+					} else {
+						switch v.(type) {
+						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							stack = append(stack, v)
+						}
+					}
+				}
 			}
 		case Descent:
-			di, _ := stack[len(stack)-1].(int)
+			di, _ := stack[len(stack)-1].(fragIndex)
 			top := (di & descentChildFlag) == 0
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
@@ -607,7 +587,7 @@ func (x Expr) First(data interface{}) interface{} {
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
-					if fi == len(x)-1 { // last one
+					if int(fi) == len(x)-1 { // last one
 						for _, v = range tv {
 							return v
 						}
@@ -623,7 +603,7 @@ func (x Expr) First(data interface{}) interface{} {
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
-					if fi == len(x)-1 { // last one
+					if int(fi) == len(x)-1 { // last one
 						if 0 < len(tv) {
 							return tv[0]
 						}
@@ -639,7 +619,7 @@ func (x Expr) First(data interface{}) interface{} {
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
-					if fi == len(x)-1 { // last one
+					if int(fi) == len(x)-1 { // last one
 						for _, v = range tv {
 							return v
 						}
@@ -655,7 +635,7 @@ func (x Expr) First(data interface{}) interface{} {
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
-					if fi == len(x)-1 { // last one
+					if int(fi) == len(x)-1 { // last one
 						if 0 < len(tv) {
 							return tv[0]
 						}
@@ -672,7 +652,7 @@ func (x Expr) First(data interface{}) interface{} {
 					stack = append(stack, fi|descentChildFlag)
 				}
 			} else {
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					if top {
 						return prev
 					}
@@ -681,44 +661,27 @@ func (x Expr) First(data interface{}) interface{} {
 				}
 			}
 		case Root:
-			if fi == len(x)-1 { // last one
+			if int(fi) == len(x)-1 { // last one
 				return data
 			}
 			stack = append(stack, data)
 		case At, Bracket:
-			if fi == len(x)-1 { // last one
+			if int(fi) == len(x)-1 { // last one
 				return prev
 			}
 			stack = append(stack, prev)
 		case Union:
 			for _, u := range tf {
+				has = false
 				switch tu := u.(type) {
 				case string:
-					var has bool
 					switch tv := prev.(type) {
 					case map[string]interface{}:
-						if v, has = tv[string(tu)]; has {
-							if fi == len(x)-1 { // last one
-								return v
-							}
-							switch v.(type) {
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-								stack = append(stack, v)
-							}
-						}
+						v, has = tv[string(tu)]
 					case gen.Object:
-						if v, has = tv[string(tu)]; has {
-							if fi == len(x)-1 { // last one
-								return v
-							}
-							switch v.(type) {
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-								stack = append(stack, v)
-							}
-						}
+						v, has = tv[string(tu)]
 					default:
-						// TBD try reflection
-						continue
+						v, has = x.reflectGetChild(tv, string(tu))
 					}
 				case int64:
 					i := int(tu)
@@ -727,35 +690,29 @@ func (x Expr) First(data interface{}) interface{} {
 						if i < 0 {
 							i = len(tv) + i
 						}
-						var v interface{}
 						if 0 <= i && i < len(tv) {
 							v = tv[i]
-						}
-						if fi == len(x)-1 { // last one
-							return v
-						}
-						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-							stack = append(stack, v)
+							has = true
 						}
 					case gen.Array:
 						if i < 0 {
 							i = len(tv) + i
 						}
-						var v interface{}
 						if 0 <= i && i < len(tv) {
 							v = tv[i]
-						}
-						if fi == len(x)-1 { // last one
-							return v
-						}
-						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-							stack = append(stack, v)
+							has = true
 						}
 					default:
-						// TBD reflection
-						continue
+						v, has = x.reflectGetNth(tv, i)
+					}
+				}
+				if has {
+					if int(fi) == len(x)-1 { // last one
+						return v
+					}
+					switch v.(type) {
+					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						stack = append(stack, v)
 					}
 				}
 			}
@@ -773,7 +730,7 @@ func (x Expr) First(data interface{}) interface{} {
 					continue
 				}
 				v := tv[start]
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					return v
 				}
 				switch v.(type) {
@@ -788,7 +745,7 @@ func (x Expr) First(data interface{}) interface{} {
 					continue
 				}
 				v := tv[start]
-				if fi == len(x)-1 { // last one
+				if int(fi) == len(x)-1 { // last one
 					return v
 				}
 				switch v.(type) {
@@ -798,12 +755,12 @@ func (x Expr) First(data interface{}) interface{} {
 			}
 		case *Filter:
 			stack = tf.Eval(stack, prev)
-			if fi == len(x)-1 { // last one
+			if int(fi) == len(x)-1 { // last one
 				return stack[len(stack)-1]
 			}
 		}
-		if fi < len(x)-1 {
-			if _, ok := stack[len(stack)-1].(int); !ok {
+		if int(fi) < len(x)-1 {
+			if _, ok := stack[len(stack)-1].(fragIndex); !ok {
 				fi++
 				f = x[fi]
 				stack = append(stack, fi)
@@ -811,4 +768,39 @@ func (x Expr) First(data interface{}) interface{} {
 		}
 	}
 	return nil
+}
+
+func (x Expr) reflectGetChild(data interface{}, key string) (v interface{}, has bool) {
+
+	// TBD
+
+	return
+}
+
+func (x Expr) reflectGetNth(data interface{}, i int) (v interface{}, has bool) {
+
+	// TBD
+
+	return
+}
+
+func (x Expr) reflectGetWild(data interface{}) (va []interface{}) {
+
+	// TBD
+
+	return
+}
+
+func (x Expr) reflectGetWildOne(data interface{}) (v interface{}, has bool) {
+
+	// TBD
+
+	return
+}
+
+func (x Expr) reflectGetSlice(data interface{}, start, end, step int) (va []interface{}) {
+
+	// TBD
+
+	return
 }

@@ -10,7 +10,6 @@
  - type assersions should always pass
 
 - oj/jp
- - Get needs to use something other than int for index on stack
  - reflection
 
 ----------------
