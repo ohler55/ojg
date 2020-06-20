@@ -429,7 +429,7 @@ func (x Expr) Set(data, value interface{}) error {
 				continue
 			}
 		case *Filter:
-			stack = tf.Eval(stack, prev)
+			stack, _ = tf.Eval(stack, prev).([]interface{})
 		case Root:
 			if int(fi) == len(x)-1 { // last one
 				return fmt.Errorf("can not set the root")
@@ -873,7 +873,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 				continue
 			}
 		case *Filter:
-			stack = tf.Eval(stack, prev)
+			stack, _ = tf.Eval(stack, prev).([]interface{})
 		case Root:
 			if int(fi) == len(x)-1 { // last one
 				return fmt.Errorf("can not set the root")

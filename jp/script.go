@@ -119,18 +119,20 @@ func (s *Script) String() string {
 func (s *Script) Match(data interface{}) bool {
 	stack := []interface{}{}
 	if node, ok := data.(gen.Node); ok {
-		stack = s.Eval(stack, gen.Array{node})
+		stack, _ = s.Eval(stack, gen.Array{node}).([]interface{})
 	} else {
-		stack = s.Eval(stack, []interface{}{data})
+		stack, _ = s.Eval(stack, []interface{}{data}).([]interface{})
 	}
 	return 0 < len(stack)
 }
 
+// TBD input as interface{}, same as output, assert types as needed
+
 // Eval is primarily used by the Expr parser but is public for testing.
-func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
+func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 	// Checking the type each iteration adds 2.5% but allows code not to be
-	// duplicated and not to call a separate function. Using just one function
-	// call for each iteration adds 6.5%.
+	// duplicated and not to call a separate function. Using just one more
+	// function call for each iteration adds 6.5%.
 	var dlen int
 	switch td := data.(type) {
 	case []interface{}:
@@ -442,7 +444,14 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 			}
 		}
 		if b, _ := s.stack[0].(bool); b {
-			stack = append(stack, v)
+			switch tstack := stack.(type) {
+			case []interface{}:
+				stack = append(tstack, v)
+			case []gen.Node:
+				if n, ok := v.(gen.Node); ok {
+					stack = append(tstack, n)
+				}
+			}
 		}
 	}
 	for i := range s.stack {

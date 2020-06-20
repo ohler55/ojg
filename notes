@@ -1,6 +1,6 @@
 
 - tasks before release
- - reflect for path and script
+ - reflect for path
  - unit tests
  - docs
  - CI - travis or something else?
@@ -10,7 +10,9 @@
  - type assersions should always pass
 
 - oj/jp
- - reflection
+ - set reflection
+
+- make gen.Key private
 
 ----------------
 - next/todo

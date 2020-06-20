@@ -120,26 +120,26 @@ func TestScriptNormalizeEval(t *testing.T) {
 		gen.Int(3),
 		gen.Float(3.0),
 	} {
-		result := s.Eval([]interface{}{}, []interface{}{v})
+		result, _ := s.Eval([]interface{}{}, []interface{}{v}).([]interface{})
 		tt.Equal(t, 1, len(result), fmt.Sprintf("%T %v", v, v))
 	}
 	s, err = jp.NewScript("(@ == 'x')")
 	tt.Nil(t, err)
-	result := s.Eval([]interface{}{}, []interface{}{"x"})
+	result, _ := s.Eval([]interface{}{}, []interface{}{"x"}).([]interface{})
 	tt.Equal(t, 1, len(result), "string normalize")
-	result = s.Eval([]interface{}{}, gen.Array{gen.String("x")})
+	result, _ = s.Eval([]interface{}{}, gen.Array{gen.String("x")}).([]interface{})
 	tt.Equal(t, 1, len(result), "gen.String normalize")
 
 	s, err = jp.NewScript("(@ == true)")
 	tt.Nil(t, err)
-	result = s.Eval([]interface{}{}, gen.Array{gen.True})
+	result, _ = s.Eval([]interface{}{}, gen.Array{gen.True}).([]interface{})
 	tt.Equal(t, 1, len(result), "bool normalize")
 }
 
 func TestScriptNonListEval(t *testing.T) {
 	s, err := jp.NewScript("(@ == 3)")
 	tt.Nil(t, err)
-	result := s.Eval([]interface{}{}, "bad")
+	result, _ := s.Eval([]interface{}{}, "bad").([]interface{})
 	tt.Equal(t, 0, len(result))
 }
 
@@ -233,7 +233,7 @@ func TestScriptEval(t *testing.T) {
 		}
 		s, err := jp.NewScript(d.src)
 		tt.Nil(t, err)
-		result := s.Eval([]interface{}{}, []interface{}{d.value})
+		result, _ := s.Eval([]interface{}{}, []interface{}{d.value}).([]interface{})
 		if d.noMatch {
 			tt.Equal(t, 0, len(result), d.src, " in ", d.value)
 		} else {
@@ -251,7 +251,7 @@ func BenchmarkOjScriptDev(b *testing.B) {
 	//fmt.Printf("*** data: %s\n", jp.JSON(data))
 	for n := 0; n < b.N; n++ {
 		stack = stack[:0]
-		stack = s.Eval(stack, data)
+		stack, _ = s.Eval(stack, data).([]interface{})
 		//fmt.Printf("*** stack: %s\n", jp.JSON(stack))
 	}
 }

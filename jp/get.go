@@ -43,6 +43,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 	stack = append(stack, fi)
 
 	for 1 < len(stack) { // must have at least a data element and a fragment index
+		//fmt.Printf("*** stack at top: %v\n", stack)
 		prev = stack[len(stack)-2]
 		if ii, up := prev.(fragIndex); up {
 			stack = stack[:len(stack)-1]
@@ -486,9 +487,15 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				}
 			}
 		case *Filter:
-			stack = tf.Eval(stack, prev)
+			this := len(stack)
+			stack, _ = tf.Eval(stack, prev).([]interface{})
 			if int(fi) == len(x)-1 { // last one
-				results = append(results, stack[len(stack)-1])
+				for ; this < len(stack); this++ {
+					results = append(results, stack[this])
+				}
+				if this < len(stack) {
+					stack = stack[:this]
+				}
 			}
 		}
 		if int(fi) < len(x)-1 {
@@ -693,7 +700,7 @@ func (x Expr) First(data interface{}) interface{} {
 			}
 		case Descent:
 			di, _ := stack[len(stack)-1].(fragIndex)
-			//top := (di & descentChildFlag) == 0
+			top := (di & descentChildFlag) == 0
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
 				self := false
@@ -782,11 +789,9 @@ func (x Expr) First(data interface{}) interface{} {
 				}
 			} else {
 				if int(fi) == len(x)-1 { // last one
-					/*
-						if top {
-							return prev
-						}
-					*/
+					if top {
+						return prev
+					}
 				} else {
 					stack = append(stack, prev)
 				}
@@ -916,7 +921,7 @@ func (x Expr) First(data interface{}) interface{} {
 				}
 			}
 		case *Filter:
-			stack = tf.Eval(stack, prev)
+			stack, _ = tf.Eval(stack, prev).([]interface{})
 			if int(fi) == len(x)-1 { // last one
 				return stack[len(stack)-1]
 			}
