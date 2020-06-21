@@ -503,8 +503,16 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 			}
 		case Slice:
 			start := 0
+			end := -1
+			step := 1
 			if 0 < len(tf) {
 				start = tf[0]
+			}
+			if 1 < len(tf) {
+				end = tf[1]
+			}
+			if 2 < len(tf) {
+				step = tf[2]
 			}
 			if tv, ok := prev.(gen.Array); ok {
 				if start < 0 {
@@ -513,13 +521,35 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 				if start < 0 || len(tv) <= start {
 					continue
 				}
-				v := tv[start]
 				if int(fi) == len(x)-1 { // last one
-					return v
+					return tv[start]
 				}
-				switch v.(type) {
-				case gen.Object, gen.Array:
-					stack = append(stack, v)
+				if end < 0 {
+					end = len(tv) + end
+				}
+				if end < 0 {
+					continue
+				}
+				if len(tv) <= end {
+					end = len(tv) - 1
+				}
+				end = start + ((end - start) / step * step)
+				if 0 < step {
+					for i := end; start <= i; i -= step {
+						v = tv[i]
+						switch v.(type) {
+						case gen.Object, gen.Array:
+							stack = append(stack, v)
+						}
+					}
+				} else {
+					for i := end; i <= start; i -= step {
+						v = tv[i]
+						switch v.(type) {
+						case gen.Object, gen.Array:
+							stack = append(stack, v)
+						}
+					}
 				}
 			}
 		case *Filter:

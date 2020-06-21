@@ -59,12 +59,14 @@ func (x Expr) Set(data, value interface{}) error {
 	for 1 < len(stack) {
 		prev = stack[len(stack)-2]
 		if ii, up := prev.(fragIndex); up {
+			stack[len(stack)-1] = nil
 			stack = stack[:len(stack)-1]
 			fi = ii & fragIndexMask
 			f = x[fi]
 			continue
 		}
 		stack[len(stack)-2] = stack[len(stack)-1]
+		stack[len(stack)-1] = nil
 		stack = stack[:len(stack)-1]
 		switch tf := f.(type) {
 		case Child:
@@ -467,11 +469,6 @@ func (x Expr) Set(data, value interface{}) error {
 			}
 		}
 	}
-	// Free up anything still on the stack.
-	stack = stack[0:cap(stack)]
-	for i := len(stack) - 1; 0 <= i; i-- {
-		stack[i] = nil
-	}
 	return nil
 }
 
@@ -483,7 +480,8 @@ func (x Expr) SetOne(data, value interface{}) error {
 	}
 	switch x[len(x)-1].(type) {
 	case Descent, Union, Slice, *Filter:
-		return fmt.Errorf("can not set with an expression ending with a %T", x[len(x)-1])
+		ta := strings.Split(fmt.Sprintf("%T", x[len(x)-1]), ".")
+		return fmt.Errorf("can not set with an expression ending with a %s", ta[len(ta)-1])
 	}
 	var v interface{}
 	var nv gen.Node
@@ -508,12 +506,14 @@ func (x Expr) SetOne(data, value interface{}) error {
 	for 1 < len(stack) {
 		prev = stack[len(stack)-2]
 		if ii, up := prev.(fragIndex); up {
+			stack[len(stack)-1] = nil
 			stack = stack[:len(stack)-1]
 			fi = ii & fragIndexMask
 			f = x[fi]
 			continue
 		}
 		stack[len(stack)-2] = stack[len(stack)-1]
+		stack[len(stack)-1] = nil
 		stack = stack[:len(stack)-1]
 		switch tf := f.(type) {
 		case Child:
@@ -853,12 +853,15 @@ func (x Expr) SetOne(data, value interface{}) error {
 				if end < 0 {
 					end = len(tv) + end
 				}
-				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
+				if start < 0 || end < 0 || len(tv) <= start || step == 0 {
 					continue
 				}
+				if len(tv) <= end {
+					end = len(tv) - 1
+				}
+				end = start + ((end - start) / step * step)
 				if 0 < step {
-					// TBD reverse iteration, same in get.go
-					for i := start; i <= end; i += step {
+					for i := end; start <= i; i -= step {
 						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -866,8 +869,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 						}
 					}
 				} else {
-					// TBD reverse iteration
-					for i := start; end <= i; i += step {
+					for i := end; i <= start; i -= step {
 						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -882,22 +884,26 @@ func (x Expr) SetOne(data, value interface{}) error {
 				if end < 0 {
 					end = len(tv) + end
 				}
-				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
+				if start < 0 || end < 0 || len(tv) <= start || step == 0 {
 					continue
 				}
+				if len(tv) <= end {
+					end = len(tv) - 1
+				}
+				end = start + ((end - start) / step * step)
 				if 0 < step {
-					for i := start; i <= end; i += step {
+					for i := end; start <= i; i -= step {
 						v = tv[i]
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case gen.Object, gen.Array:
 							stack = append(stack, v)
 						}
 					}
 				} else {
-					for i := start; end <= i; i += step {
+					for i := end; i <= start; i -= step {
 						v = tv[i]
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case gen.Object, gen.Array:
 							stack = append(stack, v)
 						}
 					}
@@ -926,11 +932,6 @@ func (x Expr) SetOne(data, value interface{}) error {
 				stack = append(stack, fi)
 			}
 		}
-	}
-	// Free up anything still on the stack.
-	stack = stack[0:cap(stack)]
-	for i := len(stack) - 1; 0 <= i; i-- {
-		stack[i] = nil
 	}
 	return nil
 }

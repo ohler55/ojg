@@ -68,10 +68,11 @@ var (
 		{path: "..a", data: `[{"a":1,"b":2}]`, value: 5, expect: `[{"a":5,"b":2}]`},
 		{path: "[-1,'x'].a", data: `[{"a":1,"b":2},{"a":2}]`, value: 5, expect: `[{"a":1,"b":2},{"a":5}]`},
 		{path: "[1,'a'].a", data: `{"a":{"a":1,"b":2},"b":{"a":2}}`, value: 5, expect: `{"a":{"a":5,"b":2},"b":{"a":2}}`},
-		{path: "[:-1:2].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":2}]`},
-		{path: "[-1:0:-2].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":5}]`},
-		{path: "[:5].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":1,"b":2},{"a":2},{"a":3}]`},
+		{path: "[:-1:2].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":3}]`},
+		{path: "[-1:0:-2].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":1,"b":2},{"a":2},{"a":5}]`},
+		{path: "[:5].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":3}]`},
 		{path: "[?(@.b == 2)].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":3}]`},
+		{path: "[-5:3].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":1,"b":2},{"a":2},{"a":3}]`},
 
 		{path: "", data: `{}`, value: 3, err: "can not set with an empty expression"},
 		{path: "$", data: `{}`, value: 3, err: "can not set the root"},
@@ -84,33 +85,6 @@ var (
 		{path: "[1]", data: `[1]`, value: 3, err: "can not follow out of bounds array index at '[1]'"},
 	}
 )
-
-func TestExprBuildSet(t *testing.T) {
-	data := map[string]interface{}{}
-
-	err := jp.R().C("a").Set(data, map[string]interface{}{})
-	tt.Nil(t, err)
-	tt.Equal(t, `{"a":{}}`, oj.JSON(data, &oj.Options{Sort: true}))
-
-	err = jp.R().C("b").Set(data, []interface{}{1, 2, 3})
-	tt.Nil(t, err)
-	tt.Equal(t, `{"a":{},"b":[1,2,3]}`, oj.JSON(data, &oj.Options{Sort: true}))
-
-	err = jp.R().C("b").Nth(1).Set(data, map[string]interface{}{})
-	tt.Nil(t, err)
-	tt.Equal(t, `{"a":{},"b":[1,{},3]}`, oj.JSON(data, &oj.Options{Sort: true}))
-
-	err = jp.R().C("b").N(1).C("x").Set(data, 7)
-	tt.Nil(t, err)
-	tt.Equal(t, `{"a":{},"b":[1,{"x":7},3]}`, oj.JSON(data, &oj.Options{Sort: true}))
-
-	err = jp.R().C("b").W().C("x").Set(data, 5)
-	tt.Nil(t, err)
-	tt.Equal(t, `{"a":{},"b":[1,{"x":5},3]}`, oj.JSON(data, &oj.Options{Sort: true}))
-
-	jp.R().C("b").W().C("x").Del(data)
-	tt.Equal(t, `{"a":{},"b":[1,{},3]}`, oj.JSON(data, &oj.Options{Sort: true}))
-}
 
 func TestExprSet(t *testing.T) {
 	for i, d := range append(setTestData) {
