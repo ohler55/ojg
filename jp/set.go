@@ -15,26 +15,30 @@ type delFlagType struct{}
 var delFlag = &delFlagType{}
 
 // Del removes matching nodes.
-func (x Expr) Del(n interface{}) {
-	_ = x.Set(n, delFlag)
+func (x Expr) Del(n interface{}) error {
+	return x.Set(n, delFlag)
 }
 
 // Del removes at most one node.
-func (x Expr) DelOne(n interface{}) {
-	_ = x.SetOne(n, delFlag)
+func (x Expr) DelOne(n interface{}) error {
+	return x.SetOne(n, delFlag)
 }
 
 // Set all matching child node values. An error is returned if it is not
 // possible. If the path to the child does not exist array and map elements
 // are added.
 func (x Expr) Set(data, value interface{}) error {
+	fun := "set"
+	if value == delFlag {
+		fun = "delete"
+	}
 	if len(x) == 0 {
-		return fmt.Errorf("can not set with an empty expression")
+		return fmt.Errorf("can not %s with an empty expression", fun)
 	}
 	switch x[len(x)-1].(type) {
 	case Descent, Union, Slice, *Filter:
 		ta := strings.Split(fmt.Sprintf("%T", x[len(x)-1]), ".")
-		return fmt.Errorf("can not set with an expression ending with a %s", ta[len(ta)-1])
+		return fmt.Errorf("can not %s with an expression ending with a %s", fun, ta[len(ta)-1])
 	}
 	var v interface{}
 	var nv gen.Node
@@ -43,7 +47,7 @@ func (x Expr) Set(data, value interface{}) error {
 	if isNode && !ok {
 		if value != nil {
 			if v = alt.Generify(value); v == nil {
-				return fmt.Errorf("can not set a %T in a %T", value, data)
+				return fmt.Errorf("can not %s a %T in a %T", fun, value, data)
 			}
 			nodeValue, _ = v.(gen.Node)
 		}
@@ -268,7 +272,7 @@ func (x Expr) Set(data, value interface{}) error {
 				case map[string]interface{}:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, di|descentFlag)
+					stack = append(stack, fragIndex(di|descentFlag))
 					for _, v = range tv {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -279,7 +283,7 @@ func (x Expr) Set(data, value interface{}) error {
 				case []interface{}:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, di|descentFlag)
+					stack = append(stack, fragIndex(di|descentFlag))
 					for _, v = range tv {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -290,7 +294,7 @@ func (x Expr) Set(data, value interface{}) error {
 				case gen.Object:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, di|descentFlag)
+					stack = append(stack, fragIndex(di|descentFlag))
 					for _, v = range tv {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -301,7 +305,7 @@ func (x Expr) Set(data, value interface{}) error {
 				case gen.Array:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, di|descentFlag)
+					stack = append(stack, fragIndex(di|descentFlag))
 					for _, v = range tv {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -313,7 +317,7 @@ func (x Expr) Set(data, value interface{}) error {
 					// TBD reflection
 				}
 				if self {
-					stack = append(stack, fi|descentChildFlag)
+					stack = append(stack, fragIndex(fi|descentChildFlag))
 				}
 			} else {
 				stack = append(stack, prev)
@@ -452,12 +456,12 @@ func (x Expr) Set(data, value interface{}) error {
 			stack, _ = tf.Eval(stack, prev).([]interface{})
 		case Root:
 			if int(fi) == len(x)-1 { // last one
-				return fmt.Errorf("can not set the root")
+				return fmt.Errorf("can not %s the root", fun)
 			}
 			stack = append(stack, data)
 		case At, Bracket:
 			if int(fi) == len(x)-1 { // last one
-				return fmt.Errorf("can not set an empty expression")
+				return fmt.Errorf("can not %s an empty expression", fun)
 			}
 			stack = append(stack, prev)
 		}
@@ -475,13 +479,17 @@ func (x Expr) Set(data, value interface{}) error {
 // Set a child node value. An error is returned if it is not possible. If the
 // path to the child does not exist array and map elements are added.
 func (x Expr) SetOne(data, value interface{}) error {
+	fun := "set"
+	if value == delFlag {
+		fun = "delete"
+	}
 	if len(x) == 0 {
-		return fmt.Errorf("can not set with an empty expression")
+		return fmt.Errorf("can not %s with an empty expression", fun)
 	}
 	switch x[len(x)-1].(type) {
 	case Descent, Union, Slice, *Filter:
 		ta := strings.Split(fmt.Sprintf("%T", x[len(x)-1]), ".")
-		return fmt.Errorf("can not set with an expression ending with a %s", ta[len(ta)-1])
+		return fmt.Errorf("can not %s with an expression ending with a %s", fun, ta[len(ta)-1])
 	}
 	var v interface{}
 	var nv gen.Node
@@ -490,7 +498,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 	if isNode && !ok {
 		if value != nil {
 			if v = alt.Generify(value); v == nil {
-				return fmt.Errorf("can not set a %T in a %T", value, data)
+				return fmt.Errorf("can not %s a %T in a %T", fun, value, data)
 			}
 			nodeValue, _ = v.(gen.Node)
 		}
@@ -724,7 +732,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 				case map[string]interface{}:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, di|descentFlag)
+					stack = append(stack, fragIndex(di|descentFlag))
 					for _, v = range tv {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -735,7 +743,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 				case []interface{}:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, di|descentFlag)
+					stack = append(stack, fragIndex(di|descentFlag))
 					for _, v = range tv {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -746,7 +754,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 				case gen.Object:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, di|descentFlag)
+					stack = append(stack, fragIndex(di|descentFlag))
 					for _, v = range tv {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -757,7 +765,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 				case gen.Array:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, di|descentFlag)
+					stack = append(stack, fragIndex(di|descentFlag))
 					for _, v = range tv {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -769,7 +777,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 					// TBD reflection
 				}
 				if self {
-					stack = append(stack, fi|descentChildFlag)
+					stack = append(stack, fragIndex(fi|descentChildFlag))
 				}
 			} else {
 				stack = append(stack, prev)
@@ -916,12 +924,12 @@ func (x Expr) SetOne(data, value interface{}) error {
 			stack, _ = tf.Eval(stack, prev).([]interface{})
 		case Root:
 			if int(fi) == len(x)-1 { // last one
-				return fmt.Errorf("can not set the root")
+				return fmt.Errorf("can not %s the root", fun)
 			}
 			stack = append(stack, data)
 		case At, Bracket:
 			if int(fi) == len(x)-1 { // last one
-				return fmt.Errorf("can not set an empty expression")
+				return fmt.Errorf("can not %s an empty expression", fun)
 			}
 			stack = append(stack, prev)
 		}

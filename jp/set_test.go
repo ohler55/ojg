@@ -57,6 +57,7 @@ var (
 		{path: "@.a", data: `{}`, value: 3, expect: `{"a":3}`},
 		{path: "a.b", data: `{}`, value: 3, expect: `{"a":{"b":3}}`},
 		{path: "a.b", data: `{"a":{}}`, value: 3, expect: `{"a":{"b":3}}`},
+		{path: "a.b", data: `{"a":{"b":2}}`, value: 3, expect: `{"a":{"b":3}}`},
 		{path: "[1]", data: `[1,2,3]`, value: 5, expect: `[1,5,3]`},
 		{path: "[-1]", data: `[1,2,3]`, value: 5, expect: `[1,2,5]`},
 		{path: "[1].a", data: `[1,{},3]`, value: 5, expect: `[1,{"a":5},3]`},
@@ -87,7 +88,7 @@ var (
 )
 
 func TestExprSet(t *testing.T) {
-	for i, d := range append(setTestData) {
+	for i, d := range setTestData {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.path)
 		}
@@ -124,7 +125,7 @@ func TestExprSet(t *testing.T) {
 }
 
 func TestExprSetOne(t *testing.T) {
-	for i, d := range append(setOneTestData) {
+	for i, d := range setOneTestData {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.path)
 		}

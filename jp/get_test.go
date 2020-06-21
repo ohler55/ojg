@@ -124,6 +124,9 @@ var (
 		{path: "[-1]", expect: []interface{}{2}, data: []interface{}{1, 2}},
 		{path: "[1,'a']", expect: []interface{}{2}, data: []interface{}{1, 2}},
 		{path: "[:2]", expect: []interface{}{1}, data: []interface{}{1, 2}},
+		{path: "a[:-3].b", expect: []interface{}{nil}, data: firstData1},
+		{path: "a[:-1].b", expect: []interface{}{2}, data: firstData1},
+		{path: "a[-1:0:-1].b", expect: []interface{}{2}, data: firstData1},
 		{path: "[?(@ > 1)]", expect: []interface{}{2}, data: []interface{}{1, 2}},
 		{path: "$[?(@ > 1)]", expect: []interface{}{2}, data: []interface{}{1, 2}},
 		{path: "[*]", expect: []interface{}{1}, data: []interface{}{1, 2}},
@@ -276,7 +279,7 @@ func TestExprGetNodes(t *testing.T) {
 		for _, r := range results {
 			ar = append(ar, r)
 		}
-		tt.Equal(t, alt.Generify(d.expect), ar)
+		tt.Equal(t, alt.Generify(d.expect), ar, i, " : ", x)
 	}
 }
 
@@ -294,7 +297,7 @@ func TestExprFirstNode(t *testing.T) {
 		} else {
 			result = x.FirstNode(alt.Generify(d.data))
 		}
-		tt.Equal(t, alt.Generify(d.expect[0]), result)
+		tt.Equal(t, alt.Generify(d.expect[0]), result, i, " : ", x)
 	}
 }
 

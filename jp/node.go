@@ -554,7 +554,7 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 			}
 		case *Filter:
 			before := len(stack)
-			stack, _ := tf.Eval(stack, prev).([]gen.Node)
+			stack, _ = tf.Eval(stack, prev).([]gen.Node)
 			if int(fi) == len(x)-1 { // last one
 				if before < len(stack) {
 					result := stack[before]
