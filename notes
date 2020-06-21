@@ -12,7 +12,7 @@
 - oj/jp
  - set reflection
 
-- make gen.Key private
+"*" should be a vliad expression
 
 ----------------
 - next/todo

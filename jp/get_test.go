@@ -14,7 +14,7 @@ import (
 	"github.com/ohler55/ojg/tt"
 )
 
-type testData struct {
+type getData struct {
 	path   string
 	data   interface{}
 	expect []interface{}
@@ -43,7 +43,7 @@ func xTestDev(t *testing.T) {
 	//data := []interface{}{int64(1), int64(2)}
 	//data = []int{1, 2, 3}
 	//fmt.Println(oj.JSON(data, 2))
-	x, err := jp.ParseString("@.a[0].b")
+	x, err := jp.ParseString("a..b")
 	tt.Nil(t, err)
 	results := x.First(data)
 	fmt.Printf("*** %s -> %s\n", x, oj.JSON(results))
@@ -59,13 +59,12 @@ func inpectExpr(x jp.Expr) {
 }
 
 var (
-	getTestData = []*testData{
+	getTestData = []*getData{
 		{path: "", expect: []interface{}{}},
 		{path: "$.a.*.b", expect: []interface{}{112, 122, 132, 142}},
 		{path: "@.b[1].c", expect: []interface{}{223}},
 		{path: "..[1].b", expect: []interface{}{122, 222, 322, 422}},
 		{path: "[-1]", expect: []interface{}{3}, data: []interface{}{0, 1, 2, 3}},
-		{path: "..[1].b", expect: []interface{}{122, 222, 322, 422}},
 		{path: "[1,'a']['b',2]['c',3]", expect: []interface{}{133}},
 		{path: "a[1:-1:2].a", expect: []interface{}{121, 141}},
 		{path: "a[?(@.a > 135)].b", expect: []interface{}{142}},
@@ -82,11 +81,13 @@ var (
 		{path: "c[-1:1:-1].a", expect: []interface{}{321, 331, 341}},
 		{path: "a[2]..", expect: []interface{}{map[string]interface{}{"a": 131, "b": 132, "c": 133, "d": 134}, 131, 132, 133, 134}},
 		{path: "..", expect: []interface{}{[]interface{}{1, 2}, 1, 2}, data: []interface{}{1, 2}},
+		{path: "..a", expect: []interface{}{}, data: []interface{}{1, 2}},
+		{path: "a..b", expect: []interface{}{112, 122, 132, 142}},
 		{path: "[1]", expect: []interface{}{2}, data: []int{1, 2, 3}},
 		{path: "[-1]", expect: []interface{}{3}, data: []int{1, 2, 3}},
 		{path: "[-1,'a']", expect: []interface{}{3}, data: []int{1, 2, 3}},
 	}
-	getTestNotNodeData = []*testData{
+	getTestReflectData = []*getData{
 		{path: "['a','b']", expect: []interface{}{"sample", 3}, data: &Sample{A: 3, B: "sample"}},
 		{path: "$.*", expect: []interface{}{"sample", 3}, data: &Sample{A: 3, B: "sample"}},
 		{path: "$.a", expect: []interface{}{3}, data: &Sample{A: 3, B: "sample"}},
@@ -113,7 +114,7 @@ var (
 var (
 	firstData1    = map[string]interface{}{"a": []interface{}{map[string]interface{}{"b": 2}}}
 	one           = &One{A: 3}
-	firstTestData = []*testData{
+	firstTestData = []*getData{
 		{path: "", expect: []interface{}{nil}, data: map[string]interface{}{"x": 1}},
 		{path: "$", expect: []interface{}{map[string]interface{}{"x": 1}}, data: map[string]interface{}{"x": 1}},
 		{path: "@", expect: []interface{}{map[string]interface{}{"x": 1}}, data: map[string]interface{}{"x": 1}},
@@ -130,6 +131,9 @@ var (
 		{path: "@.*[0].b", expect: []interface{}{2}, data: firstData1},
 		{path: "@.a[0]..", expect: []interface{}{2}, data: firstData1},
 		{path: "..", expect: []interface{}{1}, data: []interface{}{1, 2}},
+		{path: "..a", expect: []interface{}{nil}, data: []interface{}{1, 2}},
+		{path: "..[1]", expect: []interface{}{[]interface{}{2}}, data: []interface{}{1, []interface{}{2}}},
+		{path: "a..b", expect: []interface{}{112}},
 		{path: "[0,'a'][-1,'a']['b',1]", expect: []interface{}{2}, data: firstData1},
 		{path: "a[-1:2].b", expect: []interface{}{2}, data: firstData1},
 		{path: "a[-2:2].b", expect: []interface{}{nil}, data: firstData1},
@@ -138,7 +142,7 @@ var (
 		{path: "[-1]", expect: []interface{}{3}, data: []int{1, 2, 3}},
 		{path: "[-1,'a']", expect: []interface{}{3}, data: []int{1, 2, 3}},
 	}
-	firstTestNotNodeData = []*testData{
+	firstTestReflectData = []*getData{
 		{path: "$.a", expect: []interface{}{3}, data: &Sample{A: 3, B: "sample"}},
 		{path: "x.a", expect: []interface{}{3}, data: map[string]interface{}{"x": &Sample{A: 3, B: "sample"}}},
 		{path: "[0,'x'].a", expect: []interface{}{3}, data: map[string]interface{}{"x": &Sample{A: 3, B: "sample"}}},
@@ -164,7 +168,7 @@ var (
 
 func TestExprGet(t *testing.T) {
 	data := buildTree(4, 3, 0)
-	for i, d := range append(getTestData, getTestNotNodeData...) {
+	for i, d := range append(getTestData, getTestReflectData...) {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.path)
 		}
@@ -213,25 +217,37 @@ func TestExprGetOnNode(t *testing.T) {
 }
 
 func TestExprFirst(t *testing.T) {
-	for i, d := range append(firstTestData, firstTestNotNodeData...) {
+	data := buildTree(4, 3, 0)
+	for i, d := range append(firstTestData, firstTestReflectData...) {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.path)
 		}
 		x, err := jp.ParseString(d.path)
 		tt.Nil(t, err)
-		result := x.First(d.data)
+		var result interface{}
+		if d.data == nil {
+			result = x.First(data)
+		} else {
+			result = x.First(d.data)
+		}
 		tt.Equal(t, d.expect[0], result, i, " : ", x)
 	}
 }
 
 func TestExprFirstOnNode(t *testing.T) {
+	data := buildNodeTree(4, 3, 0)
 	for i, d := range firstTestData {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.path)
 		}
 		x, err := jp.ParseString(d.path)
 		tt.Nil(t, err)
-		result := x.First(alt.Generify(d.data))
+		var result interface{}
+		if d.data == nil {
+			result = x.First(data)
+		} else {
+			result = x.First(alt.Generify(d.data))
+		}
 		tt.Equal(t, alt.Generify(d.expect[0]), result, i, " : ", x)
 	}
 }
@@ -265,13 +281,19 @@ func TestExprGetNodes(t *testing.T) {
 }
 
 func TestExprFirstNode(t *testing.T) {
+	data := buildNodeTree(4, 3, 0)
 	for i, d := range firstTestData {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.path)
 		}
 		x, err := jp.ParseString(d.path)
 		tt.Nil(t, err)
-		result := x.FirstNode(alt.Generify(d.data))
+		var result gen.Node
+		if d.data == nil {
+			result = x.FirstNode(data)
+		} else {
+			result = x.FirstNode(alt.Generify(d.data))
+		}
 		tt.Equal(t, alt.Generify(d.expect[0]), result)
 	}
 }

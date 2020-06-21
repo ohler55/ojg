@@ -47,6 +47,12 @@ func TestExprBuild(t *testing.T) {
 	x = jp.S(3, 4)
 	tt.Equal(t, "[3:4]", x.String())
 
+	x = jp.D()
+	tt.Equal(t, "..", x.String())
+
+	x = jp.U(1, "a")
+	tt.Equal(t, "[1,'a']", x.String())
+
 	x = jp.Expr{jp.Slice{}}
 	tt.Equal(t, "[:]", x.String())
 }

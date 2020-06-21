@@ -4,6 +4,7 @@ package tt
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -46,6 +47,14 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 		x, _ := asString(expect)
 		a, ok := asString(actual)
 		eq = x == a && ok
+		if !eq && 2 < len(x) && x[0] == '/' && x[len(x)-1] == '/' {
+			rx, err := regexp.Compile(x[1 : len(x)-1])
+			if err != nil {
+				fmt.Printf("*-*-* %q is not a valid regular expression. %w", x, err)
+				return
+			}
+			eq = rx.MatchString(a)
+		}
 		/*
 			if !eq {
 					if !eq {
@@ -163,8 +172,6 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 		default:
 			eq = false
 		}
-	default:
-		// TBD maps
 	}
 	if !eq {
 		var b strings.Builder

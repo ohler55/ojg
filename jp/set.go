@@ -4,7 +4,9 @@ package jp
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
 )
 
@@ -31,15 +33,21 @@ func (x Expr) Set(data, value interface{}) error {
 	}
 	switch x[len(x)-1].(type) {
 	case Descent, Union, Slice, *Filter:
-		return fmt.Errorf("can not set with an expression ending with a %T", x[len(x)-1])
+		ta := strings.Split(fmt.Sprintf("%T", x[len(x)-1]), ".")
+		return fmt.Errorf("can not set with an expression ending with a %s", ta[len(ta)-1])
 	}
-	_, isNode := value.(gen.Node)
+	var v interface{}
+	var nv gen.Node
+	_, isNode := data.(gen.Node)
 	nodeValue, ok := value.(gen.Node)
 	if isNode && !ok {
-		return fmt.Errorf("can not set a %T as an oj.Node in a %T", value, data)
+		if value != nil {
+			if v = alt.Generify(value); v == nil {
+				return fmt.Errorf("can not set a %T in a %T", value, data)
+			}
+			nodeValue, _ = v.(gen.Node)
+		}
 	}
-
-	var v interface{}
 	var prev interface{}
 	stack := make([]interface{}, 0, 64)
 	stack = append(stack, data)
@@ -62,6 +70,7 @@ func (x Expr) Set(data, value interface{}) error {
 		case Child:
 			var has bool
 			switch tv := prev.(type) {
+			case nil:
 			case map[string]interface{}:
 				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
@@ -74,14 +83,16 @@ func (x Expr) Set(data, value interface{}) error {
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
-						return fmt.Errorf("can not follow a %T at %s", v, x[:fi+1])
+						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 					}
 				} else {
 					switch x[fi+1].(type) {
 					case Child:
-						tv[string(tf)] = map[string]interface{}{}
+						v = map[string]interface{}{}
+						tv[string(tf)] = v
+						stack = append(stack, v)
 					default:
-						return fmt.Errorf("can not deduce what element to add at %s", x[:fi+1])
+						return fmt.Errorf("can not deduce what element to add at '%s'", x[:fi+1])
 					}
 				}
 			case gen.Object:
@@ -96,14 +107,16 @@ func (x Expr) Set(data, value interface{}) error {
 					case gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
-						return fmt.Errorf("can not follow a %T at %s", v, x[:fi+1])
+						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 					}
 				} else {
 					switch x[fi+1].(type) {
 					case Child:
-						tv[string(tf)] = gen.Object{}
+						nv = gen.Object{}
+						tv[string(tf)] = nv
+						stack = append(stack, nv)
 					default:
-						return fmt.Errorf("can not deduce what element to add at %s", x[:fi+1])
+						return fmt.Errorf("can not deduce what element to add at '%s'", x[:fi+1])
 					}
 				}
 			default:
@@ -113,6 +126,7 @@ func (x Expr) Set(data, value interface{}) error {
 		case Nth:
 			i := int(tf)
 			switch tv := prev.(type) {
+			case nil:
 			case []interface{}:
 				if i < 0 {
 					i = len(tv) + i
@@ -130,11 +144,11 @@ func (x Expr) Set(data, value interface{}) error {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							return fmt.Errorf("can not follow a %T at %s", v, x[:fi+1])
+							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 						}
 					}
 				} else {
-					return fmt.Errorf("can not follow out of bounds array index at %s", x[:fi+1])
+					return fmt.Errorf("can not follow out of bounds array index at '%s'", x[:fi+1])
 				}
 			case gen.Array:
 				if i < 0 {
@@ -153,15 +167,18 @@ func (x Expr) Set(data, value interface{}) error {
 						case gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							return fmt.Errorf("can not follow a %T at %s", v, x[:fi+1])
+							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 						}
 					}
 				} else {
-					return fmt.Errorf("can not follow out of bounds array index at %s", x[:fi+1])
+					return fmt.Errorf("can not follow out of bounds array index at '%s'", x[:fi+1])
 				}
+			default:
+				// TBD reflection
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
+			case nil:
 			case map[string]interface{}:
 				var k string
 				if int(fi) == len(x)-1 { // last one
@@ -290,6 +307,8 @@ func (x Expr) Set(data, value interface{}) error {
 							self = true
 						}
 					}
+				default:
+					// TBD reflection
 				}
 				if self {
 					stack = append(stack, fi|descentChildFlag)
@@ -303,6 +322,7 @@ func (x Expr) Set(data, value interface{}) error {
 				case string:
 					var has bool
 					switch tv := prev.(type) {
+					case nil:
 					case map[string]interface{}:
 						if v, has = tv[string(tu)]; has {
 							switch v.(type) {
@@ -324,23 +344,22 @@ func (x Expr) Set(data, value interface{}) error {
 				case int64:
 					i := int(tu)
 					switch tv := prev.(type) {
+					case nil:
 					case []interface{}:
 						if i < 0 {
 							i = len(tv) + i
 						}
-						var v interface{}
 						if 0 <= i && i < len(tv) {
 							v = tv[i]
-						}
-						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-							stack = append(stack, v)
+							switch v.(type) {
+							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+								stack = append(stack, v)
+							}
 						}
 					case gen.Array:
 						if i < 0 {
 							i = len(tv) + i
 						}
-						var v interface{}
 						if 0 <= i && i < len(tv) {
 							v = tv[i]
 						}
@@ -368,19 +387,19 @@ func (x Expr) Set(data, value interface{}) error {
 				step = tf[2]
 			}
 			switch tv := prev.(type) {
+			case nil:
 			case []interface{}:
 				if start < 0 {
 					start = len(tv) + start
 				}
 				if end < 0 {
-					end = len(tv) + end + 1
+					end = len(tv) + end
 				}
-				if start < 0 || end < 0 || len(tv) <= start || len(tv) < end || step == 0 {
+				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
 					continue
 				}
-				var v interface{}
 				if 0 < step {
-					for i := start; i < end; i += step {
+					for i := start; i <= end; i += step {
 						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -388,7 +407,7 @@ func (x Expr) Set(data, value interface{}) error {
 						}
 					}
 				} else {
-					for i := start; end < i; i += step {
+					for i := start; end <= i; i += step {
 						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -401,14 +420,13 @@ func (x Expr) Set(data, value interface{}) error {
 					start = len(tv) + start
 				}
 				if end < 0 {
-					end = len(tv) + end + 1
+					end = len(tv) + end
 				}
-				if start < 0 || end < 0 || len(tv) <= start || len(tv) < end || step == 0 {
+				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
 					continue
 				}
-				var v interface{}
 				if 0 < step {
-					for i := start; i < end; i += step {
+					for i := start; i <= end; i += step {
 						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -416,7 +434,7 @@ func (x Expr) Set(data, value interface{}) error {
 						}
 					}
 				} else {
-					for i := start; end < i; i += step {
+					for i := start; end <= i; i += step {
 						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -467,13 +485,18 @@ func (x Expr) SetOne(data, value interface{}) error {
 	case Descent, Union, Slice, *Filter:
 		return fmt.Errorf("can not set with an expression ending with a %T", x[len(x)-1])
 	}
-	_, isNode := value.(gen.Node)
+	var v interface{}
+	var nv gen.Node
+	_, isNode := data.(gen.Node)
 	nodeValue, ok := value.(gen.Node)
 	if isNode && !ok {
-		return fmt.Errorf("can not set a %T as an oj.Node in a %T", value, data)
+		if value != nil {
+			if v = alt.Generify(value); v == nil {
+				return fmt.Errorf("can not set a %T in a %T", value, data)
+			}
+			nodeValue, _ = v.(gen.Node)
+		}
 	}
-
-	var v interface{}
 	var prev interface{}
 	stack := make([]interface{}, 0, 64)
 	stack = append(stack, data)
@@ -496,6 +519,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 		case Child:
 			var has bool
 			switch tv := prev.(type) {
+			case nil:
 			case map[string]interface{}:
 				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
@@ -509,14 +533,16 @@ func (x Expr) SetOne(data, value interface{}) error {
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
-						return fmt.Errorf("can not follow a %T at %s", v, x[:fi+1])
+						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 					}
 				} else {
 					switch x[fi+1].(type) {
 					case Child:
-						tv[string(tf)] = map[string]interface{}{}
+						v = map[string]interface{}{}
+						tv[string(tf)] = v
+						stack = append(stack, v)
 					default:
-						return fmt.Errorf("can not deduce what element to add at %s", x[:fi+1])
+						return fmt.Errorf("can not deduce what element to add at '%s'", x[:fi+1])
 					}
 				}
 			case gen.Object:
@@ -532,14 +558,16 @@ func (x Expr) SetOne(data, value interface{}) error {
 					case gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
-						return fmt.Errorf("can not follow a %T at %s", v, x[:fi+1])
+						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 					}
 				} else {
 					switch x[fi+1].(type) {
 					case Child:
-						tv[string(tf)] = gen.Object{}
+						nv = gen.Object{}
+						tv[string(tf)] = nv
+						stack = append(stack, nv)
 					default:
-						return fmt.Errorf("can not deduce what element to add at %s", x[:fi+1])
+						return fmt.Errorf("can not deduce what element to add at '%s'", x[:fi+1])
 					}
 				}
 			default:
@@ -549,6 +577,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 		case Nth:
 			i := int(tf)
 			switch tv := prev.(type) {
+			case nil:
 			case []interface{}:
 				if i < 0 {
 					i = len(tv) + i
@@ -567,11 +596,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							return fmt.Errorf("can not follow a %T at %s", v, x[:fi+1])
+							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 						}
 					}
 				} else {
-					return fmt.Errorf("can not follow out of bounds array index at %s", x[:fi+1])
+					return fmt.Errorf("can not follow out of bounds array index at '%s'", x[:fi+1])
 				}
 			case gen.Array:
 				if i < 0 {
@@ -591,15 +620,16 @@ func (x Expr) SetOne(data, value interface{}) error {
 						case gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							return fmt.Errorf("can not follow a %T at %s", v, x[:fi+1])
+							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 						}
 					}
 				} else {
-					return fmt.Errorf("can not follow out of bounds array index at %s", x[:fi+1])
+					return fmt.Errorf("can not follow out of bounds array index at '%s'", x[:fi+1])
 				}
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
+			case nil:
 			case map[string]interface{}:
 				var k string
 				if int(fi) == len(x)-1 { // last one
@@ -690,6 +720,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 			if (di & descentFlag) == 0 {
 				self := false
 				switch tv := prev.(type) {
+				case nil:
 				case map[string]interface{}:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
@@ -734,6 +765,8 @@ func (x Expr) SetOne(data, value interface{}) error {
 							self = true
 						}
 					}
+				default:
+					// TBD reflection
 				}
 				if self {
 					stack = append(stack, fi|descentChildFlag)
@@ -747,6 +780,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 				case string:
 					var has bool
 					switch tv := prev.(type) {
+					case nil:
 					case map[string]interface{}:
 						if v, has = tv[string(tu)]; has {
 							switch v.(type) {
@@ -768,11 +802,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 				case int64:
 					i := int(tu)
 					switch tv := prev.(type) {
+					case nil:
 					case []interface{}:
 						if i < 0 {
 							i = len(tv) + i
 						}
-						var v interface{}
 						if 0 <= i && i < len(tv) {
 							v = tv[i]
 						}
@@ -784,7 +818,6 @@ func (x Expr) SetOne(data, value interface{}) error {
 						if i < 0 {
 							i = len(tv) + i
 						}
-						var v interface{}
 						if 0 <= i && i < len(tv) {
 							v = tv[i]
 						}
@@ -812,19 +845,20 @@ func (x Expr) SetOne(data, value interface{}) error {
 				step = tf[2]
 			}
 			switch tv := prev.(type) {
+			case nil:
 			case []interface{}:
 				if start < 0 {
 					start = len(tv) + start
 				}
 				if end < 0 {
-					end = len(tv) + end + 1
+					end = len(tv) + end
 				}
-				if start < 0 || end < 0 || len(tv) <= start || len(tv) < end || step == 0 {
+				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
 					continue
 				}
-				var v interface{}
 				if 0 < step {
-					for i := start; i < end; i += step {
+					// TBD reverse iteration, same in get.go
+					for i := start; i <= end; i += step {
 						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -832,7 +866,8 @@ func (x Expr) SetOne(data, value interface{}) error {
 						}
 					}
 				} else {
-					for i := start; end < i; i += step {
+					// TBD reverse iteration
+					for i := start; end <= i; i += step {
 						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -845,14 +880,13 @@ func (x Expr) SetOne(data, value interface{}) error {
 					start = len(tv) + start
 				}
 				if end < 0 {
-					end = len(tv) + end + 1
+					end = len(tv) + end
 				}
-				if start < 0 || end < 0 || len(tv) <= start || len(tv) < end || step == 0 {
+				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
 					continue
 				}
-				var v interface{}
 				if 0 < step {
-					for i := start; i < end; i += step {
+					for i := start; i <= end; i += step {
 						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -860,7 +894,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 						}
 					}
 				} else {
-					for i := start; end < i; i += step {
+					for i := start; end <= i; i += step {
 						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:

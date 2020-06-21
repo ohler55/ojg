@@ -57,6 +57,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 		switch tf := f.(type) {
 		case Child:
 			switch tv := prev.(type) {
+			case nil:
 			case map[string]interface{}:
 				v, has = tv[string(tf)]
 			case gen.Object:
@@ -84,6 +85,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 		case Nth:
 			i := int(tf)
 			switch tv := prev.(type) {
+			case nil:
 			case []interface{}:
 				if i < 0 {
 					i = len(tv) + i
@@ -122,6 +124,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
+			case nil:
 			case map[string]interface{}:
 				if int(fi) == len(x)-1 { // last one
 					for _, v = range tv {
@@ -487,14 +490,14 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				}
 			}
 		case *Filter:
-			this := len(stack)
+			before := len(stack)
 			stack, _ = tf.Eval(stack, prev).([]interface{})
 			if int(fi) == len(x)-1 { // last one
-				for ; this < len(stack); this++ {
-					results = append(results, stack[this])
+				for i := before; i < len(stack); i++ {
+					results = append(results, stack[i])
 				}
-				if this < len(stack) {
-					stack = stack[:this]
+				if before < len(stack) {
+					stack = stack[:before]
 				}
 			}
 		}
@@ -549,6 +552,7 @@ func (x Expr) First(data interface{}) interface{} {
 		switch tf := f.(type) {
 		case Child:
 			switch tv := prev.(type) {
+			case nil:
 			case map[string]interface{}:
 				v, has = tv[string(tf)]
 			case gen.Object:
@@ -576,6 +580,7 @@ func (x Expr) First(data interface{}) interface{} {
 		case Nth:
 			i := int(tf)
 			switch tv := prev.(type) {
+			case nil:
 			case []interface{}:
 				if i < 0 {
 					i = len(tv) + i
@@ -613,6 +618,7 @@ func (x Expr) First(data interface{}) interface{} {
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
+			case nil:
 			case map[string]interface{}:
 				if int(fi) == len(x)-1 { // last one
 					for _, v = range tv {
@@ -700,7 +706,6 @@ func (x Expr) First(data interface{}) interface{} {
 			}
 		case Descent:
 			di, _ := stack[len(stack)-1].(fragIndex)
-			top := (di & descentChildFlag) == 0
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
 				self := false
@@ -737,7 +742,8 @@ func (x Expr) First(data interface{}) interface{} {
 							return tv[0]
 						}
 					}
-					for _, v = range tv {
+					for i := len(tv) - 1; 0 <= i; i-- {
+						v = tv[i]
 						switch v.(type) {
 						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
@@ -776,7 +782,8 @@ func (x Expr) First(data interface{}) interface{} {
 							return tv[0]
 						}
 					}
-					for _, v = range tv {
+					for i := len(tv) - 1; 0 <= i; i-- {
+						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
@@ -788,13 +795,7 @@ func (x Expr) First(data interface{}) interface{} {
 					stack = append(stack, fi|descentChildFlag)
 				}
 			} else {
-				if int(fi) == len(x)-1 { // last one
-					if top {
-						return prev
-					}
-				} else {
-					stack = append(stack, prev)
-				}
+				stack = append(stack, prev)
 			}
 		case Root:
 			if int(fi) == len(x)-1 { // last one
@@ -812,6 +813,7 @@ func (x Expr) First(data interface{}) interface{} {
 				switch tu := u.(type) {
 				case string:
 					switch tv := prev.(type) {
+					case nil:
 					case map[string]interface{}:
 						v, has = tv[string(tu)]
 					case gen.Object:
@@ -822,6 +824,7 @@ func (x Expr) First(data interface{}) interface{} {
 				case int64:
 					i := int(tu)
 					switch tv := prev.(type) {
+					case nil:
 					case []interface{}:
 						if i < 0 {
 							i = len(tv) + i
@@ -876,6 +879,7 @@ func (x Expr) First(data interface{}) interface{} {
 				if int(fi) == len(x)-1 { // last one
 					return v
 				}
+				// TBD iterate since not last
 				switch v.(type) {
 				case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 				case nil, gen.Bool, gen.Int, gen.Float, gen.String:
@@ -898,6 +902,7 @@ func (x Expr) First(data interface{}) interface{} {
 				if int(fi) == len(x)-1 { // last one
 					return v
 				}
+				// TBD iterate since not last
 				switch v.(type) {
 				case gen.Object, gen.Array:
 					stack = append(stack, v)
@@ -921,9 +926,14 @@ func (x Expr) First(data interface{}) interface{} {
 				}
 			}
 		case *Filter:
+			before := len(stack)
 			stack, _ = tf.Eval(stack, prev).([]interface{})
 			if int(fi) == len(x)-1 { // last one
-				return stack[len(stack)-1]
+				if before < len(stack) {
+					result := stack[before]
+					stack = stack[:before]
+					return result
+				}
 			}
 		}
 		if int(fi) < len(x)-1 {
