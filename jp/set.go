@@ -366,7 +366,6 @@ func (x Expr) Set(data, value interface{}) error {
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
-								self = true
 							}
 						}
 					}
@@ -385,7 +384,6 @@ func (x Expr) Set(data, value interface{}) error {
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
-								self = true
 							}
 						}
 					}
@@ -442,15 +440,8 @@ func (x Expr) Set(data, value interface{}) error {
 					case gen.Object:
 						if v, has = tv[string(tu)]; has {
 							switch v.(type) {
-							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
-							default:
-								switch reflect.TypeOf(v).Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-									stack = append(stack, v)
-								}
 							}
 						}
 					default:
@@ -741,8 +732,28 @@ func (x Expr) SetOne(data, value interface{}) error {
 					}
 				}
 			default:
-				// TBD try reflection
-				continue
+				if int(fi) == len(x)-1 { // last one
+					if value != delFlag {
+						x.reflectSetChild(tv, string(tf), value)
+					}
+					return nil
+				}
+				if v, has = x.reflectGetChild(tv, string(tf)); has {
+					switch v.(type) {
+					case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+						bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
+					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						stack = append(stack, v)
+					default:
+						switch reflect.TypeOf(v).Kind() {
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							stack = append(stack, v)
+						default:
+							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
+						}
+					}
+				}
 			}
 		case Nth:
 			i := int(tf)
@@ -804,6 +815,30 @@ func (x Expr) SetOne(data, value interface{}) error {
 				} else {
 					return fmt.Errorf("can not follow out of bounds array index at '%s'", x[:fi+1])
 				}
+			default:
+				if int(fi) == len(x)-1 { // last one
+					if value != delFlag {
+						x.reflectSetNth(tv, i, value)
+					}
+					return nil
+				}
+				var has bool
+				if v, has = x.reflectGetNth(tv, i); has {
+					switch v.(type) {
+					case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+						nil, gen.Bool, gen.Int, gen.Float, gen.String:
+						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
+					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						stack = append(stack, v)
+					default:
+						switch reflect.TypeOf(v).Kind() {
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							stack = append(stack, v)
+						default:
+							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
+						}
+					}
+				}
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
@@ -848,7 +883,8 @@ func (x Expr) SetOne(data, value interface{}) error {
 						return nil
 					}
 				} else {
-					for _, v = range tv {
+					for i := len(tv) - 1; 0 <= i; i-- {
+						v = tv[i]
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
@@ -895,7 +931,8 @@ func (x Expr) SetOne(data, value interface{}) error {
 						return nil
 					}
 				} else {
-					for _, v = range tv {
+					for i := len(tv) - 1; 0 <= i; i-- {
+						v = tv[i]
 						switch v.(type) {
 						case gen.Object, gen.Array:
 							stack = append(stack, v)
@@ -903,8 +940,21 @@ func (x Expr) SetOne(data, value interface{}) error {
 					}
 				}
 			default:
-				// TBD try reflection
-				continue
+				if int(fi) != len(x)-1 {
+					for _, v := range x.reflectGetWild(tv) {
+						switch v.(type) {
+						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							stack = append(stack, v)
+						default:
+							switch reflect.TypeOf(v).Kind() {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								stack = append(stack, v)
+							}
+						}
+					}
+				}
 			}
 		case Descent:
 			di, _ := stack[len(stack)-1].(fragIndex)
@@ -928,7 +978,6 @@ func (x Expr) SetOne(data, value interface{}) error {
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
-								self = true
 							}
 						}
 					}
@@ -936,7 +985,8 @@ func (x Expr) SetOne(data, value interface{}) error {
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, fragIndex(di|descentFlag))
-					for _, v = range tv {
+					for i := len(tv) - 1; 0 <= i; i-- {
+						v = tv[i]
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
@@ -947,7 +997,6 @@ func (x Expr) SetOne(data, value interface{}) error {
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
-								self = true
 							}
 						}
 					}
@@ -966,24 +1015,14 @@ func (x Expr) SetOne(data, value interface{}) error {
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, fragIndex(di|descentFlag))
-					for _, v = range tv {
+					for i := len(tv) - 1; 0 <= i; i-- {
+						v = tv[i]
 						switch v.(type) {
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 							self = true
-						default:
-							switch reflect.TypeOf(v).Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-								stack = append(stack, v)
-								self = true
-							}
 						}
 					}
-				default:
-					// TBD reflection
-					continue
 				}
 				if self {
 					stack = append(stack, fragIndex(fi|descentChildFlag))
@@ -1015,6 +1054,14 @@ func (x Expr) SetOne(data, value interface{}) error {
 					case gen.Object:
 						if v, has = tv[string(tu)]; has {
 							switch v.(type) {
+							case gen.Object, gen.Array:
+								stack = append(stack, v)
+							}
+						}
+					default:
+						var has bool
+						if v, has = x.reflectGetChild(tv, string(tu)); has {
+							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
@@ -1026,9 +1073,6 @@ func (x Expr) SetOne(data, value interface{}) error {
 								}
 							}
 						}
-					default:
-						// TBD try reflection
-						continue
 					}
 				case int64:
 					i := int(tu)
@@ -1060,12 +1104,24 @@ func (x Expr) SetOne(data, value interface{}) error {
 							v = tv[i]
 						}
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case gen.Object, gen.Array:
 							stack = append(stack, v)
 						}
 					default:
-						// TBD reflection
-						continue
+						var has bool
+						if v, has = x.reflectGetNth(tv, i); has {
+							switch v.(type) {
+							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+								stack = append(stack, v)
+							default:
+								switch reflect.TypeOf(v).Kind() {
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+									stack = append(stack, v)
+								}
+							}
+						}
 					}
 				}
 			}
@@ -1161,8 +1217,21 @@ func (x Expr) SetOne(data, value interface{}) error {
 					}
 				}
 			default:
-				// TBD try reflection
-				continue
+				if int(fi) != len(x)-1 {
+					for _, v := range x.reflectGetSlice(tv, start, end, step) {
+						switch v.(type) {
+						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							stack = append(stack, v)
+						default:
+							switch reflect.TypeOf(v).Kind() {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								stack = append(stack, v)
+							}
+						}
+					}
+				}
 			}
 		case *Filter:
 			stack, _ = tf.Eval(stack, prev).([]interface{})
@@ -1224,5 +1293,4 @@ func (x Expr) reflectSetNth(data interface{}, i int, v interface{}) {
 			}
 		}
 	}
-	return
 }

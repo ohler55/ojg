@@ -477,9 +477,6 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 								stack = append(stack, v)
 							}
 						}
-					default:
-						// TBD try reflection
-						continue
 					}
 				case int64:
 					i := int(tu)

@@ -219,7 +219,9 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = strMode
 				p.nextMode = colonMode
 			case '}':
-				p.objEnd()
+				if err := p.objEnd(); err != nil {
+					return err
+				}
 			default:
 				return p.newError("expected a string start or object close, not '%c'", b)
 			}

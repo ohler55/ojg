@@ -10,7 +10,6 @@ import (
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/jp"
-	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -31,31 +30,6 @@ type One struct {
 
 type Any struct {
 	X interface{}
-}
-
-func xTestDev(t *testing.T) {
-	//var data interface{}
-	//data = []*One{&One{A: 1}, &One{A: 2}, &One{A: 3}}
-	data := buildTree(4, 3, 0)
-	ndata := buildNodeTree(4, 3, 0)
-	//data := []interface{}{0, 1, 2, 3}
-	//ndata := alt.Generify(data)
-	//data := []interface{}{int64(1), int64(2)}
-	//data = []int{1, 2, 3}
-	//fmt.Println(oj.JSON(data, 2))
-	x, err := jp.ParseString("a..b")
-	tt.Nil(t, err)
-	results := x.First(data)
-	fmt.Printf("*** %s -> %s\n", x, oj.JSON(results))
-	nresults := x.FirstNode(ndata)
-	fmt.Printf("*** %s -> %s\n", x, oj.JSON(nresults))
-}
-
-func inpectExpr(x jp.Expr) {
-	fmt.Printf("*** Expr %d\n", len(x))
-	for i, f := range x {
-		fmt.Printf("***   %d: %T %s\n", i, f, f)
-	}
 }
 
 var (
@@ -327,7 +301,6 @@ func buildTree(size, depth, iv int) interface{} {
 	return obj
 }
 
-// TBD add object for relfection tests
 func buildNodeTree(size, depth, iv int) gen.Node {
 	if depth%2 == 0 {
 		list := gen.Array{}

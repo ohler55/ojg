@@ -1,15 +1,9 @@
 
 - tasks before release
- - reflect for path
- - unit tests
  - docs
  - CI - travis or something else?
- - remove tree (maybe create separate benchmark repo)
-
-- oj/jp
- - set reflection
-
-"*" should be a valid expression
+ - benchmark
+  - write using golang json.Marshal and MarshalIndent
 
 ----------------
 - next/todo

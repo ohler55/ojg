@@ -119,13 +119,6 @@ func TestParse(t *testing.T) {
 	}
 }
 
-func xTestParseDev(t *testing.T) {
-	x, err := jp.ParseString(`[?(@.x =`)
-	tt.Nil(t, err)
-	tt.NotNil(t, x)
-	tt.Equal(t, "", x.String())
-}
-
 func BenchmarkParse(b *testing.B) {
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {

@@ -126,8 +126,6 @@ func (s *Script) Match(data interface{}) bool {
 	return 0 < len(stack)
 }
 
-// TBD input as interface{}, same as output, assert types as needed
-
 // Eval is primarily used by the Expr parser but is public for testing.
 func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 	// Checking the type each iteration adds 2.5% but allows code not to be
@@ -488,27 +486,6 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 		buf = append(buf, strconv.FormatInt(tv, 10)...)
 	case int:
 		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-		/*
-			// TBD is there any way to get here?
-			case int8:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case int16:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case int32:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case uint:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case uint8:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case uint16:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case uint32:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case uint64:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case float32:
-				buf = append(buf, strconv.FormatFloat(float64(tv), 'g', -1, 32)...)
-		*/
 	case float64:
 		buf = append(buf, strconv.FormatFloat(tv, 'g', -1, 64)...)
 	case bool:
@@ -527,13 +504,6 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 		} else {
 			buf = append(buf, tv.buf...)
 		}
-		/*
-			// TBD is there any way to get here?
-			case fmt.Stringer:
-				buf = append(buf, tv.String()...)
-			default:
-				buf = append(buf, fmt.Sprintf("%v", v)...)
-		*/
 	}
 	return buf
 }
