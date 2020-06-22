@@ -22,6 +22,14 @@ type setData struct {
 	noSimple bool
 }
 
+type setReflectData struct {
+	path   string
+	data   interface{}
+	value  interface{}
+	expect string // JSON
+	err    string
+}
+
 var (
 	setTestData = []*setData{
 		{path: "@.a", data: `{}`, value: 3, expect: `{"a":3}`},
@@ -84,6 +92,35 @@ var (
 		{path: "a[0]", data: `{}`, value: 3, err: "can not deduce what element to add at 'a'"},
 		{path: "[0].1", data: `[1]`, value: 3, err: "/can not follow a .+ at '\\[0\\]'/"},
 		{path: "[1]", data: `[1]`, value: 3, err: "can not follow out of bounds array index at '[1]'"},
+	}
+	setReflectTestData = []*setReflectData{
+		{path: "a", data: &Sample{A: 1, B: "a string"}, value: 3, expect: `{"^":"Sample","a":3,"b":"a string"}`},
+		{path: "x.a", data: &Any{X: map[string]interface{}{"a": 1}}, value: 3, expect: `{"^":"Any","x":{"a":3}}`},
+		{path: "x.a", data: &Any{X: &Sample{A: 1}}, value: 3, expect: `{"^":"Any","x":{"^":"Sample","a":3,"b":""}}`},
+		{path: "[1]", data: []int{1, 2, 3}, value: 5, expect: `[1,5,3]`},
+		{path: "[-2]", data: []int{1, 2, 3}, value: 5, expect: `[1,5,3]`},
+		{path: "[1].x", data: []*Any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5, expect: `[{"^":"Any","x":1},{"^":"Any","x":5},{"^":"Any","x":3}]`},
+		{path: "$.*.x", data: []*Any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5, expect: `[{"^":"Any","x":5},{"^":"Any","x":5},{"^":"Any","x":5}]`},
+		{path: "[1].x",
+			data: []map[string]interface{}{
+				map[string]interface{}{"x": 1},
+				map[string]interface{}{"x": 2},
+				map[string]interface{}{"x": 3},
+			},
+			value: 5, expect: `[{"x":1},{"x":5},{"x":3}]`},
+		{path: "[*].x",
+			data: []map[string]interface{}{
+				map[string]interface{}{"x": 1},
+				map[string]interface{}{"x": 2},
+				map[string]interface{}{"x": 3},
+			},
+			value: 5, expect: `[{"x":5},{"x":5},{"x":5}]`},
+		{path: "[1,'a'].x",
+			data: []*Any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
+			expect: `[{"^":"Any","x":1},{"^":"Any","x":5},{"^":"Any","x":3}]`},
+		{path: "[1,'a'].x",
+			data:  map[string]interface{}{"a": &Any{X: 1}, "b": &Any{X: 2}, "c": &Any{X: 3}},
+			value: 5, expect: `{"a":{"^":"Any","x":5},"b":{"^":"Any","x":2},"c":{"^":"Any","x":3}}`},
 	}
 )
 
@@ -157,6 +194,25 @@ func TestExprSetOne(t *testing.T) {
 				result := oj.JSON(data, &oj.Options{Sort: true})
 				tt.Equal(t, d.expect, result, i, " : ", x)
 			}
+		}
+	}
+}
+
+func TestExprSetReflect(t *testing.T) {
+	for i, d := range setReflectTestData {
+		if testing.Verbose() {
+			fmt.Printf("... %d: %s\n", i, d.path)
+		}
+		x, err := jp.ParseString(d.path)
+		tt.Nil(t, err, i, " : ", x)
+
+		err = x.Set(d.data, d.value)
+		if 0 < len(d.err) {
+			tt.NotNil(t, err, i, " : ", x)
+			tt.Equal(t, d.err, err.Error(), i, " : ", x)
+		} else {
+			result := oj.JSON(d.data, &oj.Options{Sort: true, CreateKey: "^"})
+			tt.Equal(t, d.expect, result, i, " : ", x)
 		}
 	}
 }

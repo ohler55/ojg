@@ -394,7 +394,6 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
 					continue
 				}
-				var v interface{}
 				if 0 < step {
 					for i := start; i <= end; i += step {
 						v = tv[i]
@@ -444,7 +443,6 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
 					continue
 				}
-				var v interface{}
 				if 0 < step {
 					for i := start; i <= end; i += step {
 						v = tv[i]

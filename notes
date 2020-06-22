@@ -6,13 +6,10 @@
  - CI - travis or something else?
  - remove tree (maybe create separate benchmark repo)
 
-- maybe a parser path wrapper that returns a Node
- - type assersions should always pass
-
 - oj/jp
  - set reflection
 
-"*" should be a vliad expression
+"*" should be a valid expression
 
 ----------------
 - next/todo
