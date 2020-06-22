@@ -9,7 +9,7 @@ import (
 	"github.com/ohler55/ojg/oj"
 )
 
-func ExampleNodeParser_Parse() {
+func ExampleParser_Parse() {
 	// The parser can be reused for better performance by reusing buffers.
 	var p gen.Parser
 	v, err := p.Parse([]byte(`{"a": 1, "b":[2,3,4]}`))

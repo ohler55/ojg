@@ -1,16 +1,9 @@
 
 - tasks before release
- - reflect for path and script
- - unit tests
  - docs
  - CI - travis or something else?
- - remove tree (maybe create separate benchmark repo)
-
-- maybe a parser path wrapper that returns a Node
- - type assersions should always pass
-
-- oj/jp
- - reflection
+ - benchmark
+  - write using golang json.Marshal and MarshalIndent
 
 ----------------
 - next/todo

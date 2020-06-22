@@ -23,8 +23,6 @@ func (f Union) Append(buf []byte, _, _ bool) []byte {
 			buf = append(buf, '\'')
 		case int64:
 			buf = append(buf, strconv.FormatInt(tx, 10)...)
-		case int:
-			buf = append(buf, strconv.FormatInt(int64(tx), 10)...)
 		}
 	}
 	buf = append(buf, ']')

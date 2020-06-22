@@ -95,6 +95,8 @@ func (p *parser) nextFrag(first, lastDescent bool) (f Frag, err error) {
 			}
 		case '.':
 			f, err = p.afterDot()
+		case '*':
+			return Wildcard('*'), nil
 		case '[':
 			f, err = p.afterBracket()
 		case ']':

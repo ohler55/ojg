@@ -119,18 +119,18 @@ func (s *Script) String() string {
 func (s *Script) Match(data interface{}) bool {
 	stack := []interface{}{}
 	if node, ok := data.(gen.Node); ok {
-		stack = s.Eval(stack, gen.Array{node})
+		stack, _ = s.Eval(stack, gen.Array{node}).([]interface{})
 	} else {
-		stack = s.Eval(stack, []interface{}{data})
+		stack, _ = s.Eval(stack, []interface{}{data}).([]interface{})
 	}
 	return 0 < len(stack)
 }
 
 // Eval is primarily used by the Expr parser but is public for testing.
-func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
+func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 	// Checking the type each iteration adds 2.5% but allows code not to be
-	// duplicated and not to call a separate function. Using just one function
-	// call for each iteration adds 6.5%.
+	// duplicated and not to call a separate function. Using just one more
+	// function call for each iteration adds 6.5%.
 	var dlen int
 	switch td := data.(type) {
 	case []interface{}:
@@ -442,7 +442,14 @@ func (s *Script) Eval(stack []interface{}, data interface{}) []interface{} {
 			}
 		}
 		if b, _ := s.stack[0].(bool); b {
-			stack = append(stack, v)
+			switch tstack := stack.(type) {
+			case []interface{}:
+				stack = append(tstack, v)
+			case []gen.Node:
+				if n, ok := v.(gen.Node); ok {
+					stack = append(tstack, n)
+				}
+			}
 		}
 	}
 	for i := range s.stack {
@@ -479,27 +486,6 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 		buf = append(buf, strconv.FormatInt(tv, 10)...)
 	case int:
 		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-		/*
-			// TBD is there any way to get here?
-			case int8:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case int16:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case int32:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case uint:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case uint8:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case uint16:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case uint32:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case uint64:
-				buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
-			case float32:
-				buf = append(buf, strconv.FormatFloat(float64(tv), 'g', -1, 32)...)
-		*/
 	case float64:
 		buf = append(buf, strconv.FormatFloat(tv, 'g', -1, 64)...)
 	case bool:
@@ -518,13 +504,6 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 		} else {
 			buf = append(buf, tv.buf...)
 		}
-		/*
-			// TBD is there any way to get here?
-			case fmt.Stringer:
-				buf = append(buf, tv.String()...)
-			default:
-				buf = append(buf, fmt.Sprintf("%v", v)...)
-		*/
 	}
 	return buf
 }

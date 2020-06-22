@@ -2,8 +2,6 @@
 
 package gen_test
 
-import "github.com/ohler55/ojg/oj"
-
 type data struct {
 	src string
 	// Empty means no error expected while non empty should be compared
@@ -12,6 +10,4 @@ type data struct {
 	value     interface{}
 	onlyOne   bool
 	noComment bool
-	options   *oj.Options
-	indent    int
 }
