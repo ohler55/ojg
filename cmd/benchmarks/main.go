@@ -36,9 +36,9 @@ func main() {
 
 	base := testing.Benchmark(runBase)
 
-	jsonBenchmarks(base, false, false)
-	jsonBenchmarks(base, true, false)
-	jsonBenchmarks(base, true, true)
+	jsonBenchmarks(base, false)
+	jsonBenchmarks(base, true)
+	jsonSortBenchmarks(base)
 	convBenchmarks(base)
 
 	fmt.Println()
@@ -101,16 +101,26 @@ func ojGenerify(b *testing.B) {
 	}
 }
 
-func jsonBenchmarks(base testing.BenchmarkResult, indent, sort bool) {
+func jsonBenchmarks(base testing.BenchmarkResult, indent bool) {
 	fmt.Println()
-	fmt.Printf("JSON() benchmarks, indent: %t, sort: %t\n", indent, sort)
+	fmt.Printf("JSON() benchmarks, indent: %t, sort: false\n", indent)
 
+	var marshalRes testing.BenchmarkResult
 	var ojSRes testing.BenchmarkResult
 	var ojWRes testing.BenchmarkResult
 
-	if sort {
-		ojSRes = testing.Benchmark(ojJSONSort)
-	} else if indent {
+	if indent {
+		marshalRes = testing.Benchmark(marshalJSON2)
+	} else {
+		marshalRes = testing.Benchmark(marshalJSON)
+	}
+	marshalNs := marshalRes.NsPerOp()
+	marshalBytes := marshalRes.AllocedBytesPerOp()
+	marshalAllocs := marshalRes.AllocsPerOp()
+	fmt.Printf("json.Marshal:           %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
+		marshalNs, 1.0, marshalBytes, 1.0, marshalAllocs, 1.0)
+
+	if indent {
 		ojSRes = testing.Benchmark(ojJSON2)
 	} else {
 		ojSRes = testing.Benchmark(ojJSON)
@@ -119,13 +129,11 @@ func jsonBenchmarks(base testing.BenchmarkResult, indent, sort bool) {
 	ojBytes := ojSRes.AllocedBytesPerOp()
 	ojAllocs := ojSRes.AllocsPerOp()
 	fmt.Printf("  oj.JSON:              %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
-		ojNs, 1.0,
-		ojBytes, 1.0,
-		ojAllocs, 1.0)
+		ojNs, float64(marshalNs)/float64(ojNs),
+		ojBytes, float64(marshalBytes)/float64(ojBytes),
+		ojAllocs, float64(marshalAllocs)/float64(ojAllocs))
 
-	if sort {
-		ojWRes = testing.Benchmark(ojWriteSort)
-	} else if indent {
+	if indent {
 		ojWRes = testing.Benchmark(ojWrite2)
 	} else {
 		ojWRes = testing.Benchmark(ojWrite)
@@ -134,9 +142,62 @@ func jsonBenchmarks(base testing.BenchmarkResult, indent, sort bool) {
 	ojBytes = ojWRes.AllocedBytesPerOp()
 	ojAllocs = ojWRes.AllocsPerOp()
 	fmt.Printf("  oj.Write:             %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
-		ojNs, float64(ojNs)/float64(ojNs),
-		ojBytes, float64(ojBytes)/float64(ojBytes),
-		ojAllocs, float64(ojAllocs)/float64(ojAllocs))
+		ojNs, float64(marshalNs)/float64(ojNs),
+		ojBytes, float64(marshalBytes)/float64(ojBytes),
+		ojAllocs, float64(marshalAllocs)/float64(ojAllocs))
+}
+
+func jsonSortBenchmarks(base testing.BenchmarkResult) {
+	fmt.Println()
+	fmt.Printf("JSON() benchmarks, sort: true\n")
+
+	var ojSRes testing.BenchmarkResult
+	var ojWRes testing.BenchmarkResult
+
+	ojSRes = testing.Benchmark(ojJSONSort)
+	ns := ojSRes.NsPerOp()
+	bytes := ojSRes.AllocedBytesPerOp()
+	allocs := ojSRes.AllocsPerOp()
+	fmt.Printf("  oj.JSON:              %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
+		ns, 1.0,
+		bytes, 10.,
+		allocs, 1.0)
+
+	ojWRes = testing.Benchmark(ojWriteSort)
+	ojNs := ojWRes.NsPerOp()
+	ojBytes := ojWRes.AllocedBytesPerOp()
+	ojAllocs := ojWRes.AllocsPerOp()
+	fmt.Printf("  oj.Write:             %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
+		ojNs, float64(ns)/float64(ojNs),
+		ojBytes, float64(bytes)/float64(ojBytes),
+		ojAllocs, float64(allocs)/float64(ojAllocs))
+}
+
+func marshalJSONSort(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data := alt.Alter(benchmarkData(tm))
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_, _ = json.Marshal(data)
+	}
+}
+
+func marshalJSON2(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data := alt.Alter(benchmarkData(tm))
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_, _ = json.MarshalIndent(data, "", "  ")
+	}
+}
+
+func marshalJSON(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data := alt.Alter(benchmarkData(tm))
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_, _ = json.Marshal(data)
+	}
 }
 
 func ojJSON(b *testing.B) {
