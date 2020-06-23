@@ -1,6 +1,6 @@
 # [![{}j](http://www.ohler.com/dev/images/ojg_comet.jpg)](https://github.com/ohler55/ojg)
 
-[![Build Status](https://img.shields.io/travis/ohler55/ojg/master.svg?logo=travis)](http://travis-ci.org/ohler55/ojg?branch=master)[![Coverage Status](https://coveralls.io/repos/github/ohler55/ojg/badge.svg?branch=develop)](https://coveralls.io/github/ohler55/ojg?branch=develop)
+[![Build Status](https://img.shields.io/travis/ohler55/ojg/master.svg?logo=travis)](http://travis-ci.org/ohler55/ojg?branch=master)[![Coverage Status](https://coveralls.io/repos/github/ohler55/ojg/badge.svg?branch=master)](https://coveralls.io/github/ohler55/ojg?branch=master)
 
 # OjG
 
@@ -45,9 +45,9 @@ See [CHANGELOG.md](CHANGELOG.md)
 
 #### Links of Interest
 
- - *Oj, a Ruby JSON parser*: https://www.ohler.com/oj also at https://github.com/ohler55/oj
+ - *Oj, a Ruby JSON parser*: http://www.ohler.com/oj/doc/index.html also at https://github.com/ohler55/oj
 
- - *OjC, a C JSON parser*: https://www.ohler.com/ojc also at https://github.com/ohler55/ojc
+ - *OjC, a C JSON parser*: http://www.ohler.com/ojc/doc/index.html also at https://github.com/ohler55/ojc
 
  - *Fast XML parser and marshaller on GitHub*: https://github.com/ohler55/ox
 
