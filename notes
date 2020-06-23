@@ -1,16 +1,18 @@
 
-- tasks before release
- - CI - travis or something else?
-
 ----------------
 - next/todo
  - regex op =~
- - scripts
+ - FIN
  - cmd/oj
-  - palette
-  - read args from file
+  - read args from file (FIN format)
+   - also check ~/.oj.fin or ~/.oj - graphql emacs mode works well
+  - palette in cfg file
   - build or restructure json
    - use a template based approach along with JSONPath
+
+- much later
+ - scripts [(@.length-1)]
+  - decide what functions are actually useful if any
 
 -------------
 - cmd/oj
@@ -18,35 +20,31 @@
    -p (palette) key=red
    -key red
 
+-------------
+- Flexible Information Notation for command line and lazy data entry
+ - spec
+  - aspects of JSON and GraphQL
+  - keys or any value does not need quotes unless they have syntax or space characters
+  - space or characters to ignore are space and below as well comma
+  - { starts object which is closed by }
+  - [ starts object which is closed by ]
+  - : separates key from value
+  - " or ' allowed
+  - \n in string is okay
+  - \ is the escape character
+  - # comments are allowed
+  - all JSON types but also time
+ - parser to simple
+ - writer
+ - spec page in /docs/fin_spec.md
 
-- ojg/doc.go
- - JSON tools
- - different approach than go json
-  - interface{} the same, referred to as simple type
-  - also generic data, not to be confused with golang discussions
-   - types elements to match JSON, if it is allowed as an elemtn it will write to JSON
-   - light weight with very low memory and performance impact
-  - go json relies on decoration on fixed structs with no support for interface elements
-   - borrowing from Oj for Ruby, types can be encoded and later recomposed
-   - OjG supports multiple docs in one string or stream
-  - includes builders for simple and generic
-  - JSON path on generic and simple
-  - validator
 
-
-- jp - https://goessner.net/articles/JsonPath
 ------------------
 
-Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)] matches items whose description starts with cat (case-insensitive).
+- Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)]
+- Exists syntax? [?(@.x exists)]
 
-Use to negate a filter: [?(!@.isbn)] matches items that do not have the isbn property.
-
-- how to handle things in []
- - maybe [] is a check for an array/subscript
-  - then things to do on the array elements after that
-   - so ArrayStart expr followed by filter, slice, etc then terminated with an arrayEnd
-
-
+-----------------------------------
 - parse methods attempted
  - tried functions instead of switch, slower
   - tried array of 256 functions for value switching

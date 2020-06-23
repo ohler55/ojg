@@ -5,24 +5,56 @@
 # OjG
 
 Optimized JSON for Go is a high performance parser with a variety of
-additional JSON tools including a JSONPath implemenation that will
-operation on golang structs as well as simple types.
+additional JSON tools.
+
+## Features
+
+ - Fast JSON parser. Check out the cmd/benchmarks app in this repo.
+ - Full JSONPath implemenation that operates on simple types as well as structs.
+ - Generic types. Not the propose golang generics but type safe JSON elements.
+ - Fast JSON validator.
+ - Fast JSON writer with a sort option.
+ - Simple data builders using a push and pop approach.
+ - Object encoding and decoding using an approach similar to that used with Oj for Ruby.
 
 ## Using
 
-```golang
+A basic Parse:
 
-    v, err := oj.ParseString("[true,[false,[null],123],456]")
+```golang
+    obj, err := oj.ParseString(`{
+        "a":[
+            {"x":1,"y":2,"z":3},
+            {"x":2,"y":4,"z":6}
+        ]
+    }`)
+```
+
+Using JSONPath expressions:
+
+```golang
+    x, err := jp.ParseString("a[?(@.x > 1)].y")
+    ys := x.Get(obj)
+    // returns [4]
+```
+
+The **oj** command (cmd/oj) which uses JSON path for filtering and
+extracting JSON elements. It also includes sorting, reformatting, and
+colorizing options.
+
+```
+$ oj -m "(@.name == 'Pete')" myfile.json
 
 ```
 
 ## Installation
 ```
 go get github.com/ohler55/ojg
+go get github.com/ohler55/ojg/cmd/oj
 
 ```
 
-or just import
+or just import in your `.go` files.
 
 ```
 import (
@@ -33,15 +65,23 @@ import (
 )
 ```
 
+To build and install the `oj` application:
+
+```
+go install ./...
+```
+
 ## Releases
 
 See [CHANGELOG.md](CHANGELOG.md)
 
 ## Links
 
-- *Documentation*: [https://ohler55.github.com/ojg](https://ohler55.github.com/ojg)
+- *Documentation*: [https://pkg.go.dev/github.com/ohler55/ojg](https://pkg.go.dev/github.com/ohler55/ojg)
 
 - *GitHub* *repo*: https://github.com/ohler55/ojg
+
+- *JSONPath* description: https://goessner.net/articles/JsonPath
 
 #### Links of Interest
 
