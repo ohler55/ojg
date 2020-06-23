@@ -11,7 +11,7 @@ additional JSON tools.
 
  - Fast JSON parser. Check out the cmd/benchmarks app in this repo.
  - Full JSONPath implemenation that operates on simple types as well as structs.
- - Generic types. Not the propose golang generics but type safe JSON elements.
+ - Generic types. Not the proposed golang generics but type safe JSON elements.
  - Fast JSON validator.
  - Fast JSON writer with a sort option.
  - Simple data builders using a push and pop approach.
