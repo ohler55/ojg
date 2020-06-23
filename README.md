@@ -33,11 +33,11 @@ import (
 
 ## Releases
 
-See [{file:CHANGELOG.md}](CHANGELOG.md)
+See [file:CHANGELOG.md](CHANGELOG.md)
 
 ## Links
 
-- *Documentation*: http://www.ohler.com/oj/doc, http://rubydoc.info/gems/oj
+- *Documentation*: [https://ohler55.github.io/ojg](https://ohler55.github.io/ojg)
 
 - *GitHub* *repo*: https://github.com/ohler55/ojg
 
