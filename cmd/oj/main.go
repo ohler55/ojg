@@ -16,6 +16,7 @@ var (
 	indent = 2
 	color  = false
 	bright = false
+	sort   = false
 
 	// If true wrap extracts with an array.
 	wrapExtract = false
@@ -26,6 +27,7 @@ var (
 func init() {
 	flag.IntVar(&indent, "i", indent, "indent")
 	flag.BoolVar(&color, "c", color, "color")
+	flag.BoolVar(&sort, "s", sort, "sort")
 	flag.BoolVar(&bright, "b", bright, "bright color")
 	flag.BoolVar(&wrapExtract, "w", wrapExtract, "wrap extracts in an array")
 	flag.Var(&exValue{}, "x", "extract path")
@@ -58,15 +60,23 @@ follows the oj.Script format.
 
   oj -m "(@.name == 'Pete')" myfile.json "(@.name == "Makie")"
 
+An argument that starts with a { or [ marks the start of a JSON document that
+is composed of the remaining argument concatenated together.
+
 `, filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr)
 	}
 	flag.Parse()
 
+	var input []byte
 	var files []string
 	for _, arg := range flag.Args() {
 		if len(arg) == 0 {
+			continue
+		}
+		if 0 < len(input) {
+			input = append(input, arg...)
 			continue
 		}
 		switch arg[0] {
@@ -80,6 +90,8 @@ follows the oj.Script format.
 			if err == nil {
 				matches = append(matches, script)
 			}
+		case '{', '[':
+			input = append(input, arg...)
 		default:
 			files = append(files, arg)
 		}
@@ -97,7 +109,11 @@ follows the oj.Script format.
 				break
 			}
 		}
-	} else {
+	}
+	if 0 < len(input) {
+		_, err = p.Parse(input, write)
+	}
+	if len(files) == 0 && len(input) == 0 {
 		_, err = p.ParseReader(os.Stdin, write)
 	}
 	if err != nil {
@@ -143,11 +159,13 @@ func writeJSON(v interface{}) {
 		o := oj.BrightOptions
 		o.Indent = indent
 		o.Color = true
+		o.Sort = sort
 		_ = oj.Write(os.Stdout, v, &o)
-	} else if color {
+	} else if color || sort {
 		o := oj.DefaultOptions
 		o.Indent = indent
-		o.Color = true
+		o.Color = color
+		o.Sort = sort
 		_ = oj.Write(os.Stdout, v, &o)
 	} else {
 		_ = oj.Write(os.Stdout, v, indent)

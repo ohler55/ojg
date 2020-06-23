@@ -1,22 +1,18 @@
-- readme
- - usage
-  - cmd/oj
-  - parse
-  - path
- - go get with install
-
-- cmd/oj
- - read string that starts with { or [ as json and not a file name
 
 ----------------
 - next/todo
  - regex op =~
- - scripts
+ - FIN
  - cmd/oj
-  - palette
-  - read args from file
+  - read args from file (FIN format)
+   - also check ~/.oj.fin or ~/.oj - graphql emacs mode works well
+  - palette in cfg file
   - build or restructure json
    - use a template based approach along with JSONPath
+
+- much later
+ - scripts [(@.length-1)]
+  - decide what functions are actually useful if any
 
 -------------
 - cmd/oj
@@ -25,21 +21,28 @@
    -key red
 
 -------------
-- basic (BDL bdl.org?)
-- minimal (MDL)
-- essential (EDN) (EDL edl.org is available)
-- economical
-- nominal (NDN)(NDL)
-- other (ODL)(ODN)
-- data language
-- data notation
+- Flexible Information Notation for command line and lazy data entry
+ - spec
+  - aspects of JSON and GraphQL
+  - keys or any value does not need quotes unless they have syntax or space characters
+  - space or characters to ignore are space and below as well comma
+  - { starts object which is closed by }
+  - [ starts object which is closed by ]
+  - : separates key from value
+  - " or ' allowed
+  - \n in string is okay
+  - \ is the escape character
+  - # comments are allowed
+  - all JSON types but also time
+ - parser to simple
+ - writer
+ - spec page in /docs/fin_spec.md
 
 
-- jp - https://goessner.net/articles/JsonPath
 ------------------
 
-- Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)] matches items whose description starts with cat (case-insensitive).
-- Exists syntax?
+- Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)]
+- Exists syntax? [?(@.x exists)]
 
 -----------------------------------
 - parse methods attempted
