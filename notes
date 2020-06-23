@@ -1,6 +1,12 @@
+- readme
+ - usage
+  - cmd/oj
+  - parse
+  - path
+ - go get with install
 
-- tasks before release
- - CI - travis or something else?
+- cmd/oj
+ - read string that starts with { or [ as json and not a file name
 
 ----------------
 - next/todo
@@ -18,35 +24,24 @@
    -p (palette) key=red
    -key red
 
-
-- ojg/doc.go
- - JSON tools
- - different approach than go json
-  - interface{} the same, referred to as simple type
-  - also generic data, not to be confused with golang discussions
-   - types elements to match JSON, if it is allowed as an elemtn it will write to JSON
-   - light weight with very low memory and performance impact
-  - go json relies on decoration on fixed structs with no support for interface elements
-   - borrowing from Oj for Ruby, types can be encoded and later recomposed
-   - OjG supports multiple docs in one string or stream
-  - includes builders for simple and generic
-  - JSON path on generic and simple
-  - validator
+-------------
+- basic (BDL bdl.org?)
+- minimal (MDL)
+- essential (EDN) (EDL edl.org is available)
+- economical
+- nominal (NDN)(NDL)
+- other (ODL)(ODN)
+- data language
+- data notation
 
 
 - jp - https://goessner.net/articles/JsonPath
 ------------------
 
-Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)] matches items whose description starts with cat (case-insensitive).
+- Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)] matches items whose description starts with cat (case-insensitive).
+- Exists syntax?
 
-Use to negate a filter: [?(!@.isbn)] matches items that do not have the isbn property.
-
-- how to handle things in []
- - maybe [] is a check for an array/subscript
-  - then things to do on the array elements after that
-   - so ArrayStart expr followed by filter, slice, etc then terminated with an arrayEnd
-
-
+-----------------------------------
 - parse methods attempted
  - tried functions instead of switch, slower
   - tried array of 256 functions for value switching
