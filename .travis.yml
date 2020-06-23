@@ -8,7 +8,8 @@ go:
 
 env:
   - GO111MODULE=on
-    go_import_path: github.com/ohler55/ojg
+
+go_import_path: github.com/ohler55/ojg
 
 install:
   - go get golang.org/x/tools/cmd/cover
