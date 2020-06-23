@@ -11,12 +11,12 @@ env:
     go_import_path: github.com/ohler55/ojg
 
 install:
-- go get github.com/mattn/goveralls
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/mattn/goveralls
 
 script:
   - set -e
-  - go test -i ./...
   - go test ./...
-  - go test -race -coverprofile=./cov.out  ./...
-  - $HOME/gopath/bin/goveralls -repotoken t2TmOT2IIY7dLqAxhiyOoManIEpVx3z5m -coverprofile=./cov.out -service travis-ci
+  - go test -covermode=count -coverprofile=cov.out  ./...
+  - $HOME/gopath/bin/goveralls -repotoken t2TmOT2IIY7dLqAxhiyOoManIEpVx3z5m -coverprofile=cov.out -service travis-ci
   - set +e
