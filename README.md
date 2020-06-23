@@ -33,11 +33,11 @@ import (
 
 ## Releases
 
-See [file:CHANGELOG.md](CHANGELOG.md)
+See [CHANGELOG.md](CHANGELOG.md)
 
 ## Links
 
-- *Documentation*: [https://ohler55.github.io/ojg](https://ohler55.github.io/ojg)
+- *Documentation*: [https://ohler55.github.com/ojg](https://ohler55.github.com/ojg)
 
 - *GitHub* *repo*: https://github.com/ohler55/ojg
 
