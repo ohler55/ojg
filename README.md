@@ -1,5 +1,7 @@
 # [![{}j](http://www.ohler.com/dev/images/ojg_comet.jpg)](https://github.com/ohler55/ojg)
 
+[![Build Status](https://img.shields.io/travis/ohler55/ojg/master.svg?logo=travis)](http://travis-ci.org/ohler55/ojg?branch=master)
+
 # OjG
 
 Optimized JSON for Go is a high performance parser with a variety of
