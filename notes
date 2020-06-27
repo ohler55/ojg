@@ -2,7 +2,7 @@
 ----------------
 - next/todo
  - regex op =~
- - FIN
+ - SEN
  - cmd/oj
   - read args from file (FIN format)
    - also check ~/.oj.fin or ~/.oj - graphql emacs mode works well
@@ -22,6 +22,10 @@
 
 -------------
 - Flexible Information Notation for command line and lazy data entry
+ - Flexible Information Encoding (System|Notation)  FIES FIEN FEN FES
+ - *Simple Encoding Notation*
+ - Flexible Encoding Notation
+ - Minimal Encoding System
  - spec
   - aspects of JSON and GraphQL
   - keys or any value does not need quotes unless they have syntax or space characters
@@ -38,6 +42,23 @@
  - writer
  - spec page in /docs/fin_spec.md
 
+- generally follow graphql description
+ - unicode encodes as utf-8 (BOM ok)
+ - whitespace
+  - <= 0x20 (09, 0A, 0D, 20 ok, others deprecated but ignored except 00 which terminates
+   - 0A terminates comment
+  - comma
+ - token
+   - any non space and non punc
+ - punctuation
+  - [ ] { } : " ' \ #
+ - values
+  - string
+   - escape characters ok including \uhhhh \Uhhhhhhhh
+  - number
+  - true false null
+  - array
+  - object
 
 ------------------
 
