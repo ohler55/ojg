@@ -175,7 +175,9 @@ other filters. OjG supports nested filters.
 ## Interesting Tidbits
 
 Through lots of benchmarking various approach to the implemenation a
-few lessons were learned.
+few lessons were learned. The final benchmarks results can be viewed
+by running the `cmd/benchmark` command. See the results at
+[benchmarks.md](benchmarks.md).
 
 ### Functions Add Overhead
 
