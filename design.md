@@ -1,4 +1,4 @@
-# How I implemented high performance JSON tools
+# How I implemented high performance JSON parsers, JSONPath, and other tools
 
 The JSON parser has gotten gotten faster over the years but was there
 still some room for improvement? That was part of the challenge I
@@ -83,15 +83,94 @@ achieve the optimal performance.
 
 ### Generic Data (`gen` package)
 
+What better way to generic type fast than to just define types from
+simple types and then define methods on those type. A `gen.Int` is
+just an `int64` and a `gen.Array` is just a `[]gen.Node`. With that
+approach there are no extra allocations.
+
+Since generic arrays and objects restrict the type of the values in
+each collection to `gen.Node` types the collection are assured to
+contain only elements that can be encoded as JSON.
+
+The parser for generic types is a copy of the oj package parser but
+instead of simple types being created instances that support the
+`gen.Node` interface are created.
 
 ### Simple Parser (`oj` package)
+
+ - single pass
+  - no going back (except one character)
+
+ - modes to large state diagram
+ - opt for code duplication dues to overhead of function calls
+  - not pretty but the price for performance
+
+ - streaming
+  - callbacks
+
+ - minimize allocations
+ - reuse buffers
+ - no tokens
+ - build numbers during parsing, not string first
+ - build string in reusable buffer
+ - reuse when possible
+  - true and false in gen parser
+  - building a string map was more expensive
+   - might be something to consider next
+ - character maps (really a long string/[]byte)
 
 
 ### JSONPath (`jp` package)
 
+A JSONPath is represented by a `jp.Expr` which is composed of
+fragments or `jp.Frag` objects. Keeping with the guideline of
+minimizing allocations the `jp.Expr` is just a slice of `jp.Frag`. In
+most cases expressions are defined statically so the parser need not
+be fast so no special care was taken to make that fast. Instead
+functions are used in an approach that is easier to understand.
+
+If the need exists to create expressions at run time then functions
+are used that allow them to be constructed more easily.
+
+Evaluating an expression against data involves walking down the data
+tree to find one or more elements. Conceptually each fragment of a
+path sets up zero or more paths to follow through the data. When the
+last fragment is reached the search is done. A recursive approach
+would be ideal where the evaluation of one fragment then invokes the
+next fragment eval function with as many paths it matches. Great on
+paper but for something like a descent fragment (`..`) that is a lot
+of function calls.
+
+Given that function calls are expensive and slices are cheap a Forth
+(the language) evaluation stack approach is used. Each fragment taks
+it's matches and puts them on the stack. Then the next fragment
+evaluates each in turn. This continue until the stack shrinks back to
+one element indicating the evaluation is complete. The last fragment
+also puts any matches on a results list which is returned.
+
+ | Stack  | Frag  |
+ | ------ | ----- |
+ | $      | Root  |
+ | {a:3}  | data  |
+ | 'a'    | Child |
+
+One fragment type is a filter which looks like `[?(@.x == 3)]`. This
+requires a script or function evaluation. A similar stack based
+approach is used for evaluating scripts. Note that scripts can and
+almost always contain a JSONPath expression starting with a `@`
+character. An interesting aspect of this is that a filter can contain
+other filters. OjG supports nested filters.
 
 ### Converting or Altering Data (`alt` package)
 
+ - parse first then convert, more general, does add overhead
+
+ - not constrained by existing encoder which forces a use pattern that is slower
+
+ - wanted to handle interfaces
+  - approach used in ruby oj and other ruby json parsers
+
+ - use exist but assert or replace values
 
 ## Interesting Tidbits
 
@@ -162,35 +241,3 @@ Theres alway more to come. For OjG there are a few things in the works.
  - Regex filters for JSONPath
  - Add JSON building to the oj command which is an alternative to jq but uses JSONPath.
  - Implement a Simple Encoding Notation which mixes GraphQL symtax with JSON for simplier more forgiving format.
-
------------------------------------
-
- - single pass
-  - no going back (except one character)
- - use slices as stacks
- - modes to large state diagram
- - opt for code duplication dues to overhead of function calls
-  - not pretty but the price for performance
- - not constrained by existing encoder which forces a use pattern that is slower
-
-
- - wanted to handle interfaces
-  - approach used in ruby oj and other ruby json parsers
- - streaming
-  - callbacks
- - minimize allocations
- - reuse buffers
- - no tokens
- - build numbers during parsing, not string first
- - build string in reusable buffer
- - reuse when possible
-  - true and false in gen parser
-  - building a string map was more expensive
-   - might be something to consider next
- - character maps (really a long string/[]byte)
- - lots of benchmarking
-
-- JSONPath
- - stack
-  - forth
-  -
