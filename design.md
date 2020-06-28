@@ -1,6 +1,4 @@
-# How I wrote a fast JSON parser and full JSONPath for Go
-
-**TBD make title more fun**
+# A Journey building a fast JSON parser and full JSONPath for Go
 
 I had a dream. I'd write a fast JSON parser, generic data, and
 JSONPath implementation and it would be beautiful, well organized, and
@@ -128,7 +126,7 @@ performant manner even if it was not as convenient as parsing a
 string.
 
 The JSONPath implementaiton had implement all the features described
-by [the Goessner
+by the [Goessner
 article](https://goessner.net/articles/JsonPath). There are other
 descriptions of JSONPath but the Goessner description is the most
 referenced. Since the implementation is in Go the scripting feature
