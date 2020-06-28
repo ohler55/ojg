@@ -1,36 +1,67 @@
-# How I implemented high performance JSON parsers, JSONPath, and other tools
+# How I wrote a fast JSON parser and full JSONPath for Go
 
-The JSON parser has gotten gotten faster over the years but was there
-still some room for improvement? That was part of the challenge I
-undertook. That wasn't the initial goal. The initial goal was to
-implement a set of fast generic data that matched JSON. As part of
-that effort a high performance JSONPath implementation was needed. The
-JSONPath implementations for Go were limited and not at all
-complete.
+**TBD make title more fun**
 
-I suppose I knew all along a new JSON parser would be needed. Having
-written two JSON parser before it didn't seem like a very daunting
-task. Both the Ruby [OJ](https://github.com/ohler55/oj) and the C
-parser [OjC](https://github.com/ohler55/ojc) are the best performers
-in their respective languages. Why not an
-[OjG](https://github.com/ohler55/ojg) for go.
+I had a dream. I'd write a fast JSON parser, generic data, and
+JSONPath implementation and it would be beautiful, well organized, and
+something to be admired. Well, reality kicked in laughed at those
+dreams. A Go JSON parser and tools could be high performance but to
+get that performance compromised in beauty would have to be made. This
+is a tale of journey that ended with a Parser that leaves the Go JSON
+parser in the dust and resulted in some useful tools including an
+efficient JSONPath implemenation.
 
-## Requirements
+In all fairness I did embark on with some previous experience having
+written two JSON parser before. Both the Ruby
+[Oj](https://github.com/ohler55/oj) and the C parser
+[OjC](https://github.com/ohler55/ojc) are the best performers in their
+respective languages. Why not an [OjG](https://github.com/ohler55/ojg)
+for go.
 
-The first requirement was that JSON parsing and any frequently used
-operation such as JSONPath evaluation had to be fast over everything
-else. With the luxury of not having to follow the existing Go json
-package API the API could be designed for the best performance.
+## Planning
 
-Additional requirements varied depending on the JSON tool.
+Like any journey it starts with the planning. Yeah, I know, its called
+requirement gathering but casting it as planning a journey sounds like
+more fun and this was all about enjoying the discoveries on the
+journey. The journey takes place in the land of OjG which stands for
+Oj for Go. [Oj](https://github.com/ohler55/oj) or Optimized JSON being
+a popular gem I wrote for Ruby.
+
+First, JSON parsing and any frequently used operations such as
+JSONPath evaluation had to be fast over everything else. With the
+luxury of not having to follow the existing Go json package API the
+API could be designed for the best performance.
+
+The journey would visit several areas. In each area the planning would
+vary from the the others.
 
 ### Generic Data
 
-The generic data implementation had to support the basic JSON types of
-`null`, boolean, number, string, array, and object. In addition time
-should be supported. In both JSON use in Ruby and Go time has alway
-been needed. Time is just too much apart of any set of data to leave
-it out.
+The first area to visit was generic data. Not to be confused with the
+propose Go generics. That a completely different animal and has
+nothing to do with whats being referred to as generic data here. In
+building tool or packages for reuse the data acted on by those tools
+needs to be navigatable.
+
+Reflection can be used but that gets a bit tricky when dealing with
+private fields or field that can't be converted to something that can
+say be written as a JSON element.
+
+Another approach is to use simple Go types such as bool, int64,
+[]interface{}, and other types that map directly on to JSON or some
+other subset of all possible Go types. If too open, such as with
+[]interface{} it is still possible for the user to put unsupported
+types into the data. Not to pick out any package specifically but it
+is frustrating to see an argument type of interface{} and then no
+documentation describing that the supported types are.
+
+There is another approach though. Define a set of types that can be in
+a collection and use those types. With this approach, the generic data
+implementation has to support the basic JSON types of `null`, boolean,
+number, string, array, and object. In addition time should be
+supported. In both JSON use in Ruby and Go time has alway been
+needed. Time is just too much apart of any set of data to leave it
+out.
 
 The generic data had to be type safe. It would not do to have an
 element that could not be endcoded as JSON in the data.
@@ -40,7 +71,55 @@ JSON database or similar. That meant converting to simple Go types of
 nil, bool, int64, float64, string, []interface{}, and
 map[string]interface{} had to be fast.
 
+Also planned for this part of the journey was methods on the types to
+support getting, setting, and deleting elements using JSONPath. The
+hope was to have an object based approach to the generic nodes so
+something like the following could be used but keeping generic data,
+JONPath, and parsing in separate packages.
+
+```golang
+    var n gen.Node
+    n = gen.Int(123)
+    i, ok := n.AsInt()
+```
+
+Unfortunately that part of the journey had to be cancelled as the Go
+travel guide refuses to let packages talk back and forth. Imports are
+one way only. After trying to put all the code in one package it
+eventually got unwieldy function names started being prefixed with
+what should really have been package names so the object and method
+approach was dropped. A change in API but the journey would continue.
+
+### JSON Parser and Validotor
+
+The next stop was the parser and validator. After some consideration
+it seemed like starting with the validator would be best way to become
+familiar with the territory. The JSON parser and validator need not be
+the same and each should be as performant as possible. The parsers
+needed to support parsing into simple Go types as well as the generic
+data types.
+
+When parsing files that include millions or more JSON elements in
+files that might be over 100GB a streaming parser is necessary. It
+would be nice to share some code with both the streaming and string
+parsers of course. Its easier to pack light when the areas are
+similar.
+
+The parser must also allow parsing into Go types. Furthermore
+interfaces must be supported. Go unmarshalling does not support
+interface fields. Since many data types make use of interfaces that
+limitation was not acceptable for the OjG parser. A different approach
+to support interfaces was possible.
+
+JSON document of any non trivial size, especially if hand edited are
+likely to have errors at some point. Parse errors must identify where
+in the document the error occured.
+
 ### JSONPath
+
+Saving the most interesting part of the trip for last, the JSONPath
+implementation promised to have all sorts of interesting problems to
+solve with descents, wildcards, and especially filters.
 
 A JSONPath is used to extract elements from data. That part of the
 implementation had to be fast. Parsing really didn't have to be fast
@@ -55,49 +134,52 @@ descriptions of JSONPath but the Goessner description is the most
 referenced. Since the implementation is in Go the scripting feature
 described could be left out as long as similar functionality could be
 provided for array indexes based on the length of the array. Borrowing
-from Ruby, using negative indexes provided that functionality.
+from Ruby, using negative indexes would provide that functionality.
 
-### JSON Parser and Validotor
+## The Journey
 
-A JSON parser and validator need not be the same and each should be as
-performant as possible. The parsers needed to support parsing into
-simple Go types as well as the generic data types.
-
-When parsing files that include millions or more JSON elements that
-might be over 100GB a streaming parser is necessary.
-
-The parser must also allow parsing into Go types. Furthermore
-interfaces must be supported. Go unmarshalling does not support
-interface fields. Since many data types make use of interfaces that
-limitation is not acceptable for the OjG parser. A different approach
-to support interfaces was possible.
-
-JSON document of any non trivial size, especially if hand edited are
-likely to have errors at some point. Parse errors must identify where
-in the document the error occured.
-
-## The Gory Details
-
-Each sub-package of the OjG package had their own approaches to
-achieve the optimal performance.
+The journey unfolded as planned to a degree. There were some false
+starts and revisits but eventually each destination was reached and
+the journey completed.
 
 ### Generic Data (`gen` package)
 
-What better way to generic type fast than to just define types from
-simple types and then define methods on those type. A `gen.Int` is
-just an `int64` and a `gen.Array` is just a `[]gen.Node`. With that
-approach there are no extra allocations.
+What better way to make generic type fast than to just define generic
+types from simple types and then define methods on those types. A
+`gen.Int` is just an `int64` and a `gen.Array` is just a
+`[]gen.Node`. With that approach there are no extra allocations.
+
+```golang
+type Node interface{}
+type Int int64
+type Array []Node
+```
 
 Since generic arrays and objects restrict the type of the values in
 each collection to `gen.Node` types the collection are assured to
 contain only elements that can be encoded as JSON.
 
-The parser for generic types is a copy of the oj package parser but
+Since methods on the `Node` could not be implemented without import
+loops the number of functions in the `Node` interface were limited. It
+was clear a parser would be needed but that would have to wait until
+the next part of the journey was completed. Then the generic data
+package could be revisited and the parser explored.
+
+Let just ahead to the generic data parser revisit. It was not very
+interesting after the deep dive into the simple data parser. The
+parser for generic types is a copy of the oj package parser but
 instead of simple types being created instances that support the
 `gen.Node` interface are created.
 
 ### Simple Parser (`oj` package)
 
+Looking back it hard to say what was the most interesting part of the
+journey, the parser or JSONPath. Each had their own unique set of
+issues. The parser was the best place to start though as some valuable
+lessons were learned about what to avoid and what to gravitate toward
+in trying to achieve high performance code.
+
+--- left off here -----------
  - single pass
   - no going back (except one character)
 
@@ -121,6 +203,8 @@ instead of simple types being created instances that support the
 
 
 ### JSONPath (`jp` package)
+
+** TBD redo **
 
 A JSONPath is represented by a `jp.Expr` which is composed of
 fragments or `jp.Frag` objects. Keeping with the guideline of
@@ -174,9 +258,10 @@ other filters. OjG supports nested filters.
 
 ## Interesting Tidbits
 
-Through lots of benchmarking various approach to the implemenation a
-few lessons were learned. The final benchmarks results can be viewed
-by running the `cmd/benchmark` command. See the results at
+Benchmarking was instrumental to tuning and picking the most favorable
+approach to the implemenation. Through those benchmarks a number of
+lessons were learned.  The final benchmarks results can be viewed by
+running the `cmd/benchmark` command. See the results at
 [benchmarks.md](benchmarks.md).
 
 ### Functions Add Overhead
@@ -235,11 +320,10 @@ very simple AI when compared to previous Go GraphQL packages and it
 many times
 [faster](https://github.com/the-benchmarker/graphql-benchmarks).
 
-
 ## Whats Next?
 
-Theres alway more to come. For OjG there are a few things in the works.
+Theres alway something new ready to be explored. For OjG there are a few things in the planning stage.
 
- - Regex filters for JSONPath
- - Add JSON building to the oj command which is an alternative to jq but uses JSONPath.
- - Implement a Simple Encoding Notation which mixes GraphQL symtax with JSON for simplier more forgiving format.
+ - A short trip to Regex filters for JSONPath.
+ - A construction project to add JSON building to the **oj** command which is an alternative to jq but using JSONPath.
+ - Explore new territory by implementing a Simple Encoding Notation which mixes GraphQL symtax with JSON for simplier more forgiving format.
