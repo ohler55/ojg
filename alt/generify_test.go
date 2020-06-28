@@ -215,6 +215,11 @@ func TestGenAlterMap(t *testing.T) {
 	m2 := map[string]int{"1": 1, "2": 4, "3": 9}
 	v = alt.GenAlter(m2)
 	tt.Equal(t, gen.Object{"1": gen.Int(1), "2": gen.Int(4), "3": gen.Int(9)}, v)
+
+	m3 := map[string]interface{}{"1": 1, "2": nil, "3": true}
+	v = alt.GenAlter(m3, &alt.Options{OmitNil: true})
+	tt.Equal(t, gen.Object{"1": gen.Int(1), "3": gen.True}, v)
+
 }
 
 func TestGenAlterArray(t *testing.T) {
