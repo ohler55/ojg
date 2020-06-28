@@ -142,15 +142,15 @@ paper but for something like a descent fragment (`..`) that is a lot
 of function calls.
 
 Given that function calls are expensive and slices are cheap a Forth
-(the language) evaluation stack approach is used. Each fragment taks
-it's matches and puts them on the stack. Then the next fragment
-evaluates each in turn. This continue until the stack shrinks back to
-one element indicating the evaluation is complete. The last fragment
-also puts any matches on a results list which is returned.
+(the language) evaluation stack approach is used. Not exactly Forth
+but a similar approach. Each fragment takes it's matches and puts them
+on the stack. Then the next fragment evaluates each in turn. This
+continue until the stack shrinks back to one element indicating the
+evaluation is complete. The last fragment also puts any matches on a
+results list which is returned.
 
  | Stack  | Frag  |
  | ------ | ----- |
- | $      | Root  |
  | {a:3}  | data  |
  | 'a'    | Child |
 
