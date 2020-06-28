@@ -7,7 +7,7 @@ dreams. A Go JSON parser and tools could be high performance but to
 get that performance compromised in beauty would have to be made. This
 is a tale of journey that ended with a Parser that leaves the Go JSON
 parser in the dust and resulted in some useful tools including an
-efficient JSONPath implemenation.
+efficient JSONPath implementation.
 
 In all fairness I did embark on with some previous experience having
 written two JSON parser before. Both the Ruby
@@ -39,7 +39,7 @@ The first area to visit was generic data. Not to be confused with the
 propose Go generics. That a completely different animal and has
 nothing to do with whats being referred to as generic data here. In
 building tool or packages for reuse the data acted on by those tools
-needs to be navigatable.
+needs to be navigable.
 
 Reflection can be used but that gets a bit tricky when dealing with
 private fields or field that can't be converted to something that can
@@ -62,7 +62,7 @@ needed. Time is just too much apart of any set of data to leave it
 out.
 
 The generic data had to be type safe. It would not do to have an
-element that could not be endcoded as JSON in the data.
+element that could not be encoded as JSON in the data.
 
 A frequent operation for generic data is to store that data into a
 JSON database or similar. That meant converting to simple Go types of
@@ -88,7 +88,7 @@ eventually got unwieldy function names started being prefixed with
 what should really have been package names so the object and method
 approach was dropped. A change in API but the journey would continue.
 
-### JSON Parser and Validotor
+### JSON Parser and Validator
 
 The next stop was the parser and validator. After some consideration
 it seemed like starting with the validator would be best way to become
@@ -111,7 +111,7 @@ to support interfaces was possible.
 
 JSON document of any non trivial size, especially if hand edited are
 likely to have errors at some point. Parse errors must identify where
-in the document the error occured.
+in the document the error occurred.
 
 ### JSONPath
 
@@ -125,8 +125,8 @@ but it would be nice to have a way of building a JSONPath in a
 performant manner even if it was not as convenient as parsing a
 string.
 
-The JSONPath implementaiton had implement all the features described
-by the [Goessner
+The JSONPath implementation had to implement all the features
+described by the [Goessner
 article](https://goessner.net/articles/JsonPath). There are other
 descriptions of JSONPath but the Goessner description is the most
 referenced. Since the implementation is in Go the scripting feature
@@ -177,42 +177,159 @@ issues. The parser was the best place to start though as some valuable
 lessons were learned about what to avoid and what to gravitate toward
 in trying to achieve high performance code.
 
---- left off here -----------
- - single pass
-  - no going back (except one character)
+#### Validator
 
- - modes to large state diagram
- - opt for code duplication dues to overhead of function calls
-  - not pretty but the price for performance
+From the start I knew that a single pass parser would be more
+efficient than building tokens and then making a second pass to decide
+what the tokens means. At least that approach as worked well in the
+past. I dived in and used `readValue` function that branched depending
+on the next character read. It worked but it was slower than the bar
+of the Go json.Validate. It was off by a lot. Of course a benchmark
+was needed to verify that hence the start of the `cmd/benchmark`
+command. Profiling didn't help much it turned out since much of the
+overhead was in the function call setup themselves which isn't obvious
+when profiling.
 
- - streaming
-  - callbacks
+Not knowing at the time that function calls were so expensive
+anticipating that there was some overhead in a function call I moved
+some of the code from a few frequently called functions to inline in
+the calling function. That made much more of a difference than I
+expected. At that point I looked at the Go code for the core
+validation code. I was surprised to see that it used lots of functions
+but not functions attached to a type. I gave that approach a try but
+with functions on the parser type. The results were not good
+either. Simple changing the functions to take the parser as an
+argument made a big difference. Another lesson learned.
 
- - minimize allocations
- - reuse buffers
- - no tokens
- - build numbers during parsing, not string first
- - build string in reusable buffer
- - reuse when possible
-  - true and false in gen parser
-  - building a string map was more expensive
-   - might be something to consider next
- - character maps (really a long string/[]byte)
+Next was to remove function calls as much as possible since they did
+seem to be expensive. The code was no longer elegant and had lots of
+duplicated blocks but it ran much faster. At this point the code was
+nudging the Go validator bar.
 
+When parsing in a single pass a conceptual state machine is used. When
+branching with functions it is state machine but the states are
+limited for each function making it much easier to follow. Moving into
+a single function meant tracking many more states in single state
+machine. Implementation was with lengthy switch statements. One
+problem remained though. Array and Object had to be tracked to know
+when a closing `]` or `}` was allowed. Since function calls were being
+avoided that mean maintaining a stack in the single parser
+function. That approach worked well with very little overhead.
+
+Another tweak was to reuse memory. At this point the parser only
+allocated a few objects but why would it need to allocate any of the
+buffers for the stack could be reused. That prompted a change in the
+API. The initial API was for a single `Validate()` function. If the
+validator was made public it could be reused. That made a lot of sense
+since often similar data is parsed or validated by the same
+application. That change was enough to reduce the allocations per
+validation to zero and brought the performance under the Go
+`json.Valid()` bar.
+
+#### Parser
+
+With the optimum technique identified while visiting the validator,
+the next part of the journey was to use they same technique on the
+parser.
+
+The difference between the validator and the parser is that the parser
+needs to build up data elements. The first attempt was to add the
+bytes associated with a value to a reusable buffer and then parse
+that buffer at the end of the value. It worked and was as fast as the
+`json.Unmarshall` function but that was not enough as there were still
+more allocations than seemed necessary.
+
+By expanding the state machine `null`, `true`, and `false` could be
+identified as values with adding to a buffer. That gave a bit of
+improvement.
+
+Numbers, specifically integers were another value that really didn't
+need to be parsed from a buffer so instead of appending bytes to a
+buffer and calling `strconv.ParseInt()` integer values are build as an
+`int64` and grown as bytes are read. If a `.` character is encountered
+then The number is a float for capture the parts of a float as
+integers and create a float when done. This was another improvement in
+performance.
+
+Not much could be done to improve string parsing since it is really
+just appending bytes to a buffer and making them a string at the final
+`"`. Each byte being appended needed to be checked though. A byte map
+in the form of a 256 long bytes array is used for that purpose.
+
+Going back to the stack used in the validator, instead of putting a
+simple marker on the stack, an Object start character, a `{` puts a
+new `map[string]interface{}` on the stack. Values and keys are then
+used to set members of the map. Nothing special there.
+
+Saving the best for last, array where tougher to deal with. A value is
+not just added to an array but rather appended to an array and a
+potentially new array is returned. That no a terrible efficient way to
+build a slice as it will go through multiple reallocations. Instead, a
+second slice index stack is kept. As an array is to be created, a spot
+is reserved on the stack and the index of that stack location is
+places on the slice index stack. After that values are pushed onto the
+stack until an array close character, `]` is reached. The slice index
+is then referenced and a new `[]interface{}` is allocated for all the
+values from the arry index on the stack to the end of the
+stack. Values are copied to the new array and the stack is collapsed
+to the index. A bit complicated but it does save multiple object
+allocations.
+
+After some experimented it turned out that the overhead of some
+operation such as creating a slice or adding a number was not impacted
+to any large extent by making a function call since it does not happen
+as frequently as processing each byte so some use of functions could
+be used to remove duplicate code.
+
+One stop left at the parser package. Streaming had to be supported. At
+this point there were already plans on how to deal with streaming
+which was to load up a buffer and iterate over that buffer using the
+exact same code as for parsing bytes. It seemed like using an index
+into the buffer would be easier to keep track of but switching from a
+`for` `range` to `for i = 0; i < size; i++ {` dropped the performance
+considerably. Clearly staying the the `range` approach was
+better. Once that was working a quick trip back to the validator to
+allow it to support streams was made.
+
+Stream parsing or parsing a string with multiple JSON documents in it
+is best handled with a callback function. That allows the caller to
+process the parsed document and move on without incurring any
+additional memory allocations unless needed.
+
+The stay at the validator and parser was fairly lengthy at a bit over
+a month of evening coding.
 
 ### JSONPath (`jp` package)
 
-** TBD redo **
+The visit to JSONPath would prove to be a long stay as well with a lot
+more creativity for some tantalizing problems.
 
-A JSONPath is represented by a `jp.Expr` which is composed of
-fragments or `jp.Frag` objects. Keeping with the guideline of
-minimizing allocations the `jp.Expr` is just a slice of `jp.Frag`. In
-most cases expressions are defined statically so the parser need not
-be fast so no special care was taken to make that fast. Instead
-functions are used in an approach that is easier to understand.
+The first step was to get a language and cultural refresher on
+JSONPath terms and behavior. From that it was decided that a JSONPath
+would be represented by a `jp.Expr` which is composed of fragments or
+`jp.Frag` objects. Keeping with the guideline of minimizing
+allocations the `jp.Expr` is just a slice of `jp.Frag`. In most cases
+expressions are defined statically so the parser need not be fast. No
+special care was taken to make the JSONPath parser fast. Instead
+functions are used in an approach that is easier to understand. I said
+easier, not easy. There are a fair number of dangerous curves with
+trying to support bracketed notation as well as dot notation and how
+that all play nicely with the script parser so that one can call the
+other supporting nested filters. It was rewarding to see it all come
+together though.
 
 If the need exists to create expressions at run time then functions
-are used that allow them to be constructed more easily.
+are used that allow them to be constructed more easily. That makes for
+a lot of functions. I also like to be able to keep code compact and
+figured others might too so each fragment type can also be created
+with a single letter function. They don't have to be used but they
+exist to support building expressions as a chain.
+
+```golang
+    x := jp.R().D().C("abc").W().C("xyz").N(3)
+    fmt.Println(x.String())
+    // $..abc.*.xyz[3]
+```
 
 Evaluating an expression against data involves walking down the data
 tree to find one or more elements. Conceptually each fragment of a
@@ -243,16 +360,37 @@ almost always contain a JSONPath expression starting with a `@`
 character. An interesting aspect of this is that a filter can contain
 other filters. OjG supports nested filters.
 
+The most memorable part of the JSONPath part of the journey had to be
+the evaluation stack. That worked out great and was able to support
+all the various fragment types.
+
 ### Converting or Altering Data (`alt` package)
 
- - parse first then convert, more general, does add overhead
+A little extra was added to the journey once it was clear the generic
+data types could not support JSONPath directly. The original plan was
+to has functions like `AsInt()` as part of the `Node` interface. With
+that no longer reasonable an `alt` package became part of the
+journey. It would be used for converting types as well as altering
+existing ones. To make the last part of the trip even more interesting
+the `alt` package is where marshalling and unmarshalling types came
+into play but under the names of recompose and decompose since
+operations were to take Go types and decompose those objects into
+simple or generic data. The reverse is to recompose the simple data
+back into their original types. This takes an approach used in Oj for
+Ruby when the type name is encoded in the decomposed data. Since the
+data type is included in the data itself it is self describing and can
+be used to recompose types that include interface members.
 
- - not constrained by existing encoder which forces a use pattern that is slower
+There is a trade off in that JSON is not parsed directly to a Go type
+by must go through an intermediate data structure first. There is an
+up side to that as well though. Not any simple or generic data can be
+used to recompose objects and no just JSON strings.
 
- - wanted to handle interfaces
-  - approach used in ruby oj and other ruby json parsers
+The `alt.GenAlter()` function was interesting in that it is possible
+to modify a slice type and then reset the members without
+reallocating.
 
- - use exist but assert or replace values
+Thats the last stop of the journey.
 
 ## Interesting Tidbits
 
@@ -324,4 +462,4 @@ Theres alway something new ready to be explored. For OjG there are a few things 
 
  - A short trip to Regex filters for JSONPath.
  - A construction project to add JSON building to the **oj** command which is an alternative to jq but using JSONPath.
- - Explore new territory by implementing a Simple Encoding Notation which mixes GraphQL symtax with JSON for simplier more forgiving format.
+ - Explore new territory by implementing a Simple Encoding Notation which mixes GraphQL syntax with JSON for simpler more forgiving format.
