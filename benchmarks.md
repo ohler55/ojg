@@ -1,6 +1,7 @@
 # OjG Benchmarks
 
-Benchmarks were run on a MacBook Pro with a 2.8 GHz Quad-core I7.
+Benchmarks were run on a MacBook Pro with a 2.8 GHz Quad-core
+I7. Higher number are better in all cases.
 
 ```
 JSON Path Get
