@@ -1,15 +1,15 @@
-# A Journey building a fast JSON parser and full JSONPath for Go
+# A Journey building a fast JSON parser and full JSONPath with Oj for Go
 
-I had a dream. I'd write a fast JSON parser, generic data, and
+I had a dream. I'd write a fast JSON parser, generic data, and a
 JSONPath implementation and it would be beautiful, well organized, and
-something to be admired. Well, reality kicked in laughed at those
+something to be admired. Well, reality kicked in and laughed at those
 dreams. A Go JSON parser and tools could be high performance but to
-get that performance compromised in beauty would have to be made. This
+get that performance compromises in beauty would have to be made. This
 is a tale of journey that ended with a Parser that leaves the Go JSON
-parser in the dust and resulted in some useful tools including an
-efficient JSONPath implementation.
+parser in the dust and resulted in some useful tools including a
+complete and efficient JSONPath implementation.
 
-In all fairness I did embark on with some previous experience having
+In all fairness I did embark on with some previous experience. Having
 written two JSON parser before. Both the Ruby
 [Oj](https://github.com/ohler55/oj) and the C parser
 [OjC](https://github.com/ohler55/ojc) are the best performers in their
@@ -19,55 +19,55 @@ for go.
 ## Planning
 
 Like any journey it starts with the planning. Yeah, I know, its called
-requirement gathering but casting it as planning a journey sounds like
-more fun and this was all about enjoying the discoveries on the
-journey. The journey takes place in the land of OjG which stands for
-Oj for Go. [Oj](https://github.com/ohler55/oj) or Optimized JSON being
-a popular gem I wrote for Ruby.
+requirement gathering but casting it as planning a journey is more fun
+and this was all about enjoying the discoveries on the journey. The
+journey takes place in the land of OjG which stands for Oj for
+Go. [Oj](https://github.com/ohler55/oj) or Optimized JSON being a
+popular gem I wrote for Ruby.
 
 First, JSON parsing and any frequently used operations such as
 JSONPath evaluation had to be fast over everything else. With the
 luxury of not having to follow the existing Go json package API the
 API could be designed for the best performance.
 
-The journey would visit several areas. In each area the planning would
-vary from the the others.
+The journey would visit several areas each with it's own landscape and
+different problems to solve.
 
 ### Generic Data
 
-The first area to visit was generic data. Not to be confused with the
-propose Go generics. That a completely different animal and has
+The first visit was to generic data. Not to be confused with the
+proposed Go generics. Thats a completely different animal and has
 nothing to do with whats being referred to as generic data here. In
-building tool or packages for reuse the data acted on by those tools
+building tools or packages for reuse the data acted on by those tools
 needs to be navigable.
 
 Reflection can be used but that gets a bit tricky when dealing with
 private fields or field that can't be converted to something that can
-say be written as a JSON element.
+say be written as a JSON element. Other options are often better.
 
-Another approach is to use simple Go types such as bool, int64,
-[]interface{}, and other types that map directly on to JSON or some
+Another approach is to use simple Go types such as `bool`, `int64`,
+`[]interface{}`, and other types that map directly on to JSON or some
 other subset of all possible Go types. If too open, such as with
-[]interface{} it is still possible for the user to put unsupported
+`[]interface{}` it is still possible for the user to put unsupported
 types into the data. Not to pick out any package specifically but it
-is frustrating to see an argument type of interface{} and then no
-documentation describing that the supported types are.
+is frustrating to see an argument type of `interface{}` in an API and
+then no documentation describing that the supported types are.
 
 There is another approach though. Define a set of types that can be in
 a collection and use those types. With this approach, the generic data
-implementation has to support the basic JSON types of `null`, boolean,
-number, string, array, and object. In addition time should be
-supported. In both JSON use in Ruby and Go time has alway been
-needed. Time is just too much apart of any set of data to leave it
-out.
+implementation has to support the basic JSON types of `null`,
+`boolean`, `int64`, `float64`, `string`, array, and object. In
+addition time should be supported. From experience in both JSON use in
+Ruby and Go time has alway been needed. Time is just too much a part
+of any set of data to leave it out.
 
 The generic data had to be type safe. It would not do to have an
 element that could not be encoded as JSON in the data.
 
 A frequent operation for generic data is to store that data into a
 JSON database or similar. That meant converting to simple Go types of
-nil, bool, int64, float64, string, []interface{}, and
-map[string]interface{} had to be fast.
+`nil`, `bool`, `int64`, `float64`, `string`, `[]interface{}`, and
+`map[string]interface{}` had to be fast.
 
 Also planned for this part of the journey was methods on the types to
 support getting, setting, and deleting elements using JSONPath. The
@@ -84,7 +84,7 @@ JONPath, and parsing in separate packages.
 Unfortunately that part of the journey had to be cancelled as the Go
 travel guide refuses to let packages talk back and forth. Imports are
 one way only. After trying to put all the code in one package it
-eventually got unwieldy function names started being prefixed with
+eventually got unwieldy. Function names started being prefixed with
 what should really have been package names so the object and method
 approach was dropped. A change in API but the journey would continue.
 
@@ -104,10 +104,10 @@ parsers of course. Its easier to pack light when the areas are
 similar.
 
 The parser must also allow parsing into Go types. Furthermore
-interfaces must be supported. Go unmarshalling does not support
-interface fields. Since many data types make use of interfaces that
-limitation was not acceptable for the OjG parser. A different approach
-to support interfaces was possible.
+interfaces must be supported even though Go unmarshalling does not
+support interface fields. Since many data types make use of interfaces
+that limitation was not acceptable for the OjG parser. A different
+approach to support interfaces was possible.
 
 JSON document of any non trivial size, especially if hand edited are
 likely to have errors at some point. Parse errors must identify where
@@ -131,8 +131,9 @@ article](https://goessner.net/articles/JsonPath). There are other
 descriptions of JSONPath but the Goessner description is the most
 referenced. Since the implementation is in Go the scripting feature
 described could be left out as long as similar functionality could be
-provided for array indexes based on the length of the array. Borrowing
-from Ruby, using negative indexes would provide that functionality.
+provided for array indexes relative to the length of the
+array. Borrowing from Ruby, using negative indexes would provide that
+functionality.
 
 ## The Journey
 
@@ -143,7 +144,7 @@ the journey completed.
 ### Generic Data (`gen` package)
 
 What better way to make generic type fast than to just define generic
-types from simple types and then define methods on those types. A
+types from simple Go types and then add methods on those types. A
 `gen.Int` is just an `int64` and a `gen.Array` is just a
 `[]gen.Node`. With that approach there are no extra allocations.
 
@@ -157,67 +158,69 @@ Since generic arrays and objects restrict the type of the values in
 each collection to `gen.Node` types the collection are assured to
 contain only elements that can be encoded as JSON.
 
-Since methods on the `Node` could not be implemented without import
-loops the number of functions in the `Node` interface were limited. It
-was clear a parser would be needed but that would have to wait until
-the next part of the journey was completed. Then the generic data
-package could be revisited and the parser explored.
+Methods on the `Node` could not be implemented without import loops so
+the number of functions in the `Node` interface were limited. It was
+clear a parser specific to the generic data type would be needed but
+that would have to wait until the parser part of the journey was
+completed. Then the generic data package could be revisited and the
+parser explored.
 
-Let just ahead to the generic data parser revisit. It was not very
-interesting after the deep dive into the simple data parser. The
+Peeking at the future to the generic data parser revisit it was not
+very interesting after the deep dive into the simple data parser. The
 parser for generic types is a copy of the oj package parser but
 instead of simple types being created instances that support the
 `gen.Node` interface are created.
 
 ### Simple Parser (`oj` package)
 
-Looking back it hard to say what was the most interesting part of the
+Looking back its hard to say what was the most interesting part of the
 journey, the parser or JSONPath. Each had their own unique set of
 issues. The parser was the best place to start though as some valuable
 lessons were learned about what to avoid and what to gravitate toward
-in trying to achieve high performance code.
+in trying to achieve high performance Go code.
 
 #### Validator
 
 From the start I knew that a single pass parser would be more
 efficient than building tokens and then making a second pass to decide
 what the tokens means. At least that approach as worked well in the
-past. I dived in and used `readValue` function that branched depending
-on the next character read. It worked but it was slower than the bar
-of the Go json.Validate. It was off by a lot. Of course a benchmark
-was needed to verify that hence the start of the `cmd/benchmark`
-command. Profiling didn't help much it turned out since much of the
-overhead was in the function call setup themselves which isn't obvious
-when profiling.
+past. I dived in and used a `readValue` function that branched
+depending on the next character read. It worked but it was slower than
+the target of being on par with the Go json.Validate. That was the bar
+to clear. The first attempt was off by a lot. Of course a benchmark
+was needed to verify that so the `cmd/benchmark` command was
+started. Profiling didn't help much it turned out since much of the
+overhead was in the function call setup which isn't obvious when
+profiling.
 
-Not knowing at the time that function calls were so expensive
-anticipating that there was some overhead in a function call I moved
-some of the code from a few frequently called functions to inline in
-the calling function. That made much more of a difference than I
+Not knowing at the time that function calls were so expensive but
+anticipating that there was some overhead in function calls I moved
+some of the code from a few frequently called functions to be inline
+in the calling function. That made much more of a difference than I
 expected. At that point I looked at the Go code for the core
 validation code. I was surprised to see that it used lots of functions
 but not functions attached to a type. I gave that approach a try but
 with functions on the parser type. The results were not good
 either. Simple changing the functions to take the parser as an
-argument made a big difference. Another lesson learned.
+argument made a big difference though. Another lesson learned.
 
 Next was to remove function calls as much as possible since they did
 seem to be expensive. The code was no longer elegant and had lots of
-duplicated blocks but it ran much faster. At this point the code was
-nudging the Go validator bar.
+duplicated blocks but it ran much faster. At this point the code
+performance was getting closet to clearing the Go validator bar.
 
-When parsing in a single pass a conceptual state machine is used. When
-branching with functions it is state machine but the states are
-limited for each function making it much easier to follow. Moving into
-a single function meant tracking many more states in single state
-machine. Implementation was with lengthy switch statements. One
-problem remained though. Array and Object had to be tracked to know
-when a closing `]` or `}` was allowed. Since function calls were being
-avoided that mean maintaining a stack in the single parser
-function. That approach worked well with very little overhead.
+When parsing in a single pass a conceptual state machine is generally
+used. When branching with functions there is still a state machine but
+the states are limited for each function making it much easier to
+follow. Moving into a single function meant tracking many more states
+in single state machine. Implementation was with lengthy switch
+statements. One problem remained though. Array and Object had to be
+tracked to know when a closing `]` or `}` was allowed. Since function
+calls were being avoided that meant maintaining a stack in the single
+parser function. That approach worked well with very little overhead.
 
 Another tweak was to reuse memory. At this point the parser only
-allocated a few objects but why would it need to allocate any of the
+allocated a few objects but why would it need to allocate any if the
 buffers for the stack could be reused. That prompted a change in the
 API. The initial API was for a single `Validate()` function. If the
 validator was made public it could be reused. That made a lot of sense
@@ -228,27 +231,28 @@ validation to zero and brought the performance under the Go
 
 #### Parser
 
-With the optimum technique identified while visiting the validator,
-the next part of the journey was to use they same technique on the
-parser.
+With the many optimum techniques identified while visiting the
+validator, the next part of the journey was to use those same
+technique on the parser.
 
 The difference between the validator and the parser is that the parser
 needs to build up data elements. The first attempt was to add the
-bytes associated with a value to a reusable buffer and then parse
-that buffer at the end of the value. It worked and was as fast as the
-`json.Unmarshall` function but that was not enough as there were still
-more allocations than seemed necessary.
+bytes associated with a value to a reusable buffer and then parse that
+buffer at the end of the value bytes in the source. It worked and was
+as fast as the `json.Unmarshall` function but that was not enough as
+there were still more allocations than seemed necessary.
 
 By expanding the state machine `null`, `true`, and `false` could be
-identified as values with adding to a buffer. That gave a bit of
-improvement.
+identified as values without adding adding to the buffer. That gave a
+bit of improvement.
 
-Numbers, specifically integers were another value that really didn't
-need to be parsed from a buffer so instead of appending bytes to a
-buffer and calling `strconv.ParseInt()` integer values are build as an
-`int64` and grown as bytes are read. If a `.` character is encountered
-then The number is a float for capture the parts of a float as
-integers and create a float when done. This was another improvement in
+Numbers, specifically integers were another value type that really
+didn't need to be parsed from a buffer so instead of appending bytes
+to a buffer and calling `strconv.ParseInt()` integer values were built
+as an `int64` and grown as bytes were read. If a `.` character is
+encountered then the number is a is a decimal so the type expected is
+changed and each part of a float is captured as integers and finally a
+float64 is created when done. This was another improvement in
 performance.
 
 Not much could be done to improve string parsing since it is really
@@ -257,13 +261,14 @@ just appending bytes to a buffer and making them a string at the final
 in the form of a 256 long bytes array is used for that purpose.
 
 Going back to the stack used in the validator, instead of putting a
-simple marker on the stack, an Object start character, a `{` puts a
-new `map[string]interface{}` on the stack. Values and keys are then
-used to set members of the map. Nothing special there.
+simple marker on the stack like the validator, when an Object start
+character, a `{` is encountered a new `map[string]interface{}` is put
+on the stack. Values and keys are then used to set members of the
+map. Nothing special there.
 
 Saving the best for last, array where tougher to deal with. A value is
 not just added to an array but rather appended to an array and a
-potentially new array is returned. That no a terrible efficient way to
+potentially new array is returned. Thats not a terribly efficient way to
 build a slice as it will go through multiple reallocations. Instead, a
 second slice index stack is kept. As an array is to be created, a spot
 is reserved on the stack and the index of that stack location is
@@ -279,15 +284,17 @@ After some experimented it turned out that the overhead of some
 operation such as creating a slice or adding a number was not impacted
 to any large extent by making a function call since it does not happen
 as frequently as processing each byte so some use of functions could
-be used to remove duplicate code.
+be used to remove duplicate code without significan performance
+impact.
 
-One stop left at the parser package. Streaming had to be supported. At
-this point there were already plans on how to deal with streaming
-which was to load up a buffer and iterate over that buffer using the
-exact same code as for parsing bytes. It seemed like using an index
-into the buffer would be easier to keep track of but switching from a
-`for` `range` to `for i = 0; i < size; i++ {` dropped the performance
-considerably. Clearly staying the the `range` approach was
+One stop left at the parser package tour. Streaming had to be
+supported. At this point there were already plans on how to deal with
+streaming which was to load up a buffer and iterate over that buffer
+using the exact same code as for parsing bytes and repeat until there
+was nothing left to read. It seemed like using an index into the
+buffer would be easier to keep track of but switching from a `for`
+`range` to `for i = 0; i < size; i++ {` dropped the performance
+considerably. Clearly staying with the `range` approach was
 better. Once that was working a quick trip back to the validator to
 allow it to support streams was made.
 
@@ -314,8 +321,8 @@ special care was taken to make the JSONPath parser fast. Instead
 functions are used in an approach that is easier to understand. I said
 easier, not easy. There are a fair number of dangerous curves with
 trying to support bracketed notation as well as dot notation and how
-that all play nicely with the script parser so that one can call the
-other supporting nested filters. It was rewarding to see it all come
+that all plays nicely with the script parser so that one can call the
+other to support nested filters. It was rewarding to see it all come
 together though.
 
 If the need exists to create expressions at run time then functions
@@ -342,11 +349,12 @@ of function calls.
 
 Given that function calls are expensive and slices are cheap a Forth
 (the language) evaluation stack approach is used. Not exactly Forth
-but a similar approach. Each fragment takes it's matches and puts them
-on the stack. Then the next fragment evaluates each in turn. This
-continue until the stack shrinks back to one element indicating the
-evaluation is complete. The last fragment also puts any matches on a
-results list which is returned.
+but a similar concept mixing data and operators. Each fragment takes
+it's matches and those matches on the stack. Then the next fragment
+evaluates each in turn. This continue until the stack shrinks back to
+one element indicating the evaluation is complete. The last fragment
+puts any matches on a results list which is returned instead of on the
+stack.
 
  | Stack  | Frag  |
  | ------ | ----- |
@@ -367,7 +375,7 @@ all the various fragment types.
 ### Converting or Altering Data (`alt` package)
 
 A little extra was added to the journey once it was clear the generic
-data types could not support JSONPath directly. The original plan was
+data types would not support JSONPath directly. The original plan was
 to has functions like `AsInt()` as part of the `Node` interface. With
 that no longer reasonable an `alt` package became part of the
 journey. It would be used for converting types as well as altering
@@ -383,8 +391,8 @@ be used to recompose types that include interface members.
 
 There is a trade off in that JSON is not parsed directly to a Go type
 by must go through an intermediate data structure first. There is an
-up side to that as well though. Not any simple or generic data can be
-used to recompose objects and no just JSON strings.
+up side to that as well though. Now any simple or generic data can be
+used to recompose objects and not just JSON strings.
 
 The `alt.GenAlter()` function was interesting in that it is possible
 to modify a slice type and then reset the members without
@@ -406,7 +414,7 @@ Sure we all know a function call add some overhead in any language. In
 C that overhead is pretty small or nonexistent with inline
 functions. That is not true for Go. There is considerable overhead in
 making a function call and if that functional call included any kind
-on context such as being the function of a type the overhead is even
+of context such as being the function of a type the overhead is even
 higher. That observation while disappointing drove a lot of the parser
 and JSONPath evaluation code. For nice looking and well organized code
 using functions are highly recommended but for high perfomance find a
@@ -417,19 +425,20 @@ reduce function calls and it did make a significant difference in
 performance.
 
 The JSONPath evaluation takes an additional approach. It includes a
-fair amount of code duplication but it also implement its own stack to
-avoid nested functional calls even though the nature of the evaluation
-is a better match for a recursive implementation.
+fair amount of code duplication but it also implements its own stack
+to avoid nested functional calls even though the nature of the
+evaluation is a better match for a recursive implementation.
 
 ### Slices are Nice
 
-Slice are implemented very efficiently in Go. Appending to a slice has
-very little overhead. Reusing slice by collapsing then to zero length
-is a great way to avoid allocating additional memory. Care has to be
-taken when collapsing though as any cells in the slice that point to
-object will now leave those objects dangling and they will never be
-garbage collected. Simply setting the slice slot to `nil` will avoid
-memory leaks.
+Slices are implemented very efficiently in Go. Appending to a slice
+has very little overhead. Reusing slice by collapsing then to zero
+length is a great way to avoid allocating additional memory. Care has
+to be taken when collapsing though as any cells in the slice that
+point to objects will now leave those objects dangling or rather
+referenced but not reachable and they will never be garbage
+collected. Simply setting the slice slot to `nil` will avoid memory
+leaks.
 
 ### Memory Allocation
 
@@ -452,8 +461,8 @@ It's important to define an API that is easy to use as well as one
 that allows for the best performance. The parser as well as the
 JSONPath builders attempt to do both. An even better example is the
 [GGql](https://github.com/uhn/ggql) GraphQL package. It provides a
-very simple AI when compared to previous Go GraphQL packages and it
-many times
+very simple API when compared to previous Go GraphQL packages and it
+is many times
 [faster](https://github.com/the-benchmarker/graphql-benchmarks).
 
 ## Whats Next?
@@ -463,3 +472,4 @@ Theres alway something new ready to be explored. For OjG there are a few things 
  - A short trip to Regex filters for JSONPath.
  - A construction project to add JSON building to the **oj** command which is an alternative to jq but using JSONPath.
  - Explore new territory by implementing a Simple Encoding Notation which mixes GraphQL syntax with JSON for simpler more forgiving format.
+ - A callback parser along the lines of the Go json.Decoder or more likely like the Oj [Simple Callback Parser](http://ohler.com/oj/doc/Oj.html#sc_parse-class_method).
