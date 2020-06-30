@@ -18,7 +18,7 @@ for go.
 
 ## Planning
 
-Like any journey it starts with the planning. Yeah, I know, its called
+Like any journey it starts with the planning. Yeah, I know, it's called
 requirement gathering but casting it as planning a journey is more fun
 and this was all about enjoying the discoveries on the journey. The
 journey takes place in the land of OjG which stands for Oj for
