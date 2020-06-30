@@ -442,7 +442,7 @@ leaks.
 
 ### Memory Allocation
 
-Like most languages, memory allocation adds overhead. Best to avoid
+Like most languages, memory allocation adds overhead. It's best to avoid
 when possible. A good example of that is in the `alt` package. The
 `Alter()` function replaces slice and map members instead of
 allocating a new slice or map when possible.
