@@ -75,6 +75,10 @@ go install ./...
 
 See [CHANGELOG.md](CHANGELOG.md)
 
+## Benchmarks
+
+See [benchmarks.md](benchmarks.md)
+
 ## Links
 
 - *Documentation*: [https://pkg.go.dev/github.com/ohler55/ojg](https://pkg.go.dev/github.com/ohler55/ojg)

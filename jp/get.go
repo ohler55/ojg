@@ -43,7 +43,6 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 	stack = append(stack, fi)
 
 	for 1 < len(stack) { // must have at least a data element and a fragment index
-		//fmt.Printf("*** stack at top: %v\n", stack)
 		prev = stack[len(stack)-2]
 		if ii, up := prev.(fragIndex); up {
 			stack = stack[:len(stack)-1]
