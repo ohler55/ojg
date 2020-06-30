@@ -266,7 +266,7 @@ character, a `{` is encountered a new `map[string]interface{}` is put
 on the stack. Values and keys are then used to set members of the
 map. Nothing special there.
 
-Saving the best for last, arrays here tougher to deal with. A value is
+Saving the best for last, arrays were tougher to deal with. A value is
 not just added to an array but rather appended to an array and a
 potentially new array is returned. Thats not a terribly efficient way to
 build a slice as it will go through multiple reallocations. Instead, a
