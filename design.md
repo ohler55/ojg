@@ -400,7 +400,7 @@ reallocating.
 
 Thats the last stop of the journey.
 
-## Interesting Tidbits
+## Lessons Learned
 
 Benchmarking was instrumental to tuning and picking the most favorable
 approach to the implementation. Through those benchmarks a number of
