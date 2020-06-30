@@ -53,7 +53,7 @@ types into the data. Not to pick out any package specifically but it
 is frustrating to see an argument type of `interface{}` in an API and
 then no documentation describing that the supported types are.
 
-There is another approach though. Define a set of types that can be in
+There is another approach though: Define a set of types that can be in
 a collection and use those types. With this approach, the generic data
 implementation has to support the basic JSON types of `null`,
 `boolean`, `int64`, `float64`, `string`, array, and object. In
