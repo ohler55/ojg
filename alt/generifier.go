@@ -158,11 +158,17 @@ func GenAlter(v interface{}, options ...*Options) (n gen.Node) {
 			n = a
 		case map[string]interface{}:
 			o := *(*gen.Object)(unsafe.Pointer(&tv))
+			var delKeys []string
 			for k, m := range tv {
 				g := GenAlter(m, opt)
 				if g != nil || !opt.OmitNil {
 					o[k] = g
+				} else {
+					delKeys = append(delKeys, k)
 				}
+			}
+			for _, k := range delKeys {
+				delete(o, k)
 			}
 			n = o
 		default:
