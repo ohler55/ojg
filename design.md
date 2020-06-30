@@ -73,7 +73,7 @@ Also planned for this part of the journey was methods on the types to
 support getting, setting, and deleting elements using JSONPath. The
 hope was to have an object based approach to the generic nodes so
 something like the following could be used but keeping generic data,
-JONPath, and parsing in separate packages.
+JSONPath, and parsing in separate packages.
 
 ```golang
     var n gen.Node
