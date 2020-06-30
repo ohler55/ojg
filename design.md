@@ -100,16 +100,16 @@ data types.
 When parsing files that include millions or more JSON elements in
 files that might be over 100GB a streaming parser is necessary. It
 would be nice to share some code with both the streaming and string
-parsers of course. Its easier to pack light when the areas are
+parsers of course. It's easier to pack light when the areas are
 similar.
 
-The parser must also allow parsing into Go types. Furthermore
+The parser must also allow parsing into native Go types. Furthermore
 interfaces must be supported even though Go unmarshalling does not
-support interface fields. Since many data types make use of interfaces
+support interface fields. Many data types make use of interfaces
 that limitation was not acceptable for the OjG parser. A different
 approach to support interfaces was possible.
 
-JSON document of any non trivial size, especially if hand edited are
+JSON documents of any non-trivial size, especially if hand-edited, are
 likely to have errors at some point. Parse errors must identify where
 in the document the error occurred.
 
@@ -144,7 +144,7 @@ the journey completed.
 ### Generic Data (`gen` package)
 
 What better way to make generic type fast than to just define generic
-types from simple Go types and then add methods on those types. A
+types from simple Go types and then add methods on those types? A
 `gen.Int` is just an `int64` and a `gen.Array` is just a
 `[]gen.Node`. With that approach there are no extra allocations.
 
@@ -155,7 +155,7 @@ type Array []Node
 ```
 
 Since generic arrays and objects restrict the type of the values in
-each collection to `gen.Node` types the collection are assured to
+each collection to `gen.Node` types the collections are assured to
 contain only elements that can be encoded as JSON.
 
 Methods on the `Node` could not be implemented without import loops so
@@ -186,10 +186,10 @@ efficient than building tokens and then making a second pass to decide
 what the tokens means. At least that approach as worked well in the
 past. I dived in and used a `readValue` function that branched
 depending on the next character read. It worked but it was slower than
-the target of being on par with the Go json.Validate. That was the bar
-to clear. The first attempt was off by a lot. Of course a benchmark
-was needed to verify that so the `cmd/benchmark` command was
-started. Profiling didn't help much it turned out since much of the
+the target of being on par with the Go `json.Validate`. That was the
+bar to clear. The first attempt was off by a lot. Of course a
+benchmark was needed to verify that so the `cmd/benchmark` command was
+started. Profiling didn't help much. It turned out since much of the
 overhead was in the function call setup which isn't obvious when
 profiling.
 
@@ -201,13 +201,13 @@ expected. At that point I looked at the Go code for the core
 validation code. I was surprised to see that it used lots of functions
 but not functions attached to a type. I gave that approach a try but
 with functions on the parser type. The results were not good
-either. Simple changing the functions to take the parser as an
+either. Simply changing the functions to take the parser as an
 argument made a big difference though. Another lesson learned.
 
 Next was to remove function calls as much as possible since they did
 seem to be expensive. The code was no longer elegant and had lots of
 duplicated blocks but it ran much faster. At this point the code
-performance was getting closet to clearing the Go validator bar.
+performance was getting closer to clearing the Go validator bar.
 
 When parsing in a single pass a conceptual state machine is generally
 used. When branching with functions there is still a state machine but
@@ -246,11 +246,11 @@ By expanding the state machine `null`, `true`, and `false` could be
 identified as values without adding adding to the buffer. That gave a
 bit of improvement.
 
-Numbers, specifically integers were another value type that really
+Numbers, specifically integers, were another value type that really
 didn't need to be parsed from a buffer so instead of appending bytes
-to a buffer and calling `strconv.ParseInt()` integer values were built
-as an `int64` and grown as bytes were read. If a `.` character is
-encountered then the number is a is a decimal so the type expected is
+to a buffer and calling `strconv.ParseInt()`, integer values were
+built as an `int64` and grown as bytes were read. If a `.` character
+is encountered then the number is a decimal so the type expected is
 changed and each part of a float is captured as integers and finally a
 float64 is created when done. This was another improvement in
 performance.
@@ -266,26 +266,26 @@ character, a `{` is encountered a new `map[string]interface{}` is put
 on the stack. Values and keys are then used to set members of the
 map. Nothing special there.
 
-Saving the best for last, array where tougher to deal with. A value is
+Saving the best for last, arrays here tougher to deal with. A value is
 not just added to an array but rather appended to an array and a
 potentially new array is returned. Thats not a terribly efficient way to
 build a slice as it will go through multiple reallocations. Instead, a
 second slice index stack is kept. As an array is to be created, a spot
 is reserved on the stack and the index of that stack location is
-places on the slice index stack. After that values are pushed onto the
-stack until an array close character, `]` is reached. The slice index
+placed on the slice index stack. After that values are pushed onto the
+stack until an array close character `]` is reached. The slice index
 is then referenced and a new `[]interface{}` is allocated for all the
 values from the arry index on the stack to the end of the
 stack. Values are copied to the new array and the stack is collapsed
 to the index. A bit complicated but it does save multiple object
 allocations.
 
-After some experimented it turned out that the overhead of some
-operation such as creating a slice or adding a number was not impacted
-to any large extent by making a function call since it does not happen
-as frequently as processing each byte so some use of functions could
-be used to remove duplicate code without significan performance
-impact.
+After some experimentation it turned out that the overhead of some
+operations such as creating a slice or adding a number were not
+impacted to any large extent by making a function call since it does
+not happen as frequently as processing each byte. Some use of
+functions could therefor be used to remove duplicate code without
+incurring a significant performance impact.
 
 One stop left at the parser package tour. Streaming had to be
 supported. At this point there were already plans on how to deal with
@@ -352,18 +352,18 @@ tree to find one or more elements. Conceptually each fragment of a
 path sets up zero or more paths to follow through the data. When the
 last fragment is reached the search is done. A recursive approach
 would be ideal where the evaluation of one fragment then invokes the
-next fragment eval function with as many paths it matches. Great on
+next fragment's eval function with as many paths it matches. Great on
 paper but for something like a descent fragment (`..`) that is a lot
 of function calls.
 
 Given that function calls are expensive and slices are cheap a Forth
 (the language) evaluation stack approach is used. Not exactly Forth
 but a similar concept mixing data and operators. Each fragment takes
-it's matches and those matches on the stack. Then the next fragment
-evaluates each in turn. This continue until the stack shrinks back to
-one element indicating the evaluation is complete. The last fragment
-puts any matches on a results list which is returned instead of on the
-stack.
+its matches and those matches already on the stack. Then the next
+fragment evaluates each in turn. This continues until the stack
+shrinks back to one element indicating the evaluation is complete. The
+last fragment puts any matches on a results list which is returned
+instead of on the stack.
 
  | Stack  | Frag  |
  | ------ | ----- |
