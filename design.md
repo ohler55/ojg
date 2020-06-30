@@ -415,7 +415,7 @@ C that overhead is pretty small or nonexistent with inline
 functions. That is not true for Go. There is considerable overhead in
 making a function call and if that functional call included any kind
 of context such as being the function of a type the overhead is even
-higher. That observation while disappointing drove a lot of the parser
+higher. That observation (while disappointing) drove a lot of the parser
 and JSONPath evaluation code. For nice looking and well organized code
 using functions are highly recommended but for high perfomance find a
 way to reduce function calls.
