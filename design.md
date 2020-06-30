@@ -58,7 +58,7 @@ a collection and use those types. With this approach, the generic data
 implementation has to support the basic JSON types of `null`,
 `boolean`, `int64`, `float64`, `string`, array, and object. In
 addition time should be supported. From experience in both JSON use in
-Ruby and Go time has alway been needed. Time is just too much a part
+Ruby and Go time has always been needed. Time is just too much a part
 of any set of data to leave it out.
 
 The generic data had to be type safe. It would not do to have an
