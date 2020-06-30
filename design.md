@@ -30,7 +30,7 @@ JSONPath evaluation had to be fast over everything else. With the
 luxury of not having to follow the existing Go json package API the
 API could be designed for the best performance.
 
-The journey would visit several areas each with it's own landscape and
+The journey would visit several areas each with its own landscape and
 different problems to solve.
 
 ### Generic Data
