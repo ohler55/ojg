@@ -1,4 +1,4 @@
-# A Journey building a fast JSON parser and full JSONPath with Oj for Go
+# A Journey building a fast JSON parser and full JSONPath, Oj for Go
 
 I had a dream. I'd write a fast JSON parser, generic data, and a
 JSONPath implementation and it would be beautiful, well organized, and
@@ -338,6 +338,15 @@ exist to support building expressions as a chain.
     // $..abc.*.xyz[3]
 ```
 
+contrasted with the use of the JSONPath parser:
+
+```golang
+    x, err := jp.ParseString("$..abc.*.xyz[3]")
+    // check err first
+    fmt.Println(x.String())
+    // $..abc.*.xyz[3]
+```
+
 Evaluating an expression against data involves walking down the data
 tree to find one or more elements. Conceptually each fragment of a
 path sets up zero or more paths to follow through the data. When the
@@ -408,6 +417,21 @@ lessons were learned.  The final benchmarks results can be viewed by
 running the `cmd/benchmark` command. See the results at
 [benchmarks.md](benchmarks.md).
 
+Here is a snippet from the benchmarks. Note higher is better for the
+numbers in parenthesis which is a ratio of the OjG component to Go
+json package component.
+
+```
+Parse JSON
+json.Unmarshal:           7104 ns/op (1.00x)    4808 B/op (1.00x)      90 allocs/op (1.00x)
+  oj.Parse:               4518 ns/op (1.57x)    3984 B/op (1.21x)      86 allocs/op (1.05x)
+  oj.GenParse:            4623 ns/op (1.54x)    3984 B/op (1.21x)      86 allocs/op (1.05x)
+
+json.Marshal:             2616 ns/op (1.00x)     992 B/op (1.00x)      22 allocs/op (1.00x)
+  oj.JSON:                 436 ns/op (6.00x)     131 B/op (7.57x)       4 allocs/op (5.50x)
+  oj.Write:                455 ns/op (5.75x)     131 B/op (7.57x)       4 allocs/op (5.50x)
+```
+
 ### Functions Add Overhead
 
 Sure we all know a function call add some overhead in any language. In
@@ -415,10 +439,10 @@ C that overhead is pretty small or nonexistent with inline
 functions. That is not true for Go. There is considerable overhead in
 making a function call and if that functional call included any kind
 of context such as being the function of a type the overhead is even
-higher. That observation (while disappointing) drove a lot of the parser
-and JSONPath evaluation code. For nice looking and well organized code
-using functions are highly recommended but for high perfomance find a
-way to reduce function calls.
+higher. That observation (while disappointing) drove a lot of the
+parser and JSONPath evaluation code. For nice looking and well
+organized code using functions are highly recommended but for high
+perfomance find a way to reduce function calls.
 
 The implementation of the parser included a lot of duplicate code to
 reduce function calls and it did make a significant difference in

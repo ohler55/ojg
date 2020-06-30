@@ -1,6 +1,7 @@
 
 ----------------
 - next/todo
+ - use filters on object members as well as lists?
  - regex op =~
  - SEN
  - cmd/oj
