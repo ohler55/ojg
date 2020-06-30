@@ -403,7 +403,7 @@ Thats the last stop of the journey.
 ## Interesting Tidbits
 
 Benchmarking was instrumental to tuning and picking the most favorable
-approach to the implemenation. Through those benchmarks a number of
+approach to the implementation. Through those benchmarks a number of
 lessons were learned.  The final benchmarks results can be viewed by
 running the `cmd/benchmark` command. See the results at
 [benchmarks.md](benchmarks.md).
