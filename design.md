@@ -432,7 +432,7 @@ evaluation is a better match for a recursive implementation.
 ### Slices are Nice
 
 Slices are implemented very efficiently in Go. Appending to a slice
-has very little overhead. Reusing slice by collapsing then to zero
+has very little overhead. Reusing slices by collapsing them to zero
 length is a great way to avoid allocating additional memory. Care has
 to be taken when collapsing though as any cells in the slice that
 point to objects will now leave those objects dangling or rather
