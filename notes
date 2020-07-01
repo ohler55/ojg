@@ -1,7 +1,6 @@
 
 ----------------
 - next/todo
- - use filters on object members as well as lists?
  - regex op =~
  - SEN
  - cmd/oj
@@ -10,10 +9,6 @@
   - palette in cfg file
   - build or restructure json
    - use a template based approach along with JSONPath
-
-- much later
- - scripts [(@.length-1)]
-  - decide what functions are actually useful if any
 
 -------------
 - cmd/oj

@@ -173,15 +173,6 @@ func jsonSortBenchmarks(base testing.BenchmarkResult) {
 		ojAllocs, float64(allocs)/float64(ojAllocs))
 }
 
-func marshalJSONSort(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		_, _ = json.Marshal(data)
-	}
-}
-
 func marshalJSON2(b *testing.B) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	data := alt.Alter(benchmarkData(tm))

@@ -137,6 +137,20 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 		dlen = len(td)
 	case gen.Array:
 		dlen = len(td)
+	case map[string]interface{}:
+		dlen = len(td)
+		da := make([]interface{}, 0, dlen)
+		for _, v := range td {
+			da = append(da, v)
+		}
+		data = da
+	case gen.Object:
+		dlen = len(td)
+		da := make(gen.Array, 0, dlen)
+		for _, v := range td {
+			da = append(da, v)
+		}
+		data = da
 	default:
 		return stack
 	}
