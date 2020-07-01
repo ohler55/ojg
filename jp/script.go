@@ -24,6 +24,7 @@ var (
 	mult   = &op{prec: 1, code: '*', name: "*", cnt: 2}
 	divide = &op{prec: 1, code: '/', name: "/", cnt: 2}
 	get    = &op{prec: 0, code: 'G', name: "get", cnt: 1}
+	//rx     = &op{prec: 0, code: '~', name: "=~", cnt: 2}
 
 	opMap = map[string]*op{
 		eq.name:     eq,

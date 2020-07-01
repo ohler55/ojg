@@ -2,6 +2,7 @@
 ----------------
 - next/todo
  - regex op =~
+  - /^xyz&/
  - SEN
  - cmd/oj
   - read args from file (FIN format)
@@ -9,7 +10,10 @@
   - palette in cfg file
   - build or restructure json
    - use a template based approach along with JSONPath
-
+- advanced ops
+ - in - a in [1,2,3]
+ - exists, empty, or has
+ - size or length - [?(@.x size > 3)] or [?(size @.x > 3)]
 -------------
 - cmd/oj
   -colors list of colors or maybe map?
