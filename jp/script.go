@@ -24,6 +24,7 @@ var (
 	mult   = &op{prec: 1, code: '*', name: "*", cnt: 2}
 	divide = &op{prec: 1, code: '/', name: "/", cnt: 2}
 	get    = &op{prec: 0, code: 'G', name: "get", cnt: 1}
+	//rx     = &op{prec: 0, code: '~', name: "=~", cnt: 2}
 
 	opMap = map[string]*op{
 		eq.name:     eq,
@@ -137,6 +138,20 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 		dlen = len(td)
 	case gen.Array:
 		dlen = len(td)
+	case map[string]interface{}:
+		dlen = len(td)
+		da := make([]interface{}, 0, dlen)
+		for _, v := range td {
+			da = append(da, v)
+		}
+		data = da
+	case gen.Object:
+		dlen = len(td)
+		da := make(gen.Array, 0, dlen)
+		for _, v := range td {
+			da = append(da, v)
+		}
+		data = da
 	default:
 		return stack
 	}
