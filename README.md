@@ -73,6 +73,8 @@ go install ./...
 
 ## Benchmarks
 
+Higher numbers in parenthesis are better.
+
 ```
 Parse JSON
 json.Unmarshal:           7104 ns/op (1.00x)    4808 B/op (1.00x)      90 allocs/op (1.00x)
