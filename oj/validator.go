@@ -7,6 +7,8 @@ import (
 	"io"
 )
 
+const stackMinSize = 32 // for container stack { or [
+
 // Validator is a reusable JSON validator. It can be reused for multiple
 // validations or parsings which allows buffer reuse for a performance
 // advantage.
