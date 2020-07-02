@@ -71,13 +71,29 @@ To build and install the `oj` application:
 go install ./...
 ```
 
+## Benchmarks
+
+```
+Parse JSON
+json.Unmarshal:           7104 ns/op (1.00x)    4808 B/op (1.00x)      90 allocs/op (1.00x)
+  oj.Parse:               4518 ns/op (1.57x)    3984 B/op (1.21x)      86 allocs/op (1.05x)
+  oj.GenParse:            4623 ns/op (1.54x)    3984 B/op (1.21x)      86 allocs/op (1.05x)
+
+Validate io.Reader JSON
+json.Decoder:            50213 ns/op (1.00x)   32658 B/op (1.00x)     346 allocs/op (1.00x)
+  oj.ValidateReader:     12740 ns/op (3.94x)    4096 B/op (7.97x)       1 allocs/op (346.00x)
+
+JSON()
+json.Marshal:             2616 ns/op (1.00x)     992 B/op (1.00x)      22 allocs/op (1.00x)
+  oj.JSON:                 436 ns/op (6.00x)     131 B/op (7.57x)       4 allocs/op (5.50x)
+  oj.Write:                455 ns/op (5.75x)     131 B/op (7.57x)       4 allocs/op (5.50x)
+```
+
+See [all benchmarks](benchmarks.md)
+
 ## Releases
 
 See [CHANGELOG.md](CHANGELOG.md)
-
-## Benchmarks
-
-See [benchmarks.md](benchmarks.md)
 
 ## Links
 
