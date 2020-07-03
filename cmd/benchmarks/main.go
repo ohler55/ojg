@@ -17,6 +17,7 @@ import (
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
+	"github.com/ohler55/ojg/sen"
 )
 
 // TBD remove tree before going public.
@@ -397,6 +398,15 @@ func parseBenchmarks() {
 		ojNs, float64(goNs)/float64(ojNs),
 		ojBytes, float64(goBytes)/float64(ojBytes),
 		ojAllocs, float64(goAllocs)/float64(ojAllocs))
+
+	senRes := testing.Benchmark(senParse)
+	senNs := senRes.NsPerOp()
+	senBytes := senRes.AllocedBytesPerOp()
+	senAllocs := senRes.AllocsPerOp()
+	fmt.Printf(" sen.Parse:             %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
+		senNs, float64(goNs)/float64(senNs),
+		senBytes, float64(goBytes)/float64(senBytes),
+		senAllocs, float64(goAllocs)/float64(senAllocs))
 }
 
 func parseReaderBenchmarks() {
@@ -488,6 +498,15 @@ func genParse(b *testing.B) {
 	}
 }
 
+func senParse(b *testing.B) {
+	p := &sen.Parser{}
+	for n := 0; n < b.N; n++ {
+		_, _ = p.Parse([]byte(sampleSen))
+		_, err := p.Parse([]byte(sampleJSON))
+		fmt.Println(err)
+	}
+}
+
 func jsonPathGetBenchmarks() {
 	fmt.Println()
 	fmt.Println("JSON Path Get")
@@ -555,6 +574,38 @@ const sampleJSON = `[
           "nest": {
             "nest": {
               "egg": [12345678, 87654321]
+            }
+          }
+        }
+      }
+    }
+  }
+]
+`
+
+const sampleSen = `[
+  []
+  null
+  true
+  false
+  77
+  123.456e7
+  ""
+  "a string with \t unicode \u2669 and quotes \"."
+  [1 1.23 -44 six]
+  [[null[true[false[123[4.56e7[abcdef]]]]]]]
+  {
+    abc: 3
+    def: {
+      ghi: true
+    }
+    xyz: "another string"
+    nest: {
+      nest: {
+        nest: {
+          nest: {
+            nest: {
+              egg: [12345678 87654321]
             }
           }
         }

@@ -10,7 +10,7 @@ import (
 	"github.com/ohler55/ojg/tt"
 )
 
-type data struct {
+type rdata struct {
 	src string
 	// Empty means no error expected while non empty should be compared
 	// err.Error().
@@ -20,7 +20,7 @@ type data struct {
 }
 
 func TestParserParseString(t *testing.T) {
-	for i, d := range []data{
+	for i, d := range []rdata{
 		{src: "null", value: nil},
 		{src: "true", value: true},
 		{src: "false", value: false},
