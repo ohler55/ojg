@@ -10,6 +10,7 @@ import (
 
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
+	"github.com/ohler55/ojg/sen"
 )
 
 var (
@@ -17,6 +18,8 @@ var (
 	color  = false
 	bright = false
 	sort   = false
+	lazy   = false
+	senOut = false
 
 	// If true wrap extracts with an array.
 	wrapExtract = false
@@ -30,6 +33,8 @@ func init() {
 	flag.BoolVar(&sort, "s", sort, "sort")
 	flag.BoolVar(&bright, "b", bright, "bright color")
 	flag.BoolVar(&wrapExtract, "w", wrapExtract, "wrap extracts in an array")
+	flag.BoolVar(&lazy, "z", lazy, "lazy mode accepts Simple Encoding Notation (quotes and commas mostly optional)")
+	flag.BoolVar(&senOut, "sen", senOut, "outpit in Simple Encoding Notation")
 	flag.Var(&exValue{}, "x", "extract path")
 	flag.Var(&matchValue{}, "m", "match equation/script")
 }
@@ -96,8 +101,13 @@ is composed of the remaining argument concatenated together.
 			files = append(files, arg)
 		}
 	}
-	var p oj.Parser
+	var p oj.SimpleParser
 	var err error
+	if lazy {
+		p = &sen.Parser{}
+	} else {
+		p = &oj.Parser{}
+	}
 	if 0 < len(files) {
 		var f *os.File
 		for _, file := range files {
@@ -140,14 +150,24 @@ func write(v interface{}) bool {
 			for _, x := range extracts {
 				w = append(w, x.Get(v)...)
 			}
-			writeJSON(w)
+			if senOut {
+				writeSEN(w)
+			} else {
+				writeJSON(w)
+			}
 		} else {
 			for _, x := range extracts {
 				for _, v2 := range x.Get(v) {
-					writeJSON(v2)
+					if senOut {
+						writeSEN(v2)
+					} else {
+						writeJSON(v2)
+					}
 				}
 			}
 		}
+	} else if senOut {
+		writeSEN(v)
 	} else {
 		writeJSON(v)
 	}
@@ -169,6 +189,25 @@ func writeJSON(v interface{}) {
 		_ = oj.Write(os.Stdout, v, &o)
 	} else {
 		_ = oj.Write(os.Stdout, v, indent)
+	}
+	os.Stdout.Write([]byte{'\n'})
+}
+
+func writeSEN(v interface{}) {
+	if bright {
+		o := sen.BrightOptions
+		o.Indent = indent
+		o.Color = true
+		o.Sort = sort
+		_ = sen.Write(os.Stdout, v, &o)
+	} else if color || sort {
+		o := sen.DefaultOptions
+		o.Indent = indent
+		o.Color = color
+		o.Sort = sort
+		_ = sen.Write(os.Stdout, v, &o)
+	} else {
+		_ = sen.Write(os.Stdout, v, indent)
 	}
 	os.Stdout.Write([]byte{'\n'})
 }

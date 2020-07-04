@@ -10,113 +10,113 @@ import (
 // 9223372036854775807 / 10 = 922337203685477580
 const bigLimit = math.MaxInt64 / 10
 
-type number struct {
-	i      uint64
-	frac   uint64
+type Number struct {
+	I      uint64
+	Frac   uint64
 	div    uint64
-	exp    uint64
-	neg    bool
-	negExp bool
-	bigBuf []byte
+	Exp    uint64
+	Neg    bool
+	NegExp bool
+	BigBuf []byte
 }
 
-func (n *number) reset() {
-	n.i = 0
-	n.frac = 0
+func (n *Number) Reset() {
+	n.I = 0
+	n.Frac = 0
 	n.div = 1
-	n.exp = 0
-	n.neg = false
-	n.negExp = false
-	if 0 < len(n.bigBuf) {
-		n.bigBuf = n.bigBuf[:0]
+	n.Exp = 0
+	n.Neg = false
+	n.NegExp = false
+	if 0 < len(n.BigBuf) {
+		n.BigBuf = n.BigBuf[:0]
 	}
 }
 
-func (n *number) addDigit(b byte) {
-	if 0 < len(n.bigBuf) {
-		n.bigBuf = append(n.bigBuf, b)
-	} else if n.i <= bigLimit {
-		n.i = n.i*10 + uint64(b-'0')
-		if math.MaxInt64 < n.i {
-			n.fillBig()
+func (n *Number) AddDigit(b byte) {
+	if 0 < len(n.BigBuf) {
+		n.BigBuf = append(n.BigBuf, b)
+	} else if n.I <= bigLimit {
+		n.I = n.I*10 + uint64(b-'0')
+		if math.MaxInt64 < n.I {
+			n.FillBig()
 		}
 	} else {
-		n.fillBig()
-		n.bigBuf = append(n.bigBuf, b)
+		n.FillBig()
+		n.BigBuf = append(n.BigBuf, b)
 	}
 }
 
-func (n *number) addFrac(b byte) {
-	if 0 < len(n.bigBuf) {
-		n.bigBuf = append(n.bigBuf, b)
-	} else if n.frac <= bigLimit {
-		n.frac = n.frac*10 + uint64(b-'0')
+func (n *Number) AddFrac(b byte) {
+	if 0 < len(n.BigBuf) {
+		n.BigBuf = append(n.BigBuf, b)
+	} else if n.Frac <= bigLimit {
+		n.Frac = n.Frac*10 + uint64(b-'0')
 		n.div *= 10.0
-		if math.MaxInt64 < n.frac {
-			n.fillBig()
+		if math.MaxInt64 < n.Frac {
+			n.FillBig()
 		}
 	} else { // big
-		n.fillBig()
-		n.bigBuf = append(n.bigBuf, b)
+		n.FillBig()
+		n.BigBuf = append(n.BigBuf, b)
 	}
 }
 
-func (n *number) addExp(b byte) {
-	if 0 < len(n.bigBuf) {
-		n.bigBuf = append(n.bigBuf, b)
-	} else if n.exp <= 102 {
-		n.exp = n.exp*10 + uint64(b-'0')
-		if 1022 < n.exp {
-			n.fillBig()
+func (n *Number) AddExp(b byte) {
+	if 0 < len(n.BigBuf) {
+		n.BigBuf = append(n.BigBuf, b)
+	} else if n.Exp <= 102 {
+		n.Exp = n.Exp*10 + uint64(b-'0')
+		if 1022 < n.Exp {
+			n.FillBig()
 		}
 	} else { // big
-		n.fillBig()
-		n.bigBuf = append(n.bigBuf, b)
+		n.FillBig()
+		n.BigBuf = append(n.BigBuf, b)
 	}
 }
 
-func (n *number) fillBig() {
-	if n.neg {
-		n.bigBuf = append(n.bigBuf, '-')
+func (n *Number) FillBig() {
+	if n.Neg {
+		n.BigBuf = append(n.BigBuf, '-')
 	}
-	n.bigBuf = append(n.bigBuf, strconv.FormatUint(n.i, 10)...)
-	if 0 < n.frac {
-		n.bigBuf = append(n.bigBuf, '.')
-		if 1000000000000000000 <= n.frac { // nearest multiple of 10 below max int64
-			n.bigBuf = append(n.bigBuf, strconv.FormatUint(n.frac, 10)...)
+	n.BigBuf = append(n.BigBuf, strconv.FormatUint(n.I, 10)...)
+	if 0 < n.Frac {
+		n.BigBuf = append(n.BigBuf, '.')
+		if 1000000000000000000 <= n.Frac { // nearest multiple of 10 below max int64
+			n.BigBuf = append(n.BigBuf, strconv.FormatUint(n.Frac, 10)...)
 		} else {
-			s := strconv.FormatUint(n.frac+n.div, 10)
-			n.bigBuf = append(n.bigBuf, s[1:]...)
+			s := strconv.FormatUint(n.Frac+n.div, 10)
+			n.BigBuf = append(n.BigBuf, s[1:]...)
 		}
 	}
-	if 0 < n.exp {
-		n.bigBuf = append(n.bigBuf, 'e')
-		if n.negExp {
-			n.bigBuf = append(n.bigBuf, '-')
+	if 0 < n.Exp {
+		n.BigBuf = append(n.BigBuf, 'e')
+		if n.NegExp {
+			n.BigBuf = append(n.BigBuf, '-')
 		}
-		n.bigBuf = append(n.bigBuf, strconv.FormatUint(n.exp, 10)...)
+		n.BigBuf = append(n.BigBuf, strconv.FormatUint(n.Exp, 10)...)
 	}
 }
 
-func (n *number) asInt() int64 {
-	i := int64(n.i)
-	if n.neg {
+func (n *Number) AsInt() int64 {
+	i := int64(n.I)
+	if n.Neg {
 		i = -i
 	}
 	return i
 }
 
-func (n *number) asFloat() float64 {
-	f := float64(n.i)
-	if 0 < n.frac {
-		f += float64(n.frac) / float64(n.div)
+func (n *Number) AsFloat() float64 {
+	f := float64(n.I)
+	if 0 < n.Frac {
+		f += float64(n.Frac) / float64(n.div)
 	}
-	if n.neg {
+	if n.Neg {
 		f = -f
 	}
-	if 0 < n.exp {
-		x := int(n.exp)
-		if n.negExp {
+	if 0 < n.Exp {
+		x := int(n.Exp)
+		if n.NegExp {
 			x = -x
 		}
 		f *= math.Pow10(int(x))
@@ -124,6 +124,6 @@ func (n *number) asFloat() float64 {
 	return f
 }
 
-func (n *number) asBig() Big {
-	return Big(n.bigBuf)
+func (n *Number) AsBig() Big {
+	return Big(n.BigBuf)
 }

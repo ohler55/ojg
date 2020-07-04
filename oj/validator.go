@@ -7,6 +7,8 @@ import (
 	"io"
 )
 
+const stackMinSize = 32 // for container stack { or [
+
 // Validator is a reusable JSON validator. It can be reused for multiple
 // validations or parsings which allows buffer reuse for a performance
 // advantage.
@@ -219,9 +221,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = strMode
 				p.nextMode = colonMode
 			case '}':
-				if err := p.objEnd(); err != nil {
-					return err
-				}
+				_ = p.objEnd()
 			default:
 				return p.newError("expected a string start or object close, not '%c'", b)
 			}

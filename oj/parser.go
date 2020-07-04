@@ -11,9 +11,8 @@ import (
 )
 
 const (
-	tmpMinSize   = 32 // for tokens and numbers
-	stackMinSize = 32 // for container stack { or [
-	readBufSize  = 4096
+	tmpMinSize  = 32 // for tokens and numbers
+	readBufSize = 4096
 
 	bomMode          = 'b'
 	valueMode        = 'v'
@@ -53,7 +52,7 @@ type Parser struct {
 	line      int
 	noff      int // Offset of last newline from start of buf. Can be negative when using a reader.
 	off       int
-	num       number
+	num       gen.Number
 	rn        rune
 	mode      byte
 	nextMode  byte
@@ -209,15 +208,15 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.ri = 0
 			case '-':
 				p.mode = negMode
-				p.num.reset()
-				p.num.neg = true
+				p.num.Reset()
+				p.num.Neg = true
 			case '0':
 				p.mode = zeroMode
-				p.num.reset()
+				p.num.Reset()
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.mode = digitMode
-				p.num.reset()
-				p.num.i = uint64(b - '0')
+				p.num.Reset()
+				p.num.I = uint64(b - '0')
 			case '"':
 				p.mode = strMode
 				p.nextMode = afterMode
@@ -265,15 +264,15 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.ri = 0
 			case '-':
 				p.mode = negMode
-				p.num.reset()
-				p.num.neg = true
+				p.num.Reset()
+				p.num.Neg = true
 			case '0':
 				p.mode = zeroMode
-				p.num.reset()
+				p.num.Reset()
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.mode = digitMode
-				p.num.reset()
-				p.num.i = uint64(b - '0')
+				p.num.Reset()
+				p.num.I = uint64(b - '0')
 			case '"':
 				p.mode = strMode
 				p.nextMode = afterMode
@@ -395,7 +394,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.mode = zeroMode
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.mode = digitMode
-				p.num.addDigit(b)
+				p.num.AddDigit(b)
 			default:
 				return p.newError("invalid number")
 			}
@@ -434,11 +433,11 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		case digitMode:
 			switch b {
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.num.addDigit(b)
+				p.num.AddDigit(b)
 			case '.':
 				p.mode = dotMode
-				if 0 < len(p.num.bigBuf) {
-					p.num.bigBuf = append(p.num.bigBuf, b)
+				if 0 < len(p.num.BigBuf) {
+					p.num.BigBuf = append(p.num.BigBuf, b)
 				}
 			case ' ', '\t', '\r':
 				p.mode = afterMode
@@ -471,18 +470,18 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		case dotMode:
 			if '0' <= b && b <= '9' {
 				p.mode = fracMode
-				p.num.addFrac(b)
+				p.num.AddFrac(b)
 			} else {
 				return p.newError("invalid number")
 			}
 		case fracMode:
 			switch b {
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.num.addFrac(b)
+				p.num.AddFrac(b)
 			case 'e', 'E':
 				p.mode = expSignMode
-				if 0 < len(p.num.bigBuf) {
-					p.num.bigBuf = append(p.num.bigBuf, b)
+				if 0 < len(p.num.BigBuf) {
+					p.num.BigBuf = append(p.num.BigBuf, b)
 				}
 			case ' ', '\t', '\r':
 				p.mode = afterMode
@@ -516,26 +515,26 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			switch b {
 			case '-':
 				p.mode = expZeroMode
-				p.num.negExp = true
+				p.num.NegExp = true
 			case '+':
 				p.mode = expZeroMode
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.mode = expMode
-				p.num.addExp(b)
+				p.num.AddExp(b)
 			default:
 				return p.newError("invalid number")
 			}
 		case expZeroMode:
 			if '0' <= b && b <= '9' {
 				p.mode = expMode
-				p.num.addExp(b)
+				p.num.AddExp(b)
 			} else {
 				return p.newError("invalid number")
 			}
 		case expMode:
 			switch b {
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.num.addExp(b)
+				p.num.AddExp(b)
 			case ' ', '\t', '\r':
 				p.mode = afterMode
 				p.appendNum()
@@ -714,12 +713,12 @@ func (p *Parser) iadd(n interface{}) {
 }
 
 func (p *Parser) appendNum() {
-	if 0 < len(p.num.bigBuf) {
-		p.iadd(string(p.num.asBig()))
-	} else if p.num.frac == 0 && p.num.exp == 0 {
-		p.iadd(p.num.asInt())
+	if 0 < len(p.num.BigBuf) {
+		p.iadd(string(p.num.AsBig()))
+	} else if p.num.Frac == 0 && p.num.Exp == 0 {
+		p.iadd(p.num.AsInt())
 	} else {
-		p.iadd(p.num.asFloat())
+		p.iadd(p.num.AsFloat())
 	}
 }
 

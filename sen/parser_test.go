@@ -1,6 +1,6 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package oj_test
+package sen_test
 
 import (
 	"fmt"
@@ -8,27 +8,40 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/ohler55/ojg/oj"
+	"github.com/ohler55/ojg/sen"
 	"github.com/ohler55/ojg/tt"
 )
 
-const callbackJSON = `
+const callbackSEN = `
 1
 [2]
-{"x":3}
+{x:3}
 true false 123
 `
 
+type rdata struct {
+	src string
+	// Empty means no error expected while non empty should be compared
+	// err.Error().
+	expect string
+	value  interface{}
+	//onlyOne bool
+}
+
 func TestParserParseString(t *testing.T) {
-	for i, d := range []data{
+	for i, d := range []rdata{
 		{src: "null", value: nil},
 		{src: "true", value: true},
 		{src: "false", value: false},
 		{src: "false \n ", value: false},
+		{src: "hello", value: "hello"},
+		{src: "hello ", value: "hello"},
+		{src: `"hello"`, value: "hello"},
+		{src: "[one two]", value: []interface{}{"one", "two"}},
 		{src: "123", value: 123},
-		{src: "-321", value: -321},
-		{src: "12.3", value: 12.3},
-		{src: "0 ", value: 0},
+		{src: "-12.3", value: -12.3},
+		{src: "-12.5e-2", value: -0.125},
+		{src: "0", value: 0},
 		{src: "0\n", value: 0},
 		{src: "-12.3 ", value: -12.3},
 		{src: "-12.3\n", value: -12.3},
@@ -49,7 +62,6 @@ func TestParserParseString(t *testing.T) {
 		{src: `321.123e2345`, value: "321.123e2345"},
 
 		{src: "\xef\xbb\xbf\"xyz\"", value: "xyz"},
-		{src: `"Bénédicte"`, value: "Bénédicte"},
 
 		{src: "[]", value: []interface{}{}},
 		{src: "[0,\ntrue , false,null]", value: []interface{}{0, true, false, nil}},
@@ -87,24 +99,18 @@ func TestParserParseString(t *testing.T) {
 				},
 			}},
 		{src: "{}}", expect: "extra characters after close, '}' at 1:3"},
-		{src: "{ \n", expect: "incomplete JSON at 2:0"},
-		{src: "{]}", expect: "expected a string start or object close, not ']' at 1:2"},
+		{src: "{ \n", expect: "not closed at 2:0"},
+		{src: "{]}", expect: "expected a token start or object close, not ']' at 1:2"},
 		{src: "[}]", expect: "unexpected object close at 1:2"},
 		{src: "{\"a\" \n : 1]}", expect: "unexpected array close at 2:5"},
 		{src: `[1}]`, expect: "unexpected object close at 1:3"},
 		{src: `1]`, expect: "too many closes at 1:2"},
 		{src: `1}`, expect: "too many closes at 1:2"},
 		{src: `]`, expect: "too many closes at 1:1"},
-		{src: `x`, expect: "unexpected character 'x' at 1:1"},
-		{src: `[1,]`, expect: "unexpected character ']' at 1:4"},
-		{src: `[null x`, expect: "expected a comma or close, not 'x' at 1:7"},
-		{src: "{\n\"x\":1 ]", expect: "unexpected array close at 2:7"},
+		{src: `[null x`, expect: "not closed at 1:7"},
+		{src: "{\n\"x\":1 ]", expect: "expected a token start or object close, not ']' at 2:7"},
 		{src: `[1 }`, expect: "unexpected object close at 1:4"},
-		{src: "{\n\"x\":1,}", expect: "expected a string start, not '}' at 2:7"},
 		{src: `{"x"x}`, expect: "expected a colon, not 'x' at 1:5"},
-		{src: `nuul`, expect: "expected null at 1:3"},
-		{src: `fasle`, expect: "expected false at 1:3"},
-		{src: `ture`, expect: "expected true at 1:2"},
 		{src: `-x`, expect: "invalid number at 1:2"},
 		{src: `0]`, expect: "too many closes at 1:2"},
 		{src: `0}`, expect: "too many closes at 1:2"},
@@ -114,6 +120,7 @@ func TestParserParseString(t *testing.T) {
 		{src: `1.2x`, expect: "invalid number at 1:4"},
 		{src: `1.2ex`, expect: "invalid number at 1:5"},
 		{src: `1.2e+x`, expect: "invalid number at 1:6"},
+		{src: `1.2e`, expect: "incomplete JSON at 1:4"},
 		{src: "1.2\n]", expect: "extra characters after close, ']' at 2:1"},
 		{src: `1.2]`, expect: "too many closes at 1:4"},
 		{src: `1.2}`, expect: "too many closes at 1:4"},
@@ -124,24 +131,38 @@ func TestParserParseString(t *testing.T) {
 		{src: `"x\zy"`, expect: "invalid JSON escape character '\\z' at 1:4"},
 		{src: `"x\u004z"`, expect: "invalid JSON unicode character 'z' at 1:8"},
 		{src: "\xef\xbb[]", expect: "expected BOM at 1:3"},
+		{src: "$x", expect: "unexpected character '$' at 1:1"},
+		{src: "x]", expect: "too many closes at 1:2"},
+		{src: "x}", expect: "too many closes at 1:2"},
+		{src: "x$", expect: "expected a value, not '$' at 1:2"},
+		{src: "{x$:1}", expect: "expected a token character, not '$' at 1:3"},
 
-		{src: "[ // a comment\n  true\n]", value: []interface{}{true}, noComment: false},
-		{src: "[ // a comment\n  true\n]", expect: "comments not allowed at 1:3", noComment: true},
-		{src: "[\n  null, // a comment\n  true\n]", value: []interface{}{nil, true}, noComment: false},
-		{src: "[\n  null, / a comment\n  true\n]", expect: "unexpected character ' ' at 2:10", noComment: false},
-		{src: "[\n  null, // a comment\n  true\n]", expect: "comments not allowed at 2:9", noComment: true},
+		{src: "[0 1,2]", value: []interface{}{0, 1, 2}},
+		{src: "[0[1[2]]]", value: []interface{}{0, []interface{}{1, []interface{}{2}}}},
+		{src: `{aaa:0 "bbb":"one" , c:2}`, value: map[string]interface{}{"aaa": 0, "bbb": "one", "c": 2}},
+		{src: "{aaa\n:one b:\ntwo}", value: map[string]interface{}{"aaa": "one", "b": "two"}},
+		{src: "[abc[x]]", value: []interface{}{"abc", []interface{}{"x"}}},
+		{src: "[abc{x:1}]", value: []interface{}{"abc", map[string]interface{}{"x": 1}}},
+		{src: "[0{x:1}]", value: []interface{}{0, map[string]interface{}{"x": 1}}},
+		{src: "[1{x:1}]", value: []interface{}{1, map[string]interface{}{"x": 1}}},
+		{src: "[1.5{x:1}]", value: []interface{}{1.5, map[string]interface{}{"x": 1}}},
+		{src: "[1.5[1]]", value: []interface{}{1.5, []interface{}{1}}},
+		{src: "[1.5e2{x:1}]", value: []interface{}{150., map[string]interface{}{"x": 1}}},
+		{src: "[1.5e2[1]]", value: []interface{}{150.0, []interface{}{1}}},
+		{src: "[abc// a comment\n]", value: []interface{}{"abc"}},
+
+		{src: "[ // a comment\n  true\n]", value: []interface{}{true}},
+		{src: "[\n  null // a comment\n  true\n]", value: []interface{}{nil, true}},
+		{src: "[\n  null / a comment\n  true\n]", expect: "unexpected character ' ' at 2:9"},
 	} {
 		if testing.Verbose() {
-			fmt.Printf("... %s\n", d.src)
+			fmt.Printf("... %d: %q\n", i, d.src)
 		}
 		var err error
 		var v interface{}
-		if d.onlyOne || d.noComment {
-			p := oj.Parser{NoComment: d.noComment}
-			v, err = p.Parse([]byte(d.src))
-		} else {
-			v, err = oj.Parse([]byte(d.src))
-		}
+		var p sen.Parser
+		v, err = p.Parse([]byte(d.src))
+
 		if 0 < len(d.expect) {
 			tt.NotNil(t, err, d.src)
 			tt.Equal(t, d.expect, err.Error(), i, ": ", d.src)
@@ -161,8 +182,8 @@ func TestParserParseCallback(t *testing.T) {
 		results = append(results, fmt.Sprintf("%v", n)...)
 		return false
 	}
-	var p oj.Parser
-	v, err := p.Parse([]byte(callbackJSON), cb, true)
+	var p sen.Parser
+	v, err := p.Parse([]byte(callbackSEN), cb)
 	tt.Nil(t, err)
 	tt.Nil(t, v)
 	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
@@ -170,7 +191,7 @@ func TestParserParseCallback(t *testing.T) {
 	_, _ = p.Parse([]byte("[1,[2,[3}]]")) // fail to leave stack not cleaned up
 
 	results = results[:0]
-	v, err = p.Parse([]byte(callbackJSON), cb)
+	v, err = p.Parse([]byte(callbackSEN), cb)
 	tt.Nil(t, err)
 	tt.Nil(t, v)
 	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
@@ -185,50 +206,44 @@ func TestParserParseReaderCallback(t *testing.T) {
 		results = append(results, fmt.Sprintf("%v", n)...)
 		return false
 	}
-	var p oj.Parser
-	v, err := p.ParseReader(strings.NewReader("\xef\xbb\xbf"+callbackJSON), cb)
+	var p sen.Parser
+	v, err := p.ParseReader(strings.NewReader("\xef\xbb\xbf"+callbackSEN), cb)
 	tt.Nil(t, err)
 	tt.Nil(t, v)
 	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
 
 	results = results[:0]
-	v, err = p.ParseReader(strings.NewReader(callbackJSON), cb, true)
+	v, err = p.ParseReader(strings.NewReader(callbackSEN), cb)
 	tt.Nil(t, err)
 	tt.Nil(t, v)
 	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
 }
 
-func TestNumberReset(t *testing.T) {
-	var p oj.Parser
-	_, err := p.Parse([]byte("123456789012345678901234567890 1234567890"), func(interface{}) bool { return false })
-	tt.Nil(t, err)
-}
-
 func TestParseBadArg(t *testing.T) {
-	var p oj.Parser
-	_, err := p.Parse([]byte(callbackJSON), "bad")
+	var p sen.Parser
+	_, err := p.Parse([]byte(callbackSEN), "bad")
 	tt.NotNil(t, err)
 
-	_, err = p.ParseReader(strings.NewReader(callbackJSON), "bad")
+	_, err = p.ParseReader(strings.NewReader(callbackSEN), "bad")
 	tt.NotNil(t, err)
 }
 
 func TestParserParseReaderErrRead(t *testing.T) {
-	var p oj.Parser
-	r := tt.ShortReader{Max: 20, Content: []byte(callbackJSON)}
+	var p sen.Parser
+	r := tt.ShortReader{Max: 20, Content: []byte(callbackSEN)}
 	_, err := p.ParseReader(&r)
 	tt.NotNil(t, err)
 }
 
 func TestParserParseReaderEOF(t *testing.T) {
-	var p oj.Parser
-	_, err := p.ParseReader(iotest.DataErrReader(strings.NewReader("[1,2]")))
+	var p sen.Parser
+	_, err := p.ParseReader(iotest.DataErrReader(strings.NewReader("[1 2]")))
 	tt.Nil(t, err)
 }
 
 func TestParserParseReaderErr(t *testing.T) {
-	var p oj.Parser
-	_, err := p.ParseReader(iotest.DataErrReader(strings.NewReader("[1,2}")))
+	var p sen.Parser
+	_, err := p.ParseReader(iotest.DataErrReader(strings.NewReader("[1 2}")))
 	tt.NotNil(t, err)
 
 	r := tt.ShortReader{Max: 5000, Content: []byte("[ 123" + strings.Repeat(",  123", 120) + "]")}
