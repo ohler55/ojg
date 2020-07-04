@@ -49,6 +49,7 @@ func TestParserParseString(t *testing.T) {
 		{src: `321.123e2345`, value: "321.123e2345"},
 
 		{src: "\xef\xbb\xbf\"xyz\"", value: "xyz"},
+		{src: `"Bénédicte"`, value: "Bénédicte"},
 
 		{src: "[]", value: []interface{}{}},
 		{src: "[0,\ntrue , false,null]", value: []interface{}{0, true, false, nil}},

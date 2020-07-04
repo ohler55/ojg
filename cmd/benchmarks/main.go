@@ -213,20 +213,6 @@ func ojValidate(b *testing.B) {
 	}
 }
 
-// Validate io.Reader
-func baseValidateReader(b *testing.B) {
-	f, err := os.Open("test/sample.json")
-	if err != nil {
-		fmt.Printf("Failed to read test/sample.json. %s\n", err)
-		return
-	}
-	defer func() { _ = f.Close() }()
-	for n := 0; n < b.N; n++ {
-		_, _ = f.Seek(0, 0)
-		_, _ = f.Seek(0, 2)
-	}
-}
-
 func goDecodeReader(b *testing.B) {
 	f, err := os.Open("test/sample.json")
 	if err != nil {

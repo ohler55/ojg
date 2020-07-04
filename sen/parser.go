@@ -41,7 +41,7 @@ const (
 		"................................" + // 0x00
 		"..............o.oooooooooo......" + // 0x20
 		".oooooooooooooooooooooooooo...oo" + // 0x40
-		".oooooooooooooooooooooooooo....." + // 0x60
+		".oooooooooooooooooooooooooo...o." + // 0x60
 		"oooooooooooooooooooooooooooooooo" + // 0x80
 		"oooooooooooooooooooooooooooooooo" + // 0xa0
 		"oooooooooooooooooooooooooooooooo" + // 0xc0
@@ -647,9 +647,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.cb(p.stack[0])
 			}
 		case valueMode:
-			if 0 < len(p.stack) {
-				p.cb(p.stack[0])
-			}
+			// normal completion
 		case zeroMode, digitMode, fracMode, expMode:
 			p.appendNum()
 			if 0 < len(p.stack) {

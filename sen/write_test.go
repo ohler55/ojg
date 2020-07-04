@@ -17,12 +17,10 @@ import (
 type wdata struct {
 	// Empty means no error expected while non empty should be compared
 	// err.Error().
-	expect    string
-	value     interface{}
-	onlyOne   bool
-	noComment bool
-	options   *sen.Options
-	indent    int
+	expect  string
+	value   interface{}
+	options *sen.Options
+	indent  int
 }
 
 // Used to test Simplifier objects in simple data.
@@ -76,7 +74,7 @@ func TestString(t *testing.T) {
 		{value: "string", expect: "string"},
 		{value: "\\\t\n\r\b\f\"&<>\u2028\u2029\x07\U0001D122", expect: `"\\\t\n\r\b\f\"\u0026\u003c\u003e\u2028\u2029\u0007𝄢"`},
 		{value: gen.String("string"), expect: "string"},
-		{value: []interface{}{true, false}, expect: "[true false]"},
+		{value: []interface{}{true, nil}, expect: "[true null]"},
 		{value: gen.Array{gen.Bool(true), nil}, expect: "[true null]"},
 		{value: []interface{}{true, false}, indent: 2, expect: "[\n  true\n  false\n]"},
 		{value: gen.Array{gen.True, gen.False}, indent: 2, expect: "[\n  true\n  false\n]"},
