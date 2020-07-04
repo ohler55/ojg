@@ -4,8 +4,6 @@
  - regex op =~
   - /^xyz&/
  - SEN
-  - writer
-  - benchmarks
  - cmd/oj
   - read args from file (FIN format)
    - also check ~/.oj.fin or ~/.oj - graphql emacs mode works well

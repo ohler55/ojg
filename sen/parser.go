@@ -62,7 +62,7 @@ type Parser struct {
 	line      int
 	noff      int // Offset of last newline from start of buf. Can be negative when using a reader.
 	off       int
-	num       number
+	num       gen.Number
 	rn        rune
 	mode      byte
 	nextMode  byte
@@ -202,15 +202,15 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.noff = p.off
 			case '-':
 				p.mode = negMode
-				p.num.reset()
-				p.num.neg = true
+				p.num.Reset()
+				p.num.Neg = true
 			case '0':
 				p.mode = zeroMode
-				p.num.reset()
+				p.num.Reset()
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.mode = digitMode
-				p.num.reset()
-				p.num.i = uint64(b - '0')
+				p.num.Reset()
+				p.num.I = uint64(b - '0')
 			case '"':
 				p.mode = strMode
 				if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
@@ -350,7 +350,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.mode = zeroMode
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.mode = digitMode
-				p.num.addDigit(b)
+				p.num.AddDigit(b)
 			default:
 				return p.newError("invalid number")
 			}
@@ -390,11 +390,11 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		case digitMode:
 			switch b {
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.num.addDigit(b)
+				p.num.AddDigit(b)
 			case '.':
 				p.mode = dotMode
-				if 0 < len(p.num.bigBuf) {
-					p.num.bigBuf = append(p.num.bigBuf, b)
+				if 0 < len(p.num.BigBuf) {
+					p.num.BigBuf = append(p.num.BigBuf, b)
 				}
 			case ' ', '\t', '\r', ',':
 				p.appendNum()
@@ -428,18 +428,18 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		case dotMode:
 			if '0' <= b && b <= '9' {
 				p.mode = fracMode
-				p.num.addFrac(b)
+				p.num.AddFrac(b)
 			} else {
 				return p.newError("invalid number")
 			}
 		case fracMode:
 			switch b {
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.num.addFrac(b)
+				p.num.AddFrac(b)
 			case 'e', 'E':
 				p.mode = expSignMode
-				if 0 < len(p.num.bigBuf) {
-					p.num.bigBuf = append(p.num.bigBuf, b)
+				if 0 < len(p.num.BigBuf) {
+					p.num.BigBuf = append(p.num.BigBuf, b)
 				}
 			case ' ', '\t', '\r', ',':
 				p.appendNum()
@@ -474,26 +474,26 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			switch b {
 			case '-':
 				p.mode = expZeroMode
-				p.num.negExp = true
+				p.num.NegExp = true
 			case '+':
 				p.mode = expZeroMode
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.mode = expMode
-				p.num.addExp(b)
+				p.num.AddExp(b)
 			default:
 				return p.newError("invalid number")
 			}
 		case expZeroMode:
 			if '0' <= b && b <= '9' {
 				p.mode = expMode
-				p.num.addExp(b)
+				p.num.AddExp(b)
 			} else {
 				return p.newError("invalid number")
 			}
 		case expMode:
 			switch b {
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.num.addExp(b)
+				p.num.AddExp(b)
 			case ' ', '\t', '\r', ',':
 				p.appendNum()
 			case '\n':
@@ -616,7 +616,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.mode = valueMode
 			}
 		}
-		if len(p.starts) == 0 && p.mode == valueMode {
+		if len(p.starts) == 0 && p.mode == valueMode && 0 < len(p.stack) {
 			p.cb(p.stack[0])
 			p.stack[0] = nil
 			p.stack = p.stack[:0]
@@ -628,6 +628,9 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		}
 	}
 	if last {
+		if 0 < len(p.starts) {
+			return p.newError("not closed")
+		}
 		switch p.mode {
 		case tokenMode:
 			switch {
@@ -684,19 +687,18 @@ func (p *Parser) iadd(n interface{}) {
 }
 
 func (p *Parser) appendNum() {
-	if 0 < len(p.num.bigBuf) {
-		p.iadd(string(p.num.asBig()))
-	} else if p.num.frac == 0 && p.num.exp == 0 {
-		p.iadd(p.num.asInt())
+	if 0 < len(p.num.BigBuf) {
+		p.iadd(string(p.num.AsBig()))
+	} else if p.num.Frac == 0 && p.num.Exp == 0 {
+		p.iadd(p.num.AsInt())
 	} else {
-		p.iadd(p.num.asFloat())
+		p.iadd(p.num.AsFloat())
 	}
 	if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
 		p.mode = key1Mode
 	} else {
 		p.mode = valueMode
 	}
-
 }
 
 func (p *Parser) arrayEnd() error {
@@ -716,7 +718,11 @@ func (p *Parser) arrayEnd() error {
 	copy(n, p.stack[start:len(p.stack)])
 	p.stack = p.stack[0 : start-1]
 	p.iadd(n)
-
+	if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
+		p.mode = key1Mode
+	} else {
+		p.mode = valueMode
+	}
 	return nil
 }
 
@@ -734,6 +740,10 @@ func (p *Parser) objectEnd() error {
 	n := p.stack[len(p.stack)-1]
 	p.stack = p.stack[:len(p.stack)-1]
 	p.iadd(n)
-
+	if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
+		p.mode = key1Mode
+	} else {
+		p.mode = valueMode
+	}
 	return nil
 }

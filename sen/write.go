@@ -263,7 +263,9 @@ func (o *Options) buildTime(t time.Time) {
 			o.buf = append(o.buf, []byte(fmt.Sprintf("%d.%09d", secs, -(nano-(secs*int64(time.Second)))))...)
 		}
 	default:
+		o.buf = append(o.buf, '"')
 		o.buf = append(o.buf, []byte(t.Format(o.TimeFormat))...)
+		o.buf = append(o.buf, '"')
 	}
 	if 0 < len(o.TimeWrap) {
 		o.buf = append(o.buf, '}')

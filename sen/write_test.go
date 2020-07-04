@@ -4,6 +4,7 @@ package sen_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -90,7 +91,7 @@ func TestString(t *testing.T) {
 		{value: []interface{}{tm}, expect: "[1588879759123456789]"},
 		{value: tm2, expect: "-10.100000000", options: &sen.Options{TimeFormat: "second"}},
 		{value: gen.Array{gen.Time(tm)}, expect: "[1588879759123456789]"},
-		{value: gen.Array{gen.Time(tm)}, expect: `[2020-05-07T19:29:19.123456789Z]`, options: &sen.Options{TimeFormat: time.RFC3339Nano}},
+		{value: gen.Array{gen.Time(tm)}, expect: `["2020-05-07T19:29:19.123456789Z"]`, options: &sen.Options{TimeFormat: time.RFC3339Nano}},
 		{value: gen.Array{gen.Time(tm)}, expect: "[1588879759.123456789]", options: &sen.Options{TimeFormat: "second"}},
 		{value: gen.Array{gen.Time(tm)}, expect: `[{"@":1588879759123456789}]`, options: &sen.Options{TimeWrap: "@"}},
 		{value: map[string]interface{}{"t": true, "x": nil}, expect: "{t:true}", options: &sen.Options{OmitNil: true}},
@@ -148,30 +149,29 @@ func TestString(t *testing.T) {
 	}
 }
 
-/*
 func TestWrite(t *testing.T) {
 	var b strings.Builder
 
 	err := sen.Write(&b, []interface{}{true, false})
 	tt.Nil(t, err)
-	tt.Equal(t, "[true,false]", b.String())
+	tt.Equal(t, "[true false]", b.String())
 
 	opt := sen.Options{WriteLimit: 8}
 	b.Reset()
 	err = sen.Write(&b, []interface{}{true, false}, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, "[true,false]", b.String())
+	tt.Equal(t, "[true false]", b.String())
 
 	// A second time.
 	b.Reset()
 	err = sen.Write(&b, []interface{}{true, false}, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, "[true,false]", b.String())
+	tt.Equal(t, "[true false]", b.String())
 
 	b.Reset()
 	err = sen.Write(&b, []interface{}{false, true}, 2)
 	tt.Nil(t, err)
-	tt.Equal(t, "[\n  false,\n  true\n]", b.String())
+	tt.Equal(t, "[\n  false\n  true\n]", b.String())
 
 	b.Reset()
 	// Force a realloc of string buffer.
@@ -183,21 +183,21 @@ func TestWrite(t *testing.T) {
 	b.Reset()
 	err = sen.Write(&b, map[string]interface{}{"t": true, "f": false})
 	tt.Nil(t, err)
-	tt.Equal(t, 20, len(b.String()))
+	tt.Equal(t, 16, len(b.String()))
 	b.Reset()
 	err = sen.Write(&b, gen.Object{"t": gen.True, "f": gen.False})
 	tt.Nil(t, err)
-	tt.Equal(t, 20, len(b.String()))
+	tt.Equal(t, 16, len(b.String()))
 
 	b.Reset()
 	opt.Sort = true
 	err = sen.Write(&b, map[string]interface{}{"t": true, "f": false}, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, 20, len(b.String()))
+	tt.Equal(t, 16, len(b.String()))
 	b.Reset()
 	err = sen.Write(&b, gen.Object{"t": gen.True, "f": gen.False}, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, 20, len(b.String()))
+	tt.Equal(t, 16, len(b.String()))
 }
 
 func TestWriteWide(t *testing.T) {
@@ -205,22 +205,22 @@ func TestWriteWide(t *testing.T) {
 	opt := sen.Options{Indent: 300}
 	err := sen.Write(&b, []interface{}{[]interface{}{true, nil}}, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, 530, len(b.String()))
+	tt.Equal(t, 529, len(b.String()))
 
 	b.Reset()
 	err = sen.Write(&b, gen.Array{gen.Array{gen.True, nil}}, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, 530, len(b.String()))
+	tt.Equal(t, 529, len(b.String()))
 
 	b.Reset()
 	err = sen.Write(&b, map[string]interface{}{"x": map[string]interface{}{"y": true, "z": nil}}, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, 545, len(b.String()))
+	tt.Equal(t, 538, len(b.String()))
 
 	b.Reset()
 	err = sen.Write(&b, gen.Object{"x": gen.Object{"y": gen.True, "z": nil}}, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, 545, len(b.String()))
+	tt.Equal(t, 538, len(b.String()))
 }
 
 func TestWriteShort(t *testing.T) {
@@ -239,7 +239,7 @@ func TestWriteShort(t *testing.T) {
 	obj := map[string]interface{}{"t": true, "n": nil}
 	sobj := gen.Object{"t": gen.True, "n": nil}
 	opt.Indent = 0
-	for i := 2; i < 19; i += 2 {
+	for i := 2; i < 15; i += 2 {
 		err = sen.Write(&shortWriter{max: i}, obj, &opt)
 		tt.NotNil(t, err)
 		err = sen.Write(&shortWriter{max: i}, sobj, &opt)
@@ -252,7 +252,7 @@ func TestWriteShort(t *testing.T) {
 		tt.NotNil(t, err)
 	}
 	opt.Indent = 2
-	for i := 2; i < 19; i += 2 {
+	for i := 2; i < 15; i += 2 {
 		err = sen.Write(&shortWriter{max: i}, obj, &opt)
 		tt.NotNil(t, err)
 		err = sen.Write(&shortWriter{max: i}, sobj, &opt)
@@ -265,4 +265,3 @@ func TestWriteShort(t *testing.T) {
 		tt.NotNil(t, err)
 	}
 }
-*/

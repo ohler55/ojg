@@ -143,9 +143,9 @@ func (o *Options) cbuildArray(n gen.Array, depth int) (err error) {
 		cs = spaces[0:x]
 	}
 	for j, m := range n {
-		if 0 < j {
+		if 0 < j && len(cs) == 0 {
 			o.buf = append(o.buf, o.SyntaxColor...)
-			o.buf = append(o.buf, ',')
+			o.buf = append(o.buf, ' ')
 		}
 		o.buf = append(o.buf, []byte(cs)...)
 		if m == nil {
@@ -182,9 +182,9 @@ func (o *Options) cbuildSimpleArray(n []interface{}, depth int) (err error) {
 		cs = spaces[0:x]
 	}
 	for j, m := range n {
-		if 0 < j {
+		if 0 < j && len(cs) == 0 {
 			o.buf = append(o.buf, o.SyntaxColor...)
-			o.buf = append(o.buf, ',')
+			o.buf = append(o.buf, ' ')
 		}
 		o.buf = append(o.buf, []byte(cs)...)
 		if m == nil {
@@ -233,9 +233,9 @@ func (o *Options) cbuildObject(n gen.Object, depth int) (err error) {
 			}
 			if first {
 				first = false
-			} else {
+			} else if len(cs) == 0 {
 				o.buf = append(o.buf, o.SyntaxColor...)
-				o.buf = append(o.buf, ',')
+				o.buf = append(o.buf, ' ')
 			}
 			o.buf = append(o.buf, []byte(cs)...)
 			o.buf = append(o.buf, o.KeyColor...)
@@ -259,9 +259,9 @@ func (o *Options) cbuildObject(n gen.Object, depth int) (err error) {
 			}
 			if first {
 				first = false
-			} else {
+			} else if len(cs) == 0 {
 				o.buf = append(o.buf, o.SyntaxColor...)
-				o.buf = append(o.buf, ',')
+				o.buf = append(o.buf, ' ')
 			}
 			o.buf = append(o.buf, []byte(cs)...)
 			o.buf = append(o.buf, o.KeyColor...)
@@ -319,9 +319,9 @@ func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) (err e
 			}
 			if first {
 				first = false
-			} else {
+			} else if len(cs) == 0 {
 				o.buf = append(o.buf, o.SyntaxColor...)
-				o.buf = append(o.buf, ',')
+				o.buf = append(o.buf, ' ')
 			}
 			o.buf = append(o.buf, []byte(cs)...)
 			o.buf = append(o.buf, o.KeyColor...)
@@ -345,9 +345,9 @@ func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) (err e
 			}
 			if first {
 				first = false
-			} else {
+			} else if len(cs) == 0 {
 				o.buf = append(o.buf, o.SyntaxColor...)
-				o.buf = append(o.buf, ',')
+				o.buf = append(o.buf, ' ')
 			}
 			o.buf = append(o.buf, []byte(cs)...)
 			o.buf = append(o.buf, o.KeyColor...)

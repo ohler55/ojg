@@ -20,268 +20,184 @@ import (
 	"github.com/ohler55/ojg/sen"
 )
 
-// TBD remove tree before going public.
+type bench struct {
+	pkg  string
+	name string
+	fun  func(b *testing.B)
+
+	res    testing.BenchmarkResult
+	ns     int64 // base adjusted
+	bytes  int64 // base adjusted
+	allocs int64 // base adjusted
+}
 
 func main() {
 	testing.Init()
 	flag.Parse()
 	gen.TimeFormat = "nano"
 
-	jsonPathGetBenchmarks()
-	jsonPathFirstBenchmarks()
+	fmt.Println()
+	fmt.Println(" The number in parenthesis are the ratio of results between the reference and")
+	fmt.Println(" the listed. Higher values are better.")
 
-	parseBenchmarks()
-	parseReaderBenchmarks()
-	validateBenchmarks()
-	validateReaderBenchmarks()
+	benchSuite("Parse string/[]byte", []*bench{
+		{pkg: "json", name: "Unmarshal", fun: goParse},
+		{pkg: "oj", name: "Parse", fun: ojParse},
+		{pkg: "gen", name: "Parse", fun: genParse},
+		{pkg: "sen", name: "Parse", fun: senParse},
+	})
+	benchSuite("Parse io.Reader", []*bench{
+		{pkg: "json", name: "Decode", fun: goDecodeReader},
+		{pkg: "oj", name: "ParseReader", fun: ojParseReader},
+		{pkg: "gen", name: "ParseReder", fun: genParseReader},
+		{pkg: "sen", name: "ParseReader", fun: senParseReader},
+	})
 
-	base := testing.Benchmark(runBase)
+	benchSuite("Validate string/[]byte", []*bench{
+		{pkg: "json", name: "Valid", fun: goValidate},
+		{pkg: "oj", name: "Valdate", fun: ojValidate},
+	})
 
-	jsonBenchmarks(base, false)
-	jsonBenchmarks(base, true)
-	jsonSortBenchmarks(base)
-	convBenchmarks(base)
+	benchSuite("Validate io.Reader", []*bench{
+		{pkg: "json", name: "Decode", fun: goDecodeReader},
+		{pkg: "oj", name: "Valdate", fun: ojValidateReader},
+	})
+
+	benchSuite("to JSON", []*bench{
+		{pkg: "json", name: "Marshal", fun: marshalJSON},
+		{pkg: "oj", name: "JSON", fun: ojJSON},
+		{pkg: "oj", name: "Write", fun: ojWrite},
+		{pkg: "sen", name: "String", fun: senString},
+	})
+	benchSuite("to JSON with indentation", []*bench{
+		{pkg: "json", name: "Marshal", fun: marshalJSONIndent},
+		{pkg: "oj", name: "JSON", fun: ojJSONIndent},
+		{pkg: "oj", name: "Write", fun: ojWriteIndent},
+		{pkg: "sen", name: "String", fun: senStringIndent},
+	})
+	benchSuite("to JSON with indentation and sorted keys", []*bench{
+		{pkg: "oj", name: "JSON", fun: ojJSONSort},
+		{pkg: "oj", name: "Write", fun: ojWriteSort},
+		{pkg: "sen", name: "String", fun: senStringSort},
+	})
+
+	benchSuite("Convert or Alter", []*bench{
+		{pkg: "alt", name: "Generify", fun: altGenerify},
+		{pkg: "alt", name: "Alter", fun: altGenAlter},
+	})
+
+	benchSuite("JSONPath Get $..a[2].c", []*bench{
+		{pkg: "jp", name: "Get", fun: jpGet},
+	})
+	benchSuite("JSONPath First  $..a[2].c", []*bench{
+		{pkg: "jp", name: "First", fun: jpFirst},
+	})
 
 	fmt.Println()
 }
 
-func runBase(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	for n := 0; n < b.N; n++ {
-		benchmarkData(tm)
-	}
-}
-
-func benchmarkData(tm time.Time) interface{} {
-	return map[string]interface{}{
-		"a": []interface{}{1, 2, true, tm},
-		"b": 2.3,
-		"c": map[string]interface{}{
-			"x": "xxx",
-		},
-		"d": nil,
-	}
-}
-
-func convBenchmarks(base testing.BenchmarkResult) {
+func benchSuite(title string, suite []*bench) {
 	fmt.Println()
-	fmt.Println("Converting from simple to canonical types benchmarks")
+	fmt.Println(title)
 
-	genFrom := testing.Benchmark(ojGenerify)
-	fromNs := genFrom.NsPerOp() - base.NsPerOp()
-	fromBytes := genFrom.AllocedBytesPerOp() - base.AllocedBytesPerOp()
-	fromAllocs := genFrom.AllocsPerOp() - base.AllocsPerOp()
-	fmt.Printf("  oj.Generify:          %6d ns/op (%3.1fx)  %6d B/op (%3.1fx)  %6d allocs/op (%3.1fx)\n",
-		fromNs, 1.0,
-		fromBytes, 1.0,
-		fromAllocs, 1.0)
-
-	genAlter := testing.Benchmark(ojGenAlter)
-	alterNs := genAlter.NsPerOp() - base.NsPerOp()
-	alterBytes := genAlter.AllocedBytesPerOp() - base.AllocedBytesPerOp()
-	alterAllocs := genAlter.AllocsPerOp() - base.AllocsPerOp()
-	fmt.Printf("  oj.GenAlter:          %6d ns/op (%3.1fx)  %6d B/op (%3.1fx)  %6d allocs/op (%3.1fx)\n",
-		alterNs, float64(fromNs)/float64(alterNs),
-		alterBytes, float64(fromBytes)/float64(alterBytes),
-		alterAllocs, float64(fromAllocs)/float64(alterAllocs))
+	for _, b := range suite {
+		b.res = testing.Benchmark(b.fun)
+		b.ns = b.res.NsPerOp()
+		b.bytes = b.res.AllocedBytesPerOp()
+		b.allocs = b.res.AllocsPerOp()
+		fmt.Printf(" %4s.%-12s %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
+			b.pkg, b.name,
+			b.ns, float64(suite[0].ns)/float64(b.ns),
+			b.bytes, float64(suite[0].bytes)/float64(b.bytes),
+			b.allocs, float64(suite[0].allocs)/float64(b.allocs))
+	}
 }
 
-func ojGenAlter(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+// Parse functions
+func goParse(b *testing.B) {
+	var result interface{}
 	for n := 0; n < b.N; n++ {
-		native := benchmarkData(tm)
-		_ = alt.GenAlter(native)
+		_ = json.Unmarshal([]byte(sampleJSON), &result)
 	}
 }
 
-func ojGenerify(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+func ojParse(b *testing.B) {
+	p := &oj.Parser{}
 	for n := 0; n < b.N; n++ {
-		native := benchmarkData(tm)
-		_ = alt.Generify(native)
+		_, _ = p.Parse([]byte(sampleJSON))
+		//_, err := p.Parse([]byte(sampleJSON))
+		//fmt.Println(err)
 	}
 }
 
-func jsonBenchmarks(base testing.BenchmarkResult, indent bool) {
-	fmt.Println()
-	fmt.Printf("JSON() benchmarks, indent: %t, sort: false\n", indent)
-
-	var marshalRes testing.BenchmarkResult
-	var ojSRes testing.BenchmarkResult
-	var ojWRes testing.BenchmarkResult
-
-	if indent {
-		marshalRes = testing.Benchmark(marshalJSON2)
-	} else {
-		marshalRes = testing.Benchmark(marshalJSON)
-	}
-	marshalNs := marshalRes.NsPerOp()
-	marshalBytes := marshalRes.AllocedBytesPerOp()
-	marshalAllocs := marshalRes.AllocsPerOp()
-	fmt.Printf("json.Marshal:           %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
-		marshalNs, 1.0, marshalBytes, 1.0, marshalAllocs, 1.0)
-
-	if indent {
-		ojSRes = testing.Benchmark(ojJSON2)
-	} else {
-		ojSRes = testing.Benchmark(ojJSON)
-	}
-	ojNs := ojSRes.NsPerOp()
-	ojBytes := ojSRes.AllocedBytesPerOp()
-	ojAllocs := ojSRes.AllocsPerOp()
-	fmt.Printf("  oj.JSON:              %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
-		ojNs, float64(marshalNs)/float64(ojNs),
-		ojBytes, float64(marshalBytes)/float64(ojBytes),
-		ojAllocs, float64(marshalAllocs)/float64(ojAllocs))
-
-	if indent {
-		ojWRes = testing.Benchmark(ojWrite2)
-	} else {
-		ojWRes = testing.Benchmark(ojWrite)
-	}
-	ojNs = ojWRes.NsPerOp()
-	ojBytes = ojWRes.AllocedBytesPerOp()
-	ojAllocs = ojWRes.AllocsPerOp()
-	fmt.Printf("  oj.Write:             %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
-		ojNs, float64(marshalNs)/float64(ojNs),
-		ojBytes, float64(marshalBytes)/float64(ojBytes),
-		ojAllocs, float64(marshalAllocs)/float64(ojAllocs))
-}
-
-func jsonSortBenchmarks(base testing.BenchmarkResult) {
-	fmt.Println()
-	fmt.Printf("JSON() benchmarks, sort: true\n")
-
-	var ojSRes testing.BenchmarkResult
-	var ojWRes testing.BenchmarkResult
-
-	ojSRes = testing.Benchmark(ojJSONSort)
-	ns := ojSRes.NsPerOp()
-	bytes := ojSRes.AllocedBytesPerOp()
-	allocs := ojSRes.AllocsPerOp()
-	fmt.Printf("  oj.JSON:              %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
-		ns, 1.0,
-		bytes, 10.,
-		allocs, 1.0)
-
-	ojWRes = testing.Benchmark(ojWriteSort)
-	ojNs := ojWRes.NsPerOp()
-	ojBytes := ojWRes.AllocedBytesPerOp()
-	ojAllocs := ojWRes.AllocsPerOp()
-	fmt.Printf("  oj.Write:             %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
-		ojNs, float64(ns)/float64(ojNs),
-		ojBytes, float64(bytes)/float64(ojBytes),
-		ojAllocs, float64(allocs)/float64(ojAllocs))
-}
-
-func marshalJSON2(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
-	b.ResetTimer()
+func genParse(b *testing.B) {
+	p := &gen.Parser{}
 	for n := 0; n < b.N; n++ {
-		_, _ = json.MarshalIndent(data, "", "  ")
+		_, _ = p.Parse([]byte(sampleJSON))
+		//_, err := p.Parse([]byte(sampleJSON))
+		//fmt.Println(err)
 	}
 }
 
-func marshalJSON(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
-	b.ResetTimer()
+func senParse(b *testing.B) {
+	p := &sen.Parser{}
 	for n := 0; n < b.N; n++ {
-		_, _ = json.Marshal(data)
+		_, _ = p.Parse([]byte(sampleSen))
+		//_, err := p.Parse([]byte(sampleJSON))
+		//fmt.Println(err)
 	}
 }
 
-func ojJSON(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
-	opt := oj.Options{OmitNil: true}
-	b.ResetTimer()
+// Parse io.Reader
+func ojParseReader(b *testing.B) {
+	var p oj.Parser
+	f, err := os.Open("test/sample.json")
+	if err != nil {
+		fmt.Printf("Failed to read test/sample.json. %s\n", err)
+		return
+	}
+	defer func() { _ = f.Close() }()
 	for n := 0; n < b.N; n++ {
-		_ = oj.JSON(data, &opt)
+		_, _ = f.Seek(0, 0)
+		_, _ = p.ParseReader(f)
+		//_, err = p.ParseReader(f)
+		//fmt.Println(err)
 	}
 }
 
-func ojJSON2(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
-	opt := oj.Options{OmitNil: true, Indent: 2}
-	b.ResetTimer()
+func genParseReader(b *testing.B) {
+	var p gen.Parser
+	f, err := os.Open("test/sample.json")
+	if err != nil {
+		fmt.Printf("Failed to read test/sample.json. %s\n", err)
+		return
+	}
+	defer func() { _ = f.Close() }()
 	for n := 0; n < b.N; n++ {
-		_ = oj.JSON(data, &opt)
+		_, _ = f.Seek(0, 0)
+		_, _ = p.ParseReader(f)
+		//_, err = p.ParseReader(f)
+		//fmt.Println(err)
 	}
 }
 
-func ojJSONSort(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
-	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
-	b.ResetTimer()
+func senParseReader(b *testing.B) {
+	var p sen.Parser
+	f, err := os.Open("test/sample.sen")
+	if err != nil {
+		fmt.Printf("Failed to read test/sample.sen. %s\n", err)
+		return
+	}
+	defer func() { _ = f.Close() }()
 	for n := 0; n < b.N; n++ {
-		_ = oj.JSON(data, &opt)
+		_, _ = f.Seek(0, 0)
+		_, _ = p.ParseReader(f)
+		//_, err = p.ParseReader(f)
+		//fmt.Println(err)
 	}
 }
 
-func ojWrite(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
-	opt := oj.Options{OmitNil: true}
-	var buf strings.Builder
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		buf.Reset()
-		_ = oj.Write(&buf, data, &opt)
-		_ = buf.String()
-	}
-}
-
-func ojWrite2(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
-	opt := oj.Options{OmitNil: true, Indent: 2}
-	var buf strings.Builder
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		buf.Reset()
-		_ = oj.Write(&buf, data, &opt)
-		_ = buf.String()
-	}
-}
-
-func ojWriteSort(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
-	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
-	var buf strings.Builder
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		buf.Reset()
-		_ = oj.Write(&buf, data, &opt)
-		_ = buf.String()
-	}
-}
-
-func validateBenchmarks() {
-	fmt.Println()
-	fmt.Println("Validate JSON")
-
-	goRes := testing.Benchmark(goValidate)
-	goNs := goRes.NsPerOp()
-	goBytes := goRes.AllocedBytesPerOp()
-	goAllocs := goRes.AllocsPerOp()
-	fmt.Printf("json.Valid:             %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
-
-	ojRes := testing.Benchmark(ojValidate)
-	ojNs := ojRes.NsPerOp()
-	ojBytes := ojRes.AllocedBytesPerOp()
-	ojAllocs := ojRes.AllocsPerOp()
-	fmt.Printf("  oj.Validate:          %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		ojNs, float64(goNs)/float64(ojNs),
-		ojBytes, float64(goBytes)/float64(ojBytes),
-		ojAllocs, float64(goAllocs)/float64(ojAllocs))
-}
-
+// Validate string/[]byte
 func goValidate(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_ = json.Valid([]byte(sampleJSON))
@@ -297,29 +213,7 @@ func ojValidate(b *testing.B) {
 	}
 }
 
-func validateReaderBenchmarks() {
-	fmt.Println()
-	fmt.Println("Validate io.Reader JSON")
-
-	baseRes := testing.Benchmark(baseValidateReader)
-
-	goRes := testing.Benchmark(goParseReader)
-	goNs := goRes.NsPerOp() - baseRes.NsPerOp()
-	goBytes := goRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
-	goAllocs := goRes.AllocsPerOp() - baseRes.AllocsPerOp()
-	fmt.Printf("json.Decoder:           %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
-
-	ojRes := testing.Benchmark(ojValidateReader)
-	ojNs := ojRes.NsPerOp() - baseRes.NsPerOp()
-	ojBytes := ojRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
-	ojAllocs := ojRes.AllocsPerOp() - baseRes.AllocsPerOp()
-	fmt.Printf("  oj.ValidateReader:    %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		ojNs, float64(goNs)/float64(ojNs),
-		ojBytes, float64(goBytes)/float64(ojBytes),
-		ojAllocs, float64(goAllocs)/float64(ojAllocs))
-}
-
+// Validate io.Reader
 func baseValidateReader(b *testing.B) {
 	f, err := os.Open("test/sample.json")
 	if err != nil {
@@ -333,7 +227,7 @@ func baseValidateReader(b *testing.B) {
 	}
 }
 
-func goParseReader(b *testing.B) {
+func goDecodeReader(b *testing.B) {
 	f, err := os.Open("test/sample.json")
 	if err != nil {
 		fmt.Printf("Failed to read test/sample.json. %s\n", err)
@@ -370,157 +264,146 @@ func ojValidateReader(b *testing.B) {
 	}
 }
 
-func parseBenchmarks() {
-	fmt.Println()
-	fmt.Println("Parse JSON")
-
-	goRes := testing.Benchmark(goParse)
-	goNs := goRes.NsPerOp()
-	goBytes := goRes.AllocedBytesPerOp()
-	goAllocs := goRes.AllocsPerOp()
-	fmt.Printf("json.Unmarshal:         %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
-
-	ojRes := testing.Benchmark(ojParse)
-	ojNs := ojRes.NsPerOp()
-	ojBytes := ojRes.AllocedBytesPerOp()
-	ojAllocs := ojRes.AllocsPerOp()
-	fmt.Printf("  oj.Parse:             %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		ojNs, float64(goNs)/float64(ojNs),
-		ojBytes, float64(goBytes)/float64(ojBytes),
-		ojAllocs, float64(goAllocs)/float64(ojAllocs))
-
-	ojRes = testing.Benchmark(genParse)
-	ojNs = ojRes.NsPerOp()
-	ojBytes = ojRes.AllocedBytesPerOp()
-	ojAllocs = ojRes.AllocsPerOp()
-	fmt.Printf("  oj.GenParse:          %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		ojNs, float64(goNs)/float64(ojNs),
-		ojBytes, float64(goBytes)/float64(ojBytes),
-		ojAllocs, float64(goAllocs)/float64(ojAllocs))
-
-	senRes := testing.Benchmark(senParse)
-	senNs := senRes.NsPerOp()
-	senBytes := senRes.AllocedBytesPerOp()
-	senAllocs := senRes.AllocsPerOp()
-	fmt.Printf(" sen.Parse:             %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		senNs, float64(goNs)/float64(senNs),
-		senBytes, float64(goBytes)/float64(senBytes),
-		senAllocs, float64(goAllocs)/float64(senAllocs))
-}
-
-func parseReaderBenchmarks() {
-	fmt.Println()
-	fmt.Println("Parse io.Reader JSON")
-
-	baseRes := testing.Benchmark(baseValidateReader)
-
-	goRes := testing.Benchmark(goParseReader)
-	goNs := goRes.NsPerOp() - baseRes.NsPerOp()
-	goBytes := goRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
-	goAllocs := goRes.AllocsPerOp() - baseRes.AllocsPerOp()
-	fmt.Printf("json.Decoder:           %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		goNs, 1.0, goBytes, 1.0, goAllocs, 1.0)
-
-	ojRes := testing.Benchmark(ojParseReader)
-	ojNs := ojRes.NsPerOp() - baseRes.NsPerOp()
-	ojBytes := ojRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
-	ojAllocs := ojRes.AllocsPerOp() - baseRes.AllocsPerOp()
-	fmt.Printf("  oj.ParseReader:       %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		ojNs, float64(goNs)/float64(ojNs),
-		ojBytes, float64(goBytes)/float64(ojBytes),
-		ojAllocs, float64(goAllocs)/float64(ojAllocs))
-
-	ojRes = testing.Benchmark(genParseReader)
-	ojNs = ojRes.NsPerOp() - baseRes.NsPerOp()
-	ojBytes = ojRes.AllocedBytesPerOp() - baseRes.AllocedBytesPerOp()
-	ojAllocs = ojRes.AllocsPerOp() - baseRes.AllocsPerOp()
-	fmt.Printf("  oj.GenParseReader:    %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		ojNs, float64(goNs)/float64(ojNs),
-		ojBytes, float64(goBytes)/float64(ojBytes),
-		ojAllocs, float64(goAllocs)/float64(ojAllocs))
-}
-
-func ojParseReader(b *testing.B) {
-	var p oj.Parser
-	f, err := os.Open("test/sample.json")
-	if err != nil {
-		fmt.Printf("Failed to read test/sample.json. %s\n", err)
-		return
-	}
-	defer func() { _ = f.Close() }()
+// JSON functions
+func marshalJSON(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data := alt.Alter(benchmarkData(tm))
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, _ = f.Seek(0, 0)
-		_, _ = p.ParseReader(f)
-		//_, err = p.ParseReader(f)
-		//fmt.Println(err)
+		_, _ = json.Marshal(data)
 	}
 }
 
-func genParseReader(b *testing.B) {
-	var p gen.Parser
-	f, err := os.Open("test/sample.json")
-	if err != nil {
-		fmt.Printf("Failed to read test/sample.json. %s\n", err)
-		return
-	}
-	defer func() { _ = f.Close() }()
+func ojJSON(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data := alt.Alter(benchmarkData(tm))
+	opt := oj.Options{OmitNil: true}
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, _ = f.Seek(0, 0)
-		_, _ = p.ParseReader(f)
-		//_, err = p.ParseReader(f)
-		//fmt.Println(err)
+		_ = oj.JSON(data, &opt)
 	}
 }
 
-func goParse(b *testing.B) {
-	var result interface{}
+func ojWrite(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data := alt.Alter(benchmarkData(tm))
+	opt := oj.Options{OmitNil: true}
+	var buf strings.Builder
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = json.Unmarshal([]byte(sampleJSON), &result)
+		buf.Reset()
+		_ = oj.Write(&buf, data, &opt)
+		_ = buf.String()
 	}
 }
 
-func ojParse(b *testing.B) {
-	p := &oj.Parser{}
+func senString(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data := alt.Alter(benchmarkData(tm))
+	opt := sen.Options{OmitNil: true}
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, _ = p.Parse([]byte(sampleJSON))
-		//_, err := p.Parse([]byte(sampleJSON))
-		//fmt.Println(err)
+		_ = sen.String(data, &opt)
 	}
 }
 
-func genParse(b *testing.B) {
-	p := &gen.Parser{}
+// JSON with indent functions
+func marshalJSONIndent(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data := alt.Alter(benchmarkData(tm))
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, _ = p.Parse([]byte(sampleJSON))
-		//_, err := p.Parse([]byte(sampleJSON))
-		//fmt.Println(err)
+		_, _ = json.MarshalIndent(data, "", "  ")
 	}
 }
 
-func senParse(b *testing.B) {
-	p := &sen.Parser{}
+func ojJSONIndent(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data := alt.Alter(benchmarkData(tm))
+	opt := oj.Options{OmitNil: true, Indent: 2}
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, _ = p.Parse([]byte(sampleSen))
-		_, err := p.Parse([]byte(sampleJSON))
-		fmt.Println(err)
+		_ = oj.JSON(data, &opt)
 	}
 }
 
-func jsonPathGetBenchmarks() {
-	fmt.Println()
-	fmt.Println("JSON Path Get")
-
-	ojRes := testing.Benchmark(ojGet)
-	ojNs := ojRes.NsPerOp()
-	ojBytes := ojRes.AllocedBytesPerOp()
-	ojAllocs := ojRes.AllocsPerOp()
-	fmt.Printf("  oj.Expr.Get:          %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		ojNs, 1.0, ojBytes, 1.0, ojAllocs, 1.0)
+func ojWriteIndent(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data := alt.Alter(benchmarkData(tm))
+	opt := oj.Options{OmitNil: true, Indent: 2}
+	var buf strings.Builder
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		buf.Reset()
+		_ = oj.Write(&buf, data, &opt)
+		_ = buf.String()
+	}
 }
 
-func ojGet(b *testing.B) {
-	p := jp.D().C("a").W().C("c")
+func senStringIndent(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data := alt.Alter(benchmarkData(tm))
+	opt := sen.Options{OmitNil: true, Indent: 2}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_ = sen.String(data, &opt)
+	}
+}
+
+// JSON indented and sorted
+func ojJSONSort(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data := alt.Alter(benchmarkData(tm))
+	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_ = oj.JSON(data, &opt)
+	}
+}
+
+func ojWriteSort(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data := alt.Alter(benchmarkData(tm))
+	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
+	var buf strings.Builder
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		buf.Reset()
+		_ = oj.Write(&buf, data, &opt)
+		_ = buf.String()
+	}
+}
+
+func senStringSort(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	data := alt.Alter(benchmarkData(tm))
+	opt := sen.Options{OmitNil: true, Indent: 2, Sort: true}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_ = sen.String(data, &opt)
+	}
+}
+
+// Alter functions
+func altGenerify(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	for n := 0; n < b.N; n++ {
+		native := benchmarkData(tm)
+		_ = alt.Generify(native)
+	}
+}
+
+func altGenAlter(b *testing.B) {
+	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	for n := 0; n < b.N; n++ {
+		native := benchmarkData(tm)
+		_ = alt.GenAlter(native)
+	}
+}
+
+// jp.Get
+func jpGet(b *testing.B) {
+	p := jp.R().D().C("a").N(2).C("c")
 	data := buildTree(10, 4, 0)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -530,24 +413,26 @@ func ojGet(b *testing.B) {
 	}
 }
 
-func jsonPathFirstBenchmarks() {
-	fmt.Println()
-	fmt.Println("JSON Path First")
-
-	ojRes := testing.Benchmark(ojFirst)
-	ojNs := ojRes.NsPerOp()
-	ojBytes := ojRes.AllocedBytesPerOp()
-	ojAllocs := ojRes.AllocsPerOp()
-	fmt.Printf("  oj.Expr.First:        %6d ns/op (%3.2fx)  %6d B/op (%4.2fx)  %6d allocs/op (%4.2fx)\n",
-		ojNs, 1.0, ojBytes, 1.0, ojAllocs, 1.0)
-}
-
-func ojFirst(b *testing.B) {
-	p := jp.X().D().C("a").W().C("c").C("d")
-	data := buildTree(10, 3, 0)
+// jp.First
+func jpFirst(b *testing.B) {
+	p := jp.R().D().C("a").N(2).C("c")
+	data := buildTree(10, 4, 0)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		_ = p.First(data)
+		//fmt.Printf("*** %v\n", z)
+	}
+}
+
+// data
+func benchmarkData(tm time.Time) interface{} {
+	return map[string]interface{}{
+		"a": []interface{}{1, 2, true, tm},
+		"b": 2.3,
+		"c": map[string]interface{}{
+			"x": "xxx",
+		},
+		"d": nil,
 	}
 }
 
