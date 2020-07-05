@@ -222,19 +222,17 @@ func (o *Options) buildString(s string) {
 			o.buf = append(o.buf, []byte(`\u2029`)...)
 		default:
 			if r < ' ' {
-				o.buf = append(o.buf, []byte{'\\', 'u', hex[r>>12], hex[(r>>8)&0x0f], hex[(r>>4)&0x0f], hex[r&0x0f]}...)
+				o.buf = append(o.buf, []byte{'\\', 'u', '0', '0', hex[(r>>4)&0x0f], hex[r&0x0f]}...)
 			} else if r < 0x80 {
 				o.buf = append(o.buf, byte(r))
 			} else {
-				n := len(o.buf)
-				need := n + utf8.UTFMax
-				if cap(o.buf) < need {
-					buf := make([]byte, n, n+need)
-					copy(buf, o.buf)
-					o.buf = buf
+				if len(o.utf) < utf8.UTFMax {
+					o.utf = make([]byte, utf8.UTFMax)
+				} else {
+					o.utf = o.utf[:cap(o.utf)]
 				}
-				utf8.EncodeRune(o.buf[n:need], r)
-				o.buf = o.buf[:need]
+				n := utf8.EncodeRune(o.utf, r)
+				o.buf = append(o.buf, o.utf[:n]...)
 			}
 		}
 	}

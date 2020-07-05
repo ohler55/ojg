@@ -92,6 +92,7 @@ type Options struct {
 	StringColor string
 
 	buf []byte
+	utf []byte
 	w   io.Writer
 }
 
