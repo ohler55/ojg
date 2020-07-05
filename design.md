@@ -12,9 +12,8 @@ complete and efficient JSONPath implementation.
 In all fairness I did embark on with some previous experience. Having
 written two JSON parser before. Both the Ruby
 [Oj](https://github.com/ohler55/oj) and the C parser
-[OjC](https://github.com/ohler55/ojc) are the best performers in their
-respective languages. Why not an [OjG](https://github.com/ohler55/ojg)
-for go.
+[OjC](https://github.com/ohler55/ojc). Why not an
+[OjG](https://github.com/ohler55/ojg) for go.
 
 ## Planning
 
