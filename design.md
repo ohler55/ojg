@@ -243,7 +243,7 @@ as fast as the `json.Unmarshall` function but that was not enough as
 there were still more allocations than seemed necessary.
 
 By expanding the state machine `null`, `true`, and `false` could be
-identified as values without adding adding to the buffer. That gave a
+identified as values without adding to the buffer. That gave a
 bit of improvement.
 
 Numbers, specifically integers, were another value type that really
