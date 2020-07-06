@@ -123,11 +123,8 @@ func (p *Validator) ValidateReader(r io.Reader) error {
 func (p *Validator) validateBuffer(buf []byte, last bool) error {
 	var b byte
 	var i int
-	var skipTo int
-	for p.off, b = range buf {
-		if p.off < skipTo {
-			continue
-		}
+	for p.off = 0; p.off < len(buf); p.off++ {
+		b = buf[p.off]
 		switch p.mode {
 		case valueMode:
 			switch b {
@@ -141,10 +138,10 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 			case 'n':
 				if p.off+4 < len(buf) && string(buf[p.off:p.off+4]) == "null" {
-					skipTo = p.off + 4
+					p.off += 3
 					p.mode = afterMode
 				} else {
 					p.mode = nullMode
@@ -152,7 +149,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				}
 			case 'f':
 				if p.off+5 < len(buf) && string(buf[p.off:p.off+5]) == "false" {
-					skipTo = p.off + 5
+					p.off += 4
 					p.mode = afterMode
 				} else {
 					p.mode = falseMode
@@ -160,7 +157,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				}
 			case 't':
 				if p.off+4 < len(buf) && string(buf[p.off:p.off+4]) == "true" {
-					skipTo = p.off + 4
+					p.off += 3
 					p.mode = afterMode
 				} else {
 					p.mode = trueMode
@@ -178,9 +175,9 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 				if b == '"' {
-					skipTo += 2
+					p.off++
 					continue
 				}
 				p.mode = strMode
@@ -219,10 +216,10 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 			case 'n':
 				if p.off+4 < len(buf) && string(buf[p.off:p.off+4]) == "null" {
-					skipTo = p.off + 4
+					p.off += 3
 					p.mode = afterMode
 				} else {
 					p.mode = nullMode
@@ -230,7 +227,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				}
 			case 'f':
 				if p.off+5 < len(buf) && string(buf[p.off:p.off+5]) == "false" {
-					skipTo = p.off + 5
+					p.off += 4
 					p.mode = afterMode
 				} else {
 					p.mode = falseMode
@@ -238,7 +235,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				}
 			case 't':
 				if p.off+4 < len(buf) && string(buf[p.off:p.off+4]) == "true" {
-					skipTo = p.off + 4
+					p.off += 3
 					p.mode = afterMode
 				} else {
 					p.mode = trueMode
@@ -256,9 +253,9 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 				if b == '"' {
-					skipTo += 2
+					p.off++
 					p.mode = afterMode
 					continue
 				}
@@ -290,7 +287,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -320,16 +317,16 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 			case '"':
 				for i, b = range buf[p.off+1:] {
 					if strMap[b] != 'o' {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 				if b == '"' {
-					skipTo += 2
+					p.off++
 					p.mode = colonMode
 					continue
 				}
@@ -352,16 +349,16 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 			case '"':
 				for i, b = range buf[p.off+1:] {
 					if strMap[b] != 'o' {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 				if b == '"' {
-					skipTo += 2
+					p.off++
 					p.mode = colonMode
 					continue
 				}
@@ -382,7 +379,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 			case ':':
 				p.mode = valueMode
 			default:
@@ -436,7 +433,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -471,7 +468,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -512,7 +509,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -560,7 +557,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -623,7 +620,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 						break
 					}
 				}
-				skipTo = p.off + i
+				p.off += i
 			default:
 				return p.newError("extra characters after close, '%c'", b)
 			}

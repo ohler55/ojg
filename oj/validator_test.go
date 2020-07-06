@@ -68,7 +68,7 @@ func TestValidatorValidateString(t *testing.T) {
 		{src: "null {}"},
 
 		{src: "{}}", expect: "too many closes at 1:3"},
-		{src: "{ \n", expect: "incomplete JSON at 2:0"},
+		{src: "{ \n", expect: "incomplete JSON at 2:1"},
 		{src: "{]}", expect: "expected a string start or object close, not ']' at 1:2"},
 		{src: "[}]", expect: "unexpected object close at 1:2"},
 		{src: "{\"a\" \n : 1]}", expect: "unexpected array close at 2:5"},
