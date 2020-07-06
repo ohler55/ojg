@@ -46,7 +46,6 @@ type Validator struct {
 	ri       int    // read index for null, false, and true
 	line     int
 	noff     int // Offset of last newline from start of buf. Can be negative when using a reader.
-	off      int
 	mode     byte
 	nextMode byte
 
@@ -123,8 +122,9 @@ func (p *Validator) ValidateReader(r io.Reader) error {
 func (p *Validator) validateBuffer(buf []byte, last bool) error {
 	var b byte
 	var i int
-	for p.off = 0; p.off < len(buf); p.off++ {
-		b = buf[p.off]
+	var off int
+	for off = 0; off < len(buf); off++ {
+		b = buf[off]
 		switch p.mode {
 		case valueMode:
 			switch b {
@@ -132,32 +132,32 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				// ignore and continue
 			case '\n':
 				p.line++
-				p.noff = p.off
-				for i, b = range buf[p.off+1:] {
+				p.noff = off
+				for i, b = range buf[off+1:] {
 					if charTypeMap[b] != 's' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 			case 'n':
-				if p.off+4 < len(buf) && string(buf[p.off:p.off+4]) == "null" {
-					p.off += 3
+				if off+4 < len(buf) && string(buf[off:off+4]) == "null" {
+					off += 3
 					p.mode = afterMode
 				} else {
 					p.mode = nullMode
 					p.ri = 0
 				}
 			case 'f':
-				if p.off+5 < len(buf) && string(buf[p.off:p.off+5]) == "false" {
-					p.off += 4
+				if off+5 < len(buf) && string(buf[off:off+5]) == "false" {
+					off += 4
 					p.mode = afterMode
 				} else {
 					p.mode = falseMode
 					p.ri = 0
 				}
 			case 't':
-				if p.off+4 < len(buf) && string(buf[p.off:p.off+4]) == "true" {
-					p.off += 3
+				if off+4 < len(buf) && string(buf[off:off+4]) == "true" {
+					off += 3
 					p.mode = afterMode
 				} else {
 					p.mode = trueMode
@@ -170,14 +170,14 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.mode = digitMode
 			case '"':
-				for i, b = range buf[p.off+1:] {
+				for i, b = range buf[off+1:] {
 					if strMap[b] != 'o' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 				if b == '"' {
-					p.off++
+					off++
 					continue
 				}
 				p.mode = strMode
@@ -185,24 +185,24 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '[':
 				p.stack = append(p.stack, '[')
 			case ']':
-				if err := p.arrayEnd(); err != nil {
+				if err := p.arrayEnd(off); err != nil {
 					return err
 				}
 			case '{':
 				p.stack = append(p.stack, '{')
 				p.mode = key1Mode
 			case '}':
-				if err := p.objEnd(); err != nil {
+				if err := p.objEnd(off); err != nil {
 					return err
 				}
 			case '/':
 				if p.NoComment {
-					return p.newError("comments not allowed")
+					return p.newError(off, "comments not allowed")
 				}
 				p.nextMode = p.mode
 				p.mode = commentStartMode
 			default:
-				return p.newError("unexpected character '%c'", b)
+				return p.newError(off, "unexpected character '%c'", b)
 			}
 		case commaMode:
 			switch b {
@@ -210,32 +210,32 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				// ignore and continue
 			case '\n':
 				p.line++
-				p.noff = p.off
-				for i, b = range buf[p.off+1:] {
+				p.noff = off
+				for i, b = range buf[off+1:] {
 					if charTypeMap[b] != 's' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 			case 'n':
-				if p.off+4 < len(buf) && string(buf[p.off:p.off+4]) == "null" {
-					p.off += 3
+				if off+4 < len(buf) && string(buf[off:off+4]) == "null" {
+					off += 3
 					p.mode = afterMode
 				} else {
 					p.mode = nullMode
 					p.ri = 0
 				}
 			case 'f':
-				if p.off+5 < len(buf) && string(buf[p.off:p.off+5]) == "false" {
-					p.off += 4
+				if off+5 < len(buf) && string(buf[off:off+5]) == "false" {
+					off += 4
 					p.mode = afterMode
 				} else {
 					p.mode = falseMode
 					p.ri = 0
 				}
 			case 't':
-				if p.off+4 < len(buf) && string(buf[p.off:p.off+4]) == "true" {
-					p.off += 3
+				if off+4 < len(buf) && string(buf[off:off+4]) == "true" {
+					off += 3
 					p.mode = afterMode
 				} else {
 					p.mode = trueMode
@@ -248,14 +248,14 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.mode = digitMode
 			case '"':
-				for i, b = range buf[p.off+1:] {
+				for i, b = range buf[off+1:] {
 					if strMap[b] != 'o' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 				if b == '"' {
-					p.off++
+					off++
 					p.mode = afterMode
 					continue
 				}
@@ -268,12 +268,12 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = key1Mode
 			case '/':
 				if p.NoComment {
-					return p.newError("comments not allowed")
+					return p.newError(off, "comments not allowed")
 				}
 				p.nextMode = p.mode
 				p.mode = commentStartMode
 			default:
-				return p.newError("unexpected character '%c'", b)
+				return p.newError(off, "unexpected character '%c'", b)
 			}
 		case afterMode:
 			switch b {
@@ -281,13 +281,13 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				// keep going
 			case '\n':
 				p.line++
-				p.noff = p.off
-				for i, b = range buf[p.off+1:] {
+				p.noff = off
+				for i, b = range buf[off+1:] {
 					if charTypeMap[b] != 's' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -295,15 +295,15 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 					p.mode = commaMode
 				}
 			case ']':
-				if err := p.arrayEnd(); err != nil {
+				if err := p.arrayEnd(off); err != nil {
 					return err
 				}
 			case '}':
-				if err := p.objEnd(); err != nil {
+				if err := p.objEnd(off); err != nil {
 					return err
 				}
 			default:
-				return p.newError("expected a comma or close, not '%c'", b)
+				return p.newError(off, "expected a comma or close, not '%c'", b)
 			}
 		case key1Mode:
 			switch b {
@@ -311,31 +311,31 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				// keep going
 			case '\n':
 				p.line++
-				p.noff = p.off
-				for i, b = range buf[p.off+1:] {
+				p.noff = off
+				for i, b = range buf[off+1:] {
 					if charTypeMap[b] != 's' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 			case '"':
-				for i, b = range buf[p.off+1:] {
+				for i, b = range buf[off+1:] {
 					if strMap[b] != 'o' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 				if b == '"' {
-					p.off++
+					off++
 					p.mode = colonMode
 					continue
 				}
 				p.mode = strMode
 				p.nextMode = colonMode
 			case '}':
-				_ = p.objEnd()
+				_ = p.objEnd(off)
 			default:
-				return p.newError("expected a string start or object close, not '%c'", b)
+				return p.newError(off, "expected a string start or object close, not '%c'", b)
 			}
 		case keyMode:
 			switch b {
@@ -343,29 +343,29 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				// keep going
 			case '\n':
 				p.line++
-				p.noff = p.off
-				for i, b = range buf[p.off+1:] {
+				p.noff = off
+				for i, b = range buf[off+1:] {
 					if charTypeMap[b] != 's' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 			case '"':
-				for i, b = range buf[p.off+1:] {
+				for i, b = range buf[off+1:] {
 					if strMap[b] != 'o' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 				if b == '"' {
-					p.off++
+					off++
 					p.mode = colonMode
 					continue
 				}
 				p.mode = strMode
 				p.nextMode = colonMode
 			default:
-				return p.newError("expected a string start, not '%c'", b)
+				return p.newError(off, "expected a string start, not '%c'", b)
 			}
 		case colonMode:
 			switch b {
@@ -373,22 +373,22 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				// keep going
 			case '\n':
 				p.line++
-				p.noff = p.off
-				for i, b = range buf[p.off+1:] {
+				p.noff = off
+				for i, b = range buf[off+1:] {
 					if charTypeMap[b] != 's' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 			case ':':
 				p.mode = valueMode
 			default:
-				return p.newError("expected a colon, not '%c'", b)
+				return p.newError(off, "expected a colon, not '%c'", b)
 			}
 		case nullMode:
 			p.ri++
 			if "null"[p.ri] != b {
-				return p.newError("expected null")
+				return p.newError(off, "expected null")
 			}
 			if 3 <= p.ri {
 				p.mode = afterMode
@@ -396,7 +396,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 		case falseMode:
 			p.ri++
 			if "false"[p.ri] != b {
-				return p.newError("expected false")
+				return p.newError(off, "expected false")
 			}
 			if 4 <= p.ri {
 				p.mode = afterMode
@@ -404,7 +404,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 		case trueMode:
 			p.ri++
 			if "true"[p.ri] != b {
-				return p.newError("expected true")
+				return p.newError(off, "expected true")
 			}
 			if 3 <= p.ri {
 				p.mode = afterMode
@@ -416,7 +416,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.mode = digitMode
 			default:
-				return p.newError("invalid number")
+				return p.newError(off, "invalid number")
 			}
 		case zeroMode:
 			switch b {
@@ -426,14 +426,14 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = afterMode
 			case '\n':
 				p.line++
-				p.noff = p.off
+				p.noff = off
 				p.mode = afterMode
-				for i, b = range buf[p.off+1:] {
+				for i, b = range buf[off+1:] {
 					if charTypeMap[b] != 's' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -441,15 +441,15 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 					p.mode = commaMode
 				}
 			case ']':
-				if err := p.arrayEnd(); err != nil {
+				if err := p.arrayEnd(off); err != nil {
 					return err
 				}
 			case '}':
-				if err := p.objEnd(); err != nil {
+				if err := p.objEnd(off); err != nil {
 					return err
 				}
 			default:
-				return p.newError("invalid number")
+				return p.newError(off, "invalid number")
 			}
 		case digitMode:
 			switch b {
@@ -461,14 +461,14 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = afterMode
 			case '\n':
 				p.line++
-				p.noff = p.off
+				p.noff = off
 				p.mode = afterMode
-				for i, b = range buf[p.off+1:] {
+				for i, b = range buf[off+1:] {
 					if charTypeMap[b] != 's' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -476,21 +476,21 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 					p.mode = commaMode
 				}
 			case ']':
-				if err := p.arrayEnd(); err != nil {
+				if err := p.arrayEnd(off); err != nil {
 					return err
 				}
 			case '}':
-				if err := p.objEnd(); err != nil {
+				if err := p.objEnd(off); err != nil {
 					return err
 				}
 			default:
-				return p.newError("invalid number")
+				return p.newError(off, "invalid number")
 			}
 		case dotMode:
 			if '0' <= b && b <= '9' {
 				p.mode = fracMode
 			} else {
-				return p.newError("invalid number")
+				return p.newError(off, "invalid number")
 			}
 		case fracMode:
 			switch b {
@@ -502,14 +502,14 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = afterMode
 			case '\n':
 				p.line++
-				p.noff = p.off
+				p.noff = off
 				p.mode = afterMode
-				for i, b = range buf[p.off+1:] {
+				for i, b = range buf[off+1:] {
 					if charTypeMap[b] != 's' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -517,15 +517,15 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 					p.mode = commaMode
 				}
 			case ']':
-				if err := p.arrayEnd(); err != nil {
+				if err := p.arrayEnd(off); err != nil {
 					return err
 				}
 			case '}':
-				if err := p.objEnd(); err != nil {
+				if err := p.objEnd(off); err != nil {
 					return err
 				}
 			default:
-				return p.newError("invalid number")
+				return p.newError(off, "invalid number")
 			}
 		case expSignMode:
 			switch b {
@@ -534,13 +534,13 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.mode = expMode
 			default:
-				return p.newError("invalid number")
+				return p.newError(off, "invalid number")
 			}
 		case expZeroMode:
 			if '0' <= b && b <= '9' {
 				p.mode = expMode
 			} else {
-				return p.newError("invalid number")
+				return p.newError(off, "invalid number")
 			}
 		case expMode:
 			switch b {
@@ -550,14 +550,14 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = afterMode
 			case '\n':
 				p.line++
-				p.noff = p.off
+				p.noff = off
 				p.mode = afterMode
-				for i, b = range buf[p.off+1:] {
+				for i, b = range buf[off+1:] {
 					if charTypeMap[b] != 's' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -565,20 +565,20 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 					p.mode = commaMode
 				}
 			case ']':
-				if err := p.arrayEnd(); err != nil {
+				if err := p.arrayEnd(off); err != nil {
 					return err
 				}
 			case '}':
-				if err := p.objEnd(); err != nil {
+				if err := p.objEnd(off); err != nil {
 					return err
 				}
 			default:
-				return p.newError("invalid number")
+				return p.newError(off, "invalid number")
 			}
 
 		case strMode:
 			if b < 0x20 {
-				return p.newError("invalid JSON character 0x%02x", b)
+				return p.newError(off, "invalid JSON character 0x%02x", b)
 			}
 			switch b {
 			case '\\':
@@ -594,7 +594,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = uMode
 				p.ri = 0
 			default:
-				return p.newError("invalid JSON escape character '\\%c'", b)
+				return p.newError(off, "invalid JSON escape character '\\%c'", b)
 			}
 		case uMode:
 			p.ri++
@@ -603,7 +603,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case 'a', 'b', 'c', 'd', 'e', 'f':
 			case 'A', 'B', 'C', 'D', 'E', 'F':
 			default:
-				return p.newError("invalid JSON unicode character '%c'", b)
+				return p.newError(off, "invalid JSON unicode character '%c'", b)
 			}
 			if p.ri == 4 {
 				p.mode = strMode
@@ -614,30 +614,30 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				// keep going
 			case '\n':
 				p.line++
-				p.noff = p.off
-				for i, b = range buf[p.off+1:] {
+				p.noff = off
+				for i, b = range buf[off+1:] {
 					if charTypeMap[b] != 's' {
 						break
 					}
 				}
-				p.off += i
+				off += i
 			default:
-				return p.newError("extra characters after close, '%c'", b)
+				return p.newError(off, "extra characters after close, '%c'", b)
 			}
 		case commentStartMode:
 			if b != '/' {
-				return p.newError("unexpected character '%c'", b)
+				return p.newError(off, "unexpected character '%c'", b)
 			}
 			p.mode = commentMode
 		case commentMode:
 			if b == '\n' {
 				p.line++
-				p.noff = p.off
+				p.noff = off
 				p.mode = p.nextMode
 			}
 		case bomMode:
 			if []byte{0xEF, 0xBB, 0xBF}[p.ri] != b {
-				return p.newError("expected BOM")
+				return p.newError(off, "expected BOM")
 			}
 			p.ri++
 			if 3 <= p.ri {
@@ -657,42 +657,42 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 		case afterMode, zeroMode, digitMode, fracMode, expMode, valueMode:
 			// okay
 		default:
-			return p.newError("incomplete JSON")
+			return p.newError(off, "incomplete JSON")
 		}
 	}
 	return nil
 }
 
-func (p *Validator) newError(format string, args ...interface{}) error {
+func (p *Validator) newError(off int, format string, args ...interface{}) error {
 	return &ParseError{
 		Message: fmt.Sprintf(format, args...),
 		Line:    p.line,
-		Column:  p.off - p.noff,
+		Column:  off - p.noff,
 	}
 }
 
-func (p *Validator) arrayEnd() error {
+func (p *Validator) arrayEnd(off int) error {
 	depth := len(p.stack)
 	if depth == 0 {
-		return p.newError("too many closes")
+		return p.newError(off, "too many closes")
 	}
 	depth--
 	if p.stack[depth] != '[' {
-		return p.newError("unexpected array close")
+		return p.newError(off, "unexpected array close")
 	}
 	p.stack = p.stack[0:depth]
 	p.mode = afterMode
 	return nil
 }
 
-func (p *Validator) objEnd() error {
+func (p *Validator) objEnd(off int) error {
 	depth := len(p.stack)
 	if depth == 0 {
-		return p.newError("too many closes")
+		return p.newError(off, "too many closes")
 	}
 	depth--
 	if p.stack[depth] != '{' {
-		return p.newError("unexpected object close")
+		return p.newError(off, "unexpected object close")
 	}
 	p.stack = p.stack[0:depth]
 	p.mode = afterMode
