@@ -20,7 +20,7 @@ func Parse(b []byte, args ...interface{}) (n interface{}, err error) {
 	return p.Parse(b, args...)
 }
 
-// ParseString is similar to ParseSimple except it takes a string
+// ParseString is similar to Parse except it takes a string
 // argument to be parsed instead of a []byte.
 func ParseString(s string, args ...interface{}) (n interface{}, err error) {
 	p := Parser{}
