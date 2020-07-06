@@ -9,6 +9,30 @@ import (
 
 const stackMinSize = 32 // for container stack { or [
 
+const (
+	//   0123456789abcdef0123456789abcdef
+	strMap = "" +
+		"................................" + // 0x00
+		"oo.ooooooooooooooooooooooooooooo" + // 0x20
+		"oooooooooooooooooooooooooooo.ooo" + // 0x40
+		"ooooooooooooooooooooooooooooooo." + // 0x60
+		"oooooooooooooooooooooooooooooooo" + // 0x80
+		"oooooooooooooooooooooooooooooooo" + // 0xa0
+		"oooooooooooooooooooooooooooooooo" + // 0xc0
+		"oooooooooooooooooooooooooooooooo" //   0xe0
+
+	//   0123456789abcdef0123456789abcdef
+	charTypeMap = "" +
+		".........ss....................." + // 0x00
+		"s...............dddddddddd......" + // 0x20
+		"................................" + // 0x40
+		"................................" + // 0x60
+		"................................" + // 0x80
+		"................................" + // 0xa0
+		"................................" + // 0xc0
+		"................................" //   0xe0
+)
+
 // Validator is a reusable JSON validator. It can be reused for multiple
 // validations or parsings which allows buffer reuse for a performance
 // advantage.
@@ -98,7 +122,12 @@ func (p *Validator) ValidateReader(r io.Reader) error {
 
 func (p *Validator) validateBuffer(buf []byte, last bool) error {
 	var b byte
+	var i int
+	var skipTo int
 	for p.off, b = range buf {
+		if p.off < skipTo {
+			continue
+		}
 		switch p.mode {
 		case valueMode:
 			switch b {
@@ -107,15 +136,36 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '\n':
 				p.line++
 				p.noff = p.off
+				for i, b = range buf[p.off+1:] {
+					if charTypeMap[b] != 's' {
+						break
+					}
+				}
+				skipTo = p.off + i
 			case 'n':
-				p.mode = nullMode
-				p.ri = 0
+				if p.off+4 < len(buf) && string(buf[p.off:p.off+4]) == "null" {
+					skipTo = p.off + 4
+					p.mode = afterMode
+				} else {
+					p.mode = nullMode
+					p.ri = 0
+				}
 			case 'f':
-				p.mode = falseMode
-				p.ri = 0
+				if p.off+5 < len(buf) && string(buf[p.off:p.off+5]) == "false" {
+					skipTo = p.off + 5
+					p.mode = afterMode
+				} else {
+					p.mode = falseMode
+					p.ri = 0
+				}
 			case 't':
-				p.mode = trueMode
-				p.ri = 0
+				if p.off+4 < len(buf) && string(buf[p.off:p.off+4]) == "true" {
+					skipTo = p.off + 4
+					p.mode = afterMode
+				} else {
+					p.mode = trueMode
+					p.ri = 0
+				}
 			case '-':
 				p.mode = negMode
 			case '0':
@@ -123,6 +173,16 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.mode = digitMode
 			case '"':
+				for i, b = range buf[p.off+1:] {
+					if strMap[b] != 'o' {
+						break
+					}
+				}
+				skipTo = p.off + i
+				if b == '"' {
+					skipTo += 2
+					continue
+				}
 				p.mode = strMode
 				p.nextMode = afterMode
 			case '[':
@@ -154,15 +214,36 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '\n':
 				p.line++
 				p.noff = p.off
+				for i, b = range buf[p.off+1:] {
+					if charTypeMap[b] != 's' {
+						break
+					}
+				}
+				skipTo = p.off + i
 			case 'n':
-				p.mode = nullMode
-				p.ri = 0
+				if p.off+4 < len(buf) && string(buf[p.off:p.off+4]) == "null" {
+					skipTo = p.off + 4
+					p.mode = afterMode
+				} else {
+					p.mode = nullMode
+					p.ri = 0
+				}
 			case 'f':
-				p.mode = falseMode
-				p.ri = 0
+				if p.off+5 < len(buf) && string(buf[p.off:p.off+5]) == "false" {
+					skipTo = p.off + 5
+					p.mode = afterMode
+				} else {
+					p.mode = falseMode
+					p.ri = 0
+				}
 			case 't':
-				p.mode = trueMode
-				p.ri = 0
+				if p.off+4 < len(buf) && string(buf[p.off:p.off+4]) == "true" {
+					skipTo = p.off + 4
+					p.mode = afterMode
+				} else {
+					p.mode = trueMode
+					p.ri = 0
+				}
 			case '-':
 				p.mode = negMode
 			case '0':
@@ -170,6 +251,17 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.mode = digitMode
 			case '"':
+				for i, b = range buf[p.off+1:] {
+					if strMap[b] != 'o' {
+						break
+					}
+				}
+				skipTo = p.off + i
+				if b == '"' {
+					skipTo += 2
+					p.mode = afterMode
+					continue
+				}
 				p.mode = strMode
 				p.nextMode = afterMode
 			case '[':
@@ -193,6 +285,12 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '\n':
 				p.line++
 				p.noff = p.off
+				for i, b = range buf[p.off+1:] {
+					if charTypeMap[b] != 's' {
+						break
+					}
+				}
+				skipTo = p.off + i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -217,7 +315,24 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '\n':
 				p.line++
 				p.noff = p.off
+				for i, b = range buf[p.off+1:] {
+					if charTypeMap[b] != 's' {
+						break
+					}
+				}
+				skipTo = p.off + i
 			case '"':
+				for i, b = range buf[p.off+1:] {
+					if strMap[b] != 'o' {
+						break
+					}
+				}
+				skipTo = p.off + i
+				if b == '"' {
+					skipTo += 2
+					p.mode = colonMode
+					continue
+				}
 				p.mode = strMode
 				p.nextMode = colonMode
 			case '}':
@@ -232,7 +347,24 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '\n':
 				p.line++
 				p.noff = p.off
+				for i, b = range buf[p.off+1:] {
+					if charTypeMap[b] != 's' {
+						break
+					}
+				}
+				skipTo = p.off + i
 			case '"':
+				for i, b = range buf[p.off+1:] {
+					if strMap[b] != 'o' {
+						break
+					}
+				}
+				skipTo = p.off + i
+				if b == '"' {
+					skipTo += 2
+					p.mode = colonMode
+					continue
+				}
 				p.mode = strMode
 				p.nextMode = colonMode
 			default:
@@ -245,6 +377,12 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '\n':
 				p.line++
 				p.noff = p.off
+				for i, b = range buf[p.off+1:] {
+					if charTypeMap[b] != 's' {
+						break
+					}
+				}
+				skipTo = p.off + i
 			case ':':
 				p.mode = valueMode
 			default:
@@ -293,6 +431,12 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.line++
 				p.noff = p.off
 				p.mode = afterMode
+				for i, b = range buf[p.off+1:] {
+					if charTypeMap[b] != 's' {
+						break
+					}
+				}
+				skipTo = p.off + i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -322,6 +466,12 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.line++
 				p.noff = p.off
 				p.mode = afterMode
+				for i, b = range buf[p.off+1:] {
+					if charTypeMap[b] != 's' {
+						break
+					}
+				}
+				skipTo = p.off + i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -357,6 +507,12 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.line++
 				p.noff = p.off
 				p.mode = afterMode
+				for i, b = range buf[p.off+1:] {
+					if charTypeMap[b] != 's' {
+						break
+					}
+				}
+				skipTo = p.off + i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -399,6 +555,12 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.line++
 				p.noff = p.off
 				p.mode = afterMode
+				for i, b = range buf[p.off+1:] {
+					if charTypeMap[b] != 's' {
+						break
+					}
+				}
+				skipTo = p.off + i
 			case ',':
 				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 					p.mode = keyMode
@@ -456,6 +618,12 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '\n':
 				p.line++
 				p.noff = p.off
+				for i, b = range buf[p.off+1:] {
+					if charTypeMap[b] != 's' {
+						break
+					}
+				}
+				skipTo = p.off + i
 			default:
 				return p.newError("extra characters after close, '%c'", b)
 			}
