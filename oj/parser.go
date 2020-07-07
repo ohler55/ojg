@@ -38,6 +38,28 @@ const (
 	spaceMode        = ' '
 	commentStartMode = '/'
 	commentMode      = 'c'
+
+	//   0123456789abcdef0123456789abcdef
+	strMap = "" +
+		"................................" + // 0x00
+		"oo.ooooooooooooooooooooooooooooo" + // 0x20
+		"oooooooooooooooooooooooooooo.ooo" + // 0x40
+		"ooooooooooooooooooooooooooooooo." + // 0x60
+		"oooooooooooooooooooooooooooooooo" + // 0x80
+		"oooooooooooooooooooooooooooooooo" + // 0xa0
+		"oooooooooooooooooooooooooooooooo" + // 0xc0
+		"oooooooooooooooooooooooooooooooo" //   0xe0
+
+	//   0123456789abcdef0123456789abcdef
+	charTypeMap = "" +
+		".........ss....................." + // 0x00
+		"s...............dddddddddd......" + // 0x20
+		"................................" + // 0x40
+		"................................" + // 0x60
+		"................................" + // 0x80
+		"................................" + // 0xa0
+		"................................" + // 0xc0
+		"................................" //   0xe0
 )
 
 // Parser a JSON parser. It can be reused for multiple parsings which allows
