@@ -10,6 +10,7 @@ import (
 // 9223372036854775807 / 10 = 922337203685477580
 const bigLimit = math.MaxInt64 / 10
 
+// Number is used internally by parsers.
 type Number struct {
 	I      uint64
 	Frac   uint64
@@ -20,6 +21,7 @@ type Number struct {
 	BigBuf []byte
 }
 
+// Reset the number.
 func (n *Number) Reset() {
 	n.I = 0
 	n.Frac = 0
@@ -32,6 +34,7 @@ func (n *Number) Reset() {
 	}
 }
 
+// AddDigit to a number.
 func (n *Number) AddDigit(b byte) {
 	if 0 < len(n.BigBuf) {
 		n.BigBuf = append(n.BigBuf, b)
@@ -46,6 +49,7 @@ func (n *Number) AddDigit(b byte) {
 	}
 }
 
+// AddFrac adds a fractional digit.
 func (n *Number) AddFrac(b byte) {
 	if 0 < len(n.BigBuf) {
 		n.BigBuf = append(n.BigBuf, b)
@@ -61,6 +65,7 @@ func (n *Number) AddFrac(b byte) {
 	}
 }
 
+// AddExp adds an exponent digit.
 func (n *Number) AddExp(b byte) {
 	if 0 < len(n.BigBuf) {
 		n.BigBuf = append(n.BigBuf, b)
@@ -75,6 +80,7 @@ func (n *Number) AddExp(b byte) {
 	}
 }
 
+// FillBig fills the internal buffer with a big number.
 func (n *Number) FillBig() {
 	if n.Neg {
 		n.BigBuf = append(n.BigBuf, '-')
@@ -98,6 +104,7 @@ func (n *Number) FillBig() {
 	}
 }
 
+// AsInt returns the number as an int64.
 func (n *Number) AsInt() int64 {
 	i := int64(n.I)
 	if n.Neg {
@@ -106,6 +113,7 @@ func (n *Number) AsInt() int64 {
 	return i
 }
 
+// AsInt returns the number as a float64.
 func (n *Number) AsFloat() float64 {
 	f := float64(n.I)
 	if 0 < n.Frac {
@@ -124,6 +132,7 @@ func (n *Number) AsFloat() float64 {
 	return f
 }
 
+// AsInt returns the number as a a Big.
 func (n *Number) AsBig() Big {
 	return Big(n.BigBuf)
 }

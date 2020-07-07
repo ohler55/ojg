@@ -129,7 +129,6 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 		case valueMode:
 			switch b {
 			case ' ', '\t', '\r':
-				// ignore and continue
 			case '\n':
 				p.line++
 				p.noff = off

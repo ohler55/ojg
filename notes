@@ -25,6 +25,9 @@
 - Exists syntax? [?(@.x exists)]
 
 -----------------------------------
+- try single switch combining mode and byte
+
+-----------------------------------
 - parse methods attempted
  - tried functions instead of switch, slower
   - tried array of 256 functions for value switching
