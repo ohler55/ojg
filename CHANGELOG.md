@@ -6,7 +6,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 
 ## [1.1.2] - unreleased
 ### Changed
-- performance improvement on validation and parsing.
+- Performance improvement on validation and parsing.
 
 ## [1.1.1] - 2020-07-05
 ### Fixed

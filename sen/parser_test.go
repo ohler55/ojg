@@ -20,12 +20,9 @@ true false 123
 `
 
 type rdata struct {
-	src string
-	// Empty means no error expected while non empty should be compared
-	// err.Error().
+	src    string
 	expect string
 	value  interface{}
-	//onlyOne bool
 }
 
 func TestParserParseString(t *testing.T) {
@@ -42,12 +39,12 @@ func TestParserParseString(t *testing.T) {
 		{src: "-12.3", value: -12.3},
 		{src: "-12.5e-2", value: -0.125},
 		{src: "0", value: 0},
-		{src: "0\n", value: 0},
+		{src: "0\n ", value: 0},
 		{src: "-12.3 ", value: -12.3},
 		{src: "-12.3\n", value: -12.3},
 		{src: "-12.3e-5", value: -12.3e-5},
 		{src: "12.3e+5 ", value: 12.3e+5},
-		{src: "12.3e+5\n", value: 12.3e+5},
+		{src: "12.3e+5\n ", value: 12.3e+5},
 		{src: `12345678901234567890`, value: "12345678901234567890"},
 		{src: `9223372036854775807`, value: 9223372036854775807},     // max int
 		{src: `9223372036854775808`, value: "9223372036854775808"},   // max int + 1
@@ -77,10 +74,10 @@ func TestParserParseString(t *testing.T) {
 		{src: `"x\u004a\u004Ay"`, value: "xJJy"},
 
 		{src: "{}", value: map[string]interface{}{}},
-		{src: `{"abc":true}`, value: map[string]interface{}{"abc": true}},
+		{src: `{"a\tbc":true}`, value: map[string]interface{}{"a\tbc": true}},
 		{src: "{\"z\":0,\n\"z2\":0}", value: map[string]interface{}{"z": 0, "z2": 0}},
 		{src: `{"z":1.2,"z2":0}`, value: map[string]interface{}{"z": 1.2, "z2": 0}},
-		{src: `{"abc":{"def":3}}`, value: map[string]interface{}{"abc": map[string]interface{}{"def": 3}}},
+		{src: `{"abc":{"def" :3}}`, value: map[string]interface{}{"abc": map[string]interface{}{"def": 3}}},
 		{src: `{"x":1.2e3,"y":true}`, value: map[string]interface{}{"x": 1200.0, "y": true}},
 
 		{src: `{"abc": [{"x": {"y": [{"b": true}]},"z": 7}]}`,
@@ -100,6 +97,7 @@ func TestParserParseString(t *testing.T) {
 			}},
 		{src: "{}}", expect: "extra characters after close, '}' at 1:3"},
 		{src: "{ \n", expect: "not closed at 2:1"},
+		{src: "{}\n }", expect: "extra characters after close, '}' at 2:2"},
 		{src: "{]}", expect: "expected a token followed by a ':', not ']' at 1:2"},
 		{src: "[}]", expect: "unexpected object close at 1:2"},
 		{src: "{\"a\" \n : 1]}", expect: "unexpected array close at 2:5"},
@@ -113,6 +111,7 @@ func TestParserParseString(t *testing.T) {
 		{src: `{"x"x}`, expect: "expected a colon, not 'x' at 1:5"},
 		{src: `-x`, expect: "invalid number at 1:2"},
 		{src: `0]`, expect: "too many closes at 1:2"},
+		{src: `0\n $`, expect: "invalid number at 1:2"},
 		{src: `0}`, expect: "too many closes at 1:2"},
 		{src: `0x`, expect: "invalid number at 1:2"},
 		{src: `1x`, expect: "invalid number at 1:2"},
@@ -131,10 +130,10 @@ func TestParserParseString(t *testing.T) {
 		{src: `"x\zy"`, expect: "invalid JSON escape character '\\z' at 1:4"},
 		{src: `"x\u004z"`, expect: "invalid JSON unicode character 'z' at 1:8"},
 		{src: "\xef\xbb[]", expect: "expected BOM at 1:3"},
-		{src: "$x", expect: "unexpected character '$' at 1:1"},
+		{src: "$x", expect: "expected a token, not '$' at 1:1"},
 		{src: "x]", expect: "too many closes at 1:2"},
 		{src: "x}", expect: "too many closes at 1:2"},
-		{src: "x$", expect: "expected a value, not '$' at 1:2"},
+		{src: "x$", expect: "expected a token, not '$' at 1:2"},
 		{src: "{x$:1}", expect: "expected a token followed by a ':', not '$' at 1:3"},
 
 		{src: "[0 1,2]", value: []interface{}{0, 1, 2}},
@@ -143,6 +142,9 @@ func TestParserParseString(t *testing.T) {
 		{src: "{aaa\n:one b:\ntwo}", value: map[string]interface{}{"aaa": "one", "b": "two"}},
 		{src: "[abc[x]]", value: []interface{}{"abc", []interface{}{"x"}}},
 		{src: "[abc{x:1}]", value: []interface{}{"abc", map[string]interface{}{"x": 1}}},
+		{src: `{aaa:"bbb" "bbb":"one" , c:2}`, value: map[string]interface{}{"aaa": "bbb", "bbb": "one", "c": 2}},
+		{src: `{aaa:"b\tb" x:2}`, value: map[string]interface{}{"aaa": "b\tb", "x": 2}},
+
 		{src: "[0{x:1}]", value: []interface{}{0, map[string]interface{}{"x": 1}}},
 		{src: "[1{x:1}]", value: []interface{}{1, map[string]interface{}{"x": 1}}},
 		{src: "[1.5{x:1}]", value: []interface{}{1.5, map[string]interface{}{"x": 1}}},
@@ -162,6 +164,45 @@ func TestParserParseString(t *testing.T) {
 		var v interface{}
 		var p sen.Parser
 		v, err = p.Parse([]byte(d.src))
+
+		if 0 < len(d.expect) {
+			tt.NotNil(t, err, d.src)
+			tt.Equal(t, d.expect, err.Error(), i, ": ", d.src)
+		} else {
+			tt.Nil(t, err, d.src)
+			tt.Equal(t, d.value, v, i, ": ", d.src)
+		}
+	}
+}
+
+func TestParserParseReader(t *testing.T) {
+	for i, d := range []rdata{
+		{src: "null", value: nil},
+		// The read buffer is 4096 so force a buffer read in the middle of
+		// reading a token.
+		{src: strings.Repeat(" ", 4094) + "null ", value: nil},
+		{src: strings.Repeat(" ", 4094) + "true ", value: true},
+		{src: strings.Repeat(" ", 4094) + "false ", value: false},
+		{src: strings.Repeat(" ", 4094) + "hello\n  ", value: "hello"},
+		{src: strings.Repeat(" ", 4090) + "{abc:def} ", value: map[string]interface{}{"abc": "def"}},
+		{src: strings.Repeat(" ", 4093) + "{abc:def} ", value: map[string]interface{}{"abc": "def"}},
+		{src: strings.Repeat(" ", 4093) + "[abc[def]]", value: []interface{}{"abc", []interface{}{"def"}}},
+		{src: strings.Repeat(" ", 4093) + "[abc]", value: []interface{}{"abc"}},
+		{src: strings.Repeat(" ", 4093) + "[abc// comment\n]", value: []interface{}{"abc"}},
+		{src: strings.Repeat(" ", 4093) + "[abc{x:1}]", value: []interface{}{"abc", map[string]interface{}{"x": 1}}},
+
+		{src: strings.Repeat(" ", 4094) + "abc$", expect: "expected a value, not '$' at 1:2"},
+		{src: strings.Repeat(" ", 4094) + "hello\n $", expect: "extra characters after close, '$' at 2:2"},
+		{src: strings.Repeat(" ", 4094) + "hello]", expect: "too many closes at 1:4"},
+		{src: strings.Repeat(" ", 4094) + "hello}", expect: "too many closes at 1:4"},
+	} {
+		if testing.Verbose() {
+			fmt.Printf("... %d: %q\n", i, d.src)
+		}
+		var err error
+		var v interface{}
+		var p sen.Parser
+		v, err = p.ParseReader(strings.NewReader(d.src))
 
 		if 0 < len(d.expect) {
 			tt.NotNil(t, err, d.src)

@@ -61,9 +61,9 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	charTypeMap = "" +
 		".........ss....................." + // 0x00
-		"s...............dddddddddd......" + // 0x20
-		"................................" + // 0x40
-		"................................" + // 0x60
+		"s...........s..xdddddddddd......" + // 0x20
+		"...........................x.x.." + // 0x40
+		"...........................x.x.." + // 0x60
 		"................................" + // 0x80
 		"................................" + // 0xa0
 		"................................" + // 0xc0
@@ -287,13 +287,61 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.nextMode = p.mode
 				p.mode = commentStartMode
 			default:
-				if tokenMap[b] != 'o' {
-					return p.newError(off, "unexpected character '%c'", b)
+				start := off
+				for i, b = range buf[start:] {
+					if tokenMap[b] != 'o' {
+						break
+					}
 				}
-				// TBD read token, if len exceeded then drop back to modes
-				p.mode = tokenMode
-				p.tmp = p.tmp[0:0]
-				p.tmp = append(p.tmp, b)
+				off += i
+				ct := charTypeMap[b]
+				if ct == 's' || ct == 'x' {
+					switch {
+					case i == 4 && buf[start] == 'n' && buf[start+1] == 'u' && buf[start+2] == 'l' && buf[start+3] == 'l':
+						p.iadd(nil)
+					case i == 4 && buf[start] == 't' && buf[start+1] == 'r' && buf[start+2] == 'u' && buf[start+3] == 'e':
+						p.iadd(true)
+					case i == 5 && buf[start] == 'f' && buf[start+1] == 'a' && buf[start+2] == 'l' && buf[start+3] == 's' && buf[start+4] == 'e':
+						p.iadd(false)
+					default:
+						p.iadd(string(buf[start:off]))
+					}
+					switch b {
+					case '[':
+						p.starts = append(p.starts, len(p.stack))
+						p.stack = append(p.stack, emptySlice)
+						p.mode = valueMode
+					case ']':
+						if err := p.arrayEnd(off); err != nil {
+							return err
+						}
+					case '{':
+						p.starts = append(p.starts, -1)
+						p.mode = key1Mode
+						n := map[string]interface{}{}
+						p.stack = append(p.stack, n)
+					case '}':
+						if err := p.objectEnd(off); err != nil {
+							return err
+						}
+					case '/':
+						p.nextMode = p.mode
+						p.mode = commentStartMode
+					default:
+						if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
+							p.mode = key1Mode
+						} else {
+							p.mode = valueMode
+						}
+					}
+				} else if tokenMap[b] == 'o' {
+					// Must be end of buffer.
+					p.tmp = p.tmp[:0]
+					p.tmp = append(p.tmp, buf[start:off+1]...)
+					p.mode = tokenMode
+				} else if tokenMap[b] != 'o' {
+					return p.newError(off, "expected a token, not '%c'", b)
+				}
 			}
 		case tokenMode:
 			if tokenMap[b] == 'o' {
