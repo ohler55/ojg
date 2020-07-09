@@ -56,6 +56,10 @@ func TestValidatorValidateString(t *testing.T) {
 		{src: `"x\u004a\u004Ay"`},
 		{src: "\"bass \U0001D122\""},
 		{src: `""`},
+		{src: `[1,"a\tb"]`},
+		{src: `{"a\tb":1}`},
+		{src: `{"x":1,"a\tb":2}`},
+		{src: "[0\n,3\n,5.0e2\n]"},
 
 		{src: "{}"},
 		{src: `{"abc":true}`},
@@ -68,7 +72,7 @@ func TestValidatorValidateString(t *testing.T) {
 		{src: "null {}"},
 
 		{src: "{}}", expect: "too many closes at 1:3"},
-		{src: "{ \n", expect: "incomplete JSON at 2:0"},
+		{src: "{ \n", expect: "incomplete JSON at 2:1"},
 		{src: "{]}", expect: "expected a string start or object close, not ']' at 1:2"},
 		{src: "[}]", expect: "unexpected object close at 1:2"},
 		{src: "{\"a\" \n : 1]}", expect: "unexpected array close at 2:5"},
@@ -86,6 +90,8 @@ func TestValidatorValidateString(t *testing.T) {
 		{src: `nuul`, expect: "expected null at 1:3"},
 		{src: `fasle`, expect: "expected false at 1:3"},
 		{src: `ture`, expect: "expected true at 1:2"},
+		{src: `[0,nuul]`, expect: "expected null at 1:6"},
+		{src: `[0,fail]`, expect: "expected false at 1:6"},
 		{src: `-x`, expect: "invalid number at 1:2"},
 		{src: `0]`, expect: "too many closes at 1:2"},
 		{src: `0}`, expect: "too many closes at 1:2"},
