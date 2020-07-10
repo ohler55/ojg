@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.1.3] - 2020-07-09
+### Fixed
+- Validator bug introduced in the speedup fixed.
+
 ## [1.1.2] - 2020-07-08
 ### Changed
 - Performance improvement on validation and parsing.

@@ -153,10 +153,11 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				off += i
 				if b == '"' {
 					off++
-					continue
+					p.mode = afterMode
+				} else {
+					p.mode = strMode
+					p.nextMode = afterMode
 				}
-				p.mode = strMode
-				p.nextMode = afterMode
 			case '[':
 				p.stack = append(p.stack, '[')
 			case ']':

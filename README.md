@@ -63,6 +63,7 @@ import (
     "github.com/ohler55/ojg/gen"
     "github.com/ohler55/ojg/jp"
     "github.com/ohler55/ojg/oj"
+    "github.com/ohler55/ojg/sen"
 )
 ```
 
@@ -78,22 +79,22 @@ Higher numbers in parenthesis are better.
 
 ```
 Parse string/[]byte
- json.Unmarshal      7291 ns/op (1.00x)    4808 B/op (1.00x)      90 allocs/op (1.00x)
-   oj.Parse          4775 ns/op (1.53x)    3984 B/op (1.21x)      86 allocs/op (1.05x)
-  gen.Parse          4922 ns/op (1.48x)    3984 B/op (1.21x)      86 allocs/op (1.05x)
-  sen.Parse          4713 ns/op (1.55x)    3984 B/op (1.21x)      86 allocs/op (1.05x)
+ json.Unmarshal     42649 ns/op (1.00x)   17984 B/op (1.00x)     336 allocs/op (1.00x)
+   oj.Parse         24584 ns/op (1.73x)   18816 B/op (0.96x)     433 allocs/op (0.78x)
+  gen.Parse         24315 ns/op (1.75x)   18816 B/op (0.96x)     433 allocs/op (0.78x)
+  sen.Parse         26164 ns/op (1.63x)   18752 B/op (0.96x)     427 allocs/op (0.79x)
 
 Parse io.Reader
- json.Decode        52665 ns/op (1.00x)   32656 B/op (1.00x)     346 allocs/op (1.00x)
-   oj.ParseReader   34116 ns/op (1.54x)   22913 B/op (1.43x)     434 allocs/op (0.80x)
-  gen.ParseReder    33256 ns/op (1.58x)   22912 B/op (1.43x)     434 allocs/op (0.80x)
-  sen.ParseReader   31718 ns/op (1.66x)   22832 B/op (1.43x)     428 allocs/op (0.81x)
+ json.Decode        52987 ns/op (1.00x)   32656 B/op (1.00x)     346 allocs/op (1.00x)
+   oj.ParseReader   28079 ns/op (1.89x)   22913 B/op (1.43x)     434 allocs/op (0.80x)
+  gen.ParseReder    28058 ns/op (1.89x)   22912 B/op (1.43x)     434 allocs/op (0.80x)
+  sen.ParseReader   28238 ns/op (1.88x)   22913 B/op (1.43x)     434 allocs/op (0.80x)
 
 to JSON
- json.Marshal        2746 ns/op (1.00x)     992 B/op (1.00x)      22 allocs/op (1.00x)
-   oj.JSON            445 ns/op (6.17x)     131 B/op (7.57x)       4 allocs/op (5.50x)
-   oj.Write           460 ns/op (5.97x)     131 B/op (7.57x)       4 allocs/op (5.50x)
-  sen.String          445 ns/op (6.17x)     131 B/op (7.57x)       4 allocs/op (5.50x)
+ json.Marshal       42127 ns/op (1.00x)   17908 B/op (1.00x)     345 allocs/op (1.00x)
+   oj.JSON          10387 ns/op (4.06x)    3072 B/op (5.83x)       1 allocs/op (345.00x)
+   oj.Write          9579 ns/op (4.40x)       0 B/op (+Infx)       0 allocs/op (+Infx)
+  sen.String        11453 ns/op (3.68x)    2688 B/op (6.66x)       1 allocs/op (345.00x)
 ```
 
 See [all benchmarks](benchmarks.md)

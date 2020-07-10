@@ -1,8 +1,21 @@
 
+-----------------------------------
+- try single switch combining mode and byte
+ - modes are pointers to tables
+ - table maps by to switch code that spans all (256 should be enough I think)
+  - setup table in global init()
+   - use named const for clarity
+    - value0, value1, valueX41, commaX6f
+    - or x6fValue
+   - list whats needed first count, then init tables
+    - can tables be static?
+     - maybe 8 across or something
+
 ----------------
 - next/todo
  - regex op =~
   - /^xyz&/
+ - in addition to parse callback support chan for results
  - cmd/oj
   - read args from file (SEN format)
    - also check ~/.oj.fin or ~/.oj - graphql emacs mode works well
@@ -24,17 +37,6 @@
 - Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)]
 - Exists syntax? [?(@.x exists)]
 
------------------------------------
-- try single switch combining mode and byte
- - modes are pointers to tables
- - table maps by to switch code that spans all (256 should be enough I think)
-  - setup table in global init()
-   - use named const for clarity
-    - value0, value1, valueX41, commaX6f
-    - or x6fValue
-   - list whats needed first count, then init tables
-    - can tables be static?
-     - maybe 8 across or something
 -----------------------------------
 - parse methods attempted
  - tried functions instead of switch, slower

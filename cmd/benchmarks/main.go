@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -20,6 +21,8 @@ import (
 	"github.com/ohler55/ojg/sen"
 )
 
+var filename = "test/sample.json"
+
 type bench struct {
 	pkg  string
 	name string
@@ -31,14 +34,29 @@ type bench struct {
 	allocs int64 // base adjusted
 }
 
+type noWriter int
+
+func (w noWriter) Write(b []byte) (int, error) {
+	return len(b), nil
+}
+
 func main() {
 	testing.Init()
 	flag.Parse()
+	if 0 < len(flag.Args()) {
+		filename = flag.Args()[0]
+	}
+
 	gen.TimeFormat = "nano"
 
 	fmt.Println()
 	fmt.Println(" The number in parenthesis are the ratio of results between the reference and")
 	fmt.Println(" the listed. Higher values are better.")
+	fmt.Println()
+	fmt.Println(" The Benchmarks reflect a use case where JSON is either provided as a string or")
+	fmt.Println(" read from a file (io.Reader) then parsed into simple go types of nil, bool, int64")
+	fmt.Println(" float64, string, []interface{}, or map[string]interface{}. When supported, an")
+	fmt.Println(" io.Writer benchmark is also included along with some miscellaneous operations.")
 
 	benchSuite("Parse string/[]byte", []*bench{
 		{pkg: "json", name: "Unmarshal", fun: goParse},
@@ -72,13 +90,16 @@ func main() {
 	benchSuite("to JSON with indentation", []*bench{
 		{pkg: "json", name: "Marshal", fun: marshalJSONIndent},
 		{pkg: "oj", name: "JSON", fun: ojJSONIndent},
-		{pkg: "oj", name: "Write", fun: ojWriteIndent},
 		{pkg: "sen", name: "String", fun: senStringIndent},
 	})
 	benchSuite("to JSON with indentation and sorted keys", []*bench{
 		{pkg: "oj", name: "JSON", fun: ojJSONSort},
-		{pkg: "oj", name: "Write", fun: ojWriteSort},
 		{pkg: "sen", name: "String", fun: senStringSort},
+	})
+
+	benchSuite("Write indented JSON", []*bench{
+		{pkg: "json", name: "Encode", fun: jsonEncodeIndent},
+		{pkg: "oj", name: "Write", fun: ojWriteIndent},
 	})
 
 	benchSuite("Convert or Alter", []*bench{
@@ -115,109 +136,60 @@ func benchSuite(title string, suite []*bench) {
 
 // Parse functions
 func goParse(b *testing.B) {
+	sample, _ := ioutil.ReadFile(filename)
+	b.ResetTimer()
 	var result interface{}
 	for n := 0; n < b.N; n++ {
-		_ = json.Unmarshal([]byte(sampleJSON), &result)
+		if err := json.Unmarshal(sample, &result); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
 func ojParse(b *testing.B) {
+	sample, _ := ioutil.ReadFile(filename)
+	b.ResetTimer()
 	p := &oj.Parser{}
 	for n := 0; n < b.N; n++ {
-		_, _ = p.Parse([]byte(sampleJSON))
-		//_, err := p.Parse([]byte(sampleJSON))
-		//fmt.Println(err)
+		if _, err := p.Parse(sample); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
 func genParse(b *testing.B) {
+	sample, _ := ioutil.ReadFile(filename)
+	b.ResetTimer()
 	p := &gen.Parser{}
 	for n := 0; n < b.N; n++ {
-		_, _ = p.Parse([]byte(sampleJSON))
-		//_, err := p.Parse([]byte(sampleJSON))
-		//fmt.Println(err)
+		if _, err := p.Parse(sample); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
 func senParse(b *testing.B) {
+	j, _ := ioutil.ReadFile(filename)
+	var sample []byte
+	if data, err := (&oj.Parser{}).Parse(j); err == nil {
+		sample = []byte(sen.String(data, &sen.Options{Indent: 2}))
+	} else {
+		log.Fatal(err)
+	}
+	b.ResetTimer()
 	p := &sen.Parser{}
 	for n := 0; n < b.N; n++ {
-		_, _ = p.Parse([]byte(sampleSen))
-		//_, err := p.Parse([]byte(sampleJSON))
-		//fmt.Println(err)
+		if _, err := p.Parse(sample); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
 // Parse io.Reader
-func ojParseReader(b *testing.B) {
-	var p oj.Parser
-	f, err := os.Open("test/sample.json")
-	if err != nil {
-		fmt.Printf("Failed to read test/sample.json. %s\n", err)
-		return
-	}
-	defer func() { _ = f.Close() }()
-	for n := 0; n < b.N; n++ {
-		_, _ = f.Seek(0, 0)
-		_, _ = p.ParseReader(f)
-		//_, err = p.ParseReader(f)
-		//fmt.Println(err)
-	}
-}
-
-func genParseReader(b *testing.B) {
-	var p gen.Parser
-	f, err := os.Open("test/sample.json")
-	if err != nil {
-		fmt.Printf("Failed to read test/sample.json. %s\n", err)
-		return
-	}
-	defer func() { _ = f.Close() }()
-	for n := 0; n < b.N; n++ {
-		_, _ = f.Seek(0, 0)
-		_, _ = p.ParseReader(f)
-		//_, err = p.ParseReader(f)
-		//fmt.Println(err)
-	}
-}
-
-func senParseReader(b *testing.B) {
-	var p sen.Parser
-	f, err := os.Open("test/sample.sen")
-	if err != nil {
-		fmt.Printf("Failed to read test/sample.sen. %s\n", err)
-		return
-	}
-	defer func() { _ = f.Close() }()
-	for n := 0; n < b.N; n++ {
-		_, _ = f.Seek(0, 0)
-		_, _ = p.ParseReader(f)
-		//_, err = p.ParseReader(f)
-		//fmt.Println(err)
-	}
-}
-
-// Validate string/[]byte
-func goValidate(b *testing.B) {
-	for n := 0; n < b.N; n++ {
-		_ = json.Valid([]byte(sampleJSON))
-	}
-}
-
-func ojValidate(b *testing.B) {
-	var v oj.Validator
-	for n := 0; n < b.N; n++ {
-		_ = v.Validate([]byte(sampleJSON))
-		//err := v.Validate([]byte(sampleJSON))
-		//fmt.Println(err)
-	}
-}
-
 func goDecodeReader(b *testing.B) {
-	f, err := os.Open("test/sample.json")
+	f, err := os.Open(filename)
 	if err != nil {
-		fmt.Printf("Failed to read test/sample.json. %s\n", err)
-		return
+		log.Fatalf("Failed to read %s. %s\n", filename, err)
 	}
 	defer func() { _ = f.Close() }()
 	for n := 0; n < b.N; n++ {
@@ -234,35 +206,102 @@ func goDecodeReader(b *testing.B) {
 	}
 }
 
+func ojParseReader(b *testing.B) {
+	var p oj.Parser
+	f, err := os.Open(filename)
+	if err != nil {
+		log.Fatalf("Failed to read %s. %s\n", filename, err)
+	}
+	defer func() { _ = f.Close() }()
+	for n := 0; n < b.N; n++ {
+		_, _ = f.Seek(0, 0)
+		if _, err = p.ParseReader(f); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func genParseReader(b *testing.B) {
+	var p gen.Parser
+	f, err := os.Open(filename)
+	if err != nil {
+		log.Fatalf("Failed to read %s. %s\n", filename, err)
+	}
+	defer func() { _ = f.Close() }()
+	for n := 0; n < b.N; n++ {
+		_, _ = f.Seek(0, 0)
+		if _, err = p.ParseReader(f); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func senParseReader(b *testing.B) {
+	var p sen.Parser
+	f, err := os.Open(filename)
+	if err != nil {
+		log.Fatalf("Failed to read %s. %s\n", filename, err)
+	}
+	defer func() { _ = f.Close() }()
+	for n := 0; n < b.N; n++ {
+		_, _ = f.Seek(0, 0)
+		if _, err = p.ParseReader(f); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+// Validate string/[]byte
+func goValidate(b *testing.B) {
+	sample, _ := ioutil.ReadFile(filename)
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		if !json.Valid(sample) {
+			log.Fatal("JSON not valid")
+		}
+	}
+}
+
+func ojValidate(b *testing.B) {
+	sample, _ := ioutil.ReadFile(filename)
+	b.ResetTimer()
+	var v oj.Validator
+	for n := 0; n < b.N; n++ {
+		if err := v.Validate(sample); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
 func ojValidateReader(b *testing.B) {
 	var v oj.Validator
-	f, err := os.Open("test/sample.json")
+	f, err := os.Open(filename)
 	if err != nil {
-		fmt.Printf("Failed to read test/sample.json. %s\n", err)
+		fmt.Printf("Failed to read %s. %s\n", filename, err)
 		return
 	}
 	defer func() { _ = f.Close() }()
 	for n := 0; n < b.N; n++ {
 		_, _ = f.Seek(0, 0)
-		_ = v.ValidateReader(f)
-		//err = v.ValidateReader(f)
-		//fmt.Println(err)
+		if err := v.ValidateReader(f); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
 // JSON functions
 func marshalJSON(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
+	data := loadSample()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, _ = json.Marshal(data)
+		if _, err := json.Marshal(data); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
 func ojJSON(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
+	data := loadSample()
 	opt := oj.Options{OmitNil: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -271,21 +310,19 @@ func ojJSON(b *testing.B) {
 }
 
 func ojWrite(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
+	data := loadSample()
 	opt := oj.Options{OmitNil: true}
-	var buf strings.Builder
+	var w noWriter
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		buf.Reset()
-		_ = oj.Write(&buf, data, &opt)
-		_ = buf.String()
+		if err := oj.Write(w, data, &opt); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
 func senString(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
+	data := loadSample()
 	opt := sen.Options{OmitNil: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -295,17 +332,17 @@ func senString(b *testing.B) {
 
 // JSON with indent functions
 func marshalJSONIndent(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
+	data := loadSample()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, _ = json.MarshalIndent(data, "", "  ")
+		if _, err := json.MarshalIndent(data, "", "  "); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
 func ojJSONIndent(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
+	data := loadSample()
 	opt := oj.Options{OmitNil: true, Indent: 2}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -313,24 +350,10 @@ func ojJSONIndent(b *testing.B) {
 	}
 }
 
-func ojWriteIndent(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
-	opt := oj.Options{OmitNil: true, Indent: 2}
-	var buf strings.Builder
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		buf.Reset()
-		_ = oj.Write(&buf, data, &opt)
-		_ = buf.String()
-	}
-}
-
 func senStringIndent(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
-	opt := sen.Options{OmitNil: true, Indent: 2}
+	data := loadSample()
 	b.ResetTimer()
+	opt := sen.Options{OmitNil: true, Indent: 2}
 	for n := 0; n < b.N; n++ {
 		_ = sen.String(data, &opt)
 	}
@@ -338,8 +361,7 @@ func senStringIndent(b *testing.B) {
 
 // JSON indented and sorted
 func ojJSONSort(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
+	data := loadSample()
 	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -347,26 +369,51 @@ func ojJSONSort(b *testing.B) {
 	}
 }
 
-func ojWriteSort(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
-	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
-	var buf strings.Builder
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		buf.Reset()
-		_ = oj.Write(&buf, data, &opt)
-		_ = buf.String()
-	}
-}
-
 func senStringSort(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	data := alt.Alter(benchmarkData(tm))
+	data := loadSample()
 	opt := sen.Options{OmitNil: true, Indent: 2, Sort: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		_ = sen.String(data, &opt)
+	}
+}
+
+// Write with indent functions
+func jsonEncodeIndent(b *testing.B) {
+	data := loadSample()
+	var buf strings.Builder
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		buf.Reset()
+		enc := json.NewEncoder(&buf)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(data); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func ojWriteIndent(b *testing.B) {
+	data := loadSample()
+	var w noWriter
+	b.ResetTimer()
+	opt := oj.Options{OmitNil: true, Indent: 2}
+	for n := 0; n < b.N; n++ {
+		if err := oj.Write(w, data, &opt); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func ojWriteSort(b *testing.B) {
+	data := loadSample()
+	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
+	var w noWriter
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		if err := oj.Write(w, data, &opt); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
@@ -422,70 +469,6 @@ func benchmarkData(tm time.Time) interface{} {
 	}
 }
 
-const sampleJSON = `[
-  [],
-  null,
-  true,
-  false,
-  77,
-  123.456e7,
-  "",
-  "a string with \t unicode \u2669 and quotes \".",
-  [1, 1.23, -44, "six"],
-  [[null,[true,[false,[123,[4.56e7,["abcdef"]]]]]]],
-  {
-    "abc": 3,
-    "def": {
-      "ghi": true
-    },
-    "xyz": "another string",
-    "nest": {
-      "nest": {
-        "nest": {
-          "nest": {
-            "nest": {
-              "egg": [12345678, 87654321]
-            }
-          }
-        }
-      }
-    }
-  }
-]
-`
-
-const sampleSen = `[
-  []
-  null
-  true
-  false
-  77
-  123.456e7
-  ""
-  "a string with \t unicode \u2669 and quotes \"."
-  [1 1.23 -44 six]
-  [[null[true[false[123[4.56e7[abcdef]]]]]]]
-  {
-    abc: 3
-    def: {
-      ghi: true
-    }
-    xyz: "another string"
-    nest: {
-      nest: {
-        nest: {
-          nest: {
-            nest: {
-              egg: [12345678 87654321]
-            }
-          }
-        }
-      }
-    }
-  }
-]
-`
-
 func buildTree(size, depth, iv int) interface{} {
 	if depth%2 == 0 {
 		list := []interface{}{}
@@ -510,4 +493,18 @@ func buildTree(size, depth, iv int) interface{} {
 		}
 	}
 	return obj
+}
+
+func loadSample() (data interface{}) {
+	f, err := os.Open(filename)
+	if err != nil {
+		log.Fatalf("Failed to load %s. %s\n", filename, err)
+	}
+	defer func() { _ = f.Close() }()
+
+	var p oj.Parser
+	if data, err = p.ParseReader(f); err != nil {
+		log.Fatalf("Failed to parse %s. %s\n", filename, err)
+	}
+	return
 }
