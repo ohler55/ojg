@@ -1,7 +1,6 @@
 # OjG Benchmarks
 
-Benchmarks were run on a MacBook Pro with a 2.8 GHz Quad-core
-I7. Higher numbers in parenthesis are better in all cases.
+Benchmarks were run on a MacBook Pro with a 2.8 GHz Quad-core I7.
 
 ```
 
