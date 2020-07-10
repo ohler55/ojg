@@ -13,6 +13,13 @@
 
 ----------------
 - next/todo
+ - add machine and os info
+
+ - chan option for parse and validate
+ - streaming with log files in benchmarks
+  - chan and cb
+  - benchmark repo also
+
  - regex op =~
   - /^xyz&/
  - in addition to parse callback support chan for results

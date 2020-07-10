@@ -79,22 +79,35 @@ Higher numbers in parenthesis are better.
 
 ```
 Parse string/[]byte
- json.Unmarshal     42649 ns/op (1.00x)   17984 B/op (1.00x)     336 allocs/op (1.00x)
-   oj.Parse         24584 ns/op (1.73x)   18816 B/op (0.96x)     433 allocs/op (0.78x)
-  gen.Parse         24315 ns/op (1.75x)   18816 B/op (0.96x)     433 allocs/op (0.78x)
-  sen.Parse         26164 ns/op (1.63x)   18752 B/op (0.96x)     427 allocs/op (0.79x)
+     json.Unmarshal     42144 ns/op   17982 B/op     336 allocs/op
+       oj.Parse         24508 ns/op   18816 B/op     433 allocs/op
+      gen.Parse         23930 ns/op   18815 B/op     433 allocs/op
+      sen.Parse         25666 ns/op   18770 B/op     427 allocs/op
+
+      gen █████████████████▌ 1.76
+       oj █████████████████▏ 1.72
+      sen ████████████████▍ 1.64
+     json ▓▓▓▓▓▓▓▓▓▓ 1.00
 
 Parse io.Reader
- json.Decode        52987 ns/op (1.00x)   32656 B/op (1.00x)     346 allocs/op (1.00x)
-   oj.ParseReader   28079 ns/op (1.89x)   22913 B/op (1.43x)     434 allocs/op (0.80x)
-  gen.ParseReder    28058 ns/op (1.89x)   22912 B/op (1.43x)     434 allocs/op (0.80x)
-  sen.ParseReader   28238 ns/op (1.88x)   22913 B/op (1.43x)     434 allocs/op (0.80x)
+     json.Decode        52568 ns/op   32658 B/op     346 allocs/op
+       oj.ParseReader   27764 ns/op   22911 B/op     434 allocs/op
+      gen.ParseReder    27554 ns/op   22912 B/op     434 allocs/op
+      sen.ParseReader   27654 ns/op   22912 B/op     434 allocs/op
 
-to JSON
- json.Marshal       42127 ns/op (1.00x)   17908 B/op (1.00x)     345 allocs/op (1.00x)
-   oj.JSON          10387 ns/op (4.06x)    3072 B/op (5.83x)       1 allocs/op (345.00x)
-   oj.Write          9579 ns/op (4.40x)       0 B/op (+Infx)       0 allocs/op (+Infx)
-  sen.String        11453 ns/op (3.68x)    2688 B/op (6.66x)       1 allocs/op (345.00x)
+      gen ███████████████████  1.91
+      sen ███████████████████  1.90
+       oj ██████████████████▉ 1.89
+     json ▓▓▓▓▓▓▓▓▓▓ 1.00
+
+to JSON with indentation
+     json.Marshal       72788 ns/op   27326 B/op     352 allocs/op
+       oj.JSON          12143 ns/op    4096 B/op       1 allocs/op
+      sen.String        13615 ns/op    4096 B/op       1 allocs/op
+
+       oj ███████████████████████████████████████████████████████████▉ 5.99
+      sen █████████████████████████████████████████████████████▍ 5.35
+     json ▓▓▓▓▓▓▓▓▓▓ 1.00
 ```
 
 See [all benchmarks](benchmarks.md)
