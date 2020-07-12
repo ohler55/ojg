@@ -19,9 +19,9 @@ type Validator2 struct {
 	stack    []byte // { or [
 	ri       int    // read index for null, false, and true
 	line     int
-	noff     int       // Offset of last newline from start of buf. Can be negative when using a reader.
-	mode     [257]byte // TBD make a local var
-	nextMode [257]byte // TBD make a local var
+	noff     int // Offset of last newline from start of buf. Can be negative when using a reader.
+	mode     string
+	nextMode string
 
 	// NoComments returns an error if a comment is encountered.
 	NoComment bool
@@ -42,7 +42,7 @@ func (p *Validator2) Validate(buf []byte) (err error) {
 	p.mode = valueMap
 	// Skip BOM if present.
 	if 0 < len(buf) && buf[0] == 0xEF {
-		p.mode = bomBBmap
+		p.mode = bomBBMap
 		p.ri = 0
 	}
 	return p.validateBuffer(buf, true)
@@ -70,7 +70,7 @@ func (p *Validator2) ValidateReader(r io.Reader) error {
 	}
 	// Skip BOM if present.
 	if 0 < len(buf) && buf[0] == 0xEF {
-		p.mode = bomBBmap
+		p.mode = bomBBMap
 		p.ri = 0
 	}
 	for {
@@ -111,7 +111,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			}
 			off += i
 		case valNull:
-			// TBD try with seprate maps for each letter in null
+			// TBD try with separate maps for each letter in null
 			if off+4 < len(buf) && string(buf[off:off+4]) == "null" {
 				off += 3
 				p.mode = afterMap
@@ -283,7 +283,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			p.noff = off
 			p.mode = p.nextMode
 		case bomBB:
-			p.mode = bomBFmap
+			p.mode = bomBFMap
 		case bomBF:
 			p.mode = valueMap
 
