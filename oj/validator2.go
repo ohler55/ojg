@@ -259,6 +259,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			off += i
 		case numDot:
 			p.mode = dotMap
+			continue
 		case numComma:
 			if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
 				p.mode = keyMap
@@ -269,10 +270,13 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			p.mode = fracMap
 		case fracE:
 			p.mode = expSignMap
+			continue
 		case expSign:
 			p.mode = expZeroMap
+			continue
 		case expDigit:
 			p.mode = expMap
+			continue
 		case strSlash:
 			p.mode = escMap
 			continue
