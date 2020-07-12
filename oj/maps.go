@@ -40,7 +40,6 @@ const (
 	commentEnd   = 'J'
 	bomBB        = 'K'
 	bomBF        = 'L'
-	bomEF        = 'M'
 	bomErr       = 'V'
 	valErr       = 'W'
 	trueErr      = 'X'
@@ -55,7 +54,6 @@ const (
 	strErr       = '6'
 	escErr       = '7'
 	spcErr       = '8'
-	commentErr   = '9'
 
 	//   0123456789abcdef0123456789abcdef
 	bomBBMap = "" +
