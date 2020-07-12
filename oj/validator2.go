@@ -97,6 +97,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 	var b byte
 	var i int
 	var off int
+	depth := 0
 	for off = 0; off < len(buf); off++ {
 		b = buf[off]
 		switch p.mode[b] {
@@ -162,9 +163,9 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			}
 		case openArray:
 			p.stack = append(p.stack, '[')
+			depth++
 			continue
 		case closeArray:
-			depth := len(p.stack)
 			if depth == 0 {
 				return p.newError(off, "too many closes")
 			}
@@ -177,9 +178,9 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 		case openObject:
 			p.stack = append(p.stack, '{')
 			p.mode = key1Map
+			depth++
 			continue
 		case closeObject:
-			depth := len(p.stack)
 			if depth == 0 {
 				return p.newError(off, "too many closes")
 			}
@@ -276,13 +277,11 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			continue
 		case expDigit:
 			p.mode = expMap
-			continue
 		case strSlash:
 			p.mode = escMap
 			continue
 		case strQuote:
 			p.mode = p.nextMode
-			continue
 		case escOk:
 			p.mode = stringMap
 			continue
@@ -304,6 +303,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			p.mode = p.nextMode
 		case bomBB:
 			p.mode = bomBFMap
+			continue
 		case bomBF:
 			p.mode = valueMap
 			continue
@@ -337,7 +337,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 		case spcErr:
 			return p.newError(off, "extra characters after close, '%c'", b)
 		}
-		if p.mode == afterMap && len(p.stack) == 0 {
+		if p.mode == afterMap && depth == 0 {
 			if p.OnlyOne {
 				p.mode = spaceMap
 			} else {

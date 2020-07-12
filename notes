@@ -14,11 +14,8 @@
 ----------------
 - next/todo
  - add machine and os info
- - need a better way to check end or callback
-  - maybe counter for stack depth?
-  - another mode for adding to the stack
- - try local for stack, mode, and next mode
-  - store stack for next time on validator
+
+ - try all local vars instead of passing around
 
  - chan option for parse and validate
  - streaming with log files in benchmarks
