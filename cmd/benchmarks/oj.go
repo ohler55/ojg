@@ -49,17 +49,6 @@ func ojValidate(b *testing.B) {
 	}
 }
 
-func ojValidate2(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
-	b.ResetTimer()
-	var v oj.Validator2
-	for n := 0; n < b.N; n++ {
-		if err := v.Validate(sample); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
 func ojValidateReader(b *testing.B) {
 	var v oj.Validator
 	f, err := os.Open(filename)

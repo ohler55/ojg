@@ -49,24 +49,23 @@ func main() {
 		filename = flag.Args()[0]
 	}
 	gen.TimeFormat = "nano"
-	/*
-		benchSuite("Parse string/[]byte", []*bench{
-			{pkg: "json", name: "Unmarshal", fun: goParse},
-			{pkg: "oj", name: "Parse", fun: ojParse},
-			{pkg: "gen", name: "Parse", fun: genParse},
-			{pkg: "sen", name: "Parse", fun: senParse},
-		})
-		benchSuite("Parse io.Reader", []*bench{
-			{pkg: "json", name: "Decode", fun: goDecodeReader},
-			{pkg: "oj", name: "ParseReader", fun: ojParseReader},
-			{pkg: "gen", name: "ParseReder", fun: genParseReader},
-			{pkg: "sen", name: "ParseReader", fun: senParseReader},
-		})
-	*/
+
+	benchSuite("Parse string/[]byte", []*bench{
+		{pkg: "json", name: "Unmarshal", fun: goParse},
+		{pkg: "oj", name: "Parse", fun: ojParse},
+		{pkg: "gen", name: "Parse", fun: genParse},
+		{pkg: "sen", name: "Parse", fun: senParse},
+	})
+	benchSuite("Parse io.Reader", []*bench{
+		{pkg: "json", name: "Decode", fun: goDecodeReader},
+		{pkg: "oj", name: "ParseReader", fun: ojParseReader},
+		{pkg: "gen", name: "ParseReder", fun: genParseReader},
+		{pkg: "sen", name: "ParseReader", fun: senParseReader},
+	})
+
 	benchSuite("Validate string/[]byte", []*bench{
 		{pkg: "json", name: "Valid", fun: goValidate},
 		{pkg: "oj", name: "Valdate", fun: ojValidate},
-		{pkg: "oj2", name: "Valdate2", fun: ojValidate2},
 	})
 
 	benchSuite("Validate io.Reader", []*bench{
