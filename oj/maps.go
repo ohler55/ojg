@@ -251,7 +251,7 @@ const (
 	stringMap = "" +
 		"55555555555555555555555555555555" + // 0x00
 		"aazaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0x20
-		"aazaaaaaaaaaaaaaaaaaaaaaaaaaAaaa" + // 0x40
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaAaaa" + // 0x40
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0x60
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0x80
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0xa0

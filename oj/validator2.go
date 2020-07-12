@@ -101,6 +101,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 		b = buf[off]
 		switch p.mode[b] {
 		case skipChar: // skip and continue
+			continue
 		case skipNewline:
 			p.line++
 			p.noff = off
@@ -110,8 +111,8 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 				}
 			}
 			off += i
+			continue
 		case valNull:
-			// TBD try with separate maps for each letter in null
 			if off+4 < len(buf) && string(buf[off:off+4]) == "null" {
 				off += 3
 				p.mode = afterMap
@@ -137,13 +138,16 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			}
 		case valNeg:
 			p.mode = negMap
+			continue
 		case val0:
 			p.mode = zeroMap
+			continue
 		case valDigit:
 			p.mode = digitMap
+			continue
 		case valQuote:
 			for i, b = range buf[off+1:] {
-				if strMap[b] != 'o' { // TBD use stringMap?
+				if stringMap[b] != skipChar {
 					break
 				}
 			}
@@ -154,9 +158,11 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			} else {
 				p.mode = stringMap
 				p.nextMode = afterMap
+				continue
 			}
 		case openArray:
 			p.stack = append(p.stack, '[')
+			continue
 		case closeArray:
 			depth := len(p.stack)
 			if depth == 0 {
@@ -171,6 +177,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 		case openObject:
 			p.stack = append(p.stack, '{')
 			p.mode = key1Map
+			continue
 		case closeObject:
 			depth := len(p.stack)
 			if depth == 0 {
@@ -188,6 +195,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			}
 			p.nextMode = p.mode
 			p.mode = commentStartMap
+			continue
 		case nullOk:
 			p.ri++
 			if "null"[p.ri] != b {
@@ -218,6 +226,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			} else {
 				p.mode = commaMap
 			}
+			continue
 		case keyQuote:
 			for i, b = range buf[off+1:] {
 				if strMap[b] != 'o' {
@@ -232,8 +241,10 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 				p.mode = stringMap
 				p.nextMode = colonMap
 			}
+			continue
 		case colonColon:
 			p.mode = valueMap
+			continue
 		case numSpc:
 			p.mode = afterMap
 		case numNewline:
@@ -264,18 +275,23 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			p.mode = expMap
 		case strSlash:
 			p.mode = escMap
+			continue
 		case strQuote:
 			p.mode = p.nextMode
+			continue
 		case escOk:
 			p.mode = stringMap
+			continue
 		case escU:
 			p.mode = uMap
 			p.ri = 0
+			continue
 		case uOk:
 			p.ri++
 			if p.ri == 4 {
 				p.mode = stringMap
 			}
+			continue
 		case commentStart:
 			p.mode = commentMap
 		case commentEnd:
@@ -286,6 +302,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			p.mode = bomBFMap
 		case bomBF:
 			p.mode = valueMap
+			continue
 
 		case bomErr:
 			return p.newError(off, "expected BOM")
@@ -316,7 +333,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 		case spcErr:
 			return p.newError(off, "extra characters after close, '%c'", b)
 		}
-		if len(p.stack) == 0 && p.mode == afterMap {
+		if p.mode == afterMap && len(p.stack) == 0 {
 			if p.OnlyOne {
 				p.mode = spaceMap
 			} else {

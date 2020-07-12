@@ -14,6 +14,7 @@
 ----------------
 - next/todo
  - add machine and os info
+ - need a better way to check end or callback
 
  - chan option for parse and validate
  - streaming with log files in benchmarks

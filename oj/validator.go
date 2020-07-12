@@ -105,6 +105,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 		case valueMode:
 			switch b {
 			case ' ', '\t', '\r':
+				continue
 			case '\n':
 				p.line++
 				p.noff = off
@@ -114,6 +115,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 					}
 				}
 				off += i
+				continue
 			case 'n':
 				if off+4 < len(buf) && string(buf[off:off+4]) == "null" {
 					off += 3
@@ -140,8 +142,10 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				}
 			case '-':
 				p.mode = negMode
+				continue
 			case '0':
 				p.mode = zeroMode
+				continue
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
 				p.mode = digitMode
 			case '"':
@@ -157,9 +161,11 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				} else {
 					p.mode = strMode
 					p.nextMode = afterMode
+					continue
 				}
 			case '[':
 				p.stack = append(p.stack, '[')
+				continue
 			case ']':
 				if err := p.arrayEnd(off); err != nil {
 					return err
@@ -167,6 +173,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			case '{':
 				p.stack = append(p.stack, '{')
 				p.mode = key1Mode
+				continue
 			case '}':
 				if err := p.objEnd(off); err != nil {
 					return err
@@ -239,9 +246,11 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.nextMode = afterMode
 			case '[':
 				p.stack = append(p.stack, '[')
+				continue
 			case '{':
 				p.stack = append(p.stack, '{')
 				p.mode = key1Mode
+				continue
 			case '/':
 				if p.NoComment {
 					return p.newError(off, "comments not allowed")
@@ -313,6 +322,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			default:
 				return p.newError(off, "expected a string start or object close, not '%c'", b)
 			}
+			continue
 		case keyMode:
 			switch b {
 			case ' ', '\t', '\r':
@@ -343,6 +353,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			default:
 				return p.newError(off, "expected a string start, not '%c'", b)
 			}
+			continue
 		case colonMode:
 			switch b {
 			case ' ', '\t', '\r':
@@ -361,6 +372,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			default:
 				return p.newError(off, "expected a colon, not '%c'", b)
 			}
+			continue
 		case nullMode:
 			p.ri++
 			if "null"[p.ri] != b {
@@ -394,6 +406,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			default:
 				return p.newError(off, "invalid number")
 			}
+			continue
 		case zeroMode:
 			switch b {
 			case '.':
@@ -572,6 +585,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			default:
 				return p.newError(off, "invalid JSON escape character '\\%c'", b)
 			}
+			continue
 		case uMode:
 			p.ri++
 			switch b {
@@ -584,6 +598,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			if p.ri == 4 {
 				p.mode = strMode
 			}
+			continue
 		case spaceMode:
 			switch b {
 			case ' ', '\t', '\r':
@@ -620,7 +635,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = valueMode
 			}
 		}
-		if len(p.stack) == 0 && p.mode == afterMode {
+		if p.mode == afterMode && len(p.stack) == 0 {
 			if p.OnlyOne {
 				p.mode = spaceMode
 			} else {
