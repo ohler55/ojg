@@ -346,10 +346,8 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 		}
 	}
 	if last {
-		switch p.mode {
-		case afterMap, zeroMap, digitMap, fracMap, expMap, valueMap:
-			// okay
-		default:
+		if 256 < len(p.mode) && p.mode[256] == 'z' {
+		} else {
 			return p.newError(off, "incomplete JSON")
 		}
 	}

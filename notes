@@ -15,8 +15,6 @@
 - next/todo
  - add machine and os info
 
- - try all local vars instead of passing around
-
  - chan option for parse and validate
  - streaming with log files in benchmarks
   - chan and cb
