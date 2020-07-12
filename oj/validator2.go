@@ -107,7 +107,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			p.line++
 			p.noff = off
 			for i, b = range buf[off+1:] {
-				if charTypeMap[b] != 's' {
+				if spaceMap[b] != skipChar {
 					break
 				}
 			}
@@ -230,7 +230,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			continue
 		case keyQuote:
 			for i, b = range buf[off+1:] {
-				if strMap[b] != 'o' {
+				if stringMap[b] != skipChar {
 					break
 				}
 			}
@@ -253,7 +253,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 			p.noff = off
 			p.mode = afterMap
 			for i, b = range buf[off+1:] {
-				if charTypeMap[b] != 's' {
+				if spaceMap[b] != skipChar {
 					break
 				}
 			}
@@ -337,7 +337,7 @@ func (p *Validator2) validateBuffer(buf []byte, last bool) error {
 		case spcErr:
 			return p.newError(off, "extra characters after close, '%c'", b)
 		}
-		if p.mode == afterMap && depth == 0 {
+		if depth == 0 && p.mode == afterMap {
 			if p.OnlyOne {
 				p.mode = spaceMap
 			} else {
