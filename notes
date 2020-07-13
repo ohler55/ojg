@@ -1,18 +1,16 @@
 
------------------------------------
-- try single switch combining mode and byte
- - modes are pointers to tables
- - table maps by to switch code that spans all (256 should be enough I think)
-  - setup table in global init()
-   - use named const for clarity
-    - value0, value1, valueX41, commaX6f
-    - or x6fValue
-   - list whats needed first count, then init tables
-    - can tables be static?
-     - maybe 8 across or something
-
 ----------------
 - next/todo
+ - single switch
+  - oj parse
+  - gen parse
+  - sen parse
+
+ - chan option for parse and validate
+ - streaming with log files in benchmarks
+  - chan and cb
+  - benchmark repo also
+
  - regex op =~
   - /^xyz&/
  - in addition to parse callback support chan for results

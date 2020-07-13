@@ -3,13 +3,14 @@
 package main
 
 import (
-	"encoding/json"
+	"bytes"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -18,10 +19,24 @@ import (
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
-	"github.com/ohler55/ojg/sen"
 )
 
-var filename = "test/sample.json"
+const (
+	blocks    = " ▏▎▍▌▋▊▉█"
+	darkBlock = "▓"
+	//mediumBlock = "▒"
+	//lightBlock  = "░"
+)
+
+var filename = "test/patient.json"
+
+type specs struct {
+	os        string
+	model     string
+	processor string
+	cores     string
+	speed     string
+}
 
 type bench struct {
 	pkg  string
@@ -46,17 +61,7 @@ func main() {
 	if 0 < len(flag.Args()) {
 		filename = flag.Args()[0]
 	}
-
 	gen.TimeFormat = "nano"
-
-	fmt.Println()
-	fmt.Println(" The number in parenthesis are the ratio of results between the reference and")
-	fmt.Println(" the listed. Higher values are better.")
-	fmt.Println()
-	fmt.Println(" The Benchmarks reflect a use case where JSON is either provided as a string or")
-	fmt.Println(" read from a file (io.Reader) then parsed into simple go types of nil, bool, int64")
-	fmt.Println(" float64, string, []interface{}, or map[string]interface{}. When supported, an")
-	fmt.Println(" io.Writer benchmark is also included along with some miscellaneous operations.")
 
 	benchSuite("Parse string/[]byte", []*bench{
 		{pkg: "json", name: "Unmarshal", fun: goParse},
@@ -84,7 +89,6 @@ func main() {
 	benchSuite("to JSON", []*bench{
 		{pkg: "json", name: "Marshal", fun: marshalJSON},
 		{pkg: "oj", name: "JSON", fun: ojJSON},
-		{pkg: "oj", name: "Write", fun: ojWrite},
 		{pkg: "sen", name: "String", fun: senString},
 	})
 	benchSuite("to JSON with indentation", []*bench{
@@ -115,6 +119,26 @@ func main() {
 	})
 
 	fmt.Println()
+	fmt.Println(" Higher values (longer bars) are better in all cases. The bar graph compares the")
+	fmt.Println(" parsing performance. The lighter colored bar is the reference, usually the go")
+	fmt.Println(" json package.")
+	fmt.Println()
+	fmt.Println(" The Benchmarks reflect a use case where JSON is either provided as a string or")
+	fmt.Println(" read from a file (io.Reader) then parsed into simple go types of nil, bool, int64")
+	fmt.Println(" float64, string, []interface{}, or map[string]interface{}. When supported, an")
+	fmt.Println(" io.Writer benchmark is also included along with some miscellaneous operations.")
+	fmt.Println()
+	if s := getSpecs(); s != nil {
+		fmt.Println("Tests run on:")
+		if 0 < len(s.model) {
+			fmt.Printf(" Machine:         %s\n", s.model)
+		}
+		fmt.Printf(" OS:              %s\n", s.os)
+		fmt.Printf(" Processor:       %s\n", s.processor)
+		fmt.Printf(" Cores:           %s\n", s.cores)
+		fmt.Printf(" Processor Speed: %s\n", s.speed)
+	}
+	fmt.Println()
 }
 
 func benchSuite(title string, suite []*bench) {
@@ -126,334 +150,29 @@ func benchSuite(title string, suite []*bench) {
 		b.ns = b.res.NsPerOp()
 		b.bytes = b.res.AllocedBytesPerOp()
 		b.allocs = b.res.AllocsPerOp()
-		fmt.Printf(" %4s.%-12s %6d ns/op (%3.2fx)  %6d B/op (%3.2fx)  %6d allocs/op (%3.2fx)\n",
-			b.pkg, b.name,
-			b.ns, float64(suite[0].ns)/float64(b.ns),
-			b.bytes, float64(suite[0].bytes)/float64(b.bytes),
-			b.allocs, float64(suite[0].allocs)/float64(b.allocs))
+		fmt.Printf(" %8s.%-12s %6d ns/op  %6d B/op  %6d allocs/op\n",
+			b.pkg, b.name, b.ns, b.bytes, b.allocs)
 	}
-}
+	fmt.Println()
 
-// Parse functions
-func goParse(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
-	b.ResetTimer()
-	var result interface{}
-	for n := 0; n < b.N; n++ {
-		if err := json.Unmarshal(sample, &result); err != nil {
-			log.Fatal(err)
+	scale := 10 // TBD adjust to fit screen better?
+	ss := make([]*bench, len(suite))
+	copy(ss, suite)
+	sort.Slice(ss, func(i, j int) bool { return ss[i].ns < ss[j].ns })
+	ref := suite[0]
+	for _, b := range ss {
+		x := 1.0
+		var bar string
+		if ref == b {
+			bar = strings.Repeat(darkBlock, scale)
+		} else {
+			x = float64(ref.ns) / float64(b.ns)
+			size := x * float64(scale)
+			bar = strings.Repeat(string([]rune(blocks)[8:]), int(size))
+			frac := int(size*8.0) - (int(size) * 8)
+			bar += string([]rune(blocks)[frac : frac+1])
 		}
-	}
-}
-
-func ojParse(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
-	b.ResetTimer()
-	p := &oj.Parser{}
-	for n := 0; n < b.N; n++ {
-		if _, err := p.Parse(sample); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func genParse(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
-	b.ResetTimer()
-	p := &gen.Parser{}
-	for n := 0; n < b.N; n++ {
-		if _, err := p.Parse(sample); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func senParse(b *testing.B) {
-	j, _ := ioutil.ReadFile(filename)
-	var sample []byte
-	if data, err := (&oj.Parser{}).Parse(j); err == nil {
-		sample = []byte(sen.String(data, &sen.Options{Indent: 2}))
-	} else {
-		log.Fatal(err)
-	}
-	b.ResetTimer()
-	p := &sen.Parser{}
-	for n := 0; n < b.N; n++ {
-		if _, err := p.Parse(sample); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-// Parse io.Reader
-func goDecodeReader(b *testing.B) {
-	f, err := os.Open(filename)
-	if err != nil {
-		log.Fatalf("Failed to read %s. %s\n", filename, err)
-	}
-	defer func() { _ = f.Close() }()
-	for n := 0; n < b.N; n++ {
-		_, _ = f.Seek(0, 0)
-		dec := json.NewDecoder(f)
-		for {
-			var data interface{}
-			if err := dec.Decode(&data); err == io.EOF {
-				break
-			} else if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
-}
-
-func ojParseReader(b *testing.B) {
-	var p oj.Parser
-	f, err := os.Open(filename)
-	if err != nil {
-		log.Fatalf("Failed to read %s. %s\n", filename, err)
-	}
-	defer func() { _ = f.Close() }()
-	for n := 0; n < b.N; n++ {
-		_, _ = f.Seek(0, 0)
-		if _, err = p.ParseReader(f); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func genParseReader(b *testing.B) {
-	var p gen.Parser
-	f, err := os.Open(filename)
-	if err != nil {
-		log.Fatalf("Failed to read %s. %s\n", filename, err)
-	}
-	defer func() { _ = f.Close() }()
-	for n := 0; n < b.N; n++ {
-		_, _ = f.Seek(0, 0)
-		if _, err = p.ParseReader(f); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func senParseReader(b *testing.B) {
-	var p sen.Parser
-	f, err := os.Open(filename)
-	if err != nil {
-		log.Fatalf("Failed to read %s. %s\n", filename, err)
-	}
-	defer func() { _ = f.Close() }()
-	for n := 0; n < b.N; n++ {
-		_, _ = f.Seek(0, 0)
-		if _, err = p.ParseReader(f); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-// Validate string/[]byte
-func goValidate(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		if !json.Valid(sample) {
-			log.Fatal("JSON not valid")
-		}
-	}
-}
-
-func ojValidate(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
-	b.ResetTimer()
-	var v oj.Validator
-	for n := 0; n < b.N; n++ {
-		if err := v.Validate(sample); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func ojValidateReader(b *testing.B) {
-	var v oj.Validator
-	f, err := os.Open(filename)
-	if err != nil {
-		fmt.Printf("Failed to read %s. %s\n", filename, err)
-		return
-	}
-	defer func() { _ = f.Close() }()
-	for n := 0; n < b.N; n++ {
-		_, _ = f.Seek(0, 0)
-		if err := v.ValidateReader(f); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-// JSON functions
-func marshalJSON(b *testing.B) {
-	data := loadSample()
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		if _, err := json.Marshal(data); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func ojJSON(b *testing.B) {
-	data := loadSample()
-	opt := oj.Options{OmitNil: true}
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		_ = oj.JSON(data, &opt)
-	}
-}
-
-func ojWrite(b *testing.B) {
-	data := loadSample()
-	opt := oj.Options{OmitNil: true}
-	var w noWriter
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		if err := oj.Write(w, data, &opt); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func senString(b *testing.B) {
-	data := loadSample()
-	opt := sen.Options{OmitNil: true}
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		_ = sen.String(data, &opt)
-	}
-}
-
-// JSON with indent functions
-func marshalJSONIndent(b *testing.B) {
-	data := loadSample()
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		if _, err := json.MarshalIndent(data, "", "  "); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func ojJSONIndent(b *testing.B) {
-	data := loadSample()
-	opt := oj.Options{OmitNil: true, Indent: 2}
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		_ = oj.JSON(data, &opt)
-	}
-}
-
-func senStringIndent(b *testing.B) {
-	data := loadSample()
-	b.ResetTimer()
-	opt := sen.Options{OmitNil: true, Indent: 2}
-	for n := 0; n < b.N; n++ {
-		_ = sen.String(data, &opt)
-	}
-}
-
-// JSON indented and sorted
-func ojJSONSort(b *testing.B) {
-	data := loadSample()
-	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		_ = oj.JSON(data, &opt)
-	}
-}
-
-func senStringSort(b *testing.B) {
-	data := loadSample()
-	opt := sen.Options{OmitNil: true, Indent: 2, Sort: true}
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		_ = sen.String(data, &opt)
-	}
-}
-
-// Write with indent functions
-func jsonEncodeIndent(b *testing.B) {
-	data := loadSample()
-	var buf strings.Builder
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		buf.Reset()
-		enc := json.NewEncoder(&buf)
-		enc.SetIndent("", "  ")
-		if err := enc.Encode(data); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func ojWriteIndent(b *testing.B) {
-	data := loadSample()
-	var w noWriter
-	b.ResetTimer()
-	opt := oj.Options{OmitNil: true, Indent: 2}
-	for n := 0; n < b.N; n++ {
-		if err := oj.Write(w, data, &opt); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func ojWriteSort(b *testing.B) {
-	data := loadSample()
-	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
-	var w noWriter
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		if err := oj.Write(w, data, &opt); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-// Alter functions
-func altGenerify(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	for n := 0; n < b.N; n++ {
-		native := benchmarkData(tm)
-		_ = alt.Generify(native)
-	}
-}
-
-func altGenAlter(b *testing.B) {
-	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	for n := 0; n < b.N; n++ {
-		native := benchmarkData(tm)
-		_ = alt.GenAlter(native)
-	}
-}
-
-// jp.Get
-func jpGet(b *testing.B) {
-	p := jp.R().D().C("a").N(2).C("c")
-	data := buildTree(10, 4, 0)
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		_ = p.Get(data)
-		//x := p.Get(data)
-		//fmt.Printf("*** %s\n", oj.JSON(x))
-	}
-}
-
-// jp.First
-func jpFirst(b *testing.B) {
-	p := jp.R().D().C("a").N(2).C("c")
-	data := buildTree(10, 4, 0)
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		_ = p.First(data)
-		//fmt.Printf("*** %v\n", z)
+		fmt.Printf(" %8s %s %3.2f\n", b.pkg, bar, x)
 	}
 }
 
@@ -505,6 +224,57 @@ func loadSample() (data interface{}) {
 	var p oj.Parser
 	if data, err = p.ParseReader(f); err != nil {
 		log.Fatalf("Failed to parse %s. %s\n", filename, err)
+	}
+	return
+}
+
+func getSpecs() (s *specs) {
+	// Assume MacOS and try system_profiler. If that fails assume linux and check /proc.
+	out, err := exec.Command("system_profiler", "-json", "SPHardwareDataType").Output()
+	if err == nil {
+		var js interface{}
+		if js, err = oj.Parse(out); err == nil {
+			s = &specs{
+				model:     alt.String(jp.C("SPHardwareDataType").N(0).C("machine_model").First(js)),
+				processor: alt.String(jp.C("SPHardwareDataType").N(0).C("cpu_type").First(js)),
+				cores:     alt.String(jp.C("SPHardwareDataType").N(0).C("number_processors").First(js)),
+				speed:     alt.String(jp.C("SPHardwareDataType").N(0).C("current_processor_speed").First(js)),
+			}
+			var b []byte
+			if out, err = exec.Command("sw_vers", "-productName").Output(); err == nil {
+				b = append(b, bytes.TrimSpace(out)...)
+				b = append(b, ' ')
+			}
+			if out, err = exec.Command("sw_vers", "-productVersion").Output(); err == nil {
+				b = append(b, bytes.TrimSpace(out)...)
+			}
+			s.os = string(b)
+		}
+		return
+	}
+	// Try Ubuntu next.
+	if out, err = exec.Command("lsb_release", "-d").Output(); err == nil {
+		s = &specs{
+			os: string(bytes.TrimSpace(out)),
+		}
+		if out, err = ioutil.ReadFile("/proc/cpuinfo"); err == nil {
+			cnt := 0
+			for _, line := range strings.Split(string(out), "\n") {
+				if strings.Contains(line, "processor") {
+					cnt++
+				} else if strings.Contains(line, "model name") {
+					parts := strings.Split(line, ":")
+					if 1 < len(parts) {
+						parts = strings.Split(parts[1], "@")
+						s.processor = strings.TrimSpace(parts[0])
+						if 1 < len(parts) {
+							s.speed = strings.TrimSpace(parts[1])
+						}
+					}
+				}
+				s.cores = fmt.Sprintf("%d", cnt)
+			}
+		}
 	}
 	return
 }
