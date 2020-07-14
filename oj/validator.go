@@ -102,7 +102,6 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 	depth := len(p.stack)
 	for off = 0; off < len(buf); off++ {
 		b = buf[off]
-		//fmt.Printf("*** op: %c  b: %02x %c %q\n", p.mode[b], b, b, p.mode)
 		switch p.mode[b] {
 		case skipChar: // skip and continue
 			continue
@@ -343,7 +342,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 		case spcErr:
 			return p.newError(off, "extra characters after close, '%c'", b)
 		}
-		if depth == 0 && p.mode == afterMap {
+		if depth == 0 && 256 < len(p.mode) && p.mode[256] == 'a' {
 			if p.OnlyOne {
 				p.mode = spaceMap
 			} else {
