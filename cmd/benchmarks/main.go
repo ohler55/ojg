@@ -30,6 +30,14 @@ const (
 
 var filename = "test/patient.json"
 
+type specs struct {
+	os        string
+	model     string
+	processor string
+	cores     string
+	speed     string
+}
+
 type bench struct {
 	pkg  string
 	name string
@@ -119,6 +127,17 @@ func main() {
 	fmt.Println(" read from a file (io.Reader) then parsed into simple go types of nil, bool, int64")
 	fmt.Println(" float64, string, []interface{}, or map[string]interface{}. When supported, an")
 	fmt.Println(" io.Writer benchmark is also included along with some miscellaneous operations.")
+	fmt.Println()
+	if s := getSpecs(); s != nil {
+		fmt.Println("Tests run on:")
+		if 0 < len(s.model) {
+			fmt.Printf(" Machine:         %s\n", s.model)
+		}
+		fmt.Printf(" OS:              %s\n", s.os)
+		fmt.Printf(" Processor:       %s\n", s.processor)
+		fmt.Printf(" Cores:           %s\n", s.cores)
+		fmt.Printf(" Processor Speed: %s\n", s.speed)
+	}
 	fmt.Println()
 }
 

@@ -88,9 +88,12 @@ func TestValidatorValidateString(t *testing.T) {
 		{src: "{\n\"x\":1,}", expect: "expected a string start, not '}' at 2:7"},
 		{src: `{"x"x}`, expect: "expected a colon, not 'x' at 1:5"},
 		{src: `nuul`, expect: "expected null at 1:3"},
+		{src: `nxul`, expect: "expected null at 1:2"},
 		{src: `fasle`, expect: "expected false at 1:3"},
+		{src: `fxsle`, expect: "expected false at 1:2"},
 		{src: `ture`, expect: "expected true at 1:2"},
-		{src: `[0,nuul]`, expect: "expected null at 1:6"},
+		{src: `trxe`, expect: "expected true at 1:3"},
+		{src: `[0,nuts]`, expect: "expected null at 1:6"},
 		{src: `[0,fail]`, expect: "expected false at 1:6"},
 		{src: `-x`, expect: "invalid number at 1:2"},
 		{src: `0]`, expect: "too many closes at 1:2"},
@@ -135,7 +138,22 @@ func TestValidatorValidateString(t *testing.T) {
 	}
 }
 
-func TestValidatorValidateReader(t *testing.T) {
+func TestValidatorValidateReaderMany(t *testing.T) {
+	for i, d := range []data{
+		{src: "null"},
+		// The read buffer is 4096 so force a buffer read in the middle of
+		// reading a token.
+		{src: strings.Repeat(" ", 4094) + "null "},
+		{src: strings.Repeat(" ", 4094) + "true "},
+		{src: strings.Repeat(" ", 4094) + "false "},
+	} {
+		r := strings.NewReader(d.src)
+		err := oj.ValidateReader(r)
+		tt.Nil(t, err, i, ": ", d.src)
+	}
+}
+
+func TestValidatorValidateReaderBasic(t *testing.T) {
 	r := strings.NewReader("[true,[false,[null],123],456]")
 	err := oj.ValidateReader(r)
 	tt.Nil(t, err)
