@@ -3,16 +3,21 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"sort"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
+	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
 )
 
@@ -200,6 +205,59 @@ func loadSample() (data interface{}) {
 	var p oj.Parser
 	if data, err = p.ParseReader(f); err != nil {
 		log.Fatalf("Failed to parse %s. %s\n", filename, err)
+	}
+	return
+}
+
+func getSpecs() (s *specs) {
+	// Assume MacOS and try system_profiler. If that fails assume linux and check /proc.
+	out, err := exec.Command("system_profiler", "-json", "SPHardwareDataType").Output()
+	if err == nil {
+		var js interface{}
+		if js, err = oj.Parse(out); err == nil {
+			s = &specs{
+				model:     alt.String(jp.C("SPHardwareDataType").N(0).C("machine_model").First(js)),
+				processor: alt.String(jp.C("SPHardwareDataType").N(0).C("cpu_type").First(js)),
+				cores:     alt.String(jp.C("SPHardwareDataType").N(0).C("number_processors").First(js)),
+				speed:     alt.String(jp.C("SPHardwareDataType").N(0).C("current_processor_speed").First(js)),
+			}
+			var b []byte
+			if out, err = exec.Command("sw_vers", "-productName").Output(); err == nil {
+				b = append(b, bytes.TrimSpace(out)...)
+				b = append(b, ' ')
+			}
+			if out, err = exec.Command("sw_vers", "-productVersion").Output(); err == nil {
+				b = append(b, bytes.TrimSpace(out)...)
+			}
+			s.os = string(b)
+		}
+		return
+	}
+	// Try Ubuntu next.
+	if out, err = exec.Command("lsb_release", "-d").Output(); err == nil {
+		s = &specs{}
+		parts := strings.Split(string(out), ":")
+		if 1 < len(parts) {
+			s.os = string(strings.TrimSpace(parts[1]))
+		}
+		if out, err = ioutil.ReadFile("/proc/cpuinfo"); err == nil {
+			cnt := 0
+			for _, line := range strings.Split(string(out), "\n") {
+				if strings.Contains(line, "processor") {
+					cnt++
+				} else if strings.Contains(line, "model name") {
+					parts := strings.Split(line, ":")
+					if 1 < len(parts) {
+						parts = strings.Split(parts[1], "@")
+						s.processor = strings.TrimSpace(parts[0])
+						if 1 < len(parts) {
+							s.speed = strings.TrimSpace(parts[1])
+						}
+					}
+				}
+				s.cores = fmt.Sprintf("%d", cnt)
+			}
+		}
 	}
 	return
 }
