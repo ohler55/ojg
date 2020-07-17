@@ -265,6 +265,12 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.num.I = uint64(b - '0')
 			case '"':
 				start := off + 1
+				if len(buf) <= start {
+					p.tmp = p.tmp[:0]
+					p.mode = strMode
+					p.nextMode = afterMode
+					continue
+				}
 				for i, b = range buf[start:] {
 					if strMap[b] != 'o' {
 						break
@@ -360,6 +366,12 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.num.I = uint64(b - '0')
 			case '"':
 				start := off + 1
+				if len(buf) <= start {
+					p.tmp = p.tmp[:0]
+					p.mode = strMode
+					p.nextMode = afterMode
+					continue
+				}
 				for i, b = range buf[start:] {
 					if strMap[b] != 'o' {
 						break
@@ -439,6 +451,12 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				off += i
 			case '"':
 				start := off + 1
+				if len(buf) <= start {
+					p.tmp = p.tmp[:0]
+					p.mode = strMode
+					p.nextMode = colonMode
+					continue
+				}
 				for i, b = range buf[start:] {
 					if strMap[b] != 'o' {
 						break
@@ -476,6 +494,12 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				off += i
 			case '"':
 				start := off + 1
+				if len(buf) <= start {
+					p.tmp = p.tmp[:0]
+					p.mode = strMode
+					p.nextMode = colonMode
+					continue
+				}
 				for i, b = range buf[start:] {
 					if strMap[b] != 'o' {
 						break

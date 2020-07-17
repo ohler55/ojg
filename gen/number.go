@@ -136,3 +136,33 @@ func (n *Number) AsFloat() float64 {
 func (n *Number) AsBig() Big {
 	return Big(n.BigBuf)
 }
+
+// AsNum returns the number as best fit.
+func (n *Number) AsNum() (num interface{}) {
+	if 0 < len(n.BigBuf) {
+		num = string(n.BigBuf)
+	} else if n.Frac == 0 && n.Exp == 0 {
+		i := int64(n.I)
+		if n.Neg {
+			i = -i
+		}
+		num = i
+	} else {
+		f := float64(n.I)
+		if 0 < n.Frac {
+			f += float64(n.Frac) / float64(n.div)
+		}
+		if n.Neg {
+			f = -f
+		}
+		if 0 < n.Exp {
+			x := int(n.Exp)
+			if n.NegExp {
+				x = -x
+			}
+			f *= math.Pow10(int(x))
+		}
+		num = f
+	}
+	return
+}

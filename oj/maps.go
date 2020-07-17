@@ -3,59 +3,69 @@
 package oj
 
 const (
-	skipChar     = 'a'
-	skipNewline  = 'b'
-	valNull      = 'c'
-	valTrue      = 'd'
-	valFalse     = 'e'
-	valNeg       = 'f'
-	val0         = 'g'
-	valDigit     = 'h'
-	valQuote     = 'i'
-	valSlash     = 'j'
-	openArray    = 'k'
-	openObject   = 'l'
-	closeArray   = 'm'
-	closeObject  = 'n'
-	afterComma   = 'o'
-	keyQuote     = 'p'
-	colonColon   = 'q'
-	numSpc       = 'r'
-	numNewline   = 's'
-	numDot       = 't'
-	numComma     = 'u'
-	numFrac      = 'v'
-	fracE        = 'w'
-	expSign      = 'x'
-	expDigit     = 'y'
-	strQuote     = 'z'
-	strSlash     = 'A'
-	escOk        = 'B'
-	escU         = 'C'
-	uOk          = 'E'
-	nullOk       = 'F'
-	trueOk       = 'G'
-	falseOk      = 'H'
-	commentStart = 'I'
-	commentEnd   = 'J'
-	bomBB        = 'K'
-	bomBF        = 'L'
-	bomEF        = 'M'
-	bomErr       = 'V'
-	valErr       = 'W'
-	trueErr      = 'X'
-	nullErr      = 'Y'
-	falseErr     = 'Z'
-	afterErr     = '0'
-	key1Err      = '1'
-	keyErr       = '2'
-	colonErr     = '3'
-	numErr       = '4'
-	strLowErr    = '5'
-	strErr       = '6'
-	escErr       = '7'
-	spcErr       = '8'
-	commentErr   = '9'
+	skipChar       = 'a'
+	skipNewline    = 'b'
+	valNull        = 'c'
+	valTrue        = 'd'
+	valFalse       = 'e'
+	valNeg         = 'f'
+	val0           = 'g'
+	valDigit       = 'h'
+	valQuote       = 'i'
+	valSlash       = 'j'
+	openArray      = 'k'
+	openObject     = 'l'
+	closeArray     = 'm'
+	closeObject    = 'n'
+	afterComma     = 'o'
+	keyQuote       = 'p'
+	colonColon     = 'q'
+	numSpc         = 'r'
+	numNewline     = 's'
+	negDigit       = '-'
+	numDigit       = 'N'
+	numZero        = 'O'
+	numDot         = 't'
+	numComma       = 'u'
+	numFrac        = 'v'
+	numCloseArray  = 'P'
+	numCloseObject = 'Q'
+	fracE          = 'w'
+	expSign        = 'x'
+	expDigit       = 'y'
+	strOk          = 'R'
+	strQuote       = 'z'
+	strSlash       = 'A'
+	escOk          = 'B'
+	escN           = 'S'
+	escT           = 'T'
+	escQ           = '!'
+	escBackSlash   = 'C'
+	escU           = 'U'
+	uOk            = 'E'
+	nullOk         = 'F'
+	trueOk         = 'G'
+	falseOk        = 'H'
+	commentStart   = 'I'
+	commentEnd     = 'J'
+	bomBB          = 'K'
+	bomBF          = 'L'
+	bomEF          = 'M'
+	bomErr         = 'V'
+	valErr         = 'W'
+	trueErr        = 'X'
+	nullErr        = 'Y'
+	falseErr       = 'Z'
+	afterErr       = '0'
+	key1Err        = '1'
+	keyErr         = '2'
+	colonErr       = '3'
+	numErr         = '4'
+	strLowErr      = '5'
+	strErr         = '6'
+	escErr         = '7'
+	spcErr         = '8'
+	commentErr     = '9'
 
 	//   0123456789abcdef0123456789abcdef
 	bomEFMap = "" +
@@ -96,7 +106,7 @@ const (
 		"WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW" + // 0x80
 		"WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW" + // 0xa0
 		"WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW" + // 0xc0
-		"WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWz" //  0xe0
+		"WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWv" //  0xe0
 	//   0123456789abcdef0123456789abcdef
 	nullMap = "" +
 		"YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY" + // 0x00
@@ -180,7 +190,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	negMap = "" +
 		"44444444444444444444444444444444" + // 0x00
-		"4444444444444444ghhhhhhhhh444444" + // 0x20
+		"4444444444444444O---------444444" + // 0x20
 		"44444444444444444444444444444444" + // 0x40
 		"44444444444444444444444444444444" + // 0x60
 		"44444444444444444444444444444444" + // 0x80
@@ -191,22 +201,22 @@ const (
 	zeroMap = "" +
 		"444444444rs44r444444444444444444" + // 0x00
 		"r44444444444u4t44444444444444444" + // 0x20
-		"44444444444444444444444444444m44" + // 0x40
-		"44444444444444444444444444444n44" + // 0x60
+		"44444444444444444444444444444P44" + // 0x40
+		"44444444444444444444444444444Q44" + // 0x60
 		"44444444444444444444444444444444" + // 0x80
 		"44444444444444444444444444444444" + // 0xa0
 		"44444444444444444444444444444444" + // 0xc0
-		"44444444444444444444444444444444z" //  0xe0
+		"44444444444444444444444444444444n" //  0xe0
 	//   0123456789abcdef0123456789abcdef
 	digitMap = "" +
 		"444444444rs44r444444444444444444" + // 0x00
-		"r44444444444u4t4aaaaaaaaaa444444" + // 0x20
-		"44444444444444444444444444444m44" + // 0x40
-		"44444444444444444444444444444n44" + // 0x60
+		"r44444444444u4t4NNNNNNNNNN444444" + // 0x20
+		"44444444444444444444444444444P44" + // 0x40
+		"44444444444444444444444444444Q44" + // 0x60
 		"44444444444444444444444444444444" + // 0x80
 		"44444444444444444444444444444444" + // 0xa0
 		"44444444444444444444444444444444" + // 0xc0
-		"44444444444444444444444444444444z" //  0xe0
+		"44444444444444444444444444444444n" //  0xe0
 	//   0123456789abcdef0123456789abcdef
 	dotMap = "" +
 		"44444444444444444444444444444444" + // 0x00
@@ -220,13 +230,13 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	fracMap = "" +
 		"444444444rs44r444444444444444444" + // 0x00
-		"r44444444444u4t4aaaaaaaaaa444444" + // 0x20
-		"44444w44444444444444444444444m44" + // 0x40
-		"44444w44444444444444444444444n44" + // 0x60
+		"r44444444444u4t4vvvvvvvvvv444444" + // 0x20
+		"44444w44444444444444444444444P44" + // 0x40
+		"44444w44444444444444444444444Q44" + // 0x60
 		"44444444444444444444444444444444" + // 0x80
 		"44444444444444444444444444444444" + // 0xa0
 		"44444444444444444444444444444444" + // 0xc0
-		"44444444444444444444444444444444z" //  0xe0
+		"44444444444444444444444444444444n" //  0xe0
 	//   0123456789abcdef0123456789abcdef
 	expSignMap = "" +
 		"44444444444444444444444444444444" + // 0x00
@@ -251,28 +261,28 @@ const (
 	expMap = "" +
 		"444444444rs44r444444444444444444" + // 0x00
 		"r44444444444u444yyyyyyyyyy444444" + // 0x20
-		"44444444444444444444444444444m44" + // 0x40
-		"44444444444444444444444444444n44" + // 0x60
+		"44444444444444444444444444444P44" + // 0x40
+		"44444444444444444444444444444Q44" + // 0x60
 		"44444444444444444444444444444444" + // 0x80
 		"44444444444444444444444444444444" + // 0xa0
 		"44444444444444444444444444444444" + // 0xc0
-		"44444444444444444444444444444444z" //  0xe0
+		"44444444444444444444444444444444n" //  0xe0
 	//   0123456789abcdef0123456789abcdef
 	stringMap = "" +
 		"55555555555555555555555555555555" + // 0x00
-		"aazaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0x20
-		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaAaaa" + // 0x40
-		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0x60
-		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0x80
-		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0xa0
-		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0xc0
-		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" //   0xe0
+		"RRzRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" + // 0x20
+		"RRRRRRRRRRRRRRRRRRRRRRRRRRRRARRR" + // 0x40
+		"RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" + // 0x60
+		"RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" + // 0x80
+		"RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" + // 0xR0
+		"RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" + // 0xc0
+		"RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" //   0xe0
 	//   0123456789abcdef0123456789abcdef
 	escMap = "" +
 		"77777777777777777777777777777777" + // 0x00
-		"77B777777777777B7777777777777777" + // 0x20
-		"7777777777777777777777777777B777" + // 0x40
-		"77B777B7777777B777B7BC7777777777" + // 0x60
+		"77!777777777777B7777777777777777" + // 0x20
+		"7777777777777777777777777777C777" + // 0x40
+		"77B777B7777777S777B7TU7777777777" + // 0x60
 		"77777777777777777777777777777777" + // 0x80
 		"77777777777777777777777777777777" + // 0xa0
 		"77777777777777777777777777777777" + // 0xc0
@@ -296,7 +306,7 @@ const (
 		"88888888888888888888888888888888" + // 0x80
 		"88888888888888888888888888888888" + // 0xa0
 		"88888888888888888888888888888888" + // 0xc0
-		"88888888888888888888888888888888" //   0xe0
+		"88888888888888888888888888888888s" //   0xe0
 
 	//   0123456789abcdef0123456789abcdef
 	commentStartMap = "" +

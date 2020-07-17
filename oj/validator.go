@@ -103,7 +103,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 	for off = 0; off < len(buf); off++ {
 		b = buf[off]
 		switch p.mode[b] {
-		case skipChar: // skip and continue
+		case skipChar, strOk: // skip and continue
 			continue
 		case skipNewline:
 			p.line++
@@ -150,7 +150,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			continue
 		case valQuote:
 			for i, b = range buf[off+1:] {
-				if stringMap[b] != skipChar {
+				if stringMap[b] != strOk {
 					break
 				}
 			}
@@ -167,7 +167,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			p.stack = append(p.stack, '[')
 			depth++
 			continue
-		case closeArray:
+		case closeArray, numCloseArray:
 			if depth == 0 {
 				return p.newError(off, "too many closes")
 			}
@@ -182,7 +182,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			p.mode = key1Map
 			depth++
 			continue
-		case closeObject:
+		case closeObject, numCloseObject:
 			if depth == 0 {
 				return p.newError(off, "too many closes")
 			}
@@ -232,7 +232,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			continue
 		case keyQuote:
 			for i, b = range buf[off+1:] {
-				if stringMap[b] != skipChar {
+				if stringMap[b] != strOk {
 					break
 				}
 			}
@@ -260,6 +260,12 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				}
 			}
 			off += i
+		case negDigit:
+			p.mode = digitMap
+		case numDigit:
+			// nothing to do
+		case numZero:
+			p.mode = zeroMap
 		case numDot:
 			p.mode = dotMap
 			continue
@@ -284,7 +290,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			continue
 		case strQuote:
 			p.mode = p.nextMode
-		case escOk:
+		case escOk, escN, escQ, escT, escBackSlash:
 			p.mode = stringMap
 			continue
 		case escU:

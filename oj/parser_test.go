@@ -141,7 +141,7 @@ func TestParserParseString(t *testing.T) {
 		{src: "[\n  null, // a comment\n  true\n]", expect: "comments not allowed at 2:9", noComment: true},
 	} {
 		if testing.Verbose() {
-			fmt.Printf("... %s\n", d.src)
+			fmt.Printf("... %d: %s\n", i, d.src)
 		}
 		var err error
 		var v interface{}

@@ -5,6 +5,8 @@
   - oj parse
   - gen parse
   - sen parse
+ - try putting map keys and values on the stack like slices
+  - make map with correct size
 
  - chan option for parse and validate
  - streaming with log files in benchmarks
