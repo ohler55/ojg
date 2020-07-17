@@ -69,14 +69,18 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 	p.result = nil
 	p.noff = -1
 	p.line = 1
+	p.mode = valueMap
+	var err error
 	// Skip BOM if present.
-	if 0 < len(buf) && buf[0] == 0xEF {
-		p.mode = bomEFMap
-		p.ri = 0
+	if 3 < len(buf) && buf[0] == 0xEF {
+		if buf[1] == 0xBB && buf[2] == 0xBF {
+			err = p.parseBuffer(buf[3:], true)
+		} else {
+			return nil, fmt.Errorf("expected BOM at 1:3")
+		}
 	} else {
-		p.mode = valueMap
+		err = p.parseBuffer(buf, true)
 	}
-	err := p.parseBuffer(buf, true)
 	p.stack = p.stack[:cap(p.stack)]
 	for i := len(p.stack) - 1; 0 <= i; i-- {
 		p.stack[i] = nil
@@ -119,21 +123,25 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}
 	var cnt int
 	cnt, err = r.Read(buf)
 	buf = buf[:cnt]
+	p.mode = valueMap
 	if err != nil {
 		if err != io.EOF {
 			return
 		}
 		eof = true
 	}
+	var skip int
 	// Skip BOM if present.
-	if 0 < len(buf) && buf[0] == 0xEF {
-		p.mode = bomEFMap
-		p.ri = 0
-	} else {
-		p.mode = valueMap
+	if 3 < len(buf) && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF {
+		skip = 3
 	}
 	for {
-		if err = p.parseBuffer(buf, eof); err != nil {
+		if 0 < skip {
+			err = p.parseBuffer(buf[skip:], eof)
+		} else {
+			err = p.parseBuffer(buf, eof)
+		}
+		if err != nil {
 			p.stack = p.stack[:cap(p.stack)]
 			for i := len(p.stack) - 1; 0 <= i; i-- {
 				p.stack[i] = nil
@@ -142,6 +150,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}
 
 			return
 		}
+		skip = 0
 		if eof {
 			break
 		}
@@ -444,7 +453,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			continue
 		case strQuote:
 			p.mode = p.nextMode
-			if p.mode[0] == colonErr {
+			if p.mode[':'] == colonColon {
 				p.stack = append(p.stack, gen.Key(p.tmp))
 			} else {
 				p.add(string(p.tmp))
@@ -462,6 +471,8 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			}
 			p.mode = stringMap
 			continue
+
+			// TBD replace with table
 		case escN:
 			p.tmp = append(p.tmp, '\n')
 			p.mode = stringMap
@@ -478,6 +489,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			p.tmp = append(p.tmp, '\\')
 			p.mode = stringMap
 			continue
+
 		case escU:
 			p.mode = uMap
 			p.rn = 0
@@ -508,44 +520,9 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			p.line++
 			p.noff = off
 			p.mode = p.nextMode
-		case bomEF:
-			p.mode = bomBBMap
-			continue
-		case bomBB:
-			p.mode = bomBFMap
-			continue
-		case bomBF:
-			p.mode = valueMap
-			continue
 
-		case bomErr:
-			return p.newError(off, "expected BOM")
-		case valErr, commentErr:
+		case charErr:
 			return p.newError(off, "unexpected character '%c'", b)
-		case nullErr:
-			return p.newError(off, "expected null")
-		case trueErr:
-			return p.newError(off, "expected true")
-		case falseErr:
-			return p.newError(off, "expected false")
-		case afterErr:
-			return p.newError(off, "expected a comma or close, not '%c'", b)
-		case key1Err:
-			return p.newError(off, "expected a string start or object close, not '%c'", b)
-		case keyErr:
-			return p.newError(off, "expected a string start, not '%c'", b)
-		case colonErr:
-			return p.newError(off, "expected a colon, not '%c'", b)
-		case numErr:
-			return p.newError(off, "invalid number")
-		case strLowErr:
-			return p.newError(off, "invalid JSON character 0x%02x", b)
-		case strErr:
-			return p.newError(off, "invalid JSON unicode character '%c'", b)
-		case escErr:
-			return p.newError(off, "invalid JSON escape character '\\%c'", b)
-		case spcErr:
-			return p.newError(off, "extra characters after close, '%c'", b)
 		}
 		if depth == 0 && 256 < len(p.mode) && p.mode[256] == 'a' {
 			if p.cb != nil {

@@ -43,11 +43,16 @@ func (p *Validator) Validate(buf []byte) (err error) {
 	p.line = 1
 	p.mode = valueMap
 	// Skip BOM if present.
-	if 0 < len(buf) && buf[0] == 0xEF {
-		p.mode = bomEFMap
-		p.ri = 0
+	if 3 < len(buf) && buf[0] == 0xEF {
+		if buf[1] == 0xBB && buf[2] == 0xBF {
+			err = p.validateBuffer(buf[3:], true)
+		} else {
+			err = fmt.Errorf("expected BOM at 1:3")
+		}
+	} else {
+		err = p.validateBuffer(buf, true)
 	}
-	return p.validateBuffer(buf, true)
+	return
 }
 
 // ValidateReader a JSON stream. An error is returned if not valid JSON.
@@ -70,13 +75,18 @@ func (p *Validator) ValidateReader(r io.Reader) error {
 		}
 		eof = true
 	}
+	var skip int
 	// Skip BOM if present.
-	if 0 < len(buf) && buf[0] == 0xEF {
-		p.mode = bomEFMap
-		p.ri = 0
+	if 3 < len(buf) && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF {
+		skip = 3
 	}
 	for {
-		if err := p.validateBuffer(buf, eof); err != nil {
+		if 0 < skip {
+			err = p.validateBuffer(buf[skip:], eof)
+		} else {
+			err = p.validateBuffer(buf, eof)
+		}
+		if err != nil {
 			return err
 		}
 		if eof {
@@ -312,6 +322,8 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			continue
 		case strQuote:
 			p.mode = p.nextMode
+
+			// TBD escOk and then a map for the replacement char
 		case escOk:
 			p.mode = stringMap
 			continue
@@ -327,6 +339,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 		case escBackSlash:
 			p.mode = stringMap
 			continue
+
 		case escU:
 			p.mode = uMap
 			p.ri = 0
@@ -343,44 +356,9 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			p.line++
 			p.noff = off
 			p.mode = p.nextMode
-		case bomEF:
-			p.mode = bomBBMap
-			continue
-		case bomBB:
-			p.mode = bomBFMap
-			continue
-		case bomBF:
-			p.mode = valueMap
-			continue
 
-		case bomErr:
-			return p.newError(off, "expected BOM")
-		case valErr, commentErr:
+		case charErr:
 			return p.newError(off, "unexpected character '%c'", b)
-		case nullErr:
-			return p.newError(off, "expected null")
-		case trueErr:
-			return p.newError(off, "expected true")
-		case falseErr:
-			return p.newError(off, "expected false")
-		case afterErr:
-			return p.newError(off, "expected a comma or close, not '%c'", b)
-		case key1Err:
-			return p.newError(off, "expected a string start or object close, not '%c'", b)
-		case keyErr:
-			return p.newError(off, "expected a string start, not '%c'", b)
-		case colonErr:
-			return p.newError(off, "expected a colon, not '%c'", b)
-		case numErr:
-			return p.newError(off, "invalid number")
-		case strLowErr:
-			return p.newError(off, "invalid JSON character 0x%02x", b)
-		case strErr:
-			return p.newError(off, "invalid JSON unicode character '%c'", b)
-		case escErr:
-			return p.newError(off, "invalid JSON escape character '\\%c'", b)
-		case spcErr:
-			return p.newError(off, "extra characters after close, '%c'", b)
 		}
 		if depth == 0 && 256 < len(p.mode) && p.mode[256] == 'a' {
 			if p.OnlyOne {
