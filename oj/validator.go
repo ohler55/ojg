@@ -103,7 +103,9 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 	for off = 0; off < len(buf); off++ {
 		b = buf[off]
 		switch p.mode[b] {
-		case skipChar, strOk: // skip and continue
+		case skipChar:
+			continue
+		case strOk:
 			continue
 		case skipNewline:
 			p.line++
@@ -167,7 +169,17 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			p.stack = append(p.stack, '[')
 			depth++
 			continue
-		case closeArray, numCloseArray:
+		case closeArray:
+			if depth == 0 {
+				return p.newError(off, "too many closes")
+			}
+			depth--
+			if p.stack[depth] != '[' {
+				return p.newError(off, "unexpected array close")
+			}
+			p.stack = p.stack[0:depth]
+			p.mode = afterMap
+		case numCloseArray:
 			if depth == 0 {
 				return p.newError(off, "too many closes")
 			}
@@ -182,7 +194,17 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			p.mode = key1Map
 			depth++
 			continue
-		case closeObject, numCloseObject:
+		case closeObject:
+			if depth == 0 {
+				return p.newError(off, "too many closes")
+			}
+			depth--
+			if p.stack[depth] != '{' {
+				return p.newError(off, "unexpected object close")
+			}
+			p.stack = p.stack[0:depth]
+			p.mode = afterMap
+		case numCloseObject:
 			if depth == 0 {
 				return p.newError(off, "too many closes")
 			}
@@ -290,7 +312,19 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			continue
 		case strQuote:
 			p.mode = p.nextMode
-		case escOk, escN, escQ, escT, escBackSlash:
+		case escOk:
+			p.mode = stringMap
+			continue
+		case escN:
+			p.mode = stringMap
+			continue
+		case escQ:
+			p.mode = stringMap
+			continue
+		case escT:
+			p.mode = stringMap
+			continue
+		case escBackSlash:
 			p.mode = stringMap
 			continue
 		case escU:
