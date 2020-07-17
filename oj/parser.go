@@ -18,25 +18,21 @@ const (
 	readBufSize   = 4096
 )
 
-// Parser is a reusable JSON parser. It can be reused for multiple
-// validations or parsings which allows buffer reuse for a performance
-// advantage.
+// Parser is a reusable JSON parser. It can be reused for multiple parsings
+// which allows buffer reuse for a performance advantage.
 type Parser struct {
+	tracker
 	tmp       []byte // used for numbers and strings
 	runeBytes []byte
 	stack     []interface{}
 	starts    []int
 	cb        func(interface{}) bool
 	ri        int // read index for null, false, and true
-	line      int
-	noff      int // Offset of last newline from start of buf. Can be negative when using a reader.
 	num       gen.Number
 	rn        rune
 	result    interface{}
 	mode      string
 	nextMode  string
-
-	onlyOne bool
 }
 
 // Parse a JSON string in to simple types. An error is returned if not valid JSON.
@@ -45,13 +41,13 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 		switch ta := a.(type) {
 		case func(interface{}) bool:
 			p.cb = ta
-			p.onlyOne = false
+			p.OnlyOne = false
 		default:
 			return nil, fmt.Errorf("a %T is not a valid option type", a)
 		}
 	}
 	if p.cb == nil {
-		p.onlyOne = true
+		p.OnlyOne = true
 	}
 	if p.stack == nil {
 		p.stack = make([]interface{}, 0, stackInitSize)
@@ -92,13 +88,13 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}
 		switch ta := a.(type) {
 		case func(interface{}) bool:
 			p.cb = ta
-			p.onlyOne = false
+			p.OnlyOne = false
 		default:
 			return nil, fmt.Errorf("a %T is not a valid option type", a)
 		}
 	}
 	if p.cb == nil {
-		p.onlyOne = true
+		p.OnlyOne = true
 	}
 	if p.stack == nil {
 		p.stack = make([]interface{}, 0, stackInitSize)
@@ -551,7 +547,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 					p.mode = afterMap
 				}
 			case charErr:
-				return p.byteError(off, b)
+				return p.byteError(off, p.mode, b)
 			}
 		}
 		if depth == 0 && 256 < len(p.mode) && p.mode[256] == 'a' {
@@ -559,7 +555,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.cb(p.stack[0])
 				p.stack = p.stack[:0]
 			}
-			if p.onlyOne {
+			if p.OnlyOne {
 				p.mode = spaceMap
 			} else {
 				p.mode = valueMap
@@ -600,50 +596,6 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		}
 	}
 	return nil
-}
-
-func (p *Parser) newError(off int, format string, args ...interface{}) error {
-	return &ParseError{
-		Message: fmt.Sprintf(format, args...),
-		Line:    p.line,
-		Column:  off - p.noff,
-	}
-}
-
-func (p *Parser) byteError(off int, b byte) error {
-	err := &ParseError{
-		Line:   p.line,
-		Column: off - p.noff,
-	}
-	switch p.mode {
-	case nullMap:
-		err.Message = "expected null"
-	case trueMap:
-		err.Message = "expected true"
-	case falseMap:
-		err.Message = "expected false"
-	case afterMap:
-		err.Message = fmt.Sprintf("expected a comma or close, not '%c'", b)
-	case key1Map:
-		err.Message = fmt.Sprintf("expected a string start or object close, not '%c'", b)
-	case keyMap:
-		err.Message = fmt.Sprintf("expected a string start, not '%c'", b)
-	case colonMap:
-		err.Message = fmt.Sprintf("expected a colon, not '%c'", b)
-	case negMap, zeroMap, digitMap, dotMap, fracMap, expSignMap, expZeroMap, expMap:
-		err.Message = "invalid number"
-	case stringMap:
-		err.Message = fmt.Sprintf("invalid JSON character 0x%02x", b)
-	case escMap:
-		err.Message = fmt.Sprintf("invalid JSON escape character '\\%c'", b)
-	case uMap:
-		err.Message = fmt.Sprintf("invalid JSON unicode character '%c'", b)
-	case spaceMap:
-		err.Message = fmt.Sprintf("extra characters after close, '%c'", b)
-	default:
-		err.Message = fmt.Sprintf("unexpected character '%c'", b)
-	}
-	return err
 }
 
 func (p *Parser) add(n interface{}) {

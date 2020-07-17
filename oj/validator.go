@@ -13,6 +13,8 @@ const stackMinSize = 32 // for container stack { or [
 // validations or parsings which allows buffer reuse for a performance
 // advantage.
 type Validator struct {
+	tracker
+
 	// This and the Parser use the same basic code but without the
 	// building. It is a copy since adding the conditionals needed to avoid
 	// builing results add 15 to 20% overhead. An additional improvement could
@@ -20,8 +22,6 @@ type Validator struct {
 	// validation much less useful.
 	stack    []byte // { or [
 	ri       int    // read index for null, false, and true
-	line     int
-	noff     int // Offset of last newline from start of buf. Can be negative when using a reader.
 	mode     string
 	nextMode string
 
@@ -314,7 +314,6 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 		case strQuote:
 			p.mode = p.nextMode
 
-			// TBD escOk and then a map for the replacement char
 		case escOk:
 			p.mode = stringMap
 			continue
@@ -330,7 +329,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			continue
 
 		case charErr:
-			return p.byteError(off, b)
+			return p.byteError(off, p.mode, b)
 		}
 		if depth == 0 && 256 < len(p.mode) && p.mode[256] == 'a' {
 			if p.OnlyOne {
@@ -344,48 +343,4 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 		return p.newError(off, "incomplete JSON")
 	}
 	return nil
-}
-
-func (p *Validator) newError(off int, format string, args ...interface{}) error {
-	return &ParseError{
-		Message: fmt.Sprintf(format, args...),
-		Line:    p.line,
-		Column:  off - p.noff,
-	}
-}
-
-func (p *Validator) byteError(off int, b byte) error {
-	err := &ParseError{
-		Line:   p.line,
-		Column: off - p.noff,
-	}
-	switch p.mode {
-	case nullMap:
-		err.Message = "expected null"
-	case trueMap:
-		err.Message = "expected true"
-	case falseMap:
-		err.Message = "expected false"
-	case afterMap:
-		err.Message = fmt.Sprintf("expected a comma or close, not '%c'", b)
-	case key1Map:
-		err.Message = fmt.Sprintf("expected a string start or object close, not '%c'", b)
-	case keyMap:
-		err.Message = fmt.Sprintf("expected a string start, not '%c'", b)
-	case colonMap:
-		err.Message = fmt.Sprintf("expected a colon, not '%c'", b)
-	case negMap, zeroMap, digitMap, dotMap, fracMap, expSignMap, expZeroMap, expMap:
-		err.Message = "invalid number"
-	case stringMap:
-		err.Message = fmt.Sprintf("invalid JSON character 0x%02x", b)
-	case escMap:
-		err.Message = fmt.Sprintf("invalid JSON escape character '\\%c'", b)
-	case uMap:
-		err.Message = fmt.Sprintf("invalid JSON unicode character '%c'", b)
-	case spaceMap:
-		err.Message = fmt.Sprintf("extra characters after close, '%c'", b)
-	default:
-		err.Message = fmt.Sprintf("unexpected character '%c'", b)
-	}
-	return err
 }
