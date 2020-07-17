@@ -116,15 +116,11 @@ func TestValidatorValidateString(t *testing.T) {
 		{src: "\xef\xbb[]", expect: "expected BOM at 1:3"},
 		{src: "null \n {}", expect: "extra characters after close, '{' at 2:2", onlyOne: true},
 
-		{src: "[ // a comment\n  true\n]"},
-		{src: "[ // a comment\n  true\n]", expect: "comments not allowed at 1:3", noComment: true},
-		{src: "[\n  null, // a comment\n  true\n]"},
-		{src: "[\n  null, / a comment\n  true\n]", expect: "unexpected character ' ' at 2:10", noComment: false},
-		{src: "[\n  null, // a comment\n  true\n]", expect: "comments not allowed at 2:9", noComment: true},
+		{src: "[ // a comment\n  true\n]", expect: "unexpected character '/' at 1:3"},
 	} {
 		var err error
-		if d.onlyOne || d.noComment {
-			p := oj.Validator{OnlyOne: d.onlyOne, NoComment: d.noComment}
+		if d.onlyOne {
+			p := oj.Validator{OnlyOne: d.onlyOne}
 			err = p.Validate([]byte(d.src))
 		} else {
 			err = oj.Validate([]byte(d.src))

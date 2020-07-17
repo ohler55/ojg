@@ -134,19 +134,15 @@ func TestParserParseString(t *testing.T) {
 		{src: `"x\u004z"`, expect: "invalid JSON unicode character 'z' at 1:8"},
 		{src: "\xef\xbb[]", expect: "expected BOM at 1:3"},
 
-		{src: "[ // a comment\n  true\n]", value: []interface{}{true}, noComment: false},
-		{src: "[ // a comment\n  true\n]", expect: "comments not allowed at 1:3", noComment: true},
-		{src: "[\n  null, // a comment\n  true\n]", value: []interface{}{nil, true}, noComment: false},
-		{src: "[\n  null, / a comment\n  true\n]", expect: "unexpected character ' ' at 2:10", noComment: false},
-		{src: "[\n  null, // a comment\n  true\n]", expect: "comments not allowed at 2:9", noComment: true},
+		{src: "[ // a comment\n  true\n]", expect: "unexpected character '/' at 1:3"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.src)
 		}
 		var err error
 		var v interface{}
-		if d.onlyOne || d.noComment {
-			p := oj.Parser{NoComment: d.noComment}
+		if d.onlyOne {
+			p := oj.Parser{}
 			v, err = p.Parse([]byte(d.src))
 		} else {
 			v, err = oj.Parse([]byte(d.src))
@@ -171,7 +167,7 @@ func TestParserParseCallback(t *testing.T) {
 		return false
 	}
 	var p oj.Parser
-	v, err := p.Parse([]byte(callbackJSON), cb, true)
+	v, err := p.Parse([]byte(callbackJSON), cb)
 	tt.Nil(t, err)
 	tt.Nil(t, v)
 	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
@@ -201,7 +197,7 @@ func TestParserParseReaderCallback(t *testing.T) {
 	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
 
 	results = results[:0]
-	v, err = p.ParseReader(strings.NewReader(callbackJSON), cb, true)
+	v, err = p.ParseReader(strings.NewReader(callbackJSON), cb)
 	tt.Nil(t, err)
 	tt.Nil(t, v)
 	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))

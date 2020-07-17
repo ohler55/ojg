@@ -66,8 +66,8 @@ func main() {
 	benchSuite("Parse string/[]byte", []*bench{
 		{pkg: "json", name: "Unmarshal", fun: goParse},
 		{pkg: "oj", name: "Parse", fun: ojParse},
-		{pkg: "gen", name: "Parse", fun: genParse},
-		{pkg: "sen", name: "Parse", fun: senParse},
+		//{pkg: "gen", name: "Parse", fun: genParse},
+		//{pkg: "sen", name: "Parse", fun: senParse},
 	})
 	benchSuite("Parse io.Reader", []*bench{
 		{pkg: "json", name: "Decode", fun: goDecodeReader},

@@ -25,9 +25,6 @@ type Validator struct {
 	mode     string
 	nextMode string
 
-	// NoComments returns an error if a comment is encountered.
-	NoComment bool
-
 	// OnlyOne returns an error if more than one JSON is in the string or
 	// stream.
 	OnlyOne bool
@@ -86,6 +83,7 @@ func (p *Validator) ValidateReader(r io.Reader) error {
 		} else {
 			err = p.validateBuffer(buf, eof)
 		}
+		skip = 0
 		if err != nil {
 			return err
 		}
@@ -224,13 +222,6 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			}
 			p.stack = p.stack[0:depth]
 			p.mode = afterMap
-		case valSlash:
-			if p.NoComment {
-				return p.newError(off, "comments not allowed")
-			}
-			p.nextMode = p.mode
-			p.mode = commentStartMap
-			continue
 		case nullOk:
 			p.ri++
 			if "null"[p.ri] != b {
@@ -327,19 +318,6 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 		case escOk:
 			p.mode = stringMap
 			continue
-		case escN:
-			p.mode = stringMap
-			continue
-		case escQ:
-			p.mode = stringMap
-			continue
-		case escT:
-			p.mode = stringMap
-			continue
-		case escBackSlash:
-			p.mode = stringMap
-			continue
-
 		case escU:
 			p.mode = uMap
 			p.ri = 0
@@ -350,15 +328,9 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = stringMap
 			}
 			continue
-		case commentStart:
-			p.mode = commentMap
-		case commentEnd:
-			p.line++
-			p.noff = off
-			p.mode = p.nextMode
 
 		case charErr:
-			return p.newError(off, "unexpected character '%c'", b)
+			return p.byteError(off, b)
 		}
 		if depth == 0 && 256 < len(p.mode) && p.mode[256] == 'a' {
 			if p.OnlyOne {
@@ -380,4 +352,40 @@ func (p *Validator) newError(off int, format string, args ...interface{}) error 
 		Line:    p.line,
 		Column:  off - p.noff,
 	}
+}
+
+func (p *Validator) byteError(off int, b byte) error {
+	err := &ParseError{
+		Line:   p.line,
+		Column: off - p.noff,
+	}
+	switch p.mode {
+	case nullMap:
+		err.Message = "expected null"
+	case trueMap:
+		err.Message = "expected true"
+	case falseMap:
+		err.Message = "expected false"
+	case afterMap:
+		err.Message = fmt.Sprintf("expected a comma or close, not '%c'", b)
+	case key1Map:
+		err.Message = fmt.Sprintf("expected a string start or object close, not '%c'", b)
+	case keyMap:
+		err.Message = fmt.Sprintf("expected a string start, not '%c'", b)
+	case colonMap:
+		err.Message = fmt.Sprintf("expected a colon, not '%c'", b)
+	case negMap, zeroMap, digitMap, dotMap, fracMap, expSignMap, expZeroMap, expMap:
+		err.Message = "invalid number"
+	case stringMap:
+		err.Message = fmt.Sprintf("invalid JSON character 0x%02x", b)
+	case escMap:
+		err.Message = fmt.Sprintf("invalid JSON escape character '\\%c'", b)
+	case uMap:
+		err.Message = fmt.Sprintf("invalid JSON unicode character '%c'", b)
+	case spaceMap:
+		err.Message = fmt.Sprintf("extra characters after close, '%c'", b)
+	default:
+		err.Message = fmt.Sprintf("unexpected character '%c'", b)
+	}
+	return err
 }
