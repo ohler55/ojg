@@ -881,13 +881,7 @@ func (p *Parser) iadd(n interface{}) {
 }
 
 func (p *Parser) appendNum() {
-	if 0 < len(p.num.BigBuf) {
-		p.iadd(string(p.num.AsBig()))
-	} else if p.num.Frac == 0 && p.num.Exp == 0 {
-		p.iadd(p.num.AsInt())
-	} else {
-		p.iadd(p.num.AsFloat())
-	}
+	p.iadd(p.num.AsNum())
 	if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
 		p.mode = key1Mode
 	} else {

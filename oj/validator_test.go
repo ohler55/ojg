@@ -115,7 +115,6 @@ func TestValidatorValidateString(t *testing.T) {
 		{src: `"x\u004z"`, expect: "invalid JSON unicode character 'z' at 1:8"},
 		{src: "\xef\xbb[]", expect: "expected BOM at 1:3"},
 		{src: "null \n {}", expect: "extra characters after close, '{' at 2:2", onlyOne: true},
-
 		{src: "[ // a comment\n  true\n]", expect: "unexpected character '/' at 1:3"},
 	} {
 		var err error

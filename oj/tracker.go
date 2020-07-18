@@ -5,11 +5,8 @@ package oj
 import "fmt"
 
 type tracker struct {
-	//ri       int // read index for null, false, and true
 	line int
 	noff int // Offset of last newline from start of buf. Can be negative when using a reader.
-	//mode string
-	//nextMode string
 
 	// OnlyOne returns an error if more than one JSON is in the string or stream.
 	OnlyOne bool

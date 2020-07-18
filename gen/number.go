@@ -104,39 +104,6 @@ func (n *Number) FillBig() {
 	}
 }
 
-// AsInt returns the number as an int64.
-func (n *Number) AsInt() int64 {
-	i := int64(n.I)
-	if n.Neg {
-		i = -i
-	}
-	return i
-}
-
-// AsInt returns the number as a float64.
-func (n *Number) AsFloat() float64 {
-	f := float64(n.I)
-	if 0 < n.Frac {
-		f += float64(n.Frac) / float64(n.Div)
-	}
-	if n.Neg {
-		f = -f
-	}
-	if 0 < n.Exp {
-		x := int(n.Exp)
-		if n.NegExp {
-			x = -x
-		}
-		f *= math.Pow10(int(x))
-	}
-	return f
-}
-
-// AsInt returns the number as a a Big.
-func (n *Number) AsBig() Big {
-	return Big(n.BigBuf)
-}
-
 // AsNum returns the number as best fit.
 func (n *Number) AsNum() (num interface{}) {
 	if 0 < len(n.BigBuf) {
@@ -163,6 +130,36 @@ func (n *Number) AsNum() (num interface{}) {
 			f *= math.Pow10(int(x))
 		}
 		num = f
+	}
+	return
+}
+
+// AsNode returns the number as best fit.
+func (n *Number) AsNode() (num Node) {
+	if 0 < len(n.BigBuf) {
+		num = Big(n.BigBuf)
+	} else if n.Frac == 0 && n.Exp == 0 {
+		i := int64(n.I)
+		if n.Neg {
+			i = -i
+		}
+		num = Int(i)
+	} else {
+		f := float64(n.I)
+		if 0 < n.Frac {
+			f += float64(n.Frac) / float64(n.Div)
+		}
+		if n.Neg {
+			f = -f
+		}
+		if 0 < n.Exp {
+			x := int(n.Exp)
+			if n.NegExp {
+				x = -x
+			}
+			f *= math.Pow10(int(x))
+		}
+		num = Float(f)
 	}
 	return
 }

@@ -67,14 +67,16 @@ func main() {
 		{pkg: "json", name: "Unmarshal", fun: goParse},
 		{pkg: "oj", name: "Parse", fun: ojParse},
 		{pkg: "oj-reuse", name: "Parse", fun: ojParseReuse},
-		//{pkg: "gen", name: "Parse", fun: genParse},
+		{pkg: "gen", name: "Parse", fun: genParse},
+		{pkg: "gen-reuse", name: "Parse", fun: genParseReuse},
 		//{pkg: "sen", name: "Parse", fun: senParse},
 	})
 	benchSuite("Parse io.Reader", []*bench{
 		{pkg: "json", name: "Decode", fun: goDecodeReader},
 		{pkg: "oj", name: "ParseReader", fun: ojParseReader},
 		{pkg: "oj-reuse", name: "ParseReader", fun: ojParseReaderReuse},
-		//{pkg: "gen", name: "ParseReder", fun: genParseReader},
+		{pkg: "gen", name: "ParseReder", fun: genParseReader},
+		{pkg: "gen-reuse", name: "ParseReder", fun: genParseReaderReuse},
 		//{pkg: "sen", name: "ParseReader", fun: senParseReader},
 	})
 
@@ -152,7 +154,7 @@ func benchSuite(title string, suite []*bench) {
 		b.ns = b.res.NsPerOp()
 		b.bytes = b.res.AllocedBytesPerOp()
 		b.allocs = b.res.AllocsPerOp()
-		fmt.Printf(" %8s.%-12s %6d ns/op  %6d B/op  %6d allocs/op\n",
+		fmt.Printf(" %10s.%-14s %6d ns/op  %6d B/op  %6d allocs/op\n",
 			b.pkg, b.name, b.ns, b.bytes, b.allocs)
 	}
 	fmt.Println()
@@ -174,7 +176,7 @@ func benchSuite(title string, suite []*bench) {
 			frac := int(size*8.0) - (int(size) * 8)
 			bar += string([]rune(blocks)[frac : frac+1])
 		}
-		fmt.Printf(" %8s %s %3.2f\n", b.pkg, bar, x)
+		fmt.Printf(" %10s %s %3.2f\n", b.pkg, bar, x)
 	}
 }
 

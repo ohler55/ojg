@@ -106,7 +106,7 @@ is composed of the remaining argument concatenated together.
 	if lazy {
 		p = &sen.Parser{}
 	} else {
-		p = &oj.Parser{}
+		p = &oj.Parser{Reuse: true}
 	}
 	if 0 < len(files) {
 		var f *os.File

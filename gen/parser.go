@@ -5,186 +5,154 @@ package gen
 import (
 	"fmt"
 	"io"
+	"math"
 	"unicode/utf8"
 )
 
 const (
-	tmpMinSize   = 32 // for tokens and numbers
-	stackMinSize = 32 // for container stack { or [
-	readBufSize  = 4096
-
-	bomMode          = 'b'
-	valueMode        = 'v'
-	afterMode        = 'a'
-	nullMode         = 'n'
-	trueMode         = 't'
-	falseMode        = 'f'
-	negMode          = '-'
-	zeroMode         = '0'
-	digitMode        = 'd'
-	dotMode          = '.'
-	fracMode         = 'F'
-	expSignMode      = '+'
-	expZeroMode      = 'X'
-	expMode          = 'x'
-	strMode          = 's'
-	escMode          = 'e'
-	uMode            = 'u'
-	key1Mode         = 'K'
-	keyMode          = 'k'
-	colonMode        = ':'
-	commaMode        = ','
-	spaceMode        = ' '
-	commentStartMode = '/'
-	commentMode      = 'c'
-
-	//   0123456789abcdef0123456789abcdef
-	strMap = "" +
-		"................................" + // 0x00
-		"oo.ooooooooooooooooooooooooooooo" + // 0x20
-		"oooooooooooooooooooooooooooo.ooo" + // 0x40
-		"ooooooooooooooooooooooooooooooo." + // 0x60
-		"oooooooooooooooooooooooooooooooo" + // 0x80
-		"oooooooooooooooooooooooooooooooo" + // 0xa0
-		"oooooooooooooooooooooooooooooooo" + // 0xc0
-		"oooooooooooooooooooooooooooooooo" //   0xe0
-
-	//   0123456789abcdef0123456789abcdef
-	charTypeMap = "" +
-		".........ss....................." + // 0x00
-		"s...............dddddddddd......" + // 0x20
-		"................................" + // 0x40
-		"................................" + // 0x60
-		"................................" + // 0x80
-		"................................" + // 0xa0
-		"................................" + // 0xc0
-		"................................" //   0xe0
+	stackInitSize = 32 // for container stack { or [
+	tmpInitSize   = 32 // for tokens and numbers
+	mapInitSize   = 8
+	readBufSize   = 4096
 )
 
-// Parser a JSON parser. It can be reused for multiple parsings which allows
-// buffer reuse for a performance advantage.
+// Parser is a reusable JSON parser. It can be reused for multiple parsings
+// which allows buffer reuse for a performance advantage.
 type Parser struct {
 	tmp       []byte // used for numbers and strings
-	stack     []byte // { or [
 	runeBytes []byte
-	nstack    []Node
+	stack     []Node
 	starts    []int
+	maps      []Object
 	cb        func(Node) bool
-	ri        int // read index for null, false, and true
 	line      int
 	noff      int // Offset of last newline from start of buf. Can be negative when using a reader.
+	ri        int // read index for null, false, and true
+	mi        int
 	num       Number
 	rn        rune
-	mode      byte
-	nextMode  byte
-	onlyOne   bool
+	result    Node
+	mode      string
+	nextMode  string
 
-	// NoComments returns an error if a comment is encountered.
-	NoComment bool
+	// OnlyOne returns an error if more than one JSON is in the string or stream.
+	OnlyOne bool
+
+	// Reuse maps. Previously returned maps will no longer be valid or rather
+	// could be modified during parsing.
+	Reuse bool
 }
 
-func (p *Parser) Parse(buf []byte, args ...interface{}) (node Node, err error) {
-	var callback func(Node) bool
-
+// Parse a JSON string in to simple types. An error is returned if not valid JSON.
+func (p *Parser) Parse(buf []byte, args ...interface{}) (Node, error) {
 	for _, a := range args {
 		switch ta := a.(type) {
-		case bool:
-			p.NoComment = ta
 		case func(Node) bool:
-			callback = ta
-			p.onlyOne = false
+			p.cb = ta
+			p.OnlyOne = false
+		default:
+			return nil, fmt.Errorf("a %T is not a valid option type", a)
 		}
 	}
-	if callback == nil {
-		p.onlyOne = true
-		callback = func(n Node) bool {
-			node = n
-			return false // tells the parser to stop
-		}
+	if p.cb == nil {
+		p.OnlyOne = true
 	}
-	p.cb = callback
-	if cap(p.tmp) < tmpMinSize { // indicates not initialized
-		p.tmp = make([]byte, 0, tmpMinSize)
-		p.stack = make([]byte, 0, stackMinSize)
-		p.nstack = make([]Node, 0, 64)
+	if p.stack == nil {
+		p.stack = make([]Node, 0, stackInitSize)
+		p.tmp = make([]byte, 0, tmpInitSize)
 		p.starts = make([]int, 0, 16)
+		p.maps = make([]Object, 0, 16)
 	} else {
-		p.tmp = p.tmp[0:0]
-		p.stack = p.stack[0:0]
-		p.nstack = p.nstack[:0]
+		p.stack = p.stack[:0]
+		p.tmp = p.tmp[:0]
 		p.starts = p.starts[:0]
 	}
+	p.result = nil
 	p.noff = -1
 	p.line = 1
-	p.mode = valueMode
+	p.mode = valueMap
+	p.mi = 0
+	var err error
 	// Skip BOM if present.
-	if 0 < len(buf) && buf[0] == 0xEF {
-		p.mode = bomMode
-		p.ri = 0
+	if 3 < len(buf) && buf[0] == 0xEF {
+		if buf[1] == 0xBB && buf[2] == 0xBF {
+			err = p.parseBuffer(buf[3:], true)
+		} else {
+			return nil, fmt.Errorf("expected BOM at 1:3")
+		}
+	} else {
+		err = p.parseBuffer(buf, true)
 	}
-	err = p.parseBuffer(buf, true)
+	p.stack = p.stack[:cap(p.stack)]
 	for i := len(p.stack) - 1; 0 <= i; i-- {
-		p.stack = nil
+		p.stack[i] = nil
 	}
 	p.stack = p.stack[:0]
-	return
+
+	return p.result, err
 }
 
 // ParseReader a JSON io.Reader. An error is returned if not valid JSON.
-func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node Node, err error) {
-	var callback func(Node) bool
-
+func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data Node, err error) {
 	for _, a := range args {
 		switch ta := a.(type) {
-		case bool:
-			p.NoComment = ta
 		case func(Node) bool:
-			callback = ta
-			p.onlyOne = false
+			p.cb = ta
+			p.OnlyOne = false
+		default:
+			return nil, fmt.Errorf("a %T is not a valid option type", a)
 		}
 	}
-	if callback == nil {
-		p.onlyOne = true
-		callback = func(n Node) bool {
-			node = n
-			return false // tells the parser to stop
-		}
+	if p.cb == nil {
+		p.OnlyOne = true
 	}
-	p.cb = callback
-	if cap(p.tmp) < tmpMinSize { // indicates not initialized
-		p.tmp = make([]byte, 0, tmpMinSize)
-		p.stack = make([]byte, 0, stackMinSize)
-		p.nstack = make([]Node, 0, 64)
+	if p.stack == nil {
+		p.stack = make([]Node, 0, stackInitSize)
+		p.tmp = make([]byte, 0, tmpInitSize)
 		p.starts = make([]int, 0, 16)
+		p.maps = make([]Object, 0, 16)
 	} else {
-		p.tmp = p.tmp[0:0]
-		p.stack = p.stack[0:0]
-		p.nstack = p.nstack[:0]
+		p.stack = p.stack[:0]
+		p.tmp = p.tmp[:0]
 		p.starts = p.starts[:0]
 	}
+	p.result = nil
 	p.noff = -1
 	p.line = 1
-	p.mode = valueMode
+	p.mi = 0
 	buf := make([]byte, readBufSize)
 	eof := false
 	var cnt int
 	cnt, err = r.Read(buf)
 	buf = buf[:cnt]
+	p.mode = valueMap
 	if err != nil {
 		if err != io.EOF {
 			return
 		}
 		eof = true
 	}
+	var skip int
 	// Skip BOM if present.
-	if 0 < len(buf) && buf[0] == 0xEF {
-		p.mode = bomMode
-		p.ri = 0
+	if 3 < len(buf) && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF {
+		skip = 3
 	}
 	for {
-		if err = p.parseBuffer(buf, eof); err != nil {
-			break
+		if 0 < skip {
+			err = p.parseBuffer(buf[skip:], eof)
+		} else {
+			err = p.parseBuffer(buf, eof)
 		}
+		if err != nil {
+			p.stack = p.stack[:cap(p.stack)]
+			for i := len(p.stack) - 1; 0 <= i; i-- {
+				p.stack[i] = nil
+			}
+			p.stack = p.stack[:0]
+
+			return
+		}
+		skip = 0
 		if eof {
 			break
 		}
@@ -193,15 +161,13 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (node Node, err e
 		buf = buf[:cnt]
 		if err != nil {
 			if err != io.EOF {
-				break
+				return
 			}
 			eof = true
 		}
 	}
-	for i := len(p.stack) - 1; 0 <= i; i-- {
-		p.stack = nil
-	}
-	p.stack = p.stack[0:0]
+	data = p.result
+
 	return
 }
 
@@ -209,604 +175,282 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 	var b byte
 	var i int
 	var off int
+	depth := len(p.starts)
 	for off = 0; off < len(buf); off++ {
 		b = buf[off]
-		switch p.mode {
-		case valueMode:
-			switch b {
-			case ' ', '\t', '\r':
-				// ignore and continue
-			case '\n':
-				p.line++
-				p.noff = off
-				for i, b = range buf[off+1:] {
-					if charTypeMap[b] != 's' {
-						break
-					}
+		switch p.mode[b] {
+		case skipNewline:
+			p.line++
+			p.noff = off
+			for i, b = range buf[off+1:] {
+				if spaceMap[b] != skipChar {
+					break
 				}
-				off += i
-			case 'n':
-				if off+4 < len(buf) && string(buf[off:off+4]) == "null" {
-					off += 3
-					p.mode = afterMode
-					p.nadd(nil)
-				} else {
-					p.mode = nullMode
-					p.ri = 0
-				}
-			case 'f':
-				if off+5 < len(buf) && string(buf[off:off+5]) == "false" {
-					off += 4
-					p.mode = afterMode
-					p.nadd(False)
-				} else {
-					p.mode = falseMode
-					p.ri = 0
-				}
-			case 't':
-				if off+4 < len(buf) && string(buf[off:off+4]) == "true" {
-					off += 3
-					p.mode = afterMode
-					p.nadd(True)
-				} else {
-					p.mode = trueMode
-					p.ri = 0
-				}
-			case '-':
-				p.mode = negMode
-				p.num.Reset()
-				p.num.Neg = true
-			case '0':
-				p.mode = zeroMode
-				p.num.Reset()
-			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.mode = digitMode
-				p.num.Reset()
-				p.num.I = uint64(b - '0')
-			case '"':
-				start := off + 1
-				if len(buf) <= start {
-					p.tmp = p.tmp[:0]
-					p.mode = strMode
-					p.nextMode = afterMode
-					continue
-				}
-				for i, b = range buf[start:] {
-					if strMap[b] != 'o' {
-						break
-					}
-				}
-				off += i
-				if b == '"' {
-					off++
-					p.nadd(String(buf[start:off]))
-					p.mode = afterMode
-				} else {
-					p.tmp = p.tmp[:0]
-					p.tmp = append(p.tmp, buf[start:off+1]...)
-					p.mode = strMode
-					p.nextMode = afterMode
-				}
-			case '[':
-				p.stack = append(p.stack, '[')
-				p.starts = append(p.starts, len(p.nstack))
-				p.nstack = append(p.nstack, EmptyArray)
-			case ']':
-				if err := p.arrayEnd(off); err != nil {
-					return err
-				}
-			case '{':
-				p.stack = append(p.stack, '{')
-				p.mode = key1Mode
-				n := Object{}
-				p.nstack = append(p.nstack, n)
-			case '}':
-				if err := p.objectEnd(off); err != nil {
-					return err
-				}
-			case '/':
-				if p.NoComment {
-					return p.newError(off, "comments not allowed")
-				}
-				p.nextMode = p.mode
-				p.mode = commentStartMode
-			default:
-				return p.newError(off, "unexpected character '%c'", b)
 			}
-		case commaMode:
-			switch b {
-			case ' ', '\t', '\r':
-				// ignore and continue
-			case '\n':
-				p.line++
-				p.noff = off
-				for i, b = range buf[off+1:] {
-					if charTypeMap[b] != 's' {
-						break
-					}
-				}
-				off += i
-			case 'n':
-				if off+4 < len(buf) && string(buf[off:off+4]) == "null" {
-					off += 3
-					p.mode = afterMode
-					p.nadd(nil)
-				} else {
-					p.mode = nullMode
-					p.ri = 0
-				}
-			case 'f':
-				if off+5 < len(buf) && string(buf[off:off+5]) == "false" {
-					off += 4
-					p.mode = afterMode
-					p.nadd(False)
-				} else {
-					p.mode = falseMode
-					p.ri = 0
-				}
-			case 't':
-				if off+4 < len(buf) && string(buf[off:off+4]) == "true" {
-					off += 3
-					p.mode = afterMode
-					p.nadd(True)
-				} else {
-					p.mode = trueMode
-					p.ri = 0
-				}
-			case '-':
-				p.mode = negMode
-				p.num.Reset()
-				p.num.Neg = true
-			case '0':
-				p.mode = zeroMode
-				p.num.Reset()
-			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.mode = digitMode
-				p.num.Reset()
-				p.num.I = uint64(b - '0')
-			case '"':
-				start := off + 1
-				if len(buf) <= start {
-					p.tmp = p.tmp[:0]
-					p.mode = strMode
-					p.nextMode = afterMode
-					continue
-				}
-				for i, b = range buf[start:] {
-					if strMap[b] != 'o' {
-						break
-					}
-				}
-				off += i
-				if b == '"' {
-					off++
-					p.nadd(String(buf[start:off]))
-					p.mode = afterMode
-				} else {
-					p.tmp = p.tmp[:0]
-					p.tmp = append(p.tmp, buf[start:off+1]...)
-					p.mode = strMode
-					p.nextMode = afterMode
-				}
-			case '[':
-				p.stack = append(p.stack, '[')
-				p.starts = append(p.starts, len(p.nstack))
-				p.nstack = append(p.nstack, EmptyArray)
-			case '{':
-				p.stack = append(p.stack, '{')
-				p.mode = key1Mode
-				n := Object{}
-				p.nstack = append(p.nstack, n)
-			case '/':
-				if p.NoComment {
-					return p.newError(off, "comments not allowed")
-				}
-				p.nextMode = p.mode
-				p.mode = commentStartMode
-			default:
-				return p.newError(off, "unexpected character '%c'", b)
-			}
-		case afterMode:
-			switch b {
-			case ' ', '\t', '\r':
+			off += i
+			continue
+		case colonColon:
+			p.mode = valueMap
+			continue
+		case skipChar: // skip and continue
+			continue
+		case strOk:
+			p.tmp = append(p.tmp, b)
+		case keyQuote:
+			start := off + 1
+			if len(buf) <= start {
+				p.tmp = p.tmp[:0]
+				p.mode = stringMap
+				p.nextMode = colonMap
 				continue
-			case '\n':
-				p.line++
-				p.noff = off
-				for i, b = range buf[off+1:] {
-					if charTypeMap[b] != 's' {
-						break
-					}
-				}
-				off += i
-			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
-					p.mode = keyMode
-				} else {
-					p.mode = commaMode
-				}
-			case ']':
-				if err := p.arrayEnd(off); err != nil {
-					return err
-				}
-			case '}':
-				if err := p.objectEnd(off); err != nil {
-					return err
-				}
-			default:
-				return p.newError(off, "expected a comma or close, not '%c'", b)
 			}
-		case key1Mode:
-			switch b {
-			case ' ', '\t', '\r':
-				continue
-			case '\n':
-				p.line++
-				p.noff = off
-				for i, b = range buf[off+1:] {
-					if charTypeMap[b] != 's' {
-						break
-					}
+			for i, b = range buf[off+1:] {
+				if stringMap[b] != strOk {
+					break
 				}
-				off += i
-			case '"':
-				start := off + 1
-				if len(buf) <= start {
-					p.tmp = p.tmp[:0]
-					p.mode = strMode
-					p.nextMode = colonMode
-					continue
-				}
-				for i, b = range buf[start:] {
-					if strMap[b] != 'o' {
-						break
-					}
-				}
-				off += i
-				if b == '"' {
-					off++
-					p.nstack = append(p.nstack, Key(buf[start:off]))
-					p.mode = colonMode
-				} else {
-					p.tmp = p.tmp[:0]
-					p.tmp = append(p.tmp, buf[start:off+1]...)
-					p.mode = strMode
-					p.nextMode = colonMode
-				}
-			case '}':
-				// If in key mode } is always okay
-				_ = p.objectEnd(off)
-			default:
-				return p.newError(off, "expected a string start or object close, not '%c'", b)
 			}
-		case keyMode:
-			switch b {
-			case ' ', '\t', '\r':
-				continue
-			case '\n':
-				p.line++
-				p.noff = off
-				for i, b = range buf[off+1:] {
-					if charTypeMap[b] != 's' {
-						break
-					}
-				}
-				off += i
-			case '"':
-				start := off + 1
-				if len(buf) <= start {
-					p.tmp = p.tmp[:0]
-					p.mode = strMode
-					p.nextMode = colonMode
-					continue
-				}
-				for i, b = range buf[start:] {
-					if strMap[b] != 'o' {
-						break
-					}
-				}
-				off += i
-				if b == '"' {
-					off++
-					p.nstack = append(p.nstack, Key(buf[start:off]))
-					p.mode = colonMode
-				} else {
-					p.tmp = p.tmp[:0]
-					p.tmp = append(p.tmp, buf[start:off+1]...)
-					p.mode = strMode
-					p.nextMode = colonMode
-				}
-			default:
-				return p.newError(off, "expected a string start, not '%c'", b)
-			}
-		case colonMode:
-			switch b {
-			case ' ', '\t', '\r':
-				continue
-			case '\n':
-				p.line++
-				p.noff = off
-				for i, b = range buf[off+1:] {
-					if charTypeMap[b] != 's' {
-						break
-					}
-				}
-				off += i
-			case ':':
-				p.mode = valueMode
-			default:
-				return p.newError(off, "expected a colon, not '%c'", b)
-			}
-		case nullMode:
-			p.ri++
-			if "null"[p.ri] != b {
-				return p.newError(off, "expected null")
-			}
-			if 3 <= p.ri {
-				p.mode = afterMode
-				p.nadd(nil)
-			}
-		case falseMode:
-			p.ri++
-			if "false"[p.ri] != b {
-				return p.newError(off, "expected false")
-			}
-			if 4 <= p.ri {
-				p.mode = afterMode
-				p.nadd(Bool(false))
-			}
-		case trueMode:
-			p.ri++
-			if "true"[p.ri] != b {
-				return p.newError(off, "expected true")
-			}
-			if 3 <= p.ri {
-				p.mode = afterMode
-				p.nadd(Bool(true))
-			}
-		case negMode:
-			switch b {
-			case '0':
-				p.mode = zeroMode
-			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.mode = digitMode
-				p.num.AddDigit(b)
-			default:
-				return p.newError(off, "invalid number")
-			}
-		case zeroMode:
-			switch b {
-			case '.':
-				p.mode = dotMode
-			case ' ', '\t', '\r':
-				p.mode = afterMode
-				p.appendNum()
-			case '\n':
-				p.line++
-				p.noff = off
-				p.mode = afterMode
-				p.appendNum()
-				for i, b = range buf[off+1:] {
-					if charTypeMap[b] != 's' {
-						break
-					}
-				}
-				off += i
-			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
-					p.mode = keyMode
-				} else {
-					p.mode = commaMode
-				}
-				p.appendNum()
-			case ']':
-				p.appendNum()
-				if err := p.arrayEnd(off); err != nil {
-					return err
-				}
-			case '}':
-				p.appendNum()
-				if err := p.objectEnd(off); err != nil {
-					return err
-				}
-			default:
-				return p.newError(off, "invalid number")
-			}
-		case digitMode:
-			switch b {
-			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.num.AddDigit(b)
-			case '.':
-				p.mode = dotMode
-				if 0 < len(p.num.BigBuf) {
-					p.num.BigBuf = append(p.num.BigBuf, b)
-				}
-			case ' ', '\t', '\r':
-				p.mode = afterMode
-				p.appendNum()
-			case '\n':
-				p.line++
-				p.noff = off
-				p.mode = afterMode
-				p.appendNum()
-				for i, b = range buf[off+1:] {
-					if charTypeMap[b] != 's' {
-						break
-					}
-				}
-				off += i
-			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
-					p.mode = keyMode
-				} else {
-					p.mode = commaMode
-				}
-				p.appendNum()
-			case ']':
-				p.appendNum()
-				if err := p.arrayEnd(off); err != nil {
-					return err
-				}
-			case '}':
-				p.appendNum()
-				if err := p.objectEnd(off); err != nil {
-					return err
-				}
-			default:
-				return p.newError(off, "invalid number")
-			}
-		case dotMode:
-			if '0' <= b && b <= '9' {
-				p.mode = fracMode
-				p.num.AddFrac(b)
+			off += i
+			if b == '"' {
+				off++
+				p.stack = append(p.stack, Key(buf[start:off]))
+				p.mode = colonMap
 			} else {
-				return p.newError(off, "invalid number")
+				p.tmp = p.tmp[:0]
+				p.tmp = append(p.tmp, buf[start:off+1]...)
+				p.mode = stringMap
+				p.nextMode = colonMap
 			}
-		case fracMode:
-			switch b {
-			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.num.AddFrac(b)
-			case 'e', 'E':
-				p.mode = expSignMode
-				if 0 < len(p.num.BigBuf) {
-					p.num.BigBuf = append(p.num.BigBuf, b)
-				}
-			case ' ', '\t', '\r':
-				p.mode = afterMode
-				p.appendNum()
-			case '\n':
-				p.line++
-				p.noff = off
-				p.mode = afterMode
-				p.appendNum()
-				for i, b = range buf[off+1:] {
-					if charTypeMap[b] != 's' {
-						break
-					}
-				}
-				off += i
-			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
-					p.mode = keyMode
-				} else {
-					p.mode = commaMode
-				}
-				p.appendNum()
-			case ']':
-				p.appendNum()
-				if err := p.arrayEnd(off); err != nil {
-					return err
-				}
-			case '}':
-				p.appendNum()
-				if err := p.objectEnd(off); err != nil {
-					return err
-				}
-			default:
-				return p.newError(off, "invalid number")
-			}
-		case expSignMode:
-			switch b {
-			case '-':
-				p.mode = expZeroMode
-				p.num.NegExp = true
-			case '+':
-				p.mode = expZeroMode
-			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.mode = expMode
-				p.num.AddExp(b)
-			default:
-				return p.newError(off, "invalid number")
-			}
-		case expZeroMode:
-			if '0' <= b && b <= '9' {
-				p.mode = expMode
-				p.num.AddExp(b)
+			continue
+		case afterComma:
+			if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
+				p.mode = keyMap
 			} else {
-				return p.newError(off, "invalid number")
+				p.mode = commaMap
 			}
-		case expMode:
-			switch b {
-			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-				p.num.AddExp(b)
-			case ' ', '\t', '\r':
-				p.mode = afterMode
-				p.appendNum()
-			case '\n':
-				p.line++
-				p.noff = off
-				p.mode = afterMode
-				p.appendNum()
-				for i, b = range buf[off+1:] {
-					if charTypeMap[b] != 's' {
-						break
+			continue
+		case valQuote:
+			start := off + 1
+			if len(buf) <= start {
+				p.tmp = p.tmp[:0]
+				p.mode = stringMap
+				p.nextMode = afterMap
+				continue
+			}
+			for i, b = range buf[off+1:] {
+				if stringMap[b] != strOk {
+					break
+				}
+			}
+			off += i
+			if b == '"' {
+				off++
+				p.add(String(buf[start:off]))
+				p.mode = afterMap
+			} else {
+				p.tmp = p.tmp[:0]
+				p.tmp = append(p.tmp, buf[start:off+1]...)
+				p.mode = stringMap
+				p.nextMode = afterMap
+				continue
+			}
+		case numComma:
+			p.add(p.num.AsNode())
+			if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
+				p.mode = keyMap
+			} else {
+				p.mode = commaMap
+			}
+		case strSlash:
+			p.mode = escMap
+			continue
+		case escOk:
+			p.tmp = append(p.tmp, escByteMap[b])
+			p.mode = stringMap
+			continue
+		case openObject:
+			p.starts = append(p.starts, -1)
+			p.mode = key1Map
+			var m Object
+			if p.Reuse {
+				if p.mi < len(p.maps) {
+					m = p.maps[p.mi]
+					for k := range m {
+						delete(m, k)
 					}
-				}
-				off += i
-			case ',':
-				if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
-					p.mode = keyMode
 				} else {
-					p.mode = commaMode
+					m = make(Object, mapInitSize)
+					p.maps = append(p.maps, m)
 				}
-				p.appendNum()
-			case ']':
-				p.appendNum()
-				if err := p.arrayEnd(off); err != nil {
-					return err
-				}
-			case '}':
-				p.appendNum()
-				if err := p.objectEnd(off); err != nil {
-					return err
-				}
-			default:
-				return p.newError(off, "invalid number")
+				p.mi++
+			} else {
+				m = make(Object, mapInitSize)
 			}
-		case strMode:
-			if b < 0x20 {
-				return p.newError(off, "invalid JSON character 0x%02x", b)
+			p.stack = append(p.stack, m)
+			depth++
+			continue
+		case closeObject:
+			depth--
+			if depth < 0 || 0 <= p.starts[depth] {
+				return p.newError(off, "unexpected object close")
 			}
-			switch b {
-			case '\\':
-				p.mode = escMode
-			case '"':
-				p.mode = p.nextMode
-				if p.mode == colonMode {
-					p.nstack = append(p.nstack, Key(p.tmp))
-				} else {
-					p.nadd(String(string(p.tmp)))
+			if 256 < len(p.mode) && p.mode[256] == 'n' {
+				p.add(p.num.AsNode())
+			}
+			p.starts = p.starts[0:depth]
+			n := p.stack[len(p.stack)-1]
+			p.stack = p.stack[:len(p.stack)-1]
+			p.add(n)
+			p.mode = afterMap
+		case val0:
+			p.mode = zeroMap
+			p.num.Reset()
+		case valDigit:
+			p.num.Reset()
+			p.mode = digitMap
+			p.num.I = uint64(b - '0')
+			for i, b = range buf[off+1:] {
+				if digitMap[b] != numDigit {
+					break
 				}
-			default:
-				p.tmp = append(p.tmp, b)
+				p.num.I = p.num.I*10 + uint64(b-'0')
+				if math.MaxInt64 < p.num.I {
+					p.num.FillBig()
+					break
+				}
 			}
-		case escMode:
-			p.mode = strMode
-			switch b {
-			case 'n':
-				p.tmp = append(p.tmp, '\n')
-			case '"':
-				p.tmp = append(p.tmp, '"')
-			case '\\':
-				p.tmp = append(p.tmp, '\\')
-			case '/':
-				p.tmp = append(p.tmp, '/')
-			case 'b':
-				p.tmp = append(p.tmp, '\b')
-			case 'f':
-				p.tmp = append(p.tmp, '\f')
-			case 'r':
-				p.tmp = append(p.tmp, '\r')
-			case 't':
-				p.tmp = append(p.tmp, '\t')
-			case 'u':
-				p.mode = uMode
-				p.rn = 0
+			if digitMap[b] == numDigit {
+				off++
+			}
+			off += i
+		case valNeg:
+			p.mode = negMap
+			p.num.Reset()
+			p.num.Neg = true
+			continue
+		case escU:
+			p.mode = uMap
+			p.rn = 0
+			p.ri = 0
+			continue
+		case openArray:
+			p.starts = append(p.starts, len(p.stack))
+			p.stack = append(p.stack, EmptyArray)
+			depth++
+			continue
+		case closeArray:
+			depth--
+			if depth < 0 || p.starts[depth] < 0 {
+				return p.newError(off, "unexpected array close")
+			}
+			// Only modes with a close array are value, after, and numbers
+			// which are all over 256 long.
+			if p.mode[256] == 'n' {
+				p.add(p.num.AsNode())
+			}
+			start := p.starts[len(p.starts)-1] + 1
+			p.starts = p.starts[:len(p.starts)-1]
+			size := len(p.stack) - start
+			n := make(Array, size)
+			copy(n, p.stack[start:len(p.stack)])
+			p.stack = p.stack[0 : start-1]
+			p.add(n)
+			p.mode = afterMap
+		case valNull:
+			if off+4 <= len(buf) && string(buf[off:off+4]) == "null" {
+				off += 3
+				p.mode = afterMap
+				p.add(nil)
+			} else {
+				p.mode = nullMap
 				p.ri = 0
-			default:
-				return p.newError(off, "invalid JSON escape character '\\%c'", b)
 			}
-		case uMode:
+		case valTrue:
+			if off+4 <= len(buf) && string(buf[off:off+4]) == "true" {
+				off += 3
+				p.mode = afterMap
+				p.add(True)
+			} else {
+				p.mode = trueMap
+				p.ri = 0
+			}
+		case valFalse:
+			if off+5 <= len(buf) && string(buf[off:off+5]) == "false" {
+				off += 4
+				p.mode = afterMap
+				p.add(False)
+			} else {
+				p.mode = falseMap
+				p.ri = 0
+			}
+		case numDot:
+			if 0 < len(p.num.BigBuf) {
+				p.num.BigBuf = append(p.num.BigBuf, b)
+				p.mode = dotMap
+				continue
+			}
+			for i, b = range buf[off+1:] {
+				if digitMap[b] != numDigit {
+					break
+				}
+				p.num.Frac = p.num.Frac*10 + uint64(b-'0')
+				p.num.Div *= 10.0
+				if math.MaxInt64 < p.num.Frac {
+					p.num.FillBig()
+					break
+				}
+			}
+			off += i
+			if digitMap[b] == numDigit {
+				off++
+			}
+			p.mode = fracMap
+		case numFrac:
+			p.num.AddFrac(b)
+			p.mode = fracMap
+		case fracE:
+			if 0 < len(p.num.BigBuf) {
+				p.num.BigBuf = append(p.num.BigBuf, b)
+			}
+			p.mode = expSignMap
+			continue
+		case strQuote:
+			p.mode = p.nextMode
+			if p.mode[':'] == colonColon {
+				p.stack = append(p.stack, Key(p.tmp))
+			} else {
+				p.add(String(p.tmp))
+			}
+		case numZero:
+			p.mode = zeroMap
+		case numDigit:
+			p.num.AddDigit(b)
+		case negDigit:
+			p.num.AddDigit(b)
+			p.mode = digitMap
+		case numSpc:
+			p.add(p.num.AsNode())
+			p.mode = afterMap
+		case numNewline:
+			p.add(p.num.AsNode())
+			p.line++
+			p.noff = off
+			p.mode = afterMap
+			for i, b = range buf[off+1:] {
+				if spaceMap[b] != skipChar {
+					break
+				}
+			}
+			off += i
+		case expSign:
+			p.mode = expZeroMap
+			if b == '-' {
+				p.num.NegExp = true
+			}
+			continue
+		case expDigit:
+			p.num.AddExp(b)
+			p.mode = expMap
+		case uOk:
 			p.ri++
 			switch b {
 			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
@@ -815,8 +459,6 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.rn = p.rn<<4 | rune(b-'a'+10)
 			case 'A', 'B', 'C', 'D', 'E', 'F':
 				p.rn = p.rn<<4 | rune(b-'A'+10)
-			default:
-				return p.newError(off, "invalid JSON unicode character '%c'", b)
 			}
 			if p.ri == 4 {
 				if len(p.runeBytes) < 6 {
@@ -824,75 +466,84 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				}
 				n := utf8.EncodeRune(p.runeBytes, p.rn)
 				p.tmp = append(p.tmp, p.runeBytes[:n]...)
-				p.mode = strMode
+				p.mode = stringMap
 			}
-		case spaceMode:
-			switch b {
-			case ' ', '\t', '\r':
-				continue
-			case '\n':
-				p.line++
-				p.noff = off
-				for i, b = range buf[off+1:] {
-					if charTypeMap[b] != 's' {
-						break
-					}
+			continue
+		case tokenOk:
+			switch {
+			case p.mode['r'] == tokenOk:
+				p.ri++
+				if "true"[p.ri] != b {
+					return p.newError(off, "expected true")
 				}
-				off += i
-			default:
-				return p.newError(off, "extra characters after close, '%c'", b)
+				if 3 <= p.ri {
+					p.add(True)
+					p.mode = afterMap
+				}
+			case p.mode['a'] == tokenOk:
+				p.ri++
+				if "false"[p.ri] != b {
+					return p.newError(off, "expected false")
+				}
+				if 4 <= p.ri {
+					p.add(False)
+					p.mode = afterMap
+				}
+			case p.mode['u'] == tokenOk && p.mode['l'] == tokenOk:
+				p.ri++
+				if "null"[p.ri] != b {
+					return p.newError(off, "expected null")
+				}
+				if 3 <= p.ri {
+					p.add(nil)
+					p.mode = afterMap
+				}
 			}
-		case commentStartMode:
-			if b != '/' {
-				return p.newError(off, "unexpected character '%c'", b)
-			}
-			p.mode = commentMode
-		case commentMode:
-			if b == '\n' {
-				p.line++
-				p.noff = off
-				p.mode = p.nextMode
-			}
-		case bomMode:
-			if []byte{0xEF, 0xBB, 0xBF}[p.ri] != b {
-				return p.newError(off, "expected BOM")
-			}
-			p.ri++
-			if 3 <= p.ri {
-				p.mode = valueMode
-			}
+		case charErr:
+			return p.byteError(off, p.mode, b)
 		}
-		if len(p.stack) == 0 && p.mode == afterMode {
-			p.cb(p.nstack[0])
-			p.nstack = p.nstack[:0]
-			if p.onlyOne {
-				p.mode = spaceMode
+		if depth == 0 && 256 < len(p.mode) && p.mode[256] == 'a' {
+			if p.cb != nil {
+				p.cb(p.stack[0])
 			} else {
-				p.mode = valueMode
+				p.result = p.stack[0]
+			}
+			p.stack = p.stack[:0]
+			p.mi = 0
+			if p.OnlyOne {
+				p.mode = spaceMap
+			} else {
+				p.mode = valueMap
 			}
 		}
 	}
 	if last {
-		switch p.mode {
-		case afterMode, valueMode:
-			/*
-				if 0 < len(p.nstack) {
-					p.cb(p.nstack[0])
-				}
-			*/
-		case zeroMode, digitMode, fracMode, expMode:
-			p.appendNum()
-			if 0 < len(p.nstack) {
-				p.cb(p.nstack[0])
-			}
-		case spaceMode:
-			// just reading white space
-		default:
-			//fmt.Printf("*** final mode: %c\n", p.mode)
+		if len(p.mode) == 256 { // valid finishing maps are one byte longer
 			return p.newError(off, "incomplete JSON")
+		}
+		if p.mode[256] == 'n' {
+			p.add(p.num.AsNode())
+			if p.cb == nil {
+				p.result = p.stack[0]
+			} else {
+				p.cb(p.stack[0])
+			}
 		}
 	}
 	return nil
+}
+
+func (p *Parser) add(n Node) {
+	if 2 <= len(p.stack) {
+		if k, ok := p.stack[len(p.stack)-1].(Key); ok {
+			obj, _ := p.stack[len(p.stack)-2].(Object)
+			obj[string(k)] = n
+			p.stack = p.stack[0 : len(p.stack)-1]
+
+			return
+		}
+	}
+	p.stack = append(p.stack, n)
 }
 
 func (p *Parser) newError(off int, format string, args ...interface{}) error {
@@ -903,65 +554,38 @@ func (p *Parser) newError(off int, format string, args ...interface{}) error {
 	}
 }
 
-func (p *Parser) nadd(n Node) {
-	if 2 <= len(p.nstack) {
-		if k, ok := p.nstack[len(p.nstack)-1].(Key); ok {
-			obj, _ := p.nstack[len(p.nstack)-2].(Object)
-			obj[string(k)] = n
-			p.nstack = p.nstack[0 : len(p.nstack)-1]
-
-			return
-		}
+func (p *Parser) byteError(off int, mode string, b byte) error {
+	err := &ParseError{
+		Line:   p.line,
+		Column: off - p.noff,
 	}
-	p.nstack = append(p.nstack, n)
-}
-
-func (p *Parser) appendNum() {
-	if 0 < len(p.num.BigBuf) {
-		p.nadd(Big(p.num.AsBig()))
-	} else if p.num.Frac == 0 && p.num.Exp == 0 {
-		p.nadd(Int(p.num.AsInt()))
-	} else {
-		p.nadd(Float(p.num.AsFloat()))
+	switch mode {
+	case nullMap:
+		err.Message = "expected null"
+	case trueMap:
+		err.Message = "expected true"
+	case falseMap:
+		err.Message = "expected false"
+	case afterMap:
+		err.Message = fmt.Sprintf("expected a comma or close, not '%c'", b)
+	case key1Map:
+		err.Message = fmt.Sprintf("expected a string start or object close, not '%c'", b)
+	case keyMap:
+		err.Message = fmt.Sprintf("expected a string start, not '%c'", b)
+	case colonMap:
+		err.Message = fmt.Sprintf("expected a colon, not '%c'", b)
+	case negMap, zeroMap, digitMap, dotMap, fracMap, expSignMap, expZeroMap, expMap:
+		err.Message = "invalid number"
+	case stringMap:
+		err.Message = fmt.Sprintf("invalid JSON character 0x%02x", b)
+	case escMap:
+		err.Message = fmt.Sprintf("invalid JSON escape character '\\%c'", b)
+	case uMap:
+		err.Message = fmt.Sprintf("invalid JSON unicode character '%c'", b)
+	case spaceMap:
+		err.Message = fmt.Sprintf("extra characters after close, '%c'", b)
+	default:
+		err.Message = fmt.Sprintf("unexpected character '%c'", b)
 	}
-}
-
-func (p *Parser) arrayEnd(off int) error {
-	depth := len(p.stack)
-	if depth == 0 {
-		return p.newError(off, "too many closes")
-	}
-	depth--
-	if p.stack[depth] != '[' {
-		return p.newError(off, "unexpected array close")
-	}
-	p.stack = p.stack[0:depth]
-	p.mode = afterMode
-	start := p.starts[len(p.starts)-1] + 1
-	p.starts = p.starts[:len(p.starts)-1]
-	size := len(p.nstack) - start
-	n := Array(make([]Node, size))
-	copy(n, p.nstack[start:len(p.nstack)])
-	p.nstack = p.nstack[0 : start-1]
-	p.nadd(n)
-
-	return nil
-}
-
-func (p *Parser) objectEnd(off int) error {
-	depth := len(p.stack)
-	if depth == 0 {
-		return p.newError(off, "too many closes")
-	}
-	depth--
-	if p.stack[depth] != '{' {
-		return p.newError(off, "unexpected object close")
-	}
-	p.stack = p.stack[0:depth]
-	p.mode = afterMode
-	n := p.nstack[len(p.nstack)-1]
-	p.nstack = p.nstack[:len(p.nstack)-1]
-	p.nadd(n)
-
-	return nil
+	return err
 }
