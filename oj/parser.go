@@ -293,10 +293,28 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			}
 			off += i
 		case valNeg:
-			p.mode = negMap
+			// TBD
+			//p.mode = negMap
 			p.num.Reset()
 			p.num.Neg = true
-			continue
+
+			p.mode = digitMap
+			for i, b = range buf[off+1:] {
+				if digitMap[b] != numDigit {
+					break
+				}
+				p.num.I = p.num.I*10 + uint64(b-'0')
+				if math.MaxInt64 < p.num.I {
+					p.num.FillBig()
+					break
+				}
+			}
+			if digitMap[b] == numDigit {
+				off++
+			}
+			off += i
+
+			//continue
 		case escU:
 			p.mode = uMap
 			p.rn = 0
@@ -389,44 +407,8 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			p.mode = zeroMap
 		case numDigit:
 			p.num.AddDigit(b)
-			//fmt.Printf("*** numDigit %q\n", buf[off:])
-			/*
-				for i, b = range buf[off:] {
-					if digitMap[b] != numDigit {
-						break
-					}
-					p.num.I = p.num.I*10 + uint64(b-'0')
-					if math.MaxInt64 < p.num.I {
-						p.num.FillBig()
-						break
-					}
-				}
-				off += i
-				if digitMap[b] != numDigit {
-					off--
-				}
-			*/
 		case negDigit:
 			p.num.AddDigit(b)
-			//fmt.Printf("*** negDigit\n")
-			/*
-				p.num.I = uint64(b - '0')
-				p.mode = digitMap
-				for i, b = range buf[off+1:] {
-					if digitMap[b] != numDigit {
-						break
-					}
-					p.num.I = p.num.I*10 + uint64(b-'0')
-					if math.MaxInt64 < p.num.I {
-						p.num.FillBig()
-						break
-					}
-				}
-				if digitMap[b] == numDigit {
-					off++
-				}
-				off += i
-			*/
 			p.mode = digitMap
 		case numCloseObject:
 			depth--

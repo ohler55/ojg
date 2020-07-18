@@ -2,6 +2,8 @@
 - combine
  - close array and close object
   - look at mode to decide if num should be added
+ - how about just adding to num
+  - need a validation version
 
 - reuse option
  - it true reuse maps and maybe later slices
