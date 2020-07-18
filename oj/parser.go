@@ -26,13 +26,19 @@ type Parser struct {
 	runeBytes []byte
 	stack     []interface{}
 	starts    []int
+	maps      []map[string]interface{}
 	cb        func(interface{}) bool
 	ri        int // read index for null, false, and true
+	mi        int
 	num       gen.Number
 	rn        rune
 	result    interface{}
 	mode      string
 	nextMode  string
+
+	// Reuse maps. Previously returned maps will no longer be valid or rather
+	// could be modified during parsing.
+	Reuse bool
 }
 
 // Parse a JSON string in to simple types. An error is returned if not valid JSON.
@@ -53,6 +59,7 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 		p.stack = make([]interface{}, 0, stackInitSize)
 		p.tmp = make([]byte, 0, tmpInitSize)
 		p.starts = make([]int, 0, 16)
+		p.maps = make([]map[string]interface{}, 0, 16)
 	} else {
 		p.stack = p.stack[:0]
 		p.tmp = p.tmp[:0]
@@ -62,6 +69,7 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 	p.noff = -1
 	p.line = 1
 	p.mode = valueMap
+	p.mi = 0
 	var err error
 	// Skip BOM if present.
 	if 3 < len(buf) && buf[0] == 0xEF {
@@ -100,6 +108,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}
 		p.stack = make([]interface{}, 0, stackInitSize)
 		p.tmp = make([]byte, 0, tmpInitSize)
 		p.starts = make([]int, 0, 16)
+		p.maps = make([]map[string]interface{}, 0, 16)
 	} else {
 		p.stack = p.stack[:0]
 		p.tmp = p.tmp[:0]
@@ -108,6 +117,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}
 	p.result = nil
 	p.noff = -1
 	p.line = 1
+	p.mi = 0
 	buf := make([]byte, readBufSize)
 	eof := false
 	var cnt int
@@ -258,7 +268,22 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		case openObject:
 			p.starts = append(p.starts, -1)
 			p.mode = key1Map
-			p.stack = append(p.stack, make(map[string]interface{}, mapInitSize))
+			var m map[string]interface{}
+			if p.Reuse {
+				if p.mi < len(p.maps) {
+					m = p.maps[p.mi]
+					for k := range m {
+						delete(m, k)
+					}
+				} else {
+					m = make(map[string]interface{}, mapInitSize)
+					p.maps = append(p.maps, m)
+				}
+				p.mi++
+			} else {
+				m = make(map[string]interface{}, mapInitSize)
+			}
+			p.stack = append(p.stack, m)
 			depth++
 			continue
 		case closeObject:
@@ -478,8 +503,11 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		if depth == 0 && 256 < len(p.mode) && p.mode[256] == 'a' {
 			if p.cb != nil {
 				p.cb(p.stack[0])
-				p.stack = p.stack[:0]
+			} else {
+				p.result = p.stack[0]
 			}
+			p.stack = p.stack[:0]
+			p.mi = 0
 			if p.OnlyOne {
 				p.mode = spaceMap
 			} else {
@@ -491,32 +519,12 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		if len(p.mode) == 256 { // valid finishing maps are one byte longer
 			return p.newError(off, "incomplete JSON")
 		}
-		switch p.mode[256] {
-		case 'a':
-			/*
-				// never gets here
-				if p.cb == nil {
-					p.result = p.stack[0]
-				} else {
-					p.cb(p.stack[0])
-				}
-			*/
-		case 'n':
+		if p.mode[256] == 'n' {
 			p.add(p.num.AsNum())
-			if 0 < len(p.stack) {
-				if p.cb == nil {
-					p.result = p.stack[0]
-				} else {
-					p.cb(p.stack[0])
-				}
-			}
-		case 's': // reading space
-			if 0 < len(p.stack) {
-				if p.cb == nil {
-					p.result = p.stack[0]
-				} else {
-					p.cb(p.stack[0])
-				}
+			if p.cb == nil {
+				p.result = p.stack[0]
+			} else {
+				p.cb(p.stack[0])
 			}
 		}
 	}

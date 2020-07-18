@@ -1,26 +1,19 @@
 
-- combine
- - how about just adding to num
-  - need a validation version or flag
-
-- reuse option
- - it true reuse maps and maybe later slices
- - maps slice, add as needed, index into slice
- - for slice reuse remember size
-
 ----------------
 - next/todo
  - single switch
-  - oj parse
+  + oj parse
   - gen parse
   - sen parse
- - try putting map keys and values on the stack like slices
-  - make map with correct size
 
- - chan option for parse and validate
+ - chan option for parse
  - streaming with log files in benchmarks
   - chan and cb
   - benchmark repo also
+
+- combine for performance, maybe
+ - how about just adding to num
+  - need a validation version or flag
 
  - regex op =~
   - /^xyz&/
@@ -45,10 +38,3 @@
 
 - Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)]
 - Exists syntax? [?(@.x exists)]
-
------------------------------------
-- parse methods attempted
- - tried functions instead of switch, slower
-  - tried array of 256 functions for value switching
- - all in one function is fastest
- - col++ created overhead as well

@@ -66,14 +66,16 @@ func main() {
 	benchSuite("Parse string/[]byte", []*bench{
 		{pkg: "json", name: "Unmarshal", fun: goParse},
 		{pkg: "oj", name: "Parse", fun: ojParse},
+		{pkg: "oj-reuse", name: "Parse", fun: ojParseReuse},
 		//{pkg: "gen", name: "Parse", fun: genParse},
 		//{pkg: "sen", name: "Parse", fun: senParse},
 	})
 	benchSuite("Parse io.Reader", []*bench{
 		{pkg: "json", name: "Decode", fun: goDecodeReader},
 		{pkg: "oj", name: "ParseReader", fun: ojParseReader},
-		{pkg: "gen", name: "ParseReder", fun: genParseReader},
-		{pkg: "sen", name: "ParseReader", fun: senParseReader},
+		{pkg: "oj-reuse", name: "ParseReader", fun: ojParseReaderReuse},
+		//{pkg: "gen", name: "ParseReder", fun: genParseReader},
+		//{pkg: "sen", name: "ParseReader", fun: senParseReader},
 	})
 
 	benchSuite("Validate string/[]byte", []*bench{

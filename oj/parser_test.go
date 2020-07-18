@@ -166,7 +166,7 @@ func TestParserParseCallback(t *testing.T) {
 		results = append(results, fmt.Sprintf("%v", n)...)
 		return false
 	}
-	var p oj.Parser
+	p := oj.Parser{Reuse: true}
 	v, err := p.Parse([]byte(callbackJSON), cb)
 	tt.Nil(t, err)
 	tt.Nil(t, v)
@@ -239,4 +239,23 @@ func TestParserParseReaderErr(t *testing.T) {
 	r := tt.ShortReader{Max: 5000, Content: []byte("[ 123" + strings.Repeat(",  123", 120) + "]")}
 	_, err = p.ParseReader(&r)
 	tt.NotNil(t, err)
+}
+
+func TestParserParseReaderMany(t *testing.T) {
+	for i, d := range []data{
+		{src: "null", value: nil},
+		// The read buffer is 4096 so force a buffer read in the middle of
+		// reading a token.
+		{src: strings.Repeat(" ", 4094) + "null ", value: nil},
+		{src: strings.Repeat(" ", 4094) + "true ", value: true},
+		{src: strings.Repeat(" ", 4094) + "false ", value: false},
+		{src: strings.Repeat(" ", 4094) + `{"x":1}`, value: map[string]interface{}{"x": 1}},
+		{src: strings.Repeat(" ", 4095) + `"x"`, value: "x"},
+	} {
+		p := oj.Parser{}
+		r := strings.NewReader(d.src)
+		v, err := p.ParseReader(r)
+		tt.Nil(t, err, i, ": ", d.src)
+		tt.Equal(t, d.value, v, i, ": ", d.src)
+	}
 }
