@@ -180,33 +180,6 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			}
 			off += i
 			continue
-		case valNull:
-			if off+4 <= len(buf) && string(buf[off:off+4]) == "null" {
-				off += 3
-				p.mode = afterMap
-				p.add(nil)
-			} else {
-				p.mode = nullMap
-				p.ri = 0
-			}
-		case valTrue:
-			if off+4 <= len(buf) && string(buf[off:off+4]) == "true" {
-				off += 3
-				p.mode = afterMap
-				p.add(true)
-			} else {
-				p.mode = trueMap
-				p.ri = 0
-			}
-		case valFalse:
-			if off+5 <= len(buf) && string(buf[off:off+5]) == "false" {
-				off += 4
-				p.mode = afterMap
-				p.add(false)
-			} else {
-				p.mode = falseMap
-				p.ri = 0
-			}
 		case valNeg:
 			p.mode = negMap
 			p.num.Reset()
@@ -270,11 +243,8 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			depth++
 			continue
 		case closeArray:
-			if depth == 0 {
-				return p.newError(off, "too many closes")
-			}
 			depth--
-			if p.starts[depth] < 0 {
+			if depth < 0 || p.starts[depth] < 0 {
 				return p.newError(off, "unexpected array close")
 			}
 			p.mode = afterMap
@@ -286,11 +256,8 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			p.stack = p.stack[0 : start-1]
 			p.add(n)
 		case closeObject:
-			if depth == 0 {
-				return p.newError(off, "too many closes")
-			}
 			depth--
-			if 0 <= p.starts[depth] {
+			if depth < 0 || 0 <= p.starts[depth] {
 				return p.newError(off, "unexpected object close")
 			}
 			p.starts = p.starts[0:depth]
@@ -333,6 +300,33 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		case colonColon:
 			p.mode = valueMap
 			continue
+		case valNull:
+			if off+4 <= len(buf) && string(buf[off:off+4]) == "null" {
+				off += 3
+				p.mode = afterMap
+				p.add(nil)
+			} else {
+				p.mode = nullMap
+				p.ri = 0
+			}
+		case valTrue:
+			if off+4 <= len(buf) && string(buf[off:off+4]) == "true" {
+				off += 3
+				p.mode = afterMap
+				p.add(true)
+			} else {
+				p.mode = trueMap
+				p.ri = 0
+			}
+		case valFalse:
+			if off+5 <= len(buf) && string(buf[off:off+5]) == "false" {
+				off += 4
+				p.mode = afterMap
+				p.add(false)
+			} else {
+				p.mode = falseMap
+				p.ri = 0
+			}
 		case numSpc:
 			p.add(p.num.AsNum())
 			p.mode = afterMap
@@ -445,11 +439,8 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				}
 			*/
 		case numCloseArray:
-			if depth == 0 {
-				return p.newError(off, "too many closes")
-			}
 			depth--
-			if p.starts[depth] < 0 {
+			if depth < 0 || p.starts[depth] < 0 {
 				return p.newError(off, "unexpected array close")
 			}
 			p.add(p.num.AsNum())
@@ -462,11 +453,8 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			p.stack = p.stack[0 : start-1]
 			p.add(n)
 		case numCloseObject:
-			if depth == 0 {
-				return p.newError(off, "too many closes")
-			}
 			depth--
-			if 0 <= p.starts[depth] {
+			if depth < 0 || 0 <= p.starts[depth] {
 				return p.newError(off, "unexpected object close")
 			}
 			p.add(p.num.AsNum())

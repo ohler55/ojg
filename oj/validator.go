@@ -178,21 +178,15 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			depth++
 			continue
 		case closeArray:
-			if depth == 0 {
-				return p.newError(off, "too many closes")
-			}
 			depth--
-			if p.stack[depth] != '[' {
+			if depth < 0 || p.stack[depth] != '[' {
 				return p.newError(off, "unexpected array close")
 			}
 			p.stack = p.stack[0:depth]
 			p.mode = afterMap
 		case numCloseArray:
-			if depth == 0 {
-				return p.newError(off, "too many closes")
-			}
 			depth--
-			if p.stack[depth] != '[' {
+			if depth < 0 || p.stack[depth] != '[' {
 				return p.newError(off, "unexpected array close")
 			}
 			p.stack = p.stack[0:depth]
@@ -203,21 +197,15 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			depth++
 			continue
 		case closeObject:
-			if depth == 0 {
-				return p.newError(off, "too many closes")
-			}
 			depth--
-			if p.stack[depth] != '{' {
+			if depth < 0 || p.stack[depth] != '{' {
 				return p.newError(off, "unexpected object close")
 			}
 			p.stack = p.stack[0:depth]
 			p.mode = afterMap
 		case numCloseObject:
-			if depth == 0 {
-				return p.newError(off, "too many closes")
-			}
 			depth--
-			if p.stack[depth] != '{' {
+			if depth < 0 || p.stack[depth] != '{' {
 				return p.newError(off, "unexpected object close")
 			}
 			p.stack = p.stack[0:depth]
