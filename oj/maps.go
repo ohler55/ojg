@@ -3,43 +3,41 @@
 package oj
 
 const (
-	skipChar       = 'a'
-	skipNewline    = 'b'
-	valNull        = 'c'
-	valTrue        = 'd'
-	valFalse       = 'e'
-	valNeg         = 'f'
-	val0           = 'g'
-	valDigit       = 'h'
-	valQuote       = 'i'
-	openArray      = 'k'
-	openObject     = 'l'
-	closeArray     = 'm'
-	closeObject    = 'n'
-	afterComma     = 'o'
-	keyQuote       = 'p'
-	colonColon     = 'q'
-	numSpc         = 'r'
-	numNewline     = 's'
-	numDot         = 't'
-	numComma       = 'u'
-	numFrac        = 'v'
-	fracE          = 'w'
-	expSign        = 'x'
-	expDigit       = 'y'
-	strQuote       = 'z'
-	negDigit       = '-'
-	strSlash       = 'A'
-	escOk          = 'B'
-	uOk            = 'E'
-	tokenOk        = 'F'
-	numDigit       = 'N'
-	numZero        = 'O'
-	numCloseArray  = 'P'
-	numCloseObject = 'Q'
-	strOk          = 'R'
-	escU           = 'U'
-	charErr        = '.'
+	skipChar    = 'a'
+	skipNewline = 'b'
+	valNull     = 'c'
+	valTrue     = 'd'
+	valFalse    = 'e'
+	valNeg      = 'f'
+	val0        = 'g'
+	valDigit    = 'h'
+	valQuote    = 'i'
+	openArray   = 'k'
+	openObject  = 'l'
+	closeArray  = 'm'
+	closeObject = 'n'
+	afterComma  = 'o'
+	keyQuote    = 'p'
+	colonColon  = 'q'
+	numSpc      = 'r'
+	numNewline  = 's'
+	numDot      = 't'
+	numComma    = 'u'
+	numFrac     = 'v'
+	fracE       = 'w'
+	expSign     = 'x'
+	expDigit    = 'y'
+	strQuote    = 'z'
+	negDigit    = '-'
+	strSlash    = 'A'
+	escOk       = 'B'
+	uOk         = 'E'
+	tokenOk     = 'F'
+	numDigit    = 'N'
+	numZero     = 'O'
+	strOk       = 'R'
+	escU        = 'U'
+	charErr     = '.'
 
 	//   0123456789abcdef0123456789abcdef
 	valueMap = "" +
@@ -145,8 +143,8 @@ const (
 	zeroMap = "" +
 		".........rs..r.................." + // 0x00
 		"r...........u.t................." + // 0x20
-		".............................P.." + // 0x40
-		".............................Q.." + // 0x60
+		".............................m.." + // 0x40
+		".............................n.." + // 0x60
 		"................................" + // 0x80
 		"................................" + // 0xa0
 		"................................" + // 0xc0
@@ -155,8 +153,8 @@ const (
 	digitMap = "" +
 		".........rs..r.................." + // 0x00
 		"r...........u.t.NNNNNNNNNN......" + // 0x20
-		".............................P.." + // 0x40
-		".............................Q.." + // 0x60
+		".............................m.." + // 0x40
+		".............................n.." + // 0x60
 		"................................" + // 0x80
 		"................................" + // 0xa0
 		"................................" + // 0xc0
@@ -175,8 +173,8 @@ const (
 	fracMap = "" +
 		".........rs..r.................." + // 0x00
 		"r...........u.t.vvvvvvvvvv......" + // 0x20
-		".....w.......................P.." + // 0x40
-		".....w.......................Q.." + // 0x60
+		".....w.......................m.." + // 0x40
+		".....w.......................n.." + // 0x60
 		"................................" + // 0x80
 		"................................" + // 0xa0
 		"................................" + // 0xc0
@@ -205,8 +203,8 @@ const (
 	expMap = "" +
 		".........rs..r.................." + // 0x00
 		"r...........u...yyyyyyyyyy......" + // 0x20
-		".............................P.." + // 0x40
-		".............................Q.." + // 0x60
+		".............................m.." + // 0x40
+		".............................n.." + // 0x60
 		"................................" + // 0x80
 		"................................" + // 0xa0
 		"................................" + // 0xc0

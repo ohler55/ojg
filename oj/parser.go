@@ -266,6 +266,9 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			if depth < 0 || 0 <= p.starts[depth] {
 				return p.newError(off, "unexpected object close")
 			}
+			if 256 < len(p.mode) && p.mode[256] == 'n' {
+				p.add(p.num.AsNum())
+			}
 			p.starts = p.starts[0:depth]
 			n := p.stack[len(p.stack)-1]
 			p.stack = p.stack[:len(p.stack)-1]
@@ -293,28 +296,10 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			}
 			off += i
 		case valNeg:
-			// TBD
-			//p.mode = negMap
+			p.mode = negMap
 			p.num.Reset()
 			p.num.Neg = true
-
-			p.mode = digitMap
-			for i, b = range buf[off+1:] {
-				if digitMap[b] != numDigit {
-					break
-				}
-				p.num.I = p.num.I*10 + uint64(b-'0')
-				if math.MaxInt64 < p.num.I {
-					p.num.FillBig()
-					break
-				}
-			}
-			if digitMap[b] == numDigit {
-				off++
-			}
-			off += i
-
-			//continue
+			continue
 		case escU:
 			p.mode = uMap
 			p.rn = 0
@@ -330,7 +315,11 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			if depth < 0 || p.starts[depth] < 0 {
 				return p.newError(off, "unexpected array close")
 			}
-			p.mode = afterMap
+			// Only modes with a close array are value, after, and numbers
+			// which are all over 256 long.
+			if p.mode[256] == 'n' {
+				p.add(p.num.AsNum())
+			}
 			start := p.starts[len(p.starts)-1] + 1
 			p.starts = p.starts[:len(p.starts)-1]
 			size := len(p.stack) - start
@@ -338,6 +327,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			copy(n, p.stack[start:len(p.stack)])
 			p.stack = p.stack[0 : start-1]
 			p.add(n)
+			p.mode = afterMap
 		case valNull:
 			if off+4 <= len(buf) && string(buf[off:off+4]) == "null" {
 				off += 3
@@ -410,31 +400,6 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		case negDigit:
 			p.num.AddDigit(b)
 			p.mode = digitMap
-		case numCloseObject:
-			depth--
-			if depth < 0 || 0 <= p.starts[depth] {
-				return p.newError(off, "unexpected object close")
-			}
-			p.add(p.num.AsNum())
-			p.starts = p.starts[0:depth]
-			n := p.stack[len(p.stack)-1]
-			p.stack = p.stack[:len(p.stack)-1]
-			p.add(n)
-			p.mode = afterMap
-		case numCloseArray:
-			depth--
-			if depth < 0 || p.starts[depth] < 0 {
-				return p.newError(off, "unexpected array close")
-			}
-			p.add(p.num.AsNum())
-			p.mode = afterMap
-			start := p.starts[len(p.starts)-1] + 1
-			p.starts = p.starts[:len(p.starts)-1]
-			size := len(p.stack) - start
-			n := make([]interface{}, size)
-			copy(n, p.stack[start:len(p.stack)])
-			p.stack = p.stack[0 : start-1]
-			p.add(n)
 		case numSpc:
 			p.add(p.num.AsNum())
 			p.mode = afterMap

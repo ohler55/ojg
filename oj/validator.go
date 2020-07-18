@@ -253,20 +253,6 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			// nothing to do
 		case negDigit:
 			p.mode = digitMap
-		case numCloseObject:
-			depth--
-			if depth < 0 || p.stack[depth] != '{' {
-				return p.newError(off, "unexpected object close")
-			}
-			p.stack = p.stack[0:depth]
-			p.mode = afterMap
-		case numCloseArray:
-			depth--
-			if depth < 0 || p.stack[depth] != '[' {
-				return p.newError(off, "unexpected array close")
-			}
-			p.stack = p.stack[0:depth]
-			p.mode = afterMap
 		case numSpc:
 			p.mode = afterMap
 		case numNewline:
