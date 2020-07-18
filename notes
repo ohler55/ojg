@@ -1,13 +1,12 @@
 
-- for the hard cases (except string) combine in some way
+- combine
+ - close array and close object
+  - look at mode to decide if num should be added
+
 - reuse option
  - it true reuse maps and maybe later slices
  - maps slice, add as needed, index into slice
  - for slice reuse remember size
-
-- reorder cases
- - calc use
-
 
 ----------------
 - next/todo

@@ -3,45 +3,42 @@
 package oj
 
 const (
-	skipChar    = 'a'
-	skipNewline = 'b'
-	valNull     = 'c'
-	valTrue     = 'd'
-	valFalse    = 'e'
-	valNeg      = 'f'
-	val0        = 'g'
-	valDigit    = 'h'
-	valQuote    = 'i'
-	openArray   = 'k'
-	openObject  = 'l'
-	closeArray  = 'm'
-	closeObject = 'n'
-	afterComma  = 'o'
-	keyQuote    = 'p'
-	colonColon  = 'q'
-	numSpc      = 'r'
-	numNewline  = 's'
-	numDot      = 't'
-	numComma    = 'u'
-	numFrac     = 'v'
-	fracE       = 'w'
-	expSign     = 'x'
-	expDigit    = 'y'
-	strQuote    = 'z'
-
+	skipChar       = 'a'
+	skipNewline    = 'b'
+	valNull        = 'c'
+	valTrue        = 'd'
+	valFalse       = 'e'
+	valNeg         = 'f'
+	val0           = 'g'
+	valDigit       = 'h'
+	valQuote       = 'i'
+	openArray      = 'k'
+	openObject     = 'l'
+	closeArray     = 'm'
+	closeObject    = 'n'
+	afterComma     = 'o'
+	keyQuote       = 'p'
+	colonColon     = 'q'
+	numSpc         = 'r'
+	numNewline     = 's'
+	numDot         = 't'
+	numComma       = 'u'
+	numFrac        = 'v'
+	fracE          = 'w'
+	expSign        = 'x'
+	expDigit       = 'y'
+	strQuote       = 'z'
 	negDigit       = '-'
+	strSlash       = 'A'
+	escOk          = 'B'
+	uOk            = 'E'
+	tokenOk        = 'F'
 	numDigit       = 'N'
 	numZero        = 'O'
 	numCloseArray  = 'P'
 	numCloseObject = 'Q'
 	strOk          = 'R'
-	strSlash       = 'A'
-	escOk          = 'B'
 	escU           = 'U'
-	uOk            = 'E'
-	nullOk         = 'F'
-	trueOk         = 'G'
-	falseOk        = 'H'
 	charErr        = '.'
 
 	//   0123456789abcdef0123456789abcdef
@@ -69,7 +66,7 @@ const (
 		"................................" + // 0x00
 		"............o..................." + // 0x20
 		"................................" + // 0x40
-		".....G............G..G.........." + // 0x60
+		".....F............F..F.........." + // 0x60
 		"................................" + // 0x80
 		"................................" + // 0xa0
 		"................................" + // 0xc0
@@ -79,7 +76,7 @@ const (
 		"................................" + // 0x00
 		"............o..................." + // 0x20
 		"................................" + // 0x40
-		".H...H......H......H............" + // 0x60
+		".F...F......F......F............" + // 0x60
 		"................................" + // 0x80
 		"................................" + // 0xa0
 		"................................" + // 0xc0

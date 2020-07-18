@@ -111,10 +111,6 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 	for off = 0; off < len(buf); off++ {
 		b = buf[off]
 		switch p.mode[b] {
-		case skipChar:
-			continue
-		case strOk:
-			continue
 		case skipNewline:
 			p.line++
 			p.noff = off
@@ -125,6 +121,98 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			}
 			off += i
 			continue
+		case colonColon:
+			p.mode = valueMap
+			continue
+		case skipChar:
+			continue
+		case strOk:
+			continue
+		case keyQuote:
+			for i, b = range buf[off+1:] {
+				if stringMap[b] != strOk {
+					break
+				}
+			}
+			off += i
+			if b == '"' {
+				off++
+				p.mode = colonMap
+			} else {
+				p.mode = stringMap
+				p.nextMode = colonMap
+			}
+			continue
+		case afterComma:
+			if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+				p.mode = keyMap
+			} else {
+				p.mode = commaMap
+			}
+			continue
+		case valQuote:
+			for i, b = range buf[off+1:] {
+				if stringMap[b] != strOk {
+					break
+				}
+			}
+			off += i
+			if b == '"' {
+				off++
+				p.mode = afterMap
+			} else {
+				p.mode = stringMap
+				p.nextMode = afterMap
+				continue
+			}
+		case numComma:
+			if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+				p.mode = keyMap
+			} else {
+				p.mode = commaMap
+			}
+		case strSlash:
+			p.mode = escMap
+			continue
+		case escOk:
+			p.mode = stringMap
+			continue
+		case openObject:
+			p.stack = append(p.stack, '{')
+			p.mode = key1Map
+			depth++
+			continue
+		case closeObject:
+			depth--
+			if depth < 0 || p.stack[depth] != '{' {
+				return p.newError(off, "unexpected object close")
+			}
+			p.stack = p.stack[0:depth]
+			p.mode = afterMap
+		case val0:
+			p.mode = zeroMap
+			continue
+		case valDigit:
+			p.mode = digitMap
+			continue
+		case valNeg:
+			p.mode = negMap
+			continue
+		case escU:
+			p.mode = uMap
+			p.ri = 0
+			continue
+		case openArray:
+			p.stack = append(p.stack, '[')
+			depth++
+			continue
+		case closeArray:
+			depth--
+			if depth < 0 || p.stack[depth] != '[' {
+				return p.newError(off, "unexpected array close")
+			}
+			p.stack = p.stack[0:depth]
+			p.mode = afterMap
 		case valNull:
 			if off+4 <= len(buf) && string(buf[off:off+4]) == "null" {
 				off += 3
@@ -149,38 +237,26 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = falseMap
 				p.ri = 0
 			}
-		case valNeg:
-			p.mode = negMap
+		case numDot:
+			p.mode = dotMap
 			continue
-		case val0:
+		case numFrac:
+			p.mode = fracMap
+		case fracE:
+			p.mode = expSignMap
+			continue
+		case strQuote:
+			p.mode = p.nextMode
+		case numZero:
 			p.mode = zeroMap
-			continue
-		case valDigit:
+		case numDigit:
+			// nothing to do
+		case negDigit:
 			p.mode = digitMap
-			continue
-		case valQuote:
-			for i, b = range buf[off+1:] {
-				if stringMap[b] != strOk {
-					break
-				}
-			}
-			off += i
-			if b == '"' {
-				off++
-				p.mode = afterMap
-			} else {
-				p.mode = stringMap
-				p.nextMode = afterMap
-				continue
-			}
-		case openArray:
-			p.stack = append(p.stack, '[')
-			depth++
-			continue
-		case closeArray:
+		case numCloseObject:
 			depth--
-			if depth < 0 || p.stack[depth] != '[' {
-				return p.newError(off, "unexpected array close")
+			if depth < 0 || p.stack[depth] != '{' {
+				return p.newError(off, "unexpected object close")
 			}
 			p.stack = p.stack[0:depth]
 			p.mode = afterMap
@@ -191,74 +267,6 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			}
 			p.stack = p.stack[0:depth]
 			p.mode = afterMap
-		case openObject:
-			p.stack = append(p.stack, '{')
-			p.mode = key1Map
-			depth++
-			continue
-		case closeObject:
-			depth--
-			if depth < 0 || p.stack[depth] != '{' {
-				return p.newError(off, "unexpected object close")
-			}
-			p.stack = p.stack[0:depth]
-			p.mode = afterMap
-		case numCloseObject:
-			depth--
-			if depth < 0 || p.stack[depth] != '{' {
-				return p.newError(off, "unexpected object close")
-			}
-			p.stack = p.stack[0:depth]
-			p.mode = afterMap
-		case nullOk:
-			p.ri++
-			if "null"[p.ri] != b {
-				return p.newError(off, "expected null")
-			}
-			if 3 <= p.ri {
-				p.mode = afterMap
-			}
-		case falseOk:
-			p.ri++
-			if "false"[p.ri] != b {
-				return p.newError(off, "expected false")
-			}
-			if 4 <= p.ri {
-				p.mode = afterMap
-			}
-		case trueOk:
-			p.ri++
-			if "true"[p.ri] != b {
-				return p.newError(off, "expected true")
-			}
-			if 3 <= p.ri {
-				p.mode = afterMap
-			}
-		case afterComma:
-			if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
-				p.mode = keyMap
-			} else {
-				p.mode = commaMap
-			}
-			continue
-		case keyQuote:
-			for i, b = range buf[off+1:] {
-				if stringMap[b] != strOk {
-					break
-				}
-			}
-			off += i
-			if b == '"' {
-				off++
-				p.mode = colonMap
-			} else {
-				p.mode = stringMap
-				p.nextMode = colonMap
-			}
-			continue
-		case colonColon:
-			p.mode = valueMap
-			continue
 		case numSpc:
 			p.mode = afterMap
 		case numNewline:
@@ -271,44 +279,11 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				}
 			}
 			off += i
-		case negDigit:
-			p.mode = digitMap
-		case numDigit:
-			// nothing to do
-		case numZero:
-			p.mode = zeroMap
-		case numDot:
-			p.mode = dotMap
-			continue
-		case numComma:
-			if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
-				p.mode = keyMap
-			} else {
-				p.mode = commaMap
-			}
-		case numFrac:
-			p.mode = fracMap
-		case fracE:
-			p.mode = expSignMap
-			continue
 		case expSign:
 			p.mode = expZeroMap
 			continue
 		case expDigit:
 			p.mode = expMap
-		case strSlash:
-			p.mode = escMap
-			continue
-		case strQuote:
-			p.mode = p.nextMode
-
-		case escOk:
-			p.mode = stringMap
-			continue
-		case escU:
-			p.mode = uMap
-			p.ri = 0
-			continue
 		case uOk:
 			p.ri++
 			if p.ri == 4 {
@@ -316,6 +291,33 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			}
 			continue
 
+		case tokenOk:
+			switch {
+			case p.mode['r'] == tokenOk:
+				p.ri++
+				if "true"[p.ri] != b {
+					return p.newError(off, "expected true")
+				}
+				if 3 <= p.ri {
+					p.mode = afterMap
+				}
+			case p.mode['a'] == tokenOk:
+				p.ri++
+				if "false"[p.ri] != b {
+					return p.newError(off, "expected false")
+				}
+				if 4 <= p.ri {
+					p.mode = afterMap
+				}
+			case p.mode['u'] == tokenOk && p.mode['l'] == tokenOk:
+				p.ri++
+				if "null"[p.ri] != b {
+					return p.newError(off, "expected null")
+				}
+				if 3 <= p.ri {
+					p.mode = afterMap
+				}
+			}
 		case charErr:
 			return p.byteError(off, p.mode, b)
 		}
