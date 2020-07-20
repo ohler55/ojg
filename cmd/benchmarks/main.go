@@ -69,7 +69,8 @@ func main() {
 		{pkg: "oj-reuse", name: "Parse", fun: ojParseReuse},
 		{pkg: "gen", name: "Parse", fun: genParse},
 		{pkg: "gen-reuse", name: "Parse", fun: genParseReuse},
-		//{pkg: "sen", name: "Parse", fun: senParse},
+		{pkg: "sen", name: "Parse", fun: senParse},
+		{pkg: "sen-reuse", name: "Parse", fun: senParseReuse},
 	})
 	benchSuite("Parse io.Reader", []*bench{
 		{pkg: "json", name: "Decode", fun: goDecodeReader},
@@ -77,7 +78,8 @@ func main() {
 		{pkg: "oj-reuse", name: "ParseReader", fun: ojParseReaderReuse},
 		{pkg: "gen", name: "ParseReder", fun: genParseReader},
 		{pkg: "gen-reuse", name: "ParseReder", fun: genParseReaderReuse},
-		//{pkg: "sen", name: "ParseReader", fun: senParseReader},
+		{pkg: "sen", name: "ParseReader", fun: senParseReader},
+		{pkg: "sen-reuse", name: "ParseReader", fun: senParseReaderReuse},
 	})
 
 	benchSuite("Validate string/[]byte", []*bench{
