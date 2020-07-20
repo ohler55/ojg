@@ -34,7 +34,7 @@ func init() {
 	flag.BoolVar(&bright, "b", bright, "bright color")
 	flag.BoolVar(&wrapExtract, "w", wrapExtract, "wrap extracts in an array")
 	flag.BoolVar(&lazy, "z", lazy, "lazy mode accepts Simple Encoding Notation (quotes and commas mostly optional)")
-	flag.BoolVar(&senOut, "sen", senOut, "outpit in Simple Encoding Notation")
+	flag.BoolVar(&senOut, "sen", senOut, "output in Simple Encoding Notation")
 	flag.Var(&exValue{}, "x", "extract path")
 	flag.Var(&matchValue{}, "m", "match equation/script")
 }

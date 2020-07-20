@@ -182,7 +182,6 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 	depth := len(p.starts)
 	for off = 0; off < len(buf); off++ {
 		b = buf[off]
-		//fmt.Printf("*** op: %c b: %c - %q\n", p.mode[b], b, p.mode)
 		switch p.mode[b] {
 		case skipNewline:
 			p.line++
@@ -195,86 +194,41 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			off += i
 			continue
 		case tokenStart:
-			p.mode = tokenMap
-			// TBD try to read
-			p.tmp = p.tmp[:0]
-			p.tmp = append(p.tmp, b)
-		case tokenOk:
-			p.tmp = append(p.tmp, b)
-		case tokenSpc:
-			if err = p.addToken(off); err != nil {
-				return
-			}
-		case tokenColon:
-			if err = p.addToken(off); err != nil {
-				return
-			}
-			p.mode = valueMap
-		case tokenNewline:
-			if err = p.addToken(off); err != nil {
-				return
-			}
-			p.line++
-			p.noff = off
-			for i, b = range buf[off+1:] {
-				if spaceMap[b] != skipChar {
+			start := off
+			for i, b = range buf[off:] {
+				if tokenMap[b] != tokenOk {
 					break
 				}
 			}
 			off += i
-		case tokenNlColon:
-			if err = p.addToken(off); err != nil {
+			if tokenMap[b] == tokenOk { // end of buf reached
+				p.tmp = p.tmp[:0]
+				p.tmp = append(p.tmp, buf[start:off+1]...)
+				p.mode = tokenMap
+				continue
+			}
+			var n interface{}
+			t := string(buf[start:off])
+			switch t {
+			case "null":
+				n = nil
+			case "true":
+				n = true
+			case "false":
+				n = false
+			default:
+				n = t
+			}
+			if err = p.add(n, off); err != nil {
 				return
 			}
-			p.line++
-			p.noff = off
-			for i, b = range buf[off+1:] {
-				if spaceMap[b] != skipChar {
-					break
-				}
-			}
-			off += i
+			off--
+		case strOk:
+			p.tmp = append(p.tmp, b)
 		case colonColon:
 			p.mode = valueMap
 			continue
 		case skipChar: // skip and continue
-			continue
-		case strOk:
-			p.tmp = append(p.tmp, b)
-		case valQuote:
-			start := off + 1
-			if len(buf) <= start {
-				p.tmp = p.tmp[:0]
-				p.mode = stringMap
-				continue
-			}
-			for i, b = range buf[off+1:] {
-				if stringMap[b] != strOk {
-					break
-				}
-			}
-			off += i
-			if b == '"' {
-				off++
-				if err = p.add(string(buf[start:off]), off); err != nil {
-					return
-				}
-			} else {
-				p.tmp = p.tmp[:0]
-				p.tmp = append(p.tmp, buf[start:off+1]...)
-				p.mode = stringMap
-				continue
-			}
-		case numSpc:
-			if err = p.add(p.num.AsNum(), off); err != nil {
-				return
-			}
-		case strSlash:
-			p.mode = escMap
-			continue
-		case escOk:
-			p.tmp = append(p.tmp, escByteMap[b])
-			p.mode = stringMap
 			continue
 		case openObject:
 			if 256 < len(p.mode) {
@@ -331,6 +285,41 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			if err = p.add(n, off); err != nil {
 				return
 			}
+		case valQuote:
+			start := off + 1
+			if len(buf) <= start {
+				p.tmp = p.tmp[:0]
+				p.mode = stringMap
+				continue
+			}
+			for i, b = range buf[off+1:] {
+				if stringMap[b] != strOk {
+					break
+				}
+			}
+			off += i
+			if b == '"' {
+				off++
+				if err = p.add(string(buf[start:off]), off); err != nil {
+					return
+				}
+			} else {
+				p.tmp = p.tmp[:0]
+				p.tmp = append(p.tmp, buf[start:off+1]...)
+				p.mode = stringMap
+				continue
+			}
+		case numSpc:
+			if err = p.add(p.num.AsNum(), off); err != nil {
+				return
+			}
+		case strSlash:
+			p.mode = escMap
+			continue
+		case escOk:
+			p.tmp = append(p.tmp, escByteMap[b])
+			p.mode = stringMap
+			continue
 		case val0:
 			p.mode = zeroMap
 			p.num.Reset()
@@ -437,6 +426,41 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			}
 			p.mode = expSignMap
 			continue
+		case tokenOk:
+			p.tmp = append(p.tmp, b)
+		case tokenSpc:
+			if err = p.addToken(off); err != nil {
+				return
+			}
+		case tokenColon:
+			if err = p.addToken(off); err != nil {
+				return
+			}
+			p.mode = valueMap
+		case tokenNewline:
+			if err = p.addToken(off); err != nil {
+				return
+			}
+			p.line++
+			p.noff = off
+			for i, b = range buf[off+1:] {
+				if spaceMap[b] != skipChar {
+					break
+				}
+			}
+			off += i
+		case tokenNlColon:
+			if err = p.addToken(off); err != nil {
+				return
+			}
+			p.line++
+			p.noff = off
+			for i, b = range buf[off+1:] {
+				if spaceMap[b] != skipChar {
+					break
+				}
+			}
+			off += i
 		case strQuote:
 			if err = p.add(string(p.tmp), off); err != nil {
 				return
@@ -584,8 +608,8 @@ func (p *Parser) add(n interface{}, off int) error {
 
 func (p *Parser) addToken(off int) error {
 	var n interface{}
-	t := string(p.tmp)
-	switch t {
+	s := string(p.tmp)
+	switch s {
 	case "null":
 		n = nil
 	case "true":
@@ -593,9 +617,27 @@ func (p *Parser) addToken(off int) error {
 	case "false":
 		n = false
 	default:
-		n = t
+		n = s
 	}
-	return p.add(n, off)
+	p.mode = valueMap
+	if 0 < len(p.starts) {
+		if p.starts[len(p.starts)-1] == -1 { // object
+			if k, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
+				obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
+				obj[string(k)] = n
+				p.stack = p.stack[0 : len(p.stack)-1]
+			} else {
+				p.stack = append(p.stack, gen.Key(s))
+				p.mode = colonMap
+			}
+		} else { // array
+			p.stack = append(p.stack, n)
+		}
+	} else {
+		p.stack = append(p.stack, n)
+	}
+	return nil
+	//return p.add(n, off)
 }
 
 func (p *Parser) newError(off int, format string, args ...interface{}) error {

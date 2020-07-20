@@ -131,10 +131,10 @@ func TestParserParseString(t *testing.T) {
 		{src: `"x\u004z"`, expect: "invalid JSON unicode character 'z' at 1:8"},
 		{src: "\xef\xbb[]", expect: "expected BOM at 1:3"},
 		{src: "$x", expect: "unexpected character '$' at 1:1"},
-		{src: "x]", expect: "unexpected array close at 1:2"},
-		{src: "x}", expect: "unexpected object close at 1:2"},
-		{src: "x$", expect: "unexpected character '$' at 1:2"},
-		{src: "{x$:1}", expect: "unexpected character '$' at 1:3"},
+		{src: "x]", expect: "extra characters after close, ']' at 1:2"},
+		{src: "x}", expect: "extra characters after close, '}' at 1:2"},
+		{src: "x$", expect: "extra characters after close, '$' at 1:2"},
+		{src: "{x$:1}", expect: "expected a colon, not '$' at 1:3"},
 
 		{src: "[0 1,2]", value: []interface{}{0, 1, 2}},
 		{src: "[0[1[2]]]", value: []interface{}{0, []interface{}{1, []interface{}{2}}}},
@@ -191,10 +191,10 @@ func TestParserParseReader(t *testing.T) {
 		{src: strings.Repeat(" ", 4093) + "[abc// comment\n]", value: []interface{}{"abc"}},
 		{src: strings.Repeat(" ", 4093) + "[abc{x:1}]", value: []interface{}{"abc", map[string]interface{}{"x": 1}}},
 
-		{src: strings.Repeat(" ", 4094) + "abc$", expect: "expected a value, not '$' at 1:2"},
+		{src: strings.Repeat(" ", 4094) + "abc$", expect: "unexpected character '$' at 1:2"},
 		{src: strings.Repeat(" ", 4094) + "hello\n $", expect: "extra characters after close, '$' at 2:2"},
-		{src: strings.Repeat(" ", 4094) + "hello]", expect: "too many closes at 1:4"},
-		{src: strings.Repeat(" ", 4094) + "hello}", expect: "too many closes at 1:4"},
+		{src: strings.Repeat(" ", 4094) + "hello]", expect: "unexpected array close at 1:4"},
+		{src: strings.Repeat(" ", 4094) + "hello}", expect: "unexpected object close at 1:4"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %q\n", i, d.src)
