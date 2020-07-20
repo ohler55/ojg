@@ -207,21 +207,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 				p.mode = tokenMap
 				continue
 			}
-			var n interface{}
-			t := string(buf[start:off])
-			switch t {
-			case "null":
-				n = nil
-			case "true":
-				n = true
-			case "false":
-				n = false
-			default:
-				n = t
-			}
-			if err = p.add(n, off); err != nil {
-				return
-			}
+			p.addTokenWith(string(buf[start:off]), off)
 			off--
 		case strOk:
 			p.tmp = append(p.tmp, b)
@@ -238,9 +224,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 						return
 					}
 				case 't':
-					if err = p.addToken(off); err != nil {
-						return
-					}
+					p.addToken(off)
 				}
 			}
 			p.starts = append(p.starts, -1)
@@ -274,9 +258,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 						return
 					}
 				case 't':
-					if err = p.addToken(off); err != nil {
-						return
-					}
+					p.addToken(off)
 				}
 			}
 			p.starts = p.starts[0:depth]
@@ -285,6 +267,24 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			if err = p.add(n, off); err != nil {
 				return
 			}
+		case valDigit:
+			p.num.Reset()
+			p.mode = digitMap
+			p.num.I = uint64(b - '0')
+			for i, b = range buf[off+1:] {
+				if digitMap[b] != numDigit {
+					break
+				}
+				p.num.I = p.num.I*10 + uint64(b-'0')
+				if math.MaxInt64 < p.num.I {
+					p.num.FillBig()
+					break
+				}
+			}
+			if digitMap[b] == numDigit {
+				off++
+			}
+			off += i
 		case valQuote:
 			start := off + 1
 			if len(buf) <= start {
@@ -323,24 +323,6 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 		case val0:
 			p.mode = zeroMap
 			p.num.Reset()
-		case valDigit:
-			p.num.Reset()
-			p.mode = digitMap
-			p.num.I = uint64(b - '0')
-			for i, b = range buf[off+1:] {
-				if digitMap[b] != numDigit {
-					break
-				}
-				p.num.I = p.num.I*10 + uint64(b-'0')
-				if math.MaxInt64 < p.num.I {
-					p.num.FillBig()
-					break
-				}
-			}
-			if digitMap[b] == numDigit {
-				off++
-			}
-			off += i
 		case valNeg:
 			p.mode = negMap
 			p.num.Reset()
@@ -359,9 +341,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 						return
 					}
 				case 't':
-					if err = p.addToken(off); err != nil {
-						return
-					}
+					p.addToken(off)
 				}
 			}
 			p.starts = append(p.starts, len(p.stack))
@@ -381,9 +361,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 					return
 				}
 			case 't':
-				if err = p.addToken(off); err != nil {
-					return
-				}
+				p.addToken(off)
 			}
 			start := p.starts[len(p.starts)-1] + 1
 			p.starts = p.starts[:len(p.starts)-1]
@@ -429,18 +407,12 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 		case tokenOk:
 			p.tmp = append(p.tmp, b)
 		case tokenSpc:
-			if err = p.addToken(off); err != nil {
-				return
-			}
+			p.addToken(off)
 		case tokenColon:
-			if err = p.addToken(off); err != nil {
-				return
-			}
+			p.addToken(off)
 			p.mode = valueMap
 		case tokenNewline:
-			if err = p.addToken(off); err != nil {
-				return
-			}
+			p.addToken(off)
 			p.line++
 			p.noff = off
 			for i, b = range buf[off+1:] {
@@ -450,9 +422,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			}
 			off += i
 		case tokenNlColon:
-			if err = p.addToken(off); err != nil {
-				return
-			}
+			p.addToken(off)
 			p.line++
 			p.noff = off
 			for i, b = range buf[off+1:] {
@@ -521,9 +491,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 						return
 					}
 				case 't':
-					if err = p.addToken(off); err != nil {
-						return
-					}
+					p.addToken(off)
 				}
 			}
 			p.mode = commentStartMap
@@ -567,9 +535,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 				p.cb(p.stack[0])
 			}
 		case 't': // token
-			if err = p.addToken(off); err != nil {
-				return
-			}
+			p.addToken(off)
 			if p.cb == nil {
 				p.result = p.stack[0]
 			} else {
@@ -606,38 +572,79 @@ func (p *Parser) add(n interface{}, off int) error {
 	return nil
 }
 
-func (p *Parser) addToken(off int) error {
-	var n interface{}
+func (p *Parser) addToken(off int) {
 	s := string(p.tmp)
-	switch s {
-	case "null":
-		n = nil
-	case "true":
-		n = true
-	case "false":
-		n = false
-	default:
-		n = s
-	}
 	p.mode = valueMap
 	if 0 < len(p.starts) {
 		if p.starts[len(p.starts)-1] == -1 { // object
 			if k, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
 				obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
-				obj[string(k)] = n
+				switch s {
+				case "null":
+					obj[string(k)] = nil
+				case "true":
+					obj[string(k)] = true
+				case "false":
+					obj[string(k)] = false
+				default:
+					obj[string(k)] = s
+				}
 				p.stack = p.stack[0 : len(p.stack)-1]
 			} else {
 				p.stack = append(p.stack, gen.Key(s))
 				p.mode = colonMap
 			}
-		} else { // array
-			p.stack = append(p.stack, n)
+			return
 		}
-	} else {
-		p.stack = append(p.stack, n)
 	}
-	return nil
-	//return p.add(n, off)
+	// Array or just a value
+	switch s {
+	case "null":
+		p.stack = append(p.stack, nil)
+	case "true":
+		p.stack = append(p.stack, true)
+	case "false":
+		p.stack = append(p.stack, false)
+	default:
+		p.stack = append(p.stack, s)
+	}
+}
+
+func (p *Parser) addTokenWith(s string, off int) {
+	p.mode = valueMap
+	if 0 < len(p.starts) {
+		if p.starts[len(p.starts)-1] == -1 { // object
+			if k, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
+				obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
+				switch s {
+				case "null":
+					obj[string(k)] = nil
+				case "true":
+					obj[string(k)] = true
+				case "false":
+					obj[string(k)] = false
+				default:
+					obj[string(k)] = s
+				}
+				p.stack = p.stack[0 : len(p.stack)-1]
+			} else {
+				p.stack = append(p.stack, gen.Key(s))
+				p.mode = colonMap
+			}
+			return
+		}
+	}
+	// Array or just a value
+	switch s {
+	case "null":
+		p.stack = append(p.stack, nil)
+	case "true":
+		p.stack = append(p.stack, true)
+	case "false":
+		p.stack = append(p.stack, false)
+	default:
+		p.stack = append(p.stack, s)
+	}
 }
 
 func (p *Parser) newError(off int, format string, args ...interface{}) error {
