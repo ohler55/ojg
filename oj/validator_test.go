@@ -71,15 +71,15 @@ func TestValidatorValidateString(t *testing.T) {
 
 		{src: "null {}"},
 
-		{src: "{}}", expect: "too many closes at 1:3"},
+		{src: "{}}", expect: "unexpected object close at 1:3"},
 		{src: "{ \n", expect: "incomplete JSON at 2:1"},
 		{src: "{]}", expect: "expected a string start or object close, not ']' at 1:2"},
 		{src: "[}]", expect: "unexpected object close at 1:2"},
 		{src: "{\"a\" \n : 1]}", expect: "unexpected array close at 2:5"},
 		{src: `[1}]`, expect: "unexpected object close at 1:3"},
-		{src: `1]`, expect: "too many closes at 1:2"},
-		{src: `1}`, expect: "too many closes at 1:2"},
-		{src: `]`, expect: "too many closes at 1:1"},
+		{src: `1]`, expect: "unexpected array close at 1:2"},
+		{src: `1}`, expect: "unexpected object close at 1:2"},
+		{src: `]`, expect: "unexpected array close at 1:1"},
 		{src: `x`, expect: "unexpected character 'x' at 1:1"},
 		{src: `[1,]`, expect: "unexpected character ']' at 1:4"},
 		{src: `[null x`, expect: "expected a comma or close, not 'x' at 1:7"},
@@ -96,35 +96,30 @@ func TestValidatorValidateString(t *testing.T) {
 		{src: `[0,nuts]`, expect: "expected null at 1:6"},
 		{src: `[0,fail]`, expect: "expected false at 1:6"},
 		{src: `-x`, expect: "invalid number at 1:2"},
-		{src: `0]`, expect: "too many closes at 1:2"},
-		{src: `0}`, expect: "too many closes at 1:2"},
+		{src: `0]`, expect: "unexpected array close at 1:2"},
+		{src: `0}`, expect: "unexpected object close at 1:2"},
 		{src: `0x`, expect: "invalid number at 1:2"},
 		{src: `1x`, expect: "invalid number at 1:2"},
 		{src: `1.x`, expect: "invalid number at 1:3"},
 		{src: `1.2x`, expect: "invalid number at 1:4"},
 		{src: `1.2ex`, expect: "invalid number at 1:5"},
 		{src: `1.2e+x`, expect: "invalid number at 1:6"},
-		{src: "1.2\n]", expect: "too many closes at 2:1"},
-		{src: `1.2]`, expect: "too many closes at 1:4"},
-		{src: `1.2}`, expect: "too many closes at 1:4"},
-		{src: `1.2e2]`, expect: "too many closes at 1:6"},
-		{src: `1.2e2}`, expect: "too many closes at 1:6"},
+		{src: "1.2\n]", expect: "unexpected array close at 2:1"},
+		{src: `1.2]`, expect: "unexpected array close at 1:4"},
+		{src: `1.2}`, expect: "unexpected object close at 1:4"},
+		{src: `1.2e2]`, expect: "unexpected array close at 1:6"},
+		{src: `1.2e2}`, expect: "unexpected object close at 1:6"},
 		{src: `1.2e2x`, expect: "invalid number at 1:6"},
 		{src: "\"x\ty\"", expect: "invalid JSON character 0x09 at 1:3"},
 		{src: `"x\zy"`, expect: "invalid JSON escape character '\\z' at 1:4"},
 		{src: `"x\u004z"`, expect: "invalid JSON unicode character 'z' at 1:8"},
 		{src: "\xef\xbb[]", expect: "expected BOM at 1:3"},
 		{src: "null \n {}", expect: "extra characters after close, '{' at 2:2", onlyOne: true},
-
-		{src: "[ // a comment\n  true\n]"},
-		{src: "[ // a comment\n  true\n]", expect: "comments not allowed at 1:3", noComment: true},
-		{src: "[\n  null, // a comment\n  true\n]"},
-		{src: "[\n  null, / a comment\n  true\n]", expect: "unexpected character ' ' at 2:10", noComment: false},
-		{src: "[\n  null, // a comment\n  true\n]", expect: "comments not allowed at 2:9", noComment: true},
+		{src: "[ // a comment\n  true\n]", expect: "unexpected character '/' at 1:3"},
 	} {
 		var err error
-		if d.onlyOne || d.noComment {
-			p := oj.Validator{OnlyOne: d.onlyOne, NoComment: d.noComment}
+		if d.onlyOne {
+			p := oj.Validator{OnlyOne: d.onlyOne}
 			err = p.Validate([]byte(d.src))
 		} else {
 			err = oj.Validate([]byte(d.src))

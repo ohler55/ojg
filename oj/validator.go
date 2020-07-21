@@ -13,6 +13,8 @@ const stackMinSize = 32 // for container stack { or [
 // validations or parsings which allows buffer reuse for a performance
 // advantage.
 type Validator struct {
+	tracker
+
 	// This and the Parser use the same basic code but without the
 	// building. It is a copy since adding the conditionals needed to avoid
 	// builing results add 15 to 20% overhead. An additional improvement could
@@ -20,13 +22,8 @@ type Validator struct {
 	// validation much less useful.
 	stack    []byte // { or [
 	ri       int    // read index for null, false, and true
-	line     int
-	noff     int // Offset of last newline from start of buf. Can be negative when using a reader.
 	mode     string
 	nextMode string
-
-	// NoComments returns an error if a comment is encountered.
-	NoComment bool
 
 	// OnlyOne returns an error if more than one JSON is in the string or
 	// stream.
@@ -43,11 +40,16 @@ func (p *Validator) Validate(buf []byte) (err error) {
 	p.line = 1
 	p.mode = valueMap
 	// Skip BOM if present.
-	if 0 < len(buf) && buf[0] == 0xEF {
-		p.mode = bomEFMap
-		p.ri = 0
+	if 3 < len(buf) && buf[0] == 0xEF {
+		if buf[1] == 0xBB && buf[2] == 0xBF {
+			err = p.validateBuffer(buf[3:], true)
+		} else {
+			err = fmt.Errorf("expected BOM at 1:3")
+		}
+	} else {
+		err = p.validateBuffer(buf, true)
 	}
-	return p.validateBuffer(buf, true)
+	return
 }
 
 // ValidateReader a JSON stream. An error is returned if not valid JSON.
@@ -70,13 +72,19 @@ func (p *Validator) ValidateReader(r io.Reader) error {
 		}
 		eof = true
 	}
+	var skip int
 	// Skip BOM if present.
-	if 0 < len(buf) && buf[0] == 0xEF {
-		p.mode = bomEFMap
-		p.ri = 0
+	if 3 < len(buf) && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF {
+		skip = 3
 	}
 	for {
-		if err := p.validateBuffer(buf, eof); err != nil {
+		if 0 < skip {
+			err = p.validateBuffer(buf[skip:], eof)
+		} else {
+			err = p.validateBuffer(buf, eof)
+		}
+		skip = 0
+		if err != nil {
 			return err
 		}
 		if eof {
@@ -103,8 +111,6 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 	for off = 0; off < len(buf); off++ {
 		b = buf[off]
 		switch p.mode[b] {
-		case skipChar: // skip and continue
-			continue
 		case skipNewline:
 			p.line++
 			p.noff = off
@@ -115,6 +121,98 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			}
 			off += i
 			continue
+		case colonColon:
+			p.mode = valueMap
+			continue
+		case skipChar:
+			continue
+		case strOk:
+			continue
+		case keyQuote:
+			for i, b = range buf[off+1:] {
+				if stringMap[b] != strOk {
+					break
+				}
+			}
+			off += i
+			if b == '"' {
+				off++
+				p.mode = colonMap
+			} else {
+				p.mode = stringMap
+				p.nextMode = colonMap
+			}
+			continue
+		case afterComma:
+			if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+				p.mode = keyMap
+			} else {
+				p.mode = commaMap
+			}
+			continue
+		case valQuote:
+			for i, b = range buf[off+1:] {
+				if stringMap[b] != strOk {
+					break
+				}
+			}
+			off += i
+			if b == '"' {
+				off++
+				p.mode = afterMap
+			} else {
+				p.mode = stringMap
+				p.nextMode = afterMap
+				continue
+			}
+		case numComma:
+			if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
+				p.mode = keyMap
+			} else {
+				p.mode = commaMap
+			}
+		case strSlash:
+			p.mode = escMap
+			continue
+		case escOk:
+			p.mode = stringMap
+			continue
+		case openObject:
+			p.stack = append(p.stack, '{')
+			p.mode = key1Map
+			depth++
+			continue
+		case closeObject:
+			depth--
+			if depth < 0 || p.stack[depth] != '{' {
+				return p.newError(off, "unexpected object close")
+			}
+			p.stack = p.stack[0:depth]
+			p.mode = afterMap
+		case val0:
+			p.mode = zeroMap
+			continue
+		case valDigit:
+			p.mode = digitMap
+			continue
+		case valNeg:
+			p.mode = negMap
+			continue
+		case escU:
+			p.mode = uMap
+			p.ri = 0
+			continue
+		case openArray:
+			p.stack = append(p.stack, '[')
+			depth++
+			continue
+		case closeArray:
+			depth--
+			if depth < 0 || p.stack[depth] != '[' {
+				return p.newError(off, "unexpected array close")
+			}
+			p.stack = p.stack[0:depth]
+			p.mode = afterMap
 		case valNull:
 			if off+4 <= len(buf) && string(buf[off:off+4]) == "null" {
 				off += 3
@@ -139,115 +237,22 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				p.mode = falseMap
 				p.ri = 0
 			}
-		case valNeg:
-			p.mode = negMap
+		case numDot:
+			p.mode = dotMap
 			continue
-		case val0:
+		case numFrac:
+			p.mode = fracMap
+		case fracE:
+			p.mode = expSignMap
+			continue
+		case strQuote:
+			p.mode = p.nextMode
+		case numZero:
 			p.mode = zeroMap
-			continue
-		case valDigit:
+		case numDigit:
+			// nothing to do
+		case negDigit:
 			p.mode = digitMap
-			continue
-		case valQuote:
-			for i, b = range buf[off+1:] {
-				if stringMap[b] != skipChar {
-					break
-				}
-			}
-			off += i
-			if b == '"' {
-				off++
-				p.mode = afterMap
-			} else {
-				p.mode = stringMap
-				p.nextMode = afterMap
-				continue
-			}
-		case openArray:
-			p.stack = append(p.stack, '[')
-			depth++
-			continue
-		case closeArray:
-			if depth == 0 {
-				return p.newError(off, "too many closes")
-			}
-			depth--
-			if p.stack[depth] != '[' {
-				return p.newError(off, "unexpected array close")
-			}
-			p.stack = p.stack[0:depth]
-			p.mode = afterMap
-		case openObject:
-			p.stack = append(p.stack, '{')
-			p.mode = key1Map
-			depth++
-			continue
-		case closeObject:
-			if depth == 0 {
-				return p.newError(off, "too many closes")
-			}
-			depth--
-			if p.stack[depth] != '{' {
-				return p.newError(off, "unexpected object close")
-			}
-			p.stack = p.stack[0:depth]
-			p.mode = afterMap
-		case valSlash:
-			if p.NoComment {
-				return p.newError(off, "comments not allowed")
-			}
-			p.nextMode = p.mode
-			p.mode = commentStartMap
-			continue
-		case nullOk:
-			p.ri++
-			if "null"[p.ri] != b {
-				return p.newError(off, "expected null")
-			}
-			if 3 <= p.ri {
-				p.mode = afterMap
-			}
-		case falseOk:
-			p.ri++
-			if "false"[p.ri] != b {
-				return p.newError(off, "expected false")
-			}
-			if 4 <= p.ri {
-				p.mode = afterMap
-			}
-		case trueOk:
-			p.ri++
-			if "true"[p.ri] != b {
-				return p.newError(off, "expected true")
-			}
-			if 3 <= p.ri {
-				p.mode = afterMap
-			}
-		case afterComma:
-			if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
-				p.mode = keyMap
-			} else {
-				p.mode = commaMap
-			}
-			continue
-		case keyQuote:
-			for i, b = range buf[off+1:] {
-				if stringMap[b] != skipChar {
-					break
-				}
-			}
-			off += i
-			if b == '"' {
-				off++
-				p.mode = colonMap
-			} else {
-				p.mode = stringMap
-				p.nextMode = colonMap
-			}
-			continue
-		case colonColon:
-			p.mode = valueMap
-			continue
 		case numSpc:
 			p.mode = afterMap
 		case numNewline:
@@ -260,87 +265,47 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 				}
 			}
 			off += i
-		case numDot:
-			p.mode = dotMap
-			continue
-		case numComma:
-			if 0 < len(p.stack) && p.stack[len(p.stack)-1] == '{' {
-				p.mode = keyMap
-			} else {
-				p.mode = commaMap
-			}
-		case numFrac:
-			p.mode = fracMap
-		case fracE:
-			p.mode = expSignMap
-			continue
 		case expSign:
 			p.mode = expZeroMap
 			continue
 		case expDigit:
 			p.mode = expMap
-		case strSlash:
-			p.mode = escMap
-			continue
-		case strQuote:
-			p.mode = p.nextMode
-		case escOk:
-			p.mode = stringMap
-			continue
-		case escU:
-			p.mode = uMap
-			p.ri = 0
-			continue
 		case uOk:
 			p.ri++
 			if p.ri == 4 {
 				p.mode = stringMap
 			}
 			continue
-		case commentStart:
-			p.mode = commentMap
-		case commentEnd:
-			p.line++
-			p.noff = off
-			p.mode = p.nextMode
-		case bomEF:
-			p.mode = bomBBMap
-			continue
-		case bomBB:
-			p.mode = bomBFMap
-			continue
-		case bomBF:
-			p.mode = valueMap
-			continue
 
-		case bomErr:
-			return p.newError(off, "expected BOM")
-		case valErr, commentErr:
-			return p.newError(off, "unexpected character '%c'", b)
-		case nullErr:
-			return p.newError(off, "expected null")
-		case trueErr:
-			return p.newError(off, "expected true")
-		case falseErr:
-			return p.newError(off, "expected false")
-		case afterErr:
-			return p.newError(off, "expected a comma or close, not '%c'", b)
-		case key1Err:
-			return p.newError(off, "expected a string start or object close, not '%c'", b)
-		case keyErr:
-			return p.newError(off, "expected a string start, not '%c'", b)
-		case colonErr:
-			return p.newError(off, "expected a colon, not '%c'", b)
-		case numErr:
-			return p.newError(off, "invalid number")
-		case strLowErr:
-			return p.newError(off, "invalid JSON character 0x%02x", b)
-		case strErr:
-			return p.newError(off, "invalid JSON unicode character '%c'", b)
-		case escErr:
-			return p.newError(off, "invalid JSON escape character '\\%c'", b)
-		case spcErr:
-			return p.newError(off, "extra characters after close, '%c'", b)
+		case tokenOk:
+			switch {
+			case p.mode['r'] == tokenOk:
+				p.ri++
+				if "true"[p.ri] != b {
+					return p.newError(off, "expected true")
+				}
+				if 3 <= p.ri {
+					p.mode = afterMap
+				}
+			case p.mode['a'] == tokenOk:
+				p.ri++
+				if "false"[p.ri] != b {
+					return p.newError(off, "expected false")
+				}
+				if 4 <= p.ri {
+					p.mode = afterMap
+				}
+			case p.mode['u'] == tokenOk && p.mode['l'] == tokenOk:
+				p.ri++
+				if "null"[p.ri] != b {
+					return p.newError(off, "expected null")
+				}
+				if 3 <= p.ri {
+					p.mode = afterMap
+				}
+			}
+		case charErr:
+			return p.byteError(off, p.mode, b)
 		}
 		if depth == 0 && 256 < len(p.mode) && p.mode[256] == 'a' {
 			if p.OnlyOne {
@@ -354,12 +319,4 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 		return p.newError(off, "incomplete JSON")
 	}
 	return nil
-}
-
-func (p *Validator) newError(off int, format string, args ...interface{}) error {
-	return &ParseError{
-		Message: fmt.Sprintf(format, args...),
-		Line:    p.line,
-		Column:  off - p.noff,
-	}
 }

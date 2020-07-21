@@ -19,6 +19,17 @@ const (
 
 	hex         = "0123456789abcdef"
 	maxTokenLen = 64
+
+	//   0123456789abcdef0123456789abcdef
+	tokMap = "" +
+		"................................" + // 0x00
+		"..............o.oooooooooo......" + // 0x20
+		".oooooooooooooooooooooooooo...oo" + // 0x40
+		".oooooooooooooooooooooooooo...o." + // 0x60
+		"oooooooooooooooooooooooooooooooo" + // 0x80
+		"oooooooooooooooooooooooooooooooo" + // 0xa0
+		"oooooooooooooooooooooooooooooooo" + // 0xc0
+		"oooooooooooooooooooooooooooooooo" //   0xe0
 )
 
 // String returns a SEN string for the data provided. The data can be a simple
@@ -189,7 +200,7 @@ func (o *Options) buildString(s string) {
 	if len(s) < maxTokenLen { // arbitrary length, langer strings look better in quotes
 		tokenOk = true
 		for _, b := range []byte(s) {
-			if tokenMap[b] != 'o' {
+			if tokMap[b] != 'o' {
 				tokenOk = false
 				break
 			}

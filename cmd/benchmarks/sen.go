@@ -29,8 +29,40 @@ func senParse(b *testing.B) {
 	}
 }
 
+func senParseReuse(b *testing.B) {
+	j, _ := ioutil.ReadFile(filename)
+	var sample []byte
+	if data, err := (&oj.Parser{}).Parse(j); err == nil {
+		sample = []byte(sen.String(data, &sen.Options{Indent: 2}))
+	} else {
+		log.Fatal(err)
+	}
+	b.ResetTimer()
+	p := &sen.Parser{Reuse: true}
+	for n := 0; n < b.N; n++ {
+		if _, err := p.Parse(sample); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
 func senParseReader(b *testing.B) {
 	var p sen.Parser
+	f, err := os.Open(filename)
+	if err != nil {
+		log.Fatalf("Failed to read %s. %s\n", filename, err)
+	}
+	defer func() { _ = f.Close() }()
+	for n := 0; n < b.N; n++ {
+		_, _ = f.Seek(0, 0)
+		if _, err = p.ParseReader(f); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func senParseReaderReuse(b *testing.B) {
+	p := sen.Parser{Reuse: true}
 	f, err := os.Open(filename)
 	if err != nil {
 		log.Fatalf("Failed to read %s. %s\n", filename, err)

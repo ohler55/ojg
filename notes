@@ -2,14 +2,18 @@
 ----------------
 - next/todo
  - single switch
-  - oj parse
-  - gen parse
+  + oj parse
+  + gen parse
   - sen parse
 
- - chan option for parse and validate
+ - chan option for parse
  - streaming with log files in benchmarks
   - chan and cb
   - benchmark repo also
+
+- combine for performance, maybe
+ - how about just adding to num
+  - need a validation version or flag
 
  - regex op =~
   - /^xyz&/
@@ -34,10 +38,3 @@
 
 - Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)]
 - Exists syntax? [?(@.x exists)]
-
------------------------------------
-- parse methods attempted
- - tried functions instead of switch, slower
-  - tried array of 256 functions for value switching
- - all in one function is fastest
- - col++ created overhead as well

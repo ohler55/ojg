@@ -8,13 +8,13 @@ import (
 )
 
 // 9223372036854775807 / 10 = 922337203685477580
-const bigLimit = math.MaxInt64 / 10
+const BigLimit = math.MaxInt64 / 10
 
 // Number is used internally by parsers.
 type Number struct {
 	I      uint64
 	Frac   uint64
-	div    uint64
+	Div    uint64
 	Exp    uint64
 	Neg    bool
 	NegExp bool
@@ -25,7 +25,7 @@ type Number struct {
 func (n *Number) Reset() {
 	n.I = 0
 	n.Frac = 0
-	n.div = 1
+	n.Div = 1
 	n.Exp = 0
 	n.Neg = false
 	n.NegExp = false
@@ -38,7 +38,7 @@ func (n *Number) Reset() {
 func (n *Number) AddDigit(b byte) {
 	if 0 < len(n.BigBuf) {
 		n.BigBuf = append(n.BigBuf, b)
-	} else if n.I <= bigLimit {
+	} else if n.I <= BigLimit {
 		n.I = n.I*10 + uint64(b-'0')
 		if math.MaxInt64 < n.I {
 			n.FillBig()
@@ -53,9 +53,9 @@ func (n *Number) AddDigit(b byte) {
 func (n *Number) AddFrac(b byte) {
 	if 0 < len(n.BigBuf) {
 		n.BigBuf = append(n.BigBuf, b)
-	} else if n.Frac <= bigLimit {
+	} else if n.Frac <= BigLimit {
 		n.Frac = n.Frac*10 + uint64(b-'0')
-		n.div *= 10.0
+		n.Div *= 10.0
 		if math.MaxInt64 < n.Frac {
 			n.FillBig()
 		}
@@ -91,7 +91,7 @@ func (n *Number) FillBig() {
 		if 1000000000000000000 <= n.Frac { // nearest multiple of 10 below max int64
 			n.BigBuf = append(n.BigBuf, strconv.FormatUint(n.Frac, 10)...)
 		} else {
-			s := strconv.FormatUint(n.Frac+n.div, 10)
+			s := strconv.FormatUint(n.Frac+n.Div, 10)
 			n.BigBuf = append(n.BigBuf, s[1:]...)
 		}
 	}
@@ -104,35 +104,62 @@ func (n *Number) FillBig() {
 	}
 }
 
-// AsInt returns the number as an int64.
-func (n *Number) AsInt() int64 {
-	i := int64(n.I)
-	if n.Neg {
-		i = -i
-	}
-	return i
-}
-
-// AsInt returns the number as a float64.
-func (n *Number) AsFloat() float64 {
-	f := float64(n.I)
-	if 0 < n.Frac {
-		f += float64(n.Frac) / float64(n.div)
-	}
-	if n.Neg {
-		f = -f
-	}
-	if 0 < n.Exp {
-		x := int(n.Exp)
-		if n.NegExp {
-			x = -x
+// AsNum returns the number as best fit.
+func (n *Number) AsNum() (num interface{}) {
+	if 0 < len(n.BigBuf) {
+		num = string(n.BigBuf)
+	} else if n.Frac == 0 && n.Exp == 0 {
+		i := int64(n.I)
+		if n.Neg {
+			i = -i
 		}
-		f *= math.Pow10(int(x))
+		num = i
+	} else {
+		f := float64(n.I)
+		if 0 < n.Frac {
+			f += float64(n.Frac) / float64(n.Div)
+		}
+		if n.Neg {
+			f = -f
+		}
+		if 0 < n.Exp {
+			x := int(n.Exp)
+			if n.NegExp {
+				x = -x
+			}
+			f *= math.Pow10(int(x))
+		}
+		num = f
 	}
-	return f
+	return
 }
 
-// AsInt returns the number as a a Big.
-func (n *Number) AsBig() Big {
-	return Big(n.BigBuf)
+// AsNode returns the number as best fit.
+func (n *Number) AsNode() (num Node) {
+	if 0 < len(n.BigBuf) {
+		num = Big(n.BigBuf)
+	} else if n.Frac == 0 && n.Exp == 0 {
+		i := int64(n.I)
+		if n.Neg {
+			i = -i
+		}
+		num = Int(i)
+	} else {
+		f := float64(n.I)
+		if 0 < n.Frac {
+			f += float64(n.Frac) / float64(n.Div)
+		}
+		if n.Neg {
+			f = -f
+		}
+		if 0 < n.Exp {
+			x := int(n.Exp)
+			if n.NegExp {
+				x = -x
+			}
+			f *= math.Pow10(int(x))
+		}
+		num = Float(f)
+	}
+	return
 }

@@ -98,9 +98,9 @@ func TestParserParseString(t *testing.T) {
 		{src: "[}]", expect: "unexpected object close at 1:2"},
 		{src: "{\"a\" \n : 1]}", expect: "unexpected array close at 2:5"},
 		{src: `[1}]`, expect: "unexpected object close at 1:3"},
-		{src: `1]`, expect: "too many closes at 1:2"},
-		{src: `1}`, expect: "too many closes at 1:2"},
-		{src: `]`, expect: "too many closes at 1:1"},
+		{src: `1]`, expect: "unexpected array close at 1:2"},
+		{src: `1}`, expect: "unexpected object close at 1:2"},
+		{src: `]`, expect: "unexpected array close at 1:1"},
 		{src: `x`, expect: "unexpected character 'x' at 1:1"},
 		{src: `[1,]`, expect: "unexpected character ']' at 1:4"},
 		{src: `[null x`, expect: "expected a comma or close, not 'x' at 1:7"},
@@ -115,8 +115,8 @@ func TestParserParseString(t *testing.T) {
 		{src: `[0,fail]`, expect: "expected false at 1:6"},
 		{src: `[0,truk]`, expect: "expected true at 1:7"},
 		{src: `-x`, expect: "invalid number at 1:2"},
-		{src: `0]`, expect: "too many closes at 1:2"},
-		{src: `0}`, expect: "too many closes at 1:2"},
+		{src: `0]`, expect: "unexpected array close at 1:2"},
+		{src: `0}`, expect: "unexpected object close at 1:2"},
 		{src: `0x`, expect: "invalid number at 1:2"},
 		{src: `1x`, expect: "invalid number at 1:2"},
 		{src: `1.x`, expect: "invalid number at 1:3"},
@@ -124,29 +124,24 @@ func TestParserParseString(t *testing.T) {
 		{src: `1.2ex`, expect: "invalid number at 1:5"},
 		{src: `1.2e+x`, expect: "invalid number at 1:6"},
 		{src: "1.2\n]", expect: "extra characters after close, ']' at 2:1"},
-		{src: `1.2]`, expect: "too many closes at 1:4"},
-		{src: `1.2}`, expect: "too many closes at 1:4"},
-		{src: `1.2e2]`, expect: "too many closes at 1:6"},
-		{src: `1.2e2}`, expect: "too many closes at 1:6"},
+		{src: `1.2]`, expect: "unexpected array close at 1:4"},
+		{src: `1.2}`, expect: "unexpected object close at 1:4"},
+		{src: `1.2e2]`, expect: "unexpected array close at 1:6"},
+		{src: `1.2e2}`, expect: "unexpected object close at 1:6"},
 		{src: `1.2e2x`, expect: "invalid number at 1:6"},
 		{src: "\"x\ty\"", expect: "invalid JSON character 0x09 at 1:3"},
 		{src: `"x\zy"`, expect: "invalid JSON escape character '\\z' at 1:4"},
 		{src: `"x\u004z"`, expect: "invalid JSON unicode character 'z' at 1:8"},
 		{src: "\xef\xbb[]", expect: "expected BOM at 1:3"},
-
-		{src: "[ // a comment\n  true\n]", value: []interface{}{true}, noComment: false},
-		{src: "[ // a comment\n  true\n]", expect: "comments not allowed at 1:3", noComment: true},
-		{src: "[\n  null, // a comment\n  true\n]", value: []interface{}{nil, true}, noComment: false},
-		{src: "[\n  null, / a comment\n  true\n]", expect: "unexpected character ' ' at 2:10", noComment: false},
-		{src: "[\n  null, // a comment\n  true\n]", expect: "comments not allowed at 2:9", noComment: true},
+		{src: "[ // a comment\n  true\n]", expect: "unexpected character '/' at 1:3"},
 	} {
 		if testing.Verbose() {
-			fmt.Printf("... %s\n", d.src)
+			fmt.Printf("... %d: %s\n", i, d.src)
 		}
 		var err error
 		var v interface{}
-		if d.onlyOne || d.noComment {
-			p := oj.Parser{NoComment: d.noComment}
+		if d.onlyOne {
+			p := oj.Parser{}
 			v, err = p.Parse([]byte(d.src))
 		} else {
 			v, err = oj.Parse([]byte(d.src))
@@ -170,8 +165,8 @@ func TestParserParseCallback(t *testing.T) {
 		results = append(results, fmt.Sprintf("%v", n)...)
 		return false
 	}
-	var p oj.Parser
-	v, err := p.Parse([]byte(callbackJSON), cb, true)
+	p := oj.Parser{Reuse: true}
+	v, err := p.Parse([]byte(callbackJSON), cb)
 	tt.Nil(t, err)
 	tt.Nil(t, v)
 	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
@@ -201,7 +196,7 @@ func TestParserParseReaderCallback(t *testing.T) {
 	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
 
 	results = results[:0]
-	v, err = p.ParseReader(strings.NewReader(callbackJSON), cb, true)
+	v, err = p.ParseReader(strings.NewReader(callbackJSON), cb)
 	tt.Nil(t, err)
 	tt.Nil(t, v)
 	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
@@ -243,4 +238,23 @@ func TestParserParseReaderErr(t *testing.T) {
 	r := tt.ShortReader{Max: 5000, Content: []byte("[ 123" + strings.Repeat(",  123", 120) + "]")}
 	_, err = p.ParseReader(&r)
 	tt.NotNil(t, err)
+}
+
+func TestParserParseReaderMany(t *testing.T) {
+	for i, d := range []data{
+		{src: "null", value: nil},
+		// The read buffer is 4096 so force a buffer read in the middle of
+		// reading a token.
+		{src: strings.Repeat(" ", 4094) + "null ", value: nil},
+		{src: strings.Repeat(" ", 4094) + "true ", value: true},
+		{src: strings.Repeat(" ", 4094) + "false ", value: false},
+		{src: strings.Repeat(" ", 4094) + `{"x":1}`, value: map[string]interface{}{"x": 1}},
+		{src: strings.Repeat(" ", 4095) + `"x"`, value: "x"},
+	} {
+		p := oj.Parser{}
+		r := strings.NewReader(d.src)
+		v, err := p.ParseReader(r)
+		tt.Nil(t, err, i, ": ", d.src)
+		tt.Equal(t, d.value, v, i, ": ", d.src)
+	}
 }
