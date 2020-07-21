@@ -4,10 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.2.0] - [unreleased]
+## [1.2.0] - [2020-07-20]
 ### Added
 - Parse Resuse option added to allow reusing maps on subsequent parses.
-- In addition to callbacks, multi-json documents can place elements on a `chan interface{}`.
+- In addition to callbacks, parsing multi-json documents can place elements on a `chan interface{}`.
 ### Changed
 - A code refactoring resulting in a performance boost to Parsing and Validation.
 
