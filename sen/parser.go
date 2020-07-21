@@ -300,9 +300,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			off += i
 			if b == '"' {
 				off++
-				if err = p.add(string(buf[start:off]), off); err != nil {
-					return
-				}
+				p.addString(string(buf[start:off]), off)
 			} else {
 				p.tmp = p.tmp[:0]
 				p.tmp = append(p.tmp, buf[start:off+1]...)
@@ -357,9 +355,8 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			// which are all over 256 long.
 			switch p.mode[256] {
 			case 'n':
-				if err = p.add(p.num.AsNum(), off); err != nil {
-					return
-				}
+				// can not fail appending to an array
+				_ = p.add(p.num.AsNum(), off)
 			case 't':
 				p.addToken(off)
 			}
@@ -411,16 +408,6 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 		case tokenColon:
 			p.addToken(off)
 			p.mode = valueMap
-		case tokenNewline:
-			p.addToken(off)
-			p.line++
-			p.noff = off
-			for i, b = range buf[off+1:] {
-				if spaceMap[b] != skipChar {
-					break
-				}
-			}
-			off += i
 		case tokenNlColon:
 			p.addToken(off)
 			p.line++
@@ -432,9 +419,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			}
 			off += i
 		case strQuote:
-			if err = p.add(string(p.tmp), off); err != nil {
-				return
-			}
+			p.addString(string(p.tmp), off)
 		case numZero:
 			p.mode = zeroMap
 		case numDigit:
@@ -526,9 +511,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 		}
 		switch p.mode[256] {
 		case 'n': // number
-			if err = p.add(p.num.AsNum(), off); err != nil {
-				return
-			}
+			_ = p.add(p.num.AsNum(), off)
 			if p.cb == nil {
 				p.result = p.stack[0]
 			} else {
@@ -546,6 +529,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 	return nil
 }
 
+// only for non-string
 func (p *Parser) add(n interface{}, off int) error {
 	p.mode = valueMap
 	if 0 < len(p.starts) {
@@ -555,13 +539,7 @@ func (p *Parser) add(n interface{}, off int) error {
 				obj[string(k)] = n
 				p.stack = p.stack[0 : len(p.stack)-1]
 			} else {
-				// Expect a key, string.
-				if s, ok := n.(string); ok {
-					p.stack = append(p.stack, gen.Key(s))
-					p.mode = colonMap
-				} else {
-					return p.newError(off, "expected a key")
-				}
+				return p.newError(off, "expected a key")
 			}
 		} else { // array
 			p.stack = append(p.stack, n)
@@ -645,6 +623,25 @@ func (p *Parser) addTokenWith(s string, off int) {
 	default:
 		p.stack = append(p.stack, s)
 	}
+}
+
+func (p *Parser) addString(s string, off int) {
+	p.mode = valueMap
+	if 0 < len(p.starts) {
+		if p.starts[len(p.starts)-1] == -1 { // object
+			if k, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
+				obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
+				obj[string(k)] = s
+				p.stack = p.stack[0 : len(p.stack)-1]
+			} else {
+				p.stack = append(p.stack, gen.Key(s))
+				p.mode = colonMap
+			}
+			return
+		}
+	}
+	// Array or just a value
+	p.stack = append(p.stack, s)
 }
 
 func (p *Parser) newError(off int, format string, args ...interface{}) error {

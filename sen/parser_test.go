@@ -75,6 +75,9 @@ func TestParserParseString(t *testing.T) {
 
 		{src: "{}", value: map[string]interface{}{}},
 		{src: `{"a\tbc":true}`, value: map[string]interface{}{"a\tbc": true}},
+		{src: `{x:null}`, value: map[string]interface{}{"x": nil}},
+		{src: `{x:true}`, value: map[string]interface{}{"x": true}},
+		{src: `{x:false}`, value: map[string]interface{}{"x": false}},
 		{src: "{\"z\":0,\n\"z2\":0}", value: map[string]interface{}{"z": 0, "z2": 0}},
 		{src: `{"z":1.2,"z2":0}`, value: map[string]interface{}{"z": 1.2, "z2": 0}},
 		{src: `{"abc":{"def" :3}}`, value: map[string]interface{}{"abc": map[string]interface{}{"def": 3}}},
@@ -135,6 +138,15 @@ func TestParserParseString(t *testing.T) {
 		{src: "x}", expect: "extra characters after close, '}' at 1:2"},
 		{src: "x$", expect: "extra characters after close, '$' at 1:2"},
 		{src: "{x$:1}", expect: "expected a colon, not '$' at 1:3"},
+		{src: `{123}`, expect: "expected a key at 1:5"},
+		{src: `{123 }`, expect: "expected a key at 1:5"},
+		{src: `{123[}`, expect: "expected a key at 1:5"},
+		{src: `{{}}`, expect: "expected a key at 1:3"},
+		{src: `{123`, expect: "not closed at 1:5"},
+		{src: "{123\n", expect: "expected a key at 1:5"},
+		{src: `{123// comment`, expect: "expected a key at 1:5"},
+		{src: `{123{}}`, expect: "expected a key at 1:5"},
+		{src: `{[]]}`, expect: "expected a key at 1:3"},
 
 		{src: "[0 1,2]", value: []interface{}{0, 1, 2}},
 		{src: "[0[1[2]]]", value: []interface{}{0, []interface{}{1, []interface{}{2}}}},
@@ -151,8 +163,9 @@ func TestParserParseString(t *testing.T) {
 		{src: "[1.5[1]]", value: []interface{}{1.5, []interface{}{1}}},
 		{src: "[1.5e2{x:1}]", value: []interface{}{150., map[string]interface{}{"x": 1}}},
 		{src: "[1.5e2[1]]", value: []interface{}{150.0, []interface{}{1}}},
-		{src: "[abc// a comment\n]", value: []interface{}{"abc"}},
 
+		{src: "[abc// a comment\n]", value: []interface{}{"abc"}},
+		{src: "[123// a comment\n]", value: []interface{}{123}},
 		{src: "[ // a comment\n  true\n]", value: []interface{}{true}},
 		{src: "[\n  null // a comment\n  true\n]", value: []interface{}{nil, true}},
 		{src: "[\n  null / a comment\n  true\n]", expect: "unexpected character ' ' at 2:9"},
@@ -184,6 +197,9 @@ func TestParserParseReader(t *testing.T) {
 		{src: strings.Repeat(" ", 4094) + "true ", value: true},
 		{src: strings.Repeat(" ", 4094) + "false ", value: false},
 		{src: strings.Repeat(" ", 4094) + "hello\n  ", value: "hello"},
+		{src: strings.Repeat(" ", 4092) + "{x:null} ", value: map[string]interface{}{"x": nil}},
+		{src: strings.Repeat(" ", 4092) + "{x:true} ", value: map[string]interface{}{"x": true}},
+		{src: strings.Repeat(" ", 4092) + "{x:false} ", value: map[string]interface{}{"x": false}},
 		{src: strings.Repeat(" ", 4090) + "{abc:def} ", value: map[string]interface{}{"abc": "def"}},
 		{src: strings.Repeat(" ", 4093) + "{abc:def} ", value: map[string]interface{}{"abc": "def"}},
 		{src: strings.Repeat(" ", 4093) + "[abc[def]]", value: []interface{}{"abc", []interface{}{"def"}}},
@@ -195,6 +211,7 @@ func TestParserParseReader(t *testing.T) {
 		{src: strings.Repeat(" ", 4094) + "hello\n $", expect: "extra characters after close, '$' at 2:2"},
 		{src: strings.Repeat(" ", 4094) + "hello]", expect: "unexpected array close at 1:4"},
 		{src: strings.Repeat(" ", 4094) + "hello}", expect: "unexpected object close at 1:4"},
+		{src: strings.Repeat(" ", 4095) + `"x"`, value: "x"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %q\n", i, d.src)
@@ -223,7 +240,7 @@ func TestParserParseCallback(t *testing.T) {
 		results = append(results, fmt.Sprintf("%v", n)...)
 		return false
 	}
-	var p sen.Parser
+	p := sen.Parser{Reuse: true}
 	v, err := p.Parse([]byte(callbackSEN), cb)
 	tt.Nil(t, err)
 	tt.Nil(t, v)
@@ -236,6 +253,18 @@ func TestParserParseCallback(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Nil(t, v)
 	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
+
+	results = results[:0]
+	v, err = p.Parse([]byte("123"), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, `123`, string(results))
+
+	results = results[:0]
+	v, err = p.Parse([]byte("abc"), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, "abc", string(results))
 }
 
 func TestParserParseReaderCallback(t *testing.T) {
