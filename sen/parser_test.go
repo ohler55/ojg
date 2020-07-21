@@ -16,8 +16,11 @@ const callbackSEN = `
 1
 [2]
 {x:3}
-true false 123
-`
+true false 123`
+
+const tokenSEN = `
+abc
+def`
 
 type rdata struct {
 	src    string
@@ -319,4 +322,60 @@ func TestParserParseReaderErr(t *testing.T) {
 	r := tt.ShortReader{Max: 5000, Content: []byte("[ 123" + strings.Repeat(",  123", 120) + "]")}
 	_, err = p.ParseReader(&r)
 	tt.NotNil(t, err)
+}
+
+func TestParserParseChan(t *testing.T) {
+	var results []byte
+	rc := make(chan interface{}, 10)
+	var p sen.Parser
+	_, err := p.Parse([]byte(callbackSEN), rc)
+	tt.Nil(t, err)
+	rc <- nil
+	for {
+		n := <-rc
+		if n == nil {
+			break
+		}
+		if 0 < len(results) {
+			results = append(results, ' ')
+		}
+		results = append(results, fmt.Sprintf("%v", n)...)
+	}
+	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
+
+	results = results[:0]
+	_, err = p.Parse([]byte(tokenSEN), rc)
+	tt.Nil(t, err)
+	rc <- nil
+	for {
+		n := <-rc
+		if n == nil {
+			break
+		}
+		if 0 < len(results) {
+			results = append(results, ' ')
+		}
+		results = append(results, fmt.Sprintf("%v", n)...)
+	}
+	tt.Equal(t, `abc def`, string(results))
+}
+
+func TestParserParseReaderChan(t *testing.T) {
+	var results []byte
+	rc := make(chan interface{}, 10)
+	var p sen.Parser
+	_, err := p.ParseReader(strings.NewReader(callbackSEN), rc)
+	tt.Nil(t, err)
+	rc <- nil
+	for {
+		n := <-rc
+		if n == nil {
+			break
+		}
+		if 0 < len(results) {
+			results = append(results, ' ')
+		}
+		results = append(results, fmt.Sprintf("%v", n)...)
+	}
+	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
 }

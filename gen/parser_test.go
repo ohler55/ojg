@@ -16,8 +16,7 @@ const callbackJSON = `
 1
 [2]
 {"x":3}
-true false 123
-`
+true false 123`
 
 func TestParseString(t *testing.T) {
 	for i, d := range []data{
@@ -264,4 +263,44 @@ func TestParserParseReaderMany(t *testing.T) {
 		tt.Nil(t, err, i, ": ", d.src)
 		tt.Equal(t, d.value, v, i, ": ", d.src)
 	}
+}
+
+func TestParserParseChan(t *testing.T) {
+	var results []byte
+	rc := make(chan gen.Node, 10)
+	var p gen.Parser
+	_, err := p.Parse([]byte(callbackJSON), rc)
+	tt.Nil(t, err)
+	rc <- nil
+	for {
+		n := <-rc
+		if n == nil {
+			break
+		}
+		if 0 < len(results) {
+			results = append(results, ' ')
+		}
+		results = append(results, n.String()...)
+	}
+	tt.Equal(t, `1 [2] {"x":3} true false 123`, string(results))
+}
+
+func TestParserParseReaderChan(t *testing.T) {
+	var results []byte
+	rc := make(chan gen.Node, 10)
+	var p gen.Parser
+	_, err := p.ParseReader(strings.NewReader(callbackJSON), rc)
+	tt.Nil(t, err)
+	rc <- nil
+	for {
+		n := <-rc
+		if n == nil {
+			break
+		}
+		if 0 < len(results) {
+			results = append(results, ' ')
+		}
+		results = append(results, n.String()...)
+	}
+	tt.Equal(t, `1 [2] {"x":3} true false 123`, string(results))
 }

@@ -76,6 +76,35 @@ func senParseReaderReuse(b *testing.B) {
 	}
 }
 
+func senParseChan(b *testing.B) {
+	j, _ := ioutil.ReadFile(filename)
+	var sample []byte
+	if data, err := (&oj.Parser{}).Parse(j); err == nil {
+		sample = []byte(sen.String(data, &sen.Options{Indent: 2}))
+	} else {
+		log.Fatal(err)
+	}
+	rc := make(chan interface{}, b.N)
+	ready := make(chan bool)
+	go func() {
+		ready <- true
+		for {
+			if v := <-rc; v == nil {
+				break
+			}
+		}
+	}()
+	<-ready
+	b.ResetTimer()
+	var p sen.Parser
+	for n := 0; n < b.N; n++ {
+		if _, err := p.Parse(sample, rc); err != nil {
+			log.Fatal(err)
+		}
+	}
+	rc <- nil
+}
+
 func senString(b *testing.B) {
 	data := loadSample()
 	opt := sen.Options{OmitNil: true}

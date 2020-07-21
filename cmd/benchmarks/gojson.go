@@ -43,6 +43,32 @@ func goDecodeReader(b *testing.B) {
 	}
 }
 
+func goParseChan(b *testing.B) {
+	sample, _ := ioutil.ReadFile(filename)
+	rc := make(chan interface{}, b.N)
+	ready := make(chan bool)
+	go func() {
+		ready <- true
+		for {
+			if v := <-rc; v == nil {
+				break
+			}
+		}
+	}()
+	<-ready
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		var result interface{}
+		// The go json package does not have a chan based result handler so
+		// fake it to set the baseline for others.
+		if err := json.Unmarshal(sample, &result); err != nil {
+			log.Fatal(err)
+		}
+		rc <- result
+	}
+	rc <- nil
+}
+
 func goValidate(b *testing.B) {
 	sample, _ := ioutil.ReadFile(filename)
 	b.ResetTimer()
