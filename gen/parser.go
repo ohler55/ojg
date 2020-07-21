@@ -19,21 +19,22 @@ const (
 // Parser is a reusable JSON parser. It can be reused for multiple parsings
 // which allows buffer reuse for a performance advantage.
 type Parser struct {
-	tmp       []byte // used for numbers and strings
-	runeBytes []byte
-	stack     []Node
-	starts    []int
-	maps      []Object
-	cb        func(Node) bool
-	line      int
-	noff      int // Offset of last newline from start of buf. Can be negative when using a reader.
-	ri        int // read index for null, false, and true
-	mi        int
-	num       Number
-	rn        rune
-	result    Node
-	mode      string
-	nextMode  string
+	tmp        []byte // used for numbers and strings
+	runeBytes  []byte
+	stack      []Node
+	starts     []int
+	maps       []Object
+	cb         func(Node) bool
+	resultChan chan Node
+	line       int
+	noff       int // Offset of last newline from start of buf. Can be negative when using a reader.
+	ri         int // read index for null, false, and true
+	mi         int
+	num        Number
+	rn         rune
+	result     Node
+	mode       string
+	nextMode   string
 
 	// OnlyOne returns an error if more than one JSON is in the string or stream.
 	OnlyOne bool
@@ -50,11 +51,15 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (Node, error) {
 		case func(Node) bool:
 			p.cb = ta
 			p.OnlyOne = false
+		case chan Node:
+			p.resultChan = ta
+			p.OnlyOne = false
+			p.Reuse = false
 		default:
 			return nil, fmt.Errorf("a %T is not a valid option type", a)
 		}
 	}
-	if p.cb == nil {
+	if p.cb == nil && p.resultChan == nil {
 		p.OnlyOne = true
 	}
 	if p.stack == nil {
@@ -99,11 +104,15 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data Node, err e
 		case func(Node) bool:
 			p.cb = ta
 			p.OnlyOne = false
+		case chan Node:
+			p.resultChan = ta
+			p.OnlyOne = false
+			p.Reuse = false
 		default:
 			return nil, fmt.Errorf("a %T is not a valid option type", a)
 		}
 	}
-	if p.cb == nil {
+	if p.cb == nil && p.resultChan == nil {
 		p.OnlyOne = true
 	}
 	if p.stack == nil {
@@ -503,10 +512,15 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			return p.byteError(off, p.mode, b)
 		}
 		if depth == 0 && 256 < len(p.mode) && p.mode[256] == 'a' {
-			if p.cb != nil {
-				p.cb(p.stack[0])
-			} else {
+			if p.cb == nil && p.resultChan == nil {
 				p.result = p.stack[0]
+			} else {
+				if p.cb != nil {
+					p.cb(p.stack[0])
+				}
+				if p.resultChan != nil {
+					p.resultChan <- p.stack[0]
+				}
 			}
 			p.stack = p.stack[:0]
 			p.mi = 0
@@ -523,10 +537,15 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		}
 		if p.mode[256] == 'n' {
 			p.add(p.num.AsNode())
-			if p.cb == nil {
+			if p.cb == nil && p.resultChan == nil {
 				p.result = p.stack[0]
 			} else {
-				p.cb(p.stack[0])
+				if p.cb != nil {
+					p.cb(p.stack[0])
+				}
+				if p.resultChan != nil {
+					p.resultChan <- p.stack[0]
+				}
 			}
 		}
 	}
