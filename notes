@@ -1,15 +1,5 @@
 
 ----------------
-- next/todo
- - single switch
-  + oj parse
-  + gen parse
-  - sen parse
-
- - chan option for parse
- - streaming with log files in benchmarks
-  - chan and cb
-  - benchmark repo also
 
 - combine for performance, maybe
  - how about just adding to num
