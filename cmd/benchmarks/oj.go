@@ -64,6 +64,26 @@ func ojParseReaderReuse(b *testing.B) {
 	}
 }
 
+func ojParseChan(b *testing.B) {
+	sample, _ := ioutil.ReadFile(filename)
+	rc := make(chan interface{}, b.N)
+	go func() {
+		for {
+			if v := <-rc; v == nil {
+				break
+			}
+		}
+	}()
+	b.ResetTimer()
+	var p oj.Parser
+	for n := 0; n < b.N; n++ {
+		if _, err := p.Parse(sample, rc); err != nil {
+			log.Fatal(err)
+		}
+	}
+	rc <- nil
+}
+
 func ojValidate(b *testing.B) {
 	sample, _ := ioutil.ReadFile(filename)
 	b.ResetTimer()

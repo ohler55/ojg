@@ -81,6 +81,12 @@ func main() {
 		{pkg: "sen", name: "ParseReader", fun: senParseReader},
 		{pkg: "sen-reuse", name: "ParseReader", fun: senParseReaderReuse},
 	})
+	benchSuite("Parse chan interface{}", []*bench{
+		{pkg: "json", name: "Parse-chan", fun: goParseChan},
+		{pkg: "oj", name: "ParseReader", fun: ojParseChan},
+		//{pkg: "gen", name: "ParseReder", fun: genParseChan},
+		//{pkg: "sen", name: "ParseReader", fun: senParseChan},
+	})
 
 	benchSuite("Validate string/[]byte", []*bench{
 		{pkg: "json", name: "Valid", fun: goValidate},
