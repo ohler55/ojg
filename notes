@@ -5,6 +5,16 @@
  - how about just adding to num
   - need a validation version or flag
 
+- cmd/oj
+ - set option
+  - |$.foo|| for delete
+  - |$.foo|{"x":1}| for replace/set
+  - |$.foo|@.bar| for set from within
+  - eval in order
+  - use any char as separator
+  - also jp.Expr.Set(jp.Expr)
+   - find with first path and replace with path arg relative to found
+
  - regex op =~
   - /^xyz&/
  - in addition to parse callback support chan for results

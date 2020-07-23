@@ -3,6 +3,7 @@
 package alt_test
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/ohler55/ojg/alt"
@@ -90,4 +91,75 @@ func ExampleAlter() {
 	fmt.Println(oj.JSON(v, &oj.Options{Sort: true}))
 
 	// Output: {"a":1,"b":4,"c":9}
+}
+
+type Animal interface {
+	Kind() string
+}
+
+type Dog struct {
+	Size string
+}
+
+func (d *Dog) Kind() string {
+	return fmt.Sprintf("%s dog", d.Size)
+}
+
+type Cat struct {
+	Color string
+}
+
+func (c *Cat) Kind() string {
+	return fmt.Sprintf("%s cat", c.Color)
+}
+
+func ExampleDecompose_animal() {
+	pets := []Animal{&Dog{Size: "big"}, &Cat{Color: "black"}}
+
+	// First marshal using the go json package.
+	pj, err := json.Marshal(pets)
+	if err != nil {
+		fmt.Printf("error: %s\n", err)
+	}
+	// Works just fine.
+	fmt.Printf("json.Marshal: %s\n", pj)
+
+	// Now try to unmarshall. An error is returned with a list of nils.
+	var petsOut []Animal
+	err = json.Unmarshal(pj, &petsOut)
+	fmt.Printf("error: %s\n", err)
+	fmt.Printf("jsom.Unmarshal: %v\n", petsOut)
+
+	// Now try OjG. Decompress and create a JSON []byte slice.
+	simple := alt.Decompose(pets, &alt.Options{CreateKey: "^"})
+	// Sort the object members in the output for repeatability.
+	ps := oj.JSON(simple, &oj.Options{Sort: true})
+	fmt.Printf("oj.JSON: %s\n", ps)
+
+	// Create a new Recomposer. This can be use over and over again. Register
+	// the types with a nil creation function to let reflection do the work
+	// since the styles are exported.
+	var r *alt.Recomposer
+	if r, err = alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Dog{}: nil, &Cat{}: nil}); err != nil {
+		fmt.Printf("error: %s\n", err)
+	}
+
+	// Recompose from the simplified data earlier. The one that matches the JSON.
+	var result interface{}
+	if result, err = r.Recompose(simple, []Animal{}); err != nil {
+		fmt.Printf("error: %s\n", err)
+	}
+	// Check the results.
+	// members.
+	pets, _ = result.([]Animal)
+	for _, animal := range pets {
+		fmt.Printf("  %T - %s\n", animal, animal.Kind())
+	}
+	// Output:
+	// json.Marshal: [{"Size":"big"},{"Color":"black"}]
+	// error: json: cannot unmarshal object into Go value of type alt_test.Animal
+	// jsom.Unmarshal: [<nil> <nil>]
+	// oj.JSON: [{"^":"Dog","size":"big"},{"^":"Cat","color":"black"}]
+	//   *alt_test.Dog - big dog
+	//   *alt_test.Cat - black cat
 }
