@@ -496,3 +496,5 @@ Theres alway something new ready to be explored. For OjG there are a few things 
  - A construction project to add JSON building to the **oj** command which is an alternative to jq but using JSONPath.
  - Explore new territory by implementing a Simple Encoding Notation which mixes GraphQL syntax with JSON for simpler more forgiving format.
  - A callback parser along the lines of the Go json.Decoder or more likely like the Oj [Simple Callback Parser](http://ohler.com/oj/doc/Oj.html#sc_parse-class_method).
+
+Discuss this on [Changelog News](https://changelog.com/news/a-journey-building-a-fast-json-parser-and-full-jsonpath-oj-for-go-YRXJ).
