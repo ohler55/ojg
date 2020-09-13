@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.2.1] - [2020-09-13]
+### Fixed
+- Order is preserved when using JSONPath to follow wildcards, unions, and slices.
+
 ## [1.2.0] - [2020-07-20]
 ### Added
 - Parse Resuse option added to allow reusing maps on subsequent parses.

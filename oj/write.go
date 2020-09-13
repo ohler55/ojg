@@ -155,6 +155,8 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 		err = o.buildSimpleArray(td, depth)
 	case gen.Array:
 		err = o.buildArray(td, depth)
+	case []gen.Node:
+		err = o.buildArray(gen.Array(td), depth)
 
 	case map[string]interface{}:
 		err = o.buildSimpleObject(td, depth)

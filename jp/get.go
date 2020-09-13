@@ -148,7 +148,8 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				if int(fi) == len(x)-1 { // last one
 					results = append(results, tv...)
 				} else {
-					for _, v = range tv {
+					for i := len(tv) - 1; 0 <= i; i-- {
+						v = tv[i]
 						switch v.(type) {
 						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
@@ -181,7 +182,8 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						results = append(results, v)
 					}
 				} else {
-					for _, v = range tv {
+					for i := len(tv) - 1; 0 <= i; i-- {
+						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
@@ -244,7 +246,8 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					if int(fi) == len(x)-1 { // last one
 						results = append(results, tv...)
 					}
-					for _, v = range tv {
+					for i := len(tv) - 1; 0 <= i; i-- {
+						v = tv[i]
 						switch v.(type) {
 						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
@@ -283,7 +286,8 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 							results = append(results, v)
 						}
 					}
-					for _, v = range tv {
+					for i := len(tv) - 1; 0 <= i; i-- {
+						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
@@ -316,45 +320,84 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				stack = append(stack, prev)
 			}
 		case Union:
-			for _, u := range tf {
-				has = false
-				switch tu := u.(type) {
-				case string:
-					switch tv := prev.(type) {
-					case map[string]interface{}:
-						v, has = tv[string(tu)]
-					case gen.Object:
-						v, has = tv[string(tu)]
-					default:
-						v, has = x.reflectGetChild(tv, string(tu))
+			if int(fi) == len(x)-1 { // last one
+				for _, u := range tf {
+					has = false
+					switch tu := u.(type) {
+					case string:
+						switch tv := prev.(type) {
+						case map[string]interface{}:
+							v, has = tv[string(tu)]
+						case gen.Object:
+							v, has = tv[string(tu)]
+						default:
+							v, has = x.reflectGetChild(tv, string(tu))
+						}
+					case int64:
+						i := int(tu)
+						switch tv := prev.(type) {
+						case []interface{}:
+							if i < 0 {
+								i = len(tv) + i
+							}
+							if 0 <= i && i < len(tv) {
+								v = tv[i]
+								has = true
+							}
+						case gen.Array:
+							if i < 0 {
+								i = len(tv) + i
+							}
+							if 0 <= i && i < len(tv) {
+								v = tv[i]
+								has = true
+							}
+						default:
+							v, has = x.reflectGetNth(tv, i)
+						}
 					}
-				case int64:
-					i := int(tu)
-					switch tv := prev.(type) {
-					case []interface{}:
-						if i < 0 {
-							i = len(tv) + i
-						}
-						if 0 <= i && i < len(tv) {
-							v = tv[i]
-							has = true
-						}
-					case gen.Array:
-						if i < 0 {
-							i = len(tv) + i
-						}
-						if 0 <= i && i < len(tv) {
-							v = tv[i]
-							has = true
-						}
-					default:
-						v, has = x.reflectGetNth(tv, i)
+					if has {
+						results = append(results, v)
 					}
 				}
-				if has {
-					if int(fi) == len(x)-1 { // last one
-						results = append(results, v)
-					} else {
+			} else {
+				for ui := len(tf) - 1; 0 <= ui; ui-- {
+					u := tf[ui]
+					has = false
+					switch tu := u.(type) {
+					case string:
+						switch tv := prev.(type) {
+						case map[string]interface{}:
+							v, has = tv[string(tu)]
+						case gen.Object:
+							v, has = tv[string(tu)]
+						default:
+							v, has = x.reflectGetChild(tv, string(tu))
+						}
+					case int64:
+						i := int(tu)
+						switch tv := prev.(type) {
+						case []interface{}:
+							if i < 0 {
+								i = len(tv) + i
+							}
+							if 0 <= i && i < len(tv) {
+								v = tv[i]
+								has = true
+							}
+						case gen.Array:
+							if i < 0 {
+								i = len(tv) + i
+							}
+							if 0 <= i && i < len(tv) {
+								v = tv[i]
+								has = true
+							}
+						default:
+							v, has = x.reflectGetNth(tv, i)
+						}
+					}
+					if has {
 						switch v.(type) {
 						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
@@ -394,11 +437,13 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					continue
 				}
 				if 0 < step {
-					for i := start; i <= end; i += step {
-						v = tv[i]
-						if int(fi) == len(x)-1 { // last one
-							results = append(results, v)
-						} else {
+					if int(fi) == len(x)-1 { // last one
+						for i := start; i <= end; i += step {
+							results = append(results, tv[i])
+						}
+					} else {
+						for i := end; start <= i; i -= step {
+							v = tv[i]
 							switch v.(type) {
 							case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String:
@@ -413,11 +458,13 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						}
 					}
 				} else {
-					for i := start; end <= i; i += step {
-						v = tv[i]
-						if int(fi) == len(x)-1 { // last one
-							results = append(results, v)
-						} else {
+					if int(fi) == len(x)-1 { // last one
+						for i := start; end <= i; i += step {
+							results = append(results, tv[i])
+						}
+					} else {
+						for i := end; i <= start; i -= step {
+							v = tv[i]
 							switch v.(type) {
 							case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String:
@@ -443,11 +490,13 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					continue
 				}
 				if 0 < step {
-					for i := start; i <= end; i += step {
-						v = tv[i]
-						if int(fi) == len(x)-1 { // last one
-							results = append(results, v)
-						} else {
+					if int(fi) == len(x)-1 { // last one
+						for i := start; i <= end; i += step {
+							results = append(results, tv[i])
+						}
+					} else {
+						for i := end; start <= i; i -= step {
+							v = tv[i]
 							switch v.(type) {
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
@@ -455,11 +504,13 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						}
 					}
 				} else {
-					for i := start; end <= i; i += step {
-						v = tv[i]
-						if int(fi) == len(x)-1 { // last one
-							results = append(results, v)
-						} else {
+					if int(fi) == len(x)-1 { // last one
+						for i := start; end <= i; i += step {
+							results = append(results, tv[i])
+						}
+					} else {
+						for i := end; i <= start; i -= step {
+							v = tv[i]
 							switch v.(type) {
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
@@ -642,7 +693,8 @@ func (x Expr) First(data interface{}) interface{} {
 						return tv[0]
 					}
 				} else {
-					for _, v = range tv {
+					for i := len(tv) - 1; 0 <= i; i-- {
+						v = tv[i]
 						switch v.(type) {
 						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
@@ -675,7 +727,8 @@ func (x Expr) First(data interface{}) interface{} {
 						return v
 					}
 				} else {
-					for _, v = range tv {
+					for i := len(tv) - 1; 0 <= i; i-- {
+						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
@@ -805,56 +858,98 @@ func (x Expr) First(data interface{}) interface{} {
 			}
 			stack = append(stack, prev)
 		case Union:
-			for _, u := range tf {
-				has = false
-				switch tu := u.(type) {
-				case string:
-					switch tv := prev.(type) {
-					case nil:
-					case map[string]interface{}:
-						v, has = tv[string(tu)]
-					case gen.Object:
-						v, has = tv[string(tu)]
-					default:
-						v, has = x.reflectGetChild(tv, string(tu))
+			if int(fi) == len(x)-1 { // last one
+				for _, u := range tf {
+					has = false
+					switch tu := u.(type) {
+					case string:
+						switch tv := prev.(type) {
+						case nil:
+						case map[string]interface{}:
+							v, has = tv[string(tu)]
+						case gen.Object:
+							v, has = tv[string(tu)]
+						default:
+							v, has = x.reflectGetChild(tv, string(tu))
+						}
+					case int64:
+						i := int(tu)
+						switch tv := prev.(type) {
+						case nil:
+						case []interface{}:
+							if i < 0 {
+								i = len(tv) + i
+							}
+							if 0 <= i && i < len(tv) {
+								v = tv[i]
+								has = true
+							}
+						case gen.Array:
+							if i < 0 {
+								i = len(tv) + i
+							}
+							if 0 <= i && i < len(tv) {
+								v = tv[i]
+								has = true
+							}
+						default:
+							v, has = x.reflectGetNth(tv, i)
+						}
 					}
-				case int64:
-					i := int(tu)
-					switch tv := prev.(type) {
-					case nil:
-					case []interface{}:
-						if i < 0 {
-							i = len(tv) + i
-						}
-						if 0 <= i && i < len(tv) {
-							v = tv[i]
-							has = true
-						}
-					case gen.Array:
-						if i < 0 {
-							i = len(tv) + i
-						}
-						if 0 <= i && i < len(tv) {
-							v = tv[i]
-							has = true
-						}
-					default:
-						v, has = x.reflectGetNth(tv, i)
-					}
-				}
-				if has {
-					if int(fi) == len(x)-1 { // last one
+					if has {
 						return v
 					}
-					switch v.(type) {
-					case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-					case nil, gen.Bool, gen.Int, gen.Float, gen.String:
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
-						stack = append(stack, v)
-					default:
-						switch reflect.TypeOf(v).Kind() {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+				}
+			} else {
+				for ui := len(tf) - 1; 0 <= ui; ui-- {
+					u := tf[ui]
+					has = false
+					switch tu := u.(type) {
+					case string:
+						switch tv := prev.(type) {
+						case nil:
+						case map[string]interface{}:
+							v, has = tv[string(tu)]
+						case gen.Object:
+							v, has = tv[string(tu)]
+						default:
+							v, has = x.reflectGetChild(tv, string(tu))
+						}
+					case int64:
+						i := int(tu)
+						switch tv := prev.(type) {
+						case nil:
+						case []interface{}:
+							if i < 0 {
+								i = len(tv) + i
+							}
+							if 0 <= i && i < len(tv) {
+								v = tv[i]
+								has = true
+							}
+						case gen.Array:
+							if i < 0 {
+								i = len(tv) + i
+							}
+							if 0 <= i && i < len(tv) {
+								v = tv[i]
+								has = true
+							}
+						default:
+							v, has = x.reflectGetNth(tv, i)
+						}
+					}
+					if has {
+						switch v.(type) {
+						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
+						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
+						default:
+							switch reflect.TypeOf(v).Kind() {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								stack = append(stack, v)
+							}
 						}
 					}
 				}
