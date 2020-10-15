@@ -50,6 +50,39 @@ func JSON(data interface{}, args ...interface{}) string {
 	return string(o.buf)
 }
 
+// Marshal returns a JSON string for the data provided. The data can be a
+// simple type of nil, bool, int, floats, time.Time, []interface{}, or
+// map[string]interface{} or a Node type, The args, if supplied can be an int
+// as an indent or a *Options. An error will be returned if the Option.Strict
+// flag is true and a value is encountered that can not be encoded other than
+// by using the %v format of the fmt package.
+func Marshal(data interface{}, args ...interface{}) ([]byte, error) {
+	o := &DefaultOptions
+	o.strict = true
+
+	if 0 < len(args) {
+		switch ta := args[0].(type) {
+		case int:
+			oi := *o
+			oi.Indent = ta
+			o = &oi
+		case *Options:
+			o = ta
+		}
+	}
+	if o.InitSize == 0 {
+		o.InitSize = 256
+	}
+	if cap(o.buf) < o.InitSize {
+		o.buf = make([]byte, 0, o.InitSize)
+	} else {
+		o.buf = o.buf[:0]
+	}
+	err := o.buildJSON(data, 0)
+
+	return o.buf, err
+}
+
 // Write a JSON string for the data provided. The data can be a simple type of
 // nil, bool, int, floats, time.Time, []interface{}, or map[string]interface{}
 // or a Node type, The args, if supplied can be an int as an indent or a
@@ -174,11 +207,13 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 		if 0 < len(o.CreateKey) {
 			ao := alt.Options{CreateKey: o.CreateKey, OmitNil: o.OmitNil, FullTypePath: o.FullTypePath}
 			return o.buildJSON(alt.Decompose(data, &ao), depth)
+		} else if o.strict {
+			err = fmt.Errorf("%T can not be encoded as a JSON element", data)
 		} else {
 			o.buildString(fmt.Sprintf("%v", td))
 		}
 	}
-	if o.w != nil && o.WriteLimit < len(o.buf) {
+	if err == nil && o.w != nil && o.WriteLimit < len(o.buf) {
 		_, err = o.w.Write(o.buf)
 		o.buf = o.buf[:0]
 	}

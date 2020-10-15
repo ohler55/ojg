@@ -91,9 +91,10 @@ type Options struct {
 	// StringColor is the color for a string in the JSON output.
 	StringColor string
 
-	buf []byte
-	utf []byte
-	w   io.Writer
+	buf    []byte
+	utf    []byte
+	w      io.Writer
+	strict bool
 }
 
 var DefaultOptions = Options{
