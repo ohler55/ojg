@@ -250,3 +250,16 @@ func TestWriteShort(t *testing.T) {
 		tt.NotNil(t, err)
 	}
 }
+
+func TestMarshal(t *testing.T) {
+	b, err := oj.Marshal([]gen.Node{gen.True, gen.False}, 0)
+	tt.Nil(t, err)
+	tt.Equal(t, "[true,false]", string(b))
+
+	b, err = oj.Marshal([]interface{}{true, false}, &oj.Options{})
+	tt.Nil(t, err)
+	tt.Equal(t, "[true,false]", string(b))
+
+	b, err = oj.Marshal([]interface{}{true, TestMarshal})
+	tt.NotNil(t, err)
+}
