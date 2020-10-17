@@ -58,7 +58,6 @@ func JSON(data interface{}, args ...interface{}) string {
 // by using the %v format of the fmt package.
 func Marshal(data interface{}, args ...interface{}) ([]byte, error) {
 	o := &DefaultOptions
-	o.strict = true
 
 	if 0 < len(args) {
 		switch ta := args[0].(type) {
@@ -70,6 +69,7 @@ func Marshal(data interface{}, args ...interface{}) ([]byte, error) {
 			o = ta
 		}
 	}
+	o.strict = true
 	if o.InitSize == 0 {
 		o.InitSize = 256
 	}
@@ -207,7 +207,14 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 		if 0 < len(o.CreateKey) {
 			ao := alt.Options{CreateKey: o.CreateKey, OmitNil: o.OmitNil, FullTypePath: o.FullTypePath}
 			return o.buildJSON(alt.Decompose(data, &ao), depth)
-		} else if o.strict {
+		}
+		if !o.NoReflect {
+			ao := alt.Options{CreateKey: o.CreateKey, OmitNil: o.OmitNil, FullTypePath: o.FullTypePath}
+			if dec := alt.Decompose(data, &ao); dec != nil {
+				return o.buildJSON(dec, depth)
+			}
+		}
+		if o.strict {
 			err = fmt.Errorf("%T can not be encoded as a JSON element", data)
 		} else {
 			o.buildString(fmt.Sprintf("%v", td))

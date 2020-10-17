@@ -63,7 +63,7 @@ func TestColor(t *testing.T) {
 		{value: &simon{x: 3}, expect: `s{k"type"s:q"simon"s,k"x"s:03s}` + oj.Normal, options: &oj.Options{Sort: true}},
 		{value: &genny{val: 3}, expect: `s{k"type"s:q"genny"s,k"val"s:03s}` + oj.Normal, options: &oj.Options{Sort: true}},
 		{value: &Dummy{Val: 3}, expect: `s{k"^"s:q"Dummy"s,k"val"s:03s}` + oj.Normal, options: &oj.Options{Sort: true, CreateKey: "^"}},
-		{value: &Dummy{Val: 3}, expect: `"{val: 3}"` + oj.Normal, options: &oj.Options{CreateKey: ""}},
+		{value: &Dummy{Val: 3}, expect: `"\u0026{3}"` + oj.Normal},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %v\n", i, d.value)

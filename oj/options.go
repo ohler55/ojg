@@ -66,6 +66,10 @@ type Options struct {
 	//
 	CreateKey string
 
+	// NoReflect if true does not use reflection to encode an object. This is
+	// only considered if the CreateKey is empty.
+	NoReflect bool
+
 	// FullTypePath if true includes the full type name and path when used
 	// with the CreateKey.
 	FullTypePath bool
