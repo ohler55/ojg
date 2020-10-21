@@ -7,6 +7,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.3.0] - [unreleased]
 ### Added
 - oj.Marshal added. The function fails if an un-encodeable value is encountered.
+- UseTags option added for write and decompose Options.
 
 ## [1.2.1] - [2020-09-13]
 ### Fixed
