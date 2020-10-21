@@ -166,12 +166,18 @@ func reflectStruct(rv reflect.Value, opt *Options) interface{} {
 		}
 	}
 	for i := rv.NumField() - 1; 0 <= i; i-- {
-		name := []byte(t.Field(i).Name)
+		f := t.Field(i)
+		name := []byte(f.Name)
 		if len(name) == 0 || 'a' <= name[0] {
 			// not a public field
 			continue
 		}
 		name[0] = name[0] | 0x20
+		if opt.UseTags {
+			if tag, ok := t.Field(i).Tag.Lookup("json"); ok && 0 < len(tag) {
+				name = []byte(tag)
+			}
+		}
 		g := Decompose(rv.Field(i).Interface(), opt)
 		if g != nil || !opt.OmitNil {
 			obj[string(name)] = g

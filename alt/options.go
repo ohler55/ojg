@@ -15,6 +15,10 @@ type Options struct {
 
 	// OmitNil if true omits object members that have nil values.
 	OmitNil bool
+
+	// UseTags if true will use the json annotation tags when marhsalling,
+	// writing, or decomposing an struct.
+	UseTags bool
 }
 
 // DefaultOptions are the default options for decompsing.
@@ -22,4 +26,5 @@ var DefaultOptions = Options{
 	CreateKey:    "type",
 	FullTypePath: false,
 	OmitNil:      true,
+	UseTags:      false,
 }

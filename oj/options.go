@@ -95,6 +95,10 @@ type Options struct {
 	// StringColor is the color for a string in the JSON output.
 	StringColor string
 
+	// UseTags if true will use the json annotation tags when marhsalling,
+	// writing, or decomposing an struct.
+	UseTags bool
+
 	buf    []byte
 	utf    []byte
 	w      io.Writer

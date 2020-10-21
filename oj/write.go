@@ -205,11 +205,21 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 			return o.buildJSON(data, depth)
 		}
 		if 0 < len(o.CreateKey) {
-			ao := alt.Options{CreateKey: o.CreateKey, OmitNil: o.OmitNil, FullTypePath: o.FullTypePath}
+			ao := alt.Options{
+				CreateKey:    o.CreateKey,
+				OmitNil:      o.OmitNil,
+				FullTypePath: o.FullTypePath,
+				UseTags:      o.UseTags,
+			}
 			return o.buildJSON(alt.Decompose(data, &ao), depth)
 		}
 		if !o.NoReflect {
-			ao := alt.Options{CreateKey: o.CreateKey, OmitNil: o.OmitNil, FullTypePath: o.FullTypePath}
+			ao := alt.Options{
+				CreateKey:    o.CreateKey,
+				OmitNil:      o.OmitNil,
+				FullTypePath: o.FullTypePath,
+				UseTags:      o.UseTags,
+			}
 			if dec := alt.Decompose(data, &ao); dec != nil {
 				return o.buildJSON(dec, depth)
 			}
