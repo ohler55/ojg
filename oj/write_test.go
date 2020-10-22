@@ -122,6 +122,7 @@ func TestString(t *testing.T) {
 		{value: &Dummy{Val: 3}, expect: `{"val":3}`},
 		{value: Stew{3}, expect: `"[3]"`, options: &oj.Options{NoReflect: true}},
 		{value: &Dummy{Val: 3}, expect: `{"^":"Dummy","val":3}`, options: &oj.Options{Sort: true, CreateKey: "^"}},
+		{value: &Dummy{Val: 3}, expect: `{"Val":3}`, options: &oj.Options{KeyExact: true}},
 	} {
 		var s string
 		if d.options == nil {
