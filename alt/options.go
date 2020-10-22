@@ -17,8 +17,14 @@ type Options struct {
 	OmitNil bool
 
 	// UseTags if true will use the json annotation tags when marhsalling,
-	// writing, or decomposing an struct.
+	// writing, or decomposing an struct. If no tag is present then the
+	// KeyExact flag is referenced to determine the key.
 	UseTags bool
+
+	// KeyExact if true will use the exact field name for an encoded struct
+	// field. If false the key style most often seen in JSON files where the
+	// first character of the object keys is lowercase.
+	KeyExact bool
 }
 
 // DefaultOptions are the default options for decompsing.

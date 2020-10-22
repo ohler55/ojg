@@ -210,6 +210,7 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 				OmitNil:      o.OmitNil,
 				FullTypePath: o.FullTypePath,
 				UseTags:      o.UseTags,
+				KeyExact:     o.KeyExact,
 			}
 			return o.buildJSON(alt.Decompose(data, &ao), depth)
 		}
@@ -219,6 +220,7 @@ func (o *Options) buildJSON(data interface{}, depth int) (err error) {
 				OmitNil:      o.OmitNil,
 				FullTypePath: o.FullTypePath,
 				UseTags:      o.UseTags,
+				KeyExact:     o.KeyExact,
 			}
 			if dec := alt.Decompose(data, &ao); dec != nil {
 				return o.buildJSON(dec, depth)

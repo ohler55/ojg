@@ -172,7 +172,9 @@ func reflectStruct(rv reflect.Value, opt *Options) interface{} {
 			// not a public field
 			continue
 		}
-		name[0] = name[0] | 0x20
+		if !opt.KeyExact {
+			name[0] = name[0] | 0x20
+		}
 		if opt.UseTags {
 			if tag, ok := t.Field(i).Tag.Lookup("json"); ok && 0 < len(tag) {
 				name = []byte(tag)

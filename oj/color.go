@@ -129,11 +129,7 @@ func (o *Options) cbuildJSON(data interface{}, depth int) (err error) {
 				return o.cbuildJSON(dec, depth)
 			}
 		}
-		if o.strict {
-			err = fmt.Errorf("%T can not be encoded as a JSON element", data)
-		} else {
-			o.buildString(fmt.Sprintf("%v", td))
-		}
+		o.buildString(fmt.Sprintf("%v", td))
 	}
 	if o.w != nil && o.WriteLimit < len(o.buf) {
 		_, err = o.w.Write(o.buf)

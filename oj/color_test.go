@@ -170,3 +170,22 @@ func TestColorShort(t *testing.T) {
 	err = oj.Write(&shortWriter{max: 11}, sobj, &opt)
 	tt.NotNil(t, err)
 }
+
+func TestColorMarshal(t *testing.T) {
+	opt := oj.Options{
+		Color: true,
+		// use visible character to make it easier to verify
+		SyntaxColor: "s",
+		KeyColor:    "k",
+		NullColor:   "n",
+		BoolColor:   "b",
+		NumberColor: "0",
+		StringColor: "q",
+		NoReflect:   true,
+	}
+	var b strings.Builder
+
+	err := oj.Write(&b, []interface{}{true, &Dummy{Val: 3}}, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, `s[btrues,"\u0026{3}"s]`+oj.Normal, b.String())
+}
