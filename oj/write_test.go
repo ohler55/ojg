@@ -264,7 +264,7 @@ func TestMarshal(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Equal(t, "[true,false]", string(b))
 
-	b, err = oj.Marshal([]interface{}{true, TestMarshal})
+	_, err = oj.Marshal([]interface{}{true, TestMarshal})
 	tt.NotNil(t, err)
 
 	b, err = oj.Marshal([]interface{}{true, &Dummy{Val: 3}})
