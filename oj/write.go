@@ -58,6 +58,8 @@ func JSON(data interface{}, args ...interface{}) string {
 // by using the %v format of the fmt package.
 func Marshal(data interface{}, args ...interface{}) ([]byte, error) {
 	o := &DefaultOptions
+	o.KeyExact = true
+	o.UseTags = true
 
 	if 0 < len(args) {
 		switch ta := args[0].(type) {
