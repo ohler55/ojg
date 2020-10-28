@@ -15,6 +15,10 @@ type Dummy struct {
 	hidden int
 }
 
+type Anno struct {
+	Val int `json:"v"`
+}
+
 type silly struct {
 	val int
 }
@@ -43,6 +47,10 @@ func TestDecomposeStruct(t *testing.T) {
 			"val": 2,
 		},
 	}, v)
+
+	a := Anno{Val: 3}
+	v = alt.Decompose(&a, &alt.Options{UseTags: true})
+	tt.Equal(t, map[string]interface{}{"v": 3}, v)
 }
 
 func TestDecomposeComplex(t *testing.T) {

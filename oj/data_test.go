@@ -8,10 +8,9 @@ type data struct {
 	src string
 	// Empty means no error expected while non empty should be compared
 	// err.Error().
-	expect    string
-	value     interface{}
-	onlyOne   bool
-	noComment bool
-	options   *oj.Options
-	indent    int
+	expect  string
+	value   interface{}
+	onlyOne bool
+	options *oj.Options
+	indent  int
 }

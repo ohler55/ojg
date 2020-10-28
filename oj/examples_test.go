@@ -82,3 +82,13 @@ func ExampleBuilder() {
 	fmt.Println(oj.JSON(v))
 	// Output: {"a":[true,{"x":123},null]}
 }
+
+func ExampleMarshal() {
+	type Valley struct {
+		Val int `json:"value"`
+	}
+
+	b, err := oj.Marshal(&Valley{Val: 3})
+	fmt.Printf("%v %s\n", err, b)
+	// Output: <nil> {"value":3}
+}

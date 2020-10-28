@@ -63,7 +63,7 @@ func TestColor(t *testing.T) {
 		{value: &simon{x: 3}, expect: `s{k"type"s:q"simon"s,k"x"s:03s}` + oj.Normal, options: &oj.Options{Sort: true}},
 		{value: &genny{val: 3}, expect: `s{k"type"s:q"genny"s,k"val"s:03s}` + oj.Normal, options: &oj.Options{Sort: true}},
 		{value: &Dummy{Val: 3}, expect: `s{k"^"s:q"Dummy"s,k"val"s:03s}` + oj.Normal, options: &oj.Options{Sort: true, CreateKey: "^"}},
-		{value: &Dummy{Val: 3}, expect: `"{val: 3}"` + oj.Normal, options: &oj.Options{CreateKey: ""}},
+		{value: &Dummy{Val: 3}, expect: `s{k"val"s:03s}` + oj.Normal},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %v\n", i, d.value)
@@ -169,4 +169,23 @@ func TestColorShort(t *testing.T) {
 	tt.NotNil(t, err)
 	err = oj.Write(&shortWriter{max: 11}, sobj, &opt)
 	tt.NotNil(t, err)
+}
+
+func TestColorMarshal(t *testing.T) {
+	opt := oj.Options{
+		Color: true,
+		// use visible character to make it easier to verify
+		SyntaxColor: "s",
+		KeyColor:    "k",
+		NullColor:   "n",
+		BoolColor:   "b",
+		NumberColor: "0",
+		StringColor: "q",
+		NoReflect:   true,
+	}
+	var b strings.Builder
+
+	err := oj.Write(&b, []interface{}{true, &Dummy{Val: 3}}, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, `s[btrues,"\u0026{3}"s]`+oj.Normal, b.String())
 }

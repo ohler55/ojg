@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.3.0] - [2020-10-28]
+### Added
+- oj.Marshal added. The function fails if an un-encodeable value is encountered.
+- UseTags option added for write and decompose Options.
+
 ## [1.2.1] - [2020-09-13]
 ### Fixed
 - Order is preserved when using JSONPath to follow wildcards, unions, and slices.

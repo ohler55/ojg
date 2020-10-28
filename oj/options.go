@@ -66,6 +66,10 @@ type Options struct {
 	//
 	CreateKey string
 
+	// NoReflect if true does not use reflection to encode an object. This is
+	// only considered if the CreateKey is empty.
+	NoReflect bool
+
 	// FullTypePath if true includes the full type name and path when used
 	// with the CreateKey.
 	FullTypePath bool
@@ -91,9 +95,20 @@ type Options struct {
 	// StringColor is the color for a string in the JSON output.
 	StringColor string
 
-	buf []byte
-	utf []byte
-	w   io.Writer
+	// UseTags if true will use the json annotation tags when marhsalling,
+	// writing, or decomposing an struct. If no tag is present then the
+	// KeyExact flag is referenced to determine the key.
+	UseTags bool
+
+	// KeyExact if true will use the exact field name for an encoded struct
+	// field. If false the key style most often seen in JSON files where the
+	// first character of the object keys is lowercase.
+	KeyExact bool
+
+	buf    []byte
+	utf    []byte
+	w      io.Writer
+	strict bool
 }
 
 var DefaultOptions = Options{

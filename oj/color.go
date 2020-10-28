@@ -110,11 +110,26 @@ func (o *Options) cbuildJSON(data interface{}, depth int) (err error) {
 			return o.cbuildJSON(data, depth)
 		}
 		if 0 < len(o.CreateKey) {
-			ao := alt.Options{CreateKey: o.CreateKey, OmitNil: o.OmitNil, FullTypePath: o.FullTypePath}
+			ao := alt.Options{
+				CreateKey:    o.CreateKey,
+				OmitNil:      o.OmitNil,
+				FullTypePath: o.FullTypePath,
+				UseTags:      o.UseTags,
+			}
 			return o.cbuildJSON(alt.Decompose(data, &ao), depth)
-		} else {
-			o.buildString(fmt.Sprintf("%v", td))
 		}
+		if !o.NoReflect {
+			ao := alt.Options{
+				CreateKey:    o.CreateKey,
+				OmitNil:      o.OmitNil,
+				FullTypePath: o.FullTypePath,
+				UseTags:      o.UseTags,
+			}
+			if dec := alt.Decompose(data, &ao); dec != nil {
+				return o.cbuildJSON(dec, depth)
+			}
+		}
+		o.buildString(fmt.Sprintf("%v", td))
 	}
 	if o.w != nil && o.WriteLimit < len(o.buf) {
 		_, err = o.w.Write(o.buf)

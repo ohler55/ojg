@@ -37,8 +37,10 @@ type Dummy struct {
 	Val int
 }
 
-func (d *Dummy) String() string {
-	return fmt.Sprintf("{val: %d}", d.Val)
+type Stew []int
+
+func (s Stew) String() string {
+	return fmt.Sprintf("%v", []int(s))
 }
 
 type shortWriter struct {
@@ -117,8 +119,10 @@ func TestString(t *testing.T) {
 
 		{value: &simon{x: 3}, expect: `{"type":"simon","x":3}`, options: &oj.Options{Sort: true}},
 		{value: &genny{val: 3}, expect: `{"type":"genny","val":3}`, options: &oj.Options{Sort: true}},
-		{value: &Dummy{Val: 3}, expect: `"{val: 3}"`, options: &oj.Options{Sort: true}},
+		{value: &Dummy{Val: 3}, expect: `{"val":3}`},
+		{value: Stew{3}, expect: `"[3]"`, options: &oj.Options{NoReflect: true}},
 		{value: &Dummy{Val: 3}, expect: `{"^":"Dummy","val":3}`, options: &oj.Options{Sort: true, CreateKey: "^"}},
+		{value: &Dummy{Val: 3}, expect: `{"Val":3}`, options: &oj.Options{KeyExact: true}},
 	} {
 		var s string
 		if d.options == nil {
@@ -249,4 +253,28 @@ func TestWriteShort(t *testing.T) {
 		err = oj.Write(&shortWriter{max: i}, sobj, &opt)
 		tt.NotNil(t, err)
 	}
+}
+
+func TestMarshal(t *testing.T) {
+	b, err := oj.Marshal([]gen.Node{gen.True, gen.False}, 0)
+	tt.Nil(t, err)
+	tt.Equal(t, "[true,false]", string(b))
+
+	b, err = oj.Marshal([]interface{}{true, false}, &oj.Options{})
+	tt.Nil(t, err)
+	tt.Equal(t, "[true,false]", string(b))
+
+	_, err = oj.Marshal([]interface{}{true, TestMarshal})
+	tt.NotNil(t, err)
+
+	b, err = oj.Marshal([]interface{}{true, &Dummy{Val: 3}})
+	tt.Nil(t, err)
+	tt.Equal(t, `[true,{"Val":3}]`, string(b))
+
+	b, err = oj.Marshal([]interface{}{true, &Dummy{Val: 3}}, &oj.Options{UseTags: true})
+	tt.Nil(t, err)
+	tt.Equal(t, `[true,{"val":3}]`, string(b))
+
+	_, err = oj.Marshal([]interface{}{true, &Dummy{Val: 3}}, &oj.Options{NoReflect: true})
+	tt.NotNil(t, err)
 }
