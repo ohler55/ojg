@@ -75,7 +75,7 @@ go install ./...
 
 ## Benchmarks
 
-Higher numbers in parenthesis are better.
+Higher numbers (longer bars) are better.
 
 ```
 Parse string/[]byte
