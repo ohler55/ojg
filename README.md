@@ -108,6 +108,8 @@ to JSON with indentation
 
 See [all benchmarks](benchmarks.md)
 
+[Compare Go JSON parsers](https://github.com/ohler55/compare-go-json)
+
 ## Releases
 
 See [CHANGELOG.md](CHANGELOG.md)
