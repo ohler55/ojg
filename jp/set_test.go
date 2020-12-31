@@ -149,14 +149,14 @@ var (
 			value: 5, expect: `{"a":{"^":"Any","x":5},"b":{"^":"Any","x":5},"c":{"^":"Any","x":5},"x":5}`},
 		{path: "[:2:2].x",
 			data: []*Any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
-			expect: `[{"^":"Any","x":5},{"^":"Any","x":2},{"^":"Any","x":5}]`},
+			expect: `[{"^":"Any","x":5},{"^":"Any","x":2},{"^":"Any","x":3}]`},
 		{path: "[:2:2].x",
 			data: []map[string]interface{}{
 				map[string]interface{}{"x": 1},
 				map[string]interface{}{"x": 2},
 				map[string]interface{}{"x": 3},
 			},
-			value: 5, expect: `[{"x":5},{"x":2},{"x":5}]`},
+			value: 5, expect: `[{"x":5},{"x":2},{"x":3}]`},
 
 		{path: "x.a", data: map[string]interface{}{"x": func() {}}, value: 3, err: "can not follow a func() at 'x'"},
 		{path: "x.a", data: &Any{X: 1}, value: 3, err: "can not follow a int at 'x'"},

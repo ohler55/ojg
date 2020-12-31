@@ -71,6 +71,7 @@ func main() {
 		{pkg: "gen-reuse", name: "Parse", fun: genParseReuse},
 		{pkg: "sen", name: "Parse", fun: senParse},
 		{pkg: "sen-reuse", name: "Parse", fun: senParseReuse},
+		{pkg: "tree", name: "Parse", fun: treeParse},
 	})
 	benchSuite("Parse io.Reader", []*bench{
 		{pkg: "json", name: "Decode", fun: goDecodeReader},
@@ -80,17 +81,20 @@ func main() {
 		{pkg: "gen-reuse", name: "ParseReder", fun: genParseReaderReuse},
 		{pkg: "sen", name: "ParseReader", fun: senParseReader},
 		{pkg: "sen-reuse", name: "ParseReader", fun: senParseReaderReuse},
+		{pkg: "tree", name: "ParseReader", fun: treeParseReader},
 	})
 	benchSuite("Parse chan interface{}", []*bench{
 		{pkg: "json", name: "Parse-chan", fun: goParseChan},
 		{pkg: "oj", name: "Parse", fun: ojParseChan},
 		{pkg: "gen", name: "Parse", fun: genParseChan},
 		{pkg: "sen", name: "Parse", fun: senParseChan},
+		{pkg: "tree", name: "Parse", fun: treeParse},
 	})
 
 	benchSuite("Validate string/[]byte", []*bench{
 		{pkg: "json", name: "Valid", fun: goValidate},
 		{pkg: "oj", name: "Valdate", fun: ojValidate},
+		{pkg: "tree", name: "Parse", fun: treeParse},
 	})
 
 	benchSuite("Validate io.Reader", []*bench{
@@ -102,15 +106,18 @@ func main() {
 		{pkg: "json", name: "Marshal", fun: marshalJSON},
 		{pkg: "oj", name: "JSON", fun: ojJSON},
 		{pkg: "sen", name: "String", fun: senString},
+		{pkg: "tree", name: "JSON", fun: treeJSON},
 	})
 	benchSuite("to JSON with indentation", []*bench{
 		{pkg: "json", name: "Marshal", fun: marshalJSONIndent},
 		{pkg: "oj", name: "JSON", fun: ojJSONIndent},
 		{pkg: "sen", name: "String", fun: senStringIndent},
+		{pkg: "tree", name: "JSON", fun: treeJSONIndent},
 	})
 	benchSuite("to JSON with indentation and sorted keys", []*bench{
 		{pkg: "oj", name: "JSON", fun: ojJSONSort},
 		{pkg: "sen", name: "String", fun: senStringSort},
+		{pkg: "tree", name: "JSON", fun: treeJSONIndentSort},
 	})
 
 	benchSuite("Write indented JSON", []*bench{
@@ -121,13 +128,16 @@ func main() {
 	benchSuite("Convert or Alter", []*bench{
 		{pkg: "alt", name: "Generify", fun: altGenerify},
 		{pkg: "alt", name: "Alter", fun: altGenAlter},
+		{pkg: "tree", name: "FromNative", fun: treeFromNative},
 	})
 
 	benchSuite("JSONPath Get $..a[2].c", []*bench{
 		{pkg: "jp", name: "Get", fun: jpGet},
+		{pkg: "tree", name: "Get", fun: treeGet},
 	})
 	benchSuite("JSONPath First  $..a[2].c", []*bench{
 		{pkg: "jp", name: "First", fun: jpFirst},
+		{pkg: "tree", name: "Get", fun: treeGetOne},
 	})
 
 	fmt.Println()
@@ -184,7 +194,7 @@ func benchSuite(title string, suite []*bench) {
 			frac := int(size*8.0) - (int(size) * 8)
 			bar += string([]rune(blocks)[frac : frac+1])
 		}
-		fmt.Printf(" %10s %s %3.2f\n", b.pkg, bar, x)
+		fmt.Printf(" %10s %s %3.3f\n", b.pkg, bar, x)
 	}
 }
 

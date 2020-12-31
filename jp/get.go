@@ -424,6 +424,9 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			}
 			if 2 < len(tf) {
 				step = tf[2]
+				if step == 0 {
+					continue
+				}
 			}
 			switch tv := prev.(type) {
 			case []interface{}:
@@ -431,17 +434,21 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					start = len(tv) + start
 				}
 				if end < 0 {
-					end = len(tv) + end
+					end = len(tv) + end + 1
 				}
-				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
+				if start < 0 || len(tv) <= start {
 					continue
 				}
 				if 0 < step {
+					if len(tv) < end {
+						end = len(tv)
+					}
 					if int(fi) == len(x)-1 { // last one
-						for i := start; i <= end; i += step {
+						for i := start; i < end; i += step {
 							results = append(results, tv[i])
 						}
 					} else {
+						end = start + (end-start-1)/step*step
 						for i := end; start <= i; i -= step {
 							v = tv[i]
 							switch v.(type) {
@@ -458,11 +465,15 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						}
 					}
 				} else {
+					if end < -1 {
+						end = -1
+					}
 					if int(fi) == len(x)-1 { // last one
-						for i := start; end <= i; i += step {
+						for i := start; end < i; i += step {
 							results = append(results, tv[i])
 						}
 					} else {
+						end = start - (start-end-1)/step*step
 						for i := end; i <= start; i -= step {
 							v = tv[i]
 							switch v.(type) {
@@ -484,17 +495,21 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					start = len(tv) + start
 				}
 				if end < 0 {
-					end = len(tv) + end
+					end = len(tv) + end + 1
 				}
-				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
+				if start < 0 || len(tv) <= start {
 					continue
 				}
 				if 0 < step {
+					if len(tv) < end {
+						end = len(tv)
+					}
 					if int(fi) == len(x)-1 { // last one
-						for i := start; i <= end; i += step {
+						for i := start; i < end; i += step {
 							results = append(results, tv[i])
 						}
 					} else {
+						end = start + (end-start-1)/step*step
 						for i := end; start <= i; i -= step {
 							v = tv[i]
 							switch v.(type) {
@@ -504,11 +519,15 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						}
 					}
 				} else {
+					if end < -1 {
+						end = -1
+					}
 					if int(fi) == len(x)-1 { // last one
-						for i := start; end <= i; i += step {
+						for i := start; end < i; i += step {
 							results = append(results, tv[i])
 						}
 					} else {
+						end = start - (start-end-1)/step*step
 						for i := end; i <= start; i -= step {
 							v = tv[i]
 							switch v.(type) {
@@ -966,29 +985,29 @@ func (x Expr) First(data interface{}) interface{} {
 			}
 			if 2 < len(tf) {
 				step = tf[2]
+				if step == 0 {
+					continue
+				}
 			}
 			switch tv := prev.(type) {
 			case []interface{}:
 				if start < 0 {
 					start = len(tv) + start
 				}
-				if start < 0 || len(tv) <= start || step == 0 {
+				if start < 0 || len(tv) <= start {
 					continue
 				}
-				if int(fi) == len(x)-1 { // last one
-					return tv[start]
-				}
 				if end < 0 {
-					end = len(tv) + end
+					end = len(tv) + end + 1
 				}
-				if end < 0 {
-					continue
-				}
-				if len(tv) <= end {
-					end = len(tv) - 1
-				}
-				end = start + ((end - start) / step * step)
 				if 0 < step {
+					if len(tv) < end {
+						end = len(tv)
+					}
+					if int(fi) == len(x)-1 && start < end { // last one
+						return tv[start]
+					}
+					end = start + (end-start-1)/step*step
 					for i := end; start <= i; i -= step {
 						v = tv[i]
 						switch v.(type) {
@@ -1004,6 +1023,13 @@ func (x Expr) First(data interface{}) interface{} {
 						}
 					}
 				} else {
+					if end < -1 {
+						end = -1
+					}
+					if int(fi) == len(x)-1 && end < start { // last one
+						return tv[start]
+					}
+					end = start - (start-end-1)/step*step
 					for i := end; i <= start; i -= step {
 						v = tv[i]
 						switch v.(type) {
@@ -1026,20 +1052,17 @@ func (x Expr) First(data interface{}) interface{} {
 				if start < 0 || len(tv) <= start {
 					continue
 				}
-				if int(fi) == len(x)-1 { // last one
-					return tv[start]
-				}
 				if end < 0 {
-					end = len(tv) + end
+					end = len(tv) + end + 1
 				}
-				if end < 0 {
-					continue
-				}
-				if len(tv) <= end {
-					end = len(tv) - 1
-				}
-				end = start + ((end - start) / step * step)
 				if 0 < step {
+					if len(tv) < end {
+						end = len(tv)
+					}
+					if int(fi) == len(x)-1 && start < end { // last one
+						return tv[start]
+					}
+					end = start + (end-start-1)/step*step
 					for i := end; start <= i; i -= step {
 						v = tv[i]
 						switch v.(type) {
@@ -1048,6 +1071,13 @@ func (x Expr) First(data interface{}) interface{} {
 						}
 					}
 				} else {
+					if end < -1 {
+						end = -1
+					}
+					if int(fi) == len(x)-1 && end < start { // last one
+						return tv[start]
+					}
+					end = start - (start-end-1)/step*step
 					for i := end; i <= start; i -= step {
 						v = tv[i]
 						switch v.(type) {
@@ -1198,23 +1228,26 @@ func (x Expr) reflectGetSlice(data interface{}, start, end, step int) (va []inte
 			start = size + start
 		}
 		if end < 0 {
-			end = size + end
+			end = size + end + 1
 		}
-		if start < 0 || end < 0 || size <= start || size <= end || step == 0 {
-			return
-		}
-		if 0 < step {
-			for i := start; i <= end; i += step {
-				rv := rd.Index(i)
-				if rv.CanInterface() {
-					va = append([]interface{}{rv.Interface()}, va...)
+		if 0 <= start && start < size {
+			if 0 < step {
+				if size < end {
+					end = size
 				}
-			}
-		} else {
-			for i := start; end <= i; i += step {
-				rv := rd.Index(i)
-				if rv.CanInterface() {
-					va = append([]interface{}{rv.Interface()}, va...)
+				for i := start; i < end; i += step {
+					rv := rd.Index(i)
+					if rv.CanInterface() {
+						va = append([]interface{}{rv.Interface()}, va...)
+					}
+				}
+			} else {
+				end = start + (end-start-1)/step*step
+				for i := start; end <= i; i += step {
+					rv := rd.Index(i)
+					if rv.CanInterface() {
+						va = append([]interface{}{rv.Interface()}, va...)
+					}
 				}
 			}
 		}

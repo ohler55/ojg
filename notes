@@ -1,9 +1,10 @@
 
 ----------------
 
-- combine for performance, maybe
- - how about just adding to num
-  - need a validation version or flag
+- slice
+ - set
+ - first
+ - node.go
 
 - cmd/oj
  - set option
