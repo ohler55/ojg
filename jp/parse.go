@@ -215,6 +215,9 @@ func (p *parser) afterBracket() (Frag, error) {
 		default:
 			return nil, fmt.Errorf("invalid bracket fragment")
 		}
+	default:
+		p.pos--
+		return nil, fmt.Errorf("parse error")
 	}
 	return nil, nil
 }
