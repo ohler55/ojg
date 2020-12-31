@@ -4,6 +4,7 @@ package jp
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -329,14 +330,15 @@ func (p *parser) readSlice(i int) (Frag, error) {
 	f := Slice{i}
 	b := p.buf[p.pos]
 	if b == ']' {
-		f = append(f, -1)
+		f = append(f, math.MaxInt64)
+		p.pos++
 		return f, nil
 	}
 	b = p.skipSpace()
 	var err error
 	// read the end
 	if b == ':' {
-		f = append(f, -1)
+		f = append(f, math.MaxInt64)
 		if len(p.buf) <= p.pos {
 			return nil, fmt.Errorf("not terminated")
 		}
