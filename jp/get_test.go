@@ -56,6 +56,23 @@ var (
 				},
 			},
 		},
+		{path: "$..x",
+			expect: []interface{}{map[string]interface{}{"x": 2}, 1, 2, 3, 4},
+			data: map[string]interface{}{
+				"o": map[string]interface{}{
+					"a": []interface{}{
+						map[string]interface{}{"x": 1},
+						map[string]interface{}{
+							"x": map[string]interface{}{
+								"x": 2,
+							},
+						},
+					},
+					"x": 3,
+				},
+				"x": 4,
+			},
+		},
 		{path: "a[2].*", expect: []interface{}{131, 132, 133, 134}},
 		{path: "[*]", expect: []interface{}{1, 2, 3}, data: []interface{}{1, 2, 3}},
 		{path: "$", expect: []interface{}{map[string]interface{}{"x": 1}}, data: map[string]interface{}{"x": 1}},
@@ -189,6 +206,35 @@ func TestExprGet(t *testing.T) {
 	}
 }
 
+/*
+func TestExprDebug(t *testing.T) {
+	data := map[string]interface{}{
+		"o": map[string]interface{}{
+			"a": []interface{}{
+				map[string]interface{}{"x": 1},
+				map[string]interface{}{
+					"x": map[string]interface{}{
+						"x": 2,
+					},
+				},
+			},
+			"x": 3,
+		},
+		"x": 4,
+	}
+	x, err := jp.ParseString("$..x")
+	tt.Nil(t, err)
+	results := x.Get(alt.Generify(data))
+	sort.Slice(results, func(i, j int) bool {
+		iv, _ := results[i].(gen.Int)
+		jv, _ := results[j].(gen.Int)
+		return iv < jv
+	})
+	// fmt.Printf("result: %s\n", oj.JSON(results, 2))
+	tt.Equal(t, []interface{}{map[string]interface{}{"x": 2}, 1, 2, 3, 4}, results, x)
+}
+*/
+
 func TestExprGetOnNode(t *testing.T) {
 	data := buildNodeTree(4, 3, 0)
 	for i, d := range getTestData {
@@ -276,7 +322,7 @@ func TestExprGetNodes(t *testing.T) {
 		for _, r := range results {
 			ar = append(ar, r)
 		}
-		tt.Equal(t, alt.Generify(d.expect), ar, i, " : ", x)
+		tt.Equal(t, alt.Generify(d.expect), ar, i, " : ", x, " on ", oj.JSON(d.data), " - ", oj.JSON(results))
 	}
 }
 

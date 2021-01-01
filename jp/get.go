@@ -215,7 +215,6 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			top := (di & descentChildFlag) == 0
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
-				self := false
 				switch tv := prev.(type) {
 				case map[string]interface{}:
 					// Put prev back and slide fi.
@@ -232,7 +231,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						default:
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
@@ -254,7 +253,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						default:
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
@@ -275,7 +274,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
 				case gen.Array:
@@ -292,12 +291,9 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
-				}
-				if self {
-					stack = append(stack, fi|descentChildFlag)
 				}
 			} else {
 				if int(fi) == len(x)-1 { // last one
@@ -784,7 +780,6 @@ func (x Expr) First(data interface{}) interface{} {
 			di, _ := stack[len(stack)-1].(fragIndex)
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
-				self := false
 				switch tv := prev.(type) {
 				case map[string]interface{}:
 					// Put prev back and slide fi.
@@ -801,7 +796,7 @@ func (x Expr) First(data interface{}) interface{} {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						default:
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
@@ -825,7 +820,7 @@ func (x Expr) First(data interface{}) interface{} {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						default:
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
@@ -846,7 +841,7 @@ func (x Expr) First(data interface{}) interface{} {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
 				case gen.Array:
@@ -863,12 +858,9 @@ func (x Expr) First(data interface{}) interface{} {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
-				}
-				if self {
-					stack = append(stack, fi|descentChildFlag)
 				}
 			} else {
 				stack = append(stack, prev)

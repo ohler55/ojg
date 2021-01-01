@@ -219,7 +219,6 @@ func (p *parser) afterBracket() (Frag, error) {
 		p.pos--
 		return nil, fmt.Errorf("parse error")
 	}
-	return nil, nil
 }
 
 func (p *parser) readInt(b byte) (int, byte, error) {
