@@ -115,6 +115,9 @@ var (
 		{path: "@", expect: []interface{}{map[string]interface{}{"x": 1}}, data: map[string]interface{}{"x": 1}},
 		{path: "['x',-1]", expect: []interface{}{3}, data: []interface{}{1, 2, 3}},
 		{path: "$[1:3]", expect: []interface{}{2, 3}, data: []interface{}{1, 2, 3, 4, 5, 6}},
+		{path: "$[::0]", expect: []interface{}{}, data: []interface{}{1, 2, 3, 4, 5, 6}},
+		{path: "$[10:]", expect: []interface{}{}, data: []interface{}{1, 2, 3, 4, 5, 6}},
+		{path: "$[:-10:-1]", expect: []interface{}{1}, data: []interface{}{1, 2, 3, 4, 5, 6}},
 		{path: "$[1:10]", expect: []interface{}{2, 3, 4, 5, 6}, data: []interface{}{1, 2, 3, 4, 5, 6}},
 		{path: "$[-4:-4]", expect: []interface{}{}, data: []interface{}{1, 2, 3, 4, 5, 6}},
 		{path: "$[-4:-3]", expect: []interface{}{3}, data: []interface{}{1, 2, 3, 4, 5, 6}},
@@ -124,7 +127,6 @@ var (
 		{path: "$[-4:]", expect: []interface{}{1, 2, 3}, data: []interface{}{1, 2, 3}},
 		{path: "$[0:3:1]", expect: []interface{}{1, 2, 3}, data: []interface{}{1, 2, 3, 4, 5}},
 		{path: "$[0:4:2]", expect: []interface{}{1, 3}, data: []interface{}{1, 2, 3, 4, 5}},
-
 		{path: "[-4:-1:2]", expect: []interface{}{3, 5}, data: []interface{}{1, 2, 3, 4, 5, 6}},
 		{path: "[-4:]", expect: []interface{}{1, 2, 3}, data: []interface{}{1, 2, 3}},
 		{path: "[-1:1:-2]", expect: []interface{}{4, 6}, data: []interface{}{1, 2, 3, 4, 5, 6}},
@@ -136,6 +138,13 @@ var (
 		{path: "[1]", expect: []interface{}{2}, data: []int{1, 2, 3}},
 		{path: "[-1]", expect: []interface{}{3}, data: []int{1, 2, 3}},
 		{path: "[-1,'a']", expect: []interface{}{3}, data: []int{1, 2, 3}},
+		{path: "[-1,'a'].x",
+			expect: []interface{}{2},
+			data: []interface{}{
+				map[string]interface{}{"x": 1, "y": 2, "z": 3},
+				map[string]interface{}{"x": 2, "y": 4, "z": 6},
+			},
+		},
 	}
 	getTestReflectData = []*getData{
 		{path: "['a','b']", expect: []interface{}{"sample", 3}, data: &Sample{A: 3, B: "sample"}},
@@ -152,12 +161,15 @@ var (
 		{path: "$[1:2].a", expect: []interface{}{2}, data: []interface{}{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
 		{path: "$[2:1:-1].a", expect: []interface{}{3}, data: []interface{}{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
 		{path: "[0::2].a", expect: []interface{}{1, 3}, data: []*One{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
-		{path: "[-1:0:-2].a", expect: []interface{}{1, 3}, data: []*One{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
+		{path: "[-1:0:-2].a", expect: []interface{}{3}, data: []*One{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
 		{path: "[4:0:-2].a", expect: []interface{}{}, data: []*One{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
 		{path: "$.*[0]", expect: []interface{}{3}, data: &Any{X: []interface{}{3}}},
 		{path: "$[1:2]", expect: []interface{}{2}, data: []int{1, 2, 3}},
 		{path: "$[1:2][0]", expect: []interface{}{gen.Int(2)},
 			data: []gen.Array{gen.Array{gen.Int(1)}, gen.Array{gen.Int(2)}, gen.Array{gen.Int(3)}}},
+		{path: "$[-10:]", expect: []interface{}{1, 2, 3}, data: []int{1, 2, 3}},
+		{path: "$[1:-10:-1]", expect: []interface{}{1, 2}, data: []int{1, 2, 3}},
+		{path: "$[2:10]", expect: []interface{}{3}, data: []int{1, 2, 3}},
 	}
 )
 
@@ -194,6 +206,13 @@ var (
 		{path: "[1]", expect: []interface{}{2}, data: []int{1, 2, 3}},
 		{path: "[-1]", expect: []interface{}{3}, data: []int{1, 2, 3}},
 		{path: "[-1,'a']", expect: []interface{}{3}, data: []int{1, 2, 3}},
+		{path: "[::0]", expect: []interface{}{nil}, data: []interface{}{1, 2, 3}},
+		{path: "[10:]", expect: []interface{}{nil}, data: []interface{}{1, 2, 3}},
+		{path: "[:-10:-1]", expect: []interface{}{1}, data: []interface{}{1, 2, 3}},
+		{path: "[-1:0:-1].x", expect: []interface{}{2}, data: []interface{}{
+			map[string]interface{}{"x": 1},
+			map[string]interface{}{"x": 2},
+		}},
 	}
 	firstTestReflectData = []*getData{
 		{path: "$.a", expect: []interface{}{3}, data: &Sample{A: 3, B: "sample"}},
@@ -216,6 +235,7 @@ var (
 		{path: "$[1:1][0]", expect: []interface{}{gen.Int(2)},
 			data: []gen.Array{gen.Array{gen.Int(1)}, gen.Array{gen.Int(2)}, gen.Array{gen.Int(3)}}},
 		{path: "$.*", expect: []interface{}{nil}, data: &one},
+		{path: "['a',-1]", expect: []interface{}{3}, data: []interface{}{1, 2, 3}},
 	}
 )
 

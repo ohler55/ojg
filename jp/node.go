@@ -287,10 +287,10 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 				if len(tv) <= start {
 					continue
 				}
+				if len(tv) < end {
+					end = len(tv)
+				}
 				if 0 < step {
-					if len(tv) < end {
-						end = len(tv)
-					}
 					if int(fi) == len(x)-1 { // last one
 						for i := start; i < end; i += step {
 							results = append(results, tv[i])
@@ -562,10 +562,10 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 				if end < 0 {
 					end = len(tv) + end
 				}
+				if len(tv) < end {
+					end = len(tv)
+				}
 				if 0 < step {
-					if len(tv) < end {
-						end = len(tv)
-					}
 					if int(fi) == len(x)-1 && start < end { // last one
 						return tv[start]
 					}

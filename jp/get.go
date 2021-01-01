@@ -439,10 +439,10 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				if len(tv) <= start {
 					continue
 				}
+				if len(tv) < end {
+					end = len(tv)
+				}
 				if 0 < step {
-					if len(tv) < end {
-						end = len(tv)
-					}
 					if int(fi) == len(x)-1 { // last one
 						for i := start; i < end; i += step {
 							results = append(results, tv[i])
@@ -1002,10 +1002,10 @@ func (x Expr) First(data interface{}) interface{} {
 				if end < 0 {
 					end = len(tv) + end
 				}
+				if len(tv) < end {
+					end = len(tv)
+				}
 				if 0 < step {
-					if len(tv) < end {
-						end = len(tv)
-					}
 					if int(fi) == len(x)-1 && start < end { // last one
 						return tv[start]
 					}
@@ -1060,10 +1060,10 @@ func (x Expr) First(data interface{}) interface{} {
 				if end < 0 {
 					end = len(tv) + end
 				}
+				if len(tv) < end {
+					end = len(tv)
+				}
 				if 0 < step {
-					if len(tv) < end {
-						end = len(tv)
-					}
 					if int(fi) == len(x)-1 && start < end { // last one
 						return tv[start]
 					}
@@ -1237,12 +1237,15 @@ func (x Expr) reflectGetSlice(data interface{}, start, end, step int) (va []inte
 		}
 		if end < 0 {
 			end = size + end
+			if end < -1 {
+				end = -1
+			}
+		}
+		if size < end {
+			end = size
 		}
 		if 0 <= start && start < size {
 			if 0 < step {
-				if size < end {
-					end = size
-				}
 				for i := start; i < end; i += step {
 					rv := rd.Index(i)
 					if rv.CanInterface() {
@@ -1250,8 +1253,7 @@ func (x Expr) reflectGetSlice(data interface{}, start, end, step int) (va []inte
 					}
 				}
 			} else {
-				end = start + (end-start-1)/step*step
-				for i := start; end <= i; i += step {
+				for i := start; end < i; i += step {
 					rv := rd.Index(i)
 					if rv.CanInterface() {
 						va = append([]interface{}{rv.Interface()}, va...)
