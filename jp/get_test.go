@@ -73,6 +73,42 @@ var (
 				"x": 4,
 			},
 		},
+		{path: "$..[1].x",
+			expect: []interface{}{42, 200, 500},
+			data: map[string]interface{}{
+				"x": []interface{}{0, 1},
+				"y": []interface{}{
+					map[string]interface{}{"x": 0},
+					map[string]interface{}{"x": 42},
+				},
+				"z": []interface{}{
+					[]interface{}{
+						map[string]interface{}{"x": 100},
+						map[string]interface{}{"x": 200},
+						map[string]interface{}{"x": 300},
+					},
+					[]interface{}{
+						map[string]interface{}{"x": 400},
+						map[string]interface{}{"x": 500},
+						map[string]interface{}{"x": 600},
+					},
+				},
+			},
+		},
+		{path: "$.a..x",
+			expect: []interface{}{1, 2, 3, 4, 5},
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": []interface{}{
+						map[string]interface{}{"x": 1, "y": true},
+						map[string]interface{}{"x": 2, "y": false},
+						map[string]interface{}{"x": 3, "y": true},
+						map[string]interface{}{"x": 4, "y": false},
+					},
+					"c": map[string]interface{}{"x": 5, "y": nil},
+				},
+			},
+		},
 		{path: "a[2].*", expect: []interface{}{131, 132, 133, 134}},
 		{path: "[*]", expect: []interface{}{1, 2, 3}, data: []interface{}{1, 2, 3}},
 		{path: "$", expect: []interface{}{map[string]interface{}{"x": 1}}, data: map[string]interface{}{"x": 1}},
@@ -205,35 +241,6 @@ func TestExprGet(t *testing.T) {
 		tt.Equal(t, d.expect, results, i, " : ", x)
 	}
 }
-
-/*
-func TestExprDebug(t *testing.T) {
-	data := map[string]interface{}{
-		"o": map[string]interface{}{
-			"a": []interface{}{
-				map[string]interface{}{"x": 1},
-				map[string]interface{}{
-					"x": map[string]interface{}{
-						"x": 2,
-					},
-				},
-			},
-			"x": 3,
-		},
-		"x": 4,
-	}
-	x, err := jp.ParseString("$..x")
-	tt.Nil(t, err)
-	results := x.Get(alt.Generify(data))
-	sort.Slice(results, func(i, j int) bool {
-		iv, _ := results[i].(gen.Int)
-		jv, _ := results[j].(gen.Int)
-		return iv < jv
-	})
-	// fmt.Printf("result: %s\n", oj.JSON(results, 2))
-	tt.Equal(t, []interface{}{map[string]interface{}{"x": 2}, 1, 2, 3, 4}, results, x)
-}
-*/
 
 func TestExprGetOnNode(t *testing.T) {
 	data := buildNodeTree(4, 3, 0)
