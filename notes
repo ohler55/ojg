@@ -1,10 +1,8 @@
 
 ----------------
 
-- slice
+- coverage
  - set
- - first
- - node.go
 
 - cmd/oj
  - set option

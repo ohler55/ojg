@@ -45,7 +45,7 @@ var (
 		{path: "a[?(@.a > 135)].b", expect: []interface{}{142}},
 		{path: "[?(@[1].a > 230)][1].b", expect: []interface{}{322, 422}},
 		{path: "[?(@ > 1)]", expect: []interface{}{2, 3}, data: []interface{}{1, 2, 3}},
-		{path: "[?(1==1)]", expect: []interface{}{1, 2, 3}, data: []interface{}{1, 2, 3}},
+		{path: "$[?(1==1)]", expect: []interface{}{1, 2, 3}, data: []interface{}{1, 2, 3}},
 		{path: "$.*[*].a", expect: []interface{}{111, 121, 131, 141, 211, 221, 231, 241, 311, 321, 331, 341, 411, 421, 431, 441}},
 		{path: "$.a[*].y",
 			expect: []interface{}{2, 4},
@@ -138,6 +138,7 @@ var (
 		{path: "[1]", expect: []interface{}{2}, data: []int{1, 2, 3}},
 		{path: "[-1]", expect: []interface{}{3}, data: []int{1, 2, 3}},
 		{path: "[-1,'a']", expect: []interface{}{3}, data: []int{1, 2, 3}},
+		{path: "$[::]", expect: []interface{}{1, 2, 3}, data: []int{1, 2, 3}},
 		{path: "[-1,'a'].x",
 			expect: []interface{}{2},
 			data: []interface{}{

@@ -346,10 +346,12 @@ func (p *parser) readSlice(i int) (Frag, error) {
 		}
 		b = p.buf[p.pos]
 		p.pos++
-		if i, b, err = p.readInt(b); err != nil {
-			return nil, err
+		if b != ']' {
+			if i, b, err = p.readInt(b); err != nil {
+				return nil, err
+			}
+			f = append(f, i)
 		}
-		f = append(f, i)
 	} else if i, b, err = p.readInt(b); err == nil {
 		f = append(f, i)
 		if b == ':' {
