@@ -353,6 +353,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			}
 			p.starts = append(p.starts, len(p.stack))
 			p.stack = append(p.stack, emptySlice)
+			p.mode = valueMap
 			depth++
 			continue
 		case closeArray:
