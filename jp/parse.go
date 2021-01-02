@@ -222,13 +222,16 @@ func (p *parser) afterBracket() (Frag, error) {
 }
 
 func (p *parser) readInt(b byte) (int, byte, error) {
-	if b == '0' {
-		if p.pos < len(p.buf) {
-			b = p.buf[p.pos]
-			p.pos++
+	// Allow numbers to begin with a zero.
+	/*
+		if b == '0' {
+			if p.pos < len(p.buf) {
+				b = p.buf[p.pos]
+				p.pos++
+			}
+			return 0, b, nil
 		}
-		return 0, b, nil
-	}
+	*/
 	neg := b == '-'
 	if neg {
 		if len(p.buf) <= p.pos {
@@ -249,9 +252,12 @@ func (p *parser) readInt(b byte) (int, byte, error) {
 		b = p.buf[p.pos]
 		p.pos++
 	}
-	if i == 0 {
-		return 0, 0, fmt.Errorf("expected a number")
-	}
+	// Allow numbers to begin with a zero.
+	/*
+		if i == 0 {
+			return 0, 0, fmt.Errorf("expected a number")
+		}
+	*/
 	if neg {
 		i = -i
 	}
