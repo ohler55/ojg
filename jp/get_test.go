@@ -171,6 +171,7 @@ var (
 		{path: "$[-10:]", expect: []interface{}{1, 2, 3}, data: []int{1, 2, 3}},
 		{path: "$[1:-10:-1]", expect: []interface{}{1, 2}, data: []int{1, 2, 3}},
 		{path: "$[2:10]", expect: []interface{}{3}, data: []int{1, 2, 3}},
+		{path: "$[1:3:]", expect: []interface{}{2, 3}, data: []interface{}{1, 2, 3, 4, 5}},
 	}
 )
 

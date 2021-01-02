@@ -1,6 +1,11 @@
 
 ----------------
 
+- token
+ - decide if - is a valid character or where
+  - child, ok
+  - script, not
+
 - coverage
  - set
 

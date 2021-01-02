@@ -60,6 +60,9 @@ func TestParse(t *testing.T) {
 		{src: `['a\\b']`, expect: `['a\\b']`},
 		{src: `[:]`, expect: `[:]`},
 		{src: `[::]`, expect: `[:]`},
+		{src: `[1:2:]`, expect: `[1:2]`},
+		// TBD dash ok, sometimes
+		//{src: "$.x-y", expect: "$.x-y"},
 
 		{src: "$[1,'a']  ", err: "parse error at 9 in $[1,'a']  "},
 		{src: "abc.", err: "not terminated at 5 in abc."},
