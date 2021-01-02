@@ -27,7 +27,7 @@ func Nil(t *testing.T, actual interface{}, args ...interface{}) {
 func NotNil(t *testing.T, actual interface{}, args ...interface{}) {
 	if isNil(actual) {
 		var b strings.Builder
-		b.WriteString(fmt.Sprintf("\nexpect: not nil\nactual: nil\n"))
+		b.WriteString("\nexpect: not nil\nactual: nil\n")
 		stackFill(&b)
 		if 0 < len(args) {
 			if format, _ := args[0].(string); 0 < len(format) {
