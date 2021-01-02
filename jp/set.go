@@ -349,7 +349,6 @@ func (x Expr) Set(data, value interface{}) error {
 			di, _ := stack[len(stack)-1].(fragIndex)
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
-				self := false
 				switch tv := prev.(type) {
 				case map[string]interface{}:
 					// Put prev back and slide fi.
@@ -361,7 +360,7 @@ func (x Expr) Set(data, value interface{}) error {
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fragIndex(fi|descentChildFlag))
 						default:
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
@@ -379,7 +378,7 @@ func (x Expr) Set(data, value interface{}) error {
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fragIndex(fi|descentChildFlag))
 						default:
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
@@ -395,7 +394,7 @@ func (x Expr) Set(data, value interface{}) error {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fragIndex(fi|descentChildFlag))
 						}
 					}
 				case gen.Array:
@@ -406,12 +405,9 @@ func (x Expr) Set(data, value interface{}) error {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fragIndex(fi|descentChildFlag))
 						}
 					}
-				}
-				if self {
-					stack = append(stack, fragIndex(fi|descentChildFlag))
 				}
 			} else {
 				stack = append(stack, prev)
@@ -658,13 +654,6 @@ func (x Expr) SetOne(data, value interface{}) error {
 
 	for 1 < len(stack) {
 		prev = stack[len(stack)-2]
-		if ii, up := prev.(fragIndex); up {
-			stack[len(stack)-1] = nil
-			stack = stack[:len(stack)-1]
-			fi = ii & fragIndexMask
-			f = x[fi]
-			continue
-		}
 		stack[len(stack)-2] = stack[len(stack)-1]
 		stack[len(stack)-1] = nil
 		stack = stack[:len(stack)-1]
@@ -960,7 +949,6 @@ func (x Expr) SetOne(data, value interface{}) error {
 			di, _ := stack[len(stack)-1].(fragIndex)
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
-				self := false
 				switch tv := prev.(type) {
 				case nil:
 				case map[string]interface{}:
@@ -973,7 +961,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fragIndex(fi|descentChildFlag))
 						default:
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
@@ -992,7 +980,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fragIndex(fi|descentChildFlag))
 						default:
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
@@ -1008,7 +996,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fragIndex(fi|descentChildFlag))
 						}
 					}
 				case gen.Array:
@@ -1020,12 +1008,9 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fragIndex(fi|descentChildFlag))
 						}
 					}
-				}
-				if self {
-					stack = append(stack, fragIndex(fi|descentChildFlag))
 				}
 			} else {
 				stack = append(stack, prev)

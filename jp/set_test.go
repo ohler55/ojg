@@ -75,6 +75,7 @@ var (
 		{path: "[*].a", data: `[{"a":1,"b":2}]`, value: 5, expect: `[{"a":5,"b":2}]`},
 		{path: "..a", data: `{"a":1,"b":2}`, value: 5, expect: `{"a":5,"b":2}`},
 		{path: "..a", data: `[{"a":1,"b":2}]`, value: 5, expect: `[{"a":5,"b":2}]`},
+		{path: "..b", data: `{"x":{"a":{}}}`, value: 5, expect: `{"x":{"a":{"b":5}}}`},
 		{path: "[-1,'x'].a", data: `[{"a":1,"b":2},{"a":2}]`, value: 5, expect: `[{"a":1,"b":2},{"a":5}]`},
 		{path: "[1,'a'].a", data: `{"a":{"a":1,"b":2},"b":{"a":2}}`, value: 5, expect: `{"a":{"a":5,"b":2},"b":{"a":2}}`},
 		{path: "[:-1:2].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":3}]`},

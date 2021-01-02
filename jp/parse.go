@@ -240,6 +240,7 @@ func (p *parser) readInt(b byte) (int, byte, error) {
 		b = p.buf[p.pos]
 		p.pos++
 	}
+	start := p.pos
 	var i int
 	for {
 		if b < '0' || '9' < b {
@@ -252,12 +253,9 @@ func (p *parser) readInt(b byte) (int, byte, error) {
 		b = p.buf[p.pos]
 		p.pos++
 	}
-	// Allow numbers to begin with a zero.
-	/*
-		if i == 0 {
-			return 0, 0, fmt.Errorf("expected a number")
-		}
-	*/
+	if p.pos == start {
+		return 0, 0, fmt.Errorf("expected a number")
+	}
 	if neg {
 		i = -i
 	}

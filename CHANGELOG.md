@@ -7,6 +7,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.4.0] - [unreleased]
 ### Fixed
 - JSONPath Slice end is now exclusive as called for in the Goessner description and the consensus.
+- Nested array parsing bug fixed.
 
 ## [1.3.0] - 2020-10-28
 ### Added
