@@ -3,6 +3,7 @@
 package jp
 
 import (
+	"math"
 	"reflect"
 	"strings"
 
@@ -214,7 +215,6 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			top := (di & descentChildFlag) == 0
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
-				self := false
 				switch tv := prev.(type) {
 				case map[string]interface{}:
 					// Put prev back and slide fi.
@@ -231,7 +231,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						default:
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
@@ -253,7 +253,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						default:
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
@@ -274,7 +274,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
 				case gen.Array:
@@ -291,12 +291,9 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
-				}
-				if self {
-					stack = append(stack, fi|descentChildFlag)
 				}
 			} else {
 				if int(fi) == len(x)-1 { // last one
@@ -414,7 +411,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			}
 		case Slice:
 			start := 0
-			end := -1
+			end := math.MaxInt64
 			step := 1
 			if 0 < len(tf) {
 				start = tf[0]
@@ -424,24 +421,34 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			}
 			if 2 < len(tf) {
 				step = tf[2]
+				if step == 0 {
+					continue
+				}
 			}
 			switch tv := prev.(type) {
 			case []interface{}:
 				if start < 0 {
 					start = len(tv) + start
+					if start < 0 {
+						start = 0
+					}
 				}
 				if end < 0 {
 					end = len(tv) + end
 				}
-				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
+				if len(tv) <= start {
 					continue
+				}
+				if len(tv) < end {
+					end = len(tv)
 				}
 				if 0 < step {
 					if int(fi) == len(x)-1 { // last one
-						for i := start; i <= end; i += step {
+						for i := start; i < end; i += step {
 							results = append(results, tv[i])
 						}
 					} else {
+						end = start + (end-start-1)/step*step
 						for i := end; start <= i; i -= step {
 							v = tv[i]
 							switch v.(type) {
@@ -458,11 +465,15 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						}
 					}
 				} else {
+					if end < -1 {
+						end = -1
+					}
 					if int(fi) == len(x)-1 { // last one
-						for i := start; end <= i; i += step {
+						for i := start; end < i; i += step {
 							results = append(results, tv[i])
 						}
 					} else {
+						end = start - (start-end-1)/step*step
 						for i := end; i <= start; i -= step {
 							v = tv[i]
 							switch v.(type) {
@@ -482,19 +493,26 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			case gen.Array:
 				if start < 0 {
 					start = len(tv) + start
+					if start < 0 {
+						start = 0
+					}
 				}
 				if end < 0 {
 					end = len(tv) + end
 				}
-				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
+				if len(tv) <= start {
 					continue
 				}
 				if 0 < step {
+					if len(tv) < end {
+						end = len(tv)
+					}
 					if int(fi) == len(x)-1 { // last one
-						for i := start; i <= end; i += step {
+						for i := start; i < end; i += step {
 							results = append(results, tv[i])
 						}
 					} else {
+						end = start + (end-start-1)/step*step
 						for i := end; start <= i; i -= step {
 							v = tv[i]
 							switch v.(type) {
@@ -504,11 +522,15 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						}
 					}
 				} else {
+					if end < -1 {
+						end = -1
+					}
 					if int(fi) == len(x)-1 { // last one
-						for i := start; end <= i; i += step {
+						for i := start; end < i; i += step {
 							results = append(results, tv[i])
 						}
 					} else {
+						end = start - (start-end-1)/step*step
 						for i := end; i <= start; i -= step {
 							v = tv[i]
 							switch v.(type) {
@@ -758,7 +780,6 @@ func (x Expr) First(data interface{}) interface{} {
 			di, _ := stack[len(stack)-1].(fragIndex)
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
-				self := false
 				switch tv := prev.(type) {
 				case map[string]interface{}:
 					// Put prev back and slide fi.
@@ -775,7 +796,7 @@ func (x Expr) First(data interface{}) interface{} {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						default:
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
@@ -799,7 +820,7 @@ func (x Expr) First(data interface{}) interface{} {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						default:
 							switch reflect.TypeOf(v).Kind() {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
@@ -820,7 +841,7 @@ func (x Expr) First(data interface{}) interface{} {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
 				case gen.Array:
@@ -837,12 +858,9 @@ func (x Expr) First(data interface{}) interface{} {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							self = true
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
-				}
-				if self {
-					stack = append(stack, fi|descentChildFlag)
 				}
 			} else {
 				stack = append(stack, prev)
@@ -956,7 +974,7 @@ func (x Expr) First(data interface{}) interface{} {
 			}
 		case Slice:
 			start := 0
-			end := -1
+			end := math.MaxInt64
 			step := 1
 			if 0 < len(tf) {
 				start = tf[0]
@@ -966,29 +984,32 @@ func (x Expr) First(data interface{}) interface{} {
 			}
 			if 2 < len(tf) {
 				step = tf[2]
+				if step == 0 {
+					continue
+				}
 			}
 			switch tv := prev.(type) {
 			case []interface{}:
 				if start < 0 {
 					start = len(tv) + start
+					if start < 0 {
+						start = 0
+					}
 				}
-				if start < 0 || len(tv) <= start || step == 0 {
+				if len(tv) <= start {
 					continue
-				}
-				if int(fi) == len(x)-1 { // last one
-					return tv[start]
 				}
 				if end < 0 {
 					end = len(tv) + end
 				}
-				if end < 0 {
-					continue
+				if len(tv) < end {
+					end = len(tv)
 				}
-				if len(tv) <= end {
-					end = len(tv) - 1
-				}
-				end = start + ((end - start) / step * step)
 				if 0 < step {
+					if int(fi) == len(x)-1 && start < end { // last one
+						return tv[start]
+					}
+					end = start + (end-start-1)/step*step
 					for i := end; start <= i; i -= step {
 						v = tv[i]
 						switch v.(type) {
@@ -1004,6 +1025,13 @@ func (x Expr) First(data interface{}) interface{} {
 						}
 					}
 				} else {
+					if end < -1 {
+						end = -1
+					}
+					if int(fi) == len(x)-1 && end < start { // last one
+						return tv[start]
+					}
+					end = start - (start-end-1)/step*step
 					for i := end; i <= start; i -= step {
 						v = tv[i]
 						switch v.(type) {
@@ -1022,24 +1050,24 @@ func (x Expr) First(data interface{}) interface{} {
 			case gen.Array:
 				if start < 0 {
 					start = len(tv) + start
+					if start < 0 {
+						start = 0
+					}
 				}
-				if start < 0 || len(tv) <= start {
+				if len(tv) <= start {
 					continue
-				}
-				if int(fi) == len(x)-1 { // last one
-					return tv[start]
 				}
 				if end < 0 {
 					end = len(tv) + end
 				}
-				if end < 0 {
-					continue
+				if len(tv) < end {
+					end = len(tv)
 				}
-				if len(tv) <= end {
-					end = len(tv) - 1
-				}
-				end = start + ((end - start) / step * step)
 				if 0 < step {
+					if int(fi) == len(x)-1 && start < end { // last one
+						return tv[start]
+					}
+					end = start + (end-start-1)/step*step
 					for i := end; start <= i; i -= step {
 						v = tv[i]
 						switch v.(type) {
@@ -1048,6 +1076,13 @@ func (x Expr) First(data interface{}) interface{} {
 						}
 					}
 				} else {
+					if end < -1 {
+						end = -1
+					}
+					if int(fi) == len(x)-1 && end < start { // last one
+						return tv[start]
+					}
+					end = start - (start-end-1)/step*step
 					for i := end; i <= start; i -= step {
 						v = tv[i]
 						switch v.(type) {
@@ -1196,25 +1231,33 @@ func (x Expr) reflectGetSlice(data interface{}, start, end, step int) (va []inte
 		size := rd.Len()
 		if start < 0 {
 			start = size + start
+			if start < 0 {
+				start = 0
+			}
 		}
 		if end < 0 {
 			end = size + end
-		}
-		if start < 0 || end < 0 || size <= start || size <= end || step == 0 {
-			return
-		}
-		if 0 < step {
-			for i := start; i <= end; i += step {
-				rv := rd.Index(i)
-				if rv.CanInterface() {
-					va = append([]interface{}{rv.Interface()}, va...)
-				}
+			if end < -1 {
+				end = -1
 			}
-		} else {
-			for i := start; end <= i; i += step {
-				rv := rd.Index(i)
-				if rv.CanInterface() {
-					va = append([]interface{}{rv.Interface()}, va...)
+		}
+		if size < end {
+			end = size
+		}
+		if 0 <= start && start < size {
+			if 0 < step {
+				for i := start; i < end; i += step {
+					rv := rd.Index(i)
+					if rv.CanInterface() {
+						va = append([]interface{}{rv.Interface()}, va...)
+					}
+				}
+			} else {
+				for i := start; end < i; i += step {
+					rv := rd.Index(i)
+					if rv.CanInterface() {
+						va = append([]interface{}{rv.Interface()}, va...)
+					}
 				}
 			}
 		}

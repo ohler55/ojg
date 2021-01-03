@@ -41,10 +41,11 @@ var (
 		{path: "..[1].b", expect: []interface{}{122, 222, 322, 422}},
 		{path: "[-1]", expect: []interface{}{3}, data: []interface{}{0, 1, 2, 3}},
 		{path: "[1,'a']['b',2]['c',3]", expect: []interface{}{133}},
-		{path: "a[1:-1:2].a", expect: []interface{}{121, 141}},
+		{path: "a[1::2].a", expect: []interface{}{121, 141}},
 		{path: "a[?(@.a > 135)].b", expect: []interface{}{142}},
 		{path: "[?(@[1].a > 230)][1].b", expect: []interface{}{322, 422}},
 		{path: "[?(@ > 1)]", expect: []interface{}{2, 3}, data: []interface{}{1, 2, 3}},
+		{path: "$[?(1==1)]", expect: []interface{}{1, 2, 3}, data: []interface{}{1, 2, 3}},
 		{path: "$.*[*].a", expect: []interface{}{111, 121, 131, 141, 211, 221, 231, 241, 311, 321, 331, 341, 411, 421, 431, 441}},
 		{path: "$.a[*].y",
 			expect: []interface{}{2, 4},
@@ -55,15 +56,85 @@ var (
 				},
 			},
 		},
+		{path: "$..x",
+			expect: []interface{}{map[string]interface{}{"x": 2}, 1, 2, 3, 4},
+			data: map[string]interface{}{
+				"o": map[string]interface{}{
+					"a": []interface{}{
+						map[string]interface{}{"x": 1},
+						map[string]interface{}{
+							"x": map[string]interface{}{
+								"x": 2,
+							},
+						},
+					},
+					"x": 3,
+				},
+				"x": 4,
+			},
+		},
+		{path: "$..[1].x",
+			expect: []interface{}{42, 200, 500},
+			data: map[string]interface{}{
+				"x": []interface{}{0, 1},
+				"y": []interface{}{
+					map[string]interface{}{"x": 0},
+					map[string]interface{}{"x": 42},
+				},
+				"z": []interface{}{
+					[]interface{}{
+						map[string]interface{}{"x": 100},
+						map[string]interface{}{"x": 200},
+						map[string]interface{}{"x": 300},
+					},
+					[]interface{}{
+						map[string]interface{}{"x": 400},
+						map[string]interface{}{"x": 500},
+						map[string]interface{}{"x": 600},
+					},
+				},
+			},
+		},
+		{path: "$['a-b']",
+			expect: []interface{}{1},
+			data:   map[string]interface{}{"a-b": 1, "c-d": 2},
+		},
+		{path: "$.a..x",
+			expect: []interface{}{1, 2, 3, 4, 5},
+			data: map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": []interface{}{
+						map[string]interface{}{"x": 1, "y": true},
+						map[string]interface{}{"x": 2, "y": false},
+						map[string]interface{}{"x": 3, "y": true},
+						map[string]interface{}{"x": 4, "y": false},
+					},
+					"c": map[string]interface{}{"x": 5, "y": nil},
+				},
+			},
+		},
 		{path: "a[2].*", expect: []interface{}{131, 132, 133, 134}},
 		{path: "[*]", expect: []interface{}{1, 2, 3}, data: []interface{}{1, 2, 3}},
 		{path: "$", expect: []interface{}{map[string]interface{}{"x": 1}}, data: map[string]interface{}{"x": 1}},
 		{path: "@", expect: []interface{}{map[string]interface{}{"x": 1}}, data: map[string]interface{}{"x": 1}},
 		{path: "['x',-1]", expect: []interface{}{3}, data: []interface{}{1, 2, 3}},
+		{path: "$[1:3]", expect: []interface{}{2, 3}, data: []interface{}{1, 2, 3, 4, 5, 6}},
+		{path: "$[::0]", expect: []interface{}{}, data: []interface{}{1, 2, 3, 4, 5, 6}},
+		{path: "$[10:]", expect: []interface{}{}, data: []interface{}{1, 2, 3, 4, 5, 6}},
+		{path: "$[:-10:-1]", expect: []interface{}{1}, data: []interface{}{1, 2, 3, 4, 5, 6}},
+		{path: "$[1:10]", expect: []interface{}{2, 3, 4, 5, 6}, data: []interface{}{1, 2, 3, 4, 5, 6}},
+		{path: "$[-4:-4]", expect: []interface{}{}, data: []interface{}{1, 2, 3, 4, 5, 6}},
+		{path: "$[-4:-3]", expect: []interface{}{3}, data: []interface{}{1, 2, 3, 4, 5, 6}},
+		{path: "$[-4:2]", expect: []interface{}{}, data: []interface{}{1, 2, 3, 4, 5, 6}},
+		{path: "$[-4:3]", expect: []interface{}{3}, data: []interface{}{1, 2, 3, 4, 5, 6}},
+		{path: "$[:2]", expect: []interface{}{1, 2}, data: []interface{}{1, 2, 3, 4, 5, 6}},
+		{path: "$[-4:]", expect: []interface{}{1, 2, 3}, data: []interface{}{1, 2, 3}},
+		{path: "$[0:3:1]", expect: []interface{}{1, 2, 3}, data: []interface{}{1, 2, 3, 4, 5}},
+		{path: "$[0:4:2]", expect: []interface{}{1, 3}, data: []interface{}{1, 2, 3, 4, 5}},
 		{path: "[-4:-1:2]", expect: []interface{}{3, 5}, data: []interface{}{1, 2, 3, 4, 5, 6}},
-		{path: "[-4:]", expect: []interface{}{}, data: []interface{}{1, 2, 3}},
-		{path: "[-1:1:-2]", expect: []interface{}{2, 4, 6}, data: []interface{}{1, 2, 3, 4, 5, 6}},
-		{path: "c[-1:1:-1].a", expect: []interface{}{321, 331, 341}},
+		{path: "[-4:]", expect: []interface{}{1, 2, 3}, data: []interface{}{1, 2, 3}},
+		{path: "[-1:1:-2]", expect: []interface{}{4, 6}, data: []interface{}{1, 2, 3, 4, 5, 6}},
+		{path: "c[-1:1:-1].a", expect: []interface{}{331, 341}},
 		{path: "a[2]..", expect: []interface{}{map[string]interface{}{"a": 131, "b": 132, "c": 133, "d": 134}, 131, 132, 133, 134}},
 		{path: "..", expect: []interface{}{[]interface{}{1, 2}, 1, 2}, data: []interface{}{1, 2}},
 		{path: "..a", expect: []interface{}{}, data: []interface{}{1, 2}},
@@ -71,6 +142,16 @@ var (
 		{path: "[1]", expect: []interface{}{2}, data: []int{1, 2, 3}},
 		{path: "[-1]", expect: []interface{}{3}, data: []int{1, 2, 3}},
 		{path: "[-1,'a']", expect: []interface{}{3}, data: []int{1, 2, 3}},
+		{path: "$[::]", expect: []interface{}{1, 2, 3}, data: []int{1, 2, 3}},
+		{path: "[-1,'a'].x",
+			expect: []interface{}{2},
+			data: []interface{}{
+				map[string]interface{}{"x": 1, "y": 2, "z": 3},
+				map[string]interface{}{"x": 2, "y": 4, "z": 6},
+			},
+		},
+		{path: "$[1:3:]", expect: []interface{}{2, 3}, data: []interface{}{1, 2, 3, 4, 5}},
+		{path: "$[01:03:01]", expect: []interface{}{2, 3}, data: []interface{}{1, 2, 3, 4, 5}},
 	}
 	getTestReflectData = []*getData{
 		{path: "['a','b']", expect: []interface{}{"sample", 3}, data: &Sample{A: 3, B: "sample"}},
@@ -84,15 +165,18 @@ var (
 		{path: "$.*.a", expect: []interface{}{3}, data: map[string]interface{}{"x": &Sample{A: 3, B: "sample"}}},
 		{path: "$..a", expect: []interface{}{3}, data: map[string]interface{}{"x": &Sample{A: 3, B: "sample"}}},
 		{path: "$..a", expect: []interface{}{3}, data: []interface{}{&Sample{A: 3, B: "sample"}}},
-		{path: "$[1:2].a", expect: []interface{}{2, 3}, data: []interface{}{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
-		{path: "$[2:1:-1].a", expect: []interface{}{2, 3}, data: []interface{}{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
-		{path: "[0:-1:2].a", expect: []interface{}{1, 3}, data: []*One{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
-		{path: "[-1:0:-2].a", expect: []interface{}{1, 3}, data: []*One{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
+		{path: "$[1:2].a", expect: []interface{}{2}, data: []interface{}{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
+		{path: "$[2:1:-1].a", expect: []interface{}{3}, data: []interface{}{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
+		{path: "[0::2].a", expect: []interface{}{1, 3}, data: []*One{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
+		{path: "[-1:0:-2].a", expect: []interface{}{3}, data: []*One{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
 		{path: "[4:0:-2].a", expect: []interface{}{}, data: []*One{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
 		{path: "$.*[0]", expect: []interface{}{3}, data: &Any{X: []interface{}{3}}},
-		{path: "$[1:2]", expect: []interface{}{2, 3}, data: []int{1, 2, 3}},
-		{path: "$[1:1][0]", expect: []interface{}{gen.Int(2)},
+		{path: "$[1:2]", expect: []interface{}{2}, data: []int{1, 2, 3}},
+		{path: "$[1:2][0]", expect: []interface{}{gen.Int(2)},
 			data: []gen.Array{gen.Array{gen.Int(1)}, gen.Array{gen.Int(2)}, gen.Array{gen.Int(3)}}},
+		{path: "$[-10:]", expect: []interface{}{1, 2, 3}, data: []int{1, 2, 3}},
+		{path: "$[1:-10:-1]", expect: []interface{}{1, 2}, data: []int{1, 2, 3}},
+		{path: "$[2:10]", expect: []interface{}{3}, data: []int{1, 2, 3}},
 	}
 )
 
@@ -110,8 +194,8 @@ var (
 		{path: "[1,'a']", expect: []interface{}{2}, data: []interface{}{1, 2}},
 		{path: "[:2]", expect: []interface{}{1}, data: []interface{}{1, 2}},
 		{path: "a[:-3].b", expect: []interface{}{nil}, data: firstData1},
-		{path: "a[:-1].b", expect: []interface{}{2}, data: firstData1},
-		{path: "a[-1:0:-1].b", expect: []interface{}{2}, data: firstData1},
+		{path: "a[:].b", expect: []interface{}{2}, data: firstData1},
+		{path: "a[-1:0:-1].b", expect: []interface{}{nil}, data: firstData1},
 		{path: "[?(@ > 1)]", expect: []interface{}{2}, data: []interface{}{1, 2}},
 		{path: "$[?(@ > 1)]", expect: []interface{}{2}, data: []interface{}{1, 2}},
 		{path: "[*]", expect: []interface{}{1}, data: []interface{}{1, 2}},
@@ -124,11 +208,18 @@ var (
 		{path: "a..b", expect: []interface{}{112}},
 		{path: "[0,'a'][-1,'a']['b',1]", expect: []interface{}{2}, data: firstData1},
 		{path: "a[-1:2].b", expect: []interface{}{2}, data: firstData1},
-		{path: "a[-2:2].b", expect: []interface{}{nil}, data: firstData1},
+		{path: "a[-2:2].b", expect: []interface{}{2}, data: firstData1},
 		{path: "x[:2]", expect: []interface{}{2}, data: map[string]interface{}{"x": []interface{}{2, 3}}},
 		{path: "[1]", expect: []interface{}{2}, data: []int{1, 2, 3}},
 		{path: "[-1]", expect: []interface{}{3}, data: []int{1, 2, 3}},
 		{path: "[-1,'a']", expect: []interface{}{3}, data: []int{1, 2, 3}},
+		{path: "[::0]", expect: []interface{}{nil}, data: []interface{}{1, 2, 3}},
+		{path: "[10:]", expect: []interface{}{nil}, data: []interface{}{1, 2, 3}},
+		{path: "[:-10:-1]", expect: []interface{}{1}, data: []interface{}{1, 2, 3}},
+		{path: "[-1:0:-1].x", expect: []interface{}{2}, data: []interface{}{
+			map[string]interface{}{"x": 1},
+			map[string]interface{}{"x": 2},
+		}},
 	}
 	firstTestReflectData = []*getData{
 		{path: "$.a", expect: []interface{}{3}, data: &Sample{A: 3, B: "sample"}},
@@ -151,6 +242,7 @@ var (
 		{path: "$[1:1][0]", expect: []interface{}{gen.Int(2)},
 			data: []gen.Array{gen.Array{gen.Int(1)}, gen.Array{gen.Int(2)}, gen.Array{gen.Int(3)}}},
 		{path: "$.*", expect: []interface{}{nil}, data: &one},
+		{path: "['a',-1]", expect: []interface{}{3}, data: []interface{}{1, 2, 3}},
 	}
 )
 
@@ -264,7 +356,7 @@ func TestExprGetNodes(t *testing.T) {
 		for _, r := range results {
 			ar = append(ar, r)
 		}
-		tt.Equal(t, alt.Generify(d.expect), ar, i, " : ", x)
+		tt.Equal(t, alt.Generify(d.expect), ar, i, " : ", x, " on ", oj.JSON(d.data), " - ", oj.JSON(results))
 	}
 }
 
@@ -442,7 +534,7 @@ func TestExprGetSlice(t *testing.T) {
 	tt.Nil(t, err)
 	x, _ := jp.ParseString("$.a[0:1].y")
 	ys := x.Get(obj)
-	tt.Equal(t, "[2,4]", oj.JSON(ys))
+	tt.Equal(t, "[2]", oj.JSON(ys))
 	y := x.First(obj)
 	tt.Equal(t, "2", oj.JSON(y))
 
@@ -450,7 +542,7 @@ func TestExprGetSlice(t *testing.T) {
 	tt.Nil(t, err)
 	x, _ = jp.ParseString("$.a[0:1]")
 	ys = x.Get(obj)
-	tt.Equal(t, "[2,4]", oj.JSON(ys))
+	tt.Equal(t, "[2]", oj.JSON(ys))
 	y = x.First(obj)
 	tt.Equal(t, "2", oj.JSON(y))
 }
@@ -466,7 +558,7 @@ func TestExprGetGenSlice(t *testing.T) {
 	tt.Nil(t, err)
 	x, _ := jp.ParseString("$.a[0:1].y")
 	ys := x.GetNodes(obj)
-	tt.Equal(t, "[2,4]", oj.JSON(ys))
+	tt.Equal(t, "[2]", oj.JSON(ys))
 	y := x.FirstNode(obj)
 	tt.Equal(t, "2", oj.JSON(y))
 
@@ -474,7 +566,7 @@ func TestExprGetGenSlice(t *testing.T) {
 	tt.Nil(t, err)
 	x, _ = jp.ParseString("$.a[0:1]")
 	ys = x.GetNodes(obj)
-	tt.Equal(t, "[2,4]", oj.JSON(ys))
+	tt.Equal(t, "[2]", oj.JSON(ys))
 	y = x.FirstNode(obj)
 	tt.Equal(t, "2", oj.JSON(y))
 }

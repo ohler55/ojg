@@ -59,6 +59,7 @@ func TestParserParseString(t *testing.T) {
 		{src: "[true]", value: []interface{}{true}},
 		{src: "[true,false]", value: []interface{}{true, false}},
 		{src: "[[]]", value: []interface{}{[]interface{}{}}},
+		{src: "[true,[]]", value: []interface{}{true, []interface{}{}}},
 		{src: "[[true]]", value: []interface{}{[]interface{}{true}}},
 		{src: `"x\t\n\"\b\f\r\u0041\\\/y"`, value: "x\t\n\"\b\f\r\u0041\\/y"},
 		{src: `"x\u004a\u004Ay"`, value: "xJJy"},

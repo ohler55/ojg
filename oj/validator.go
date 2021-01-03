@@ -204,6 +204,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			continue
 		case openArray:
 			p.stack = append(p.stack, '[')
+			p.mode = valueMap
 			depth++
 			continue
 		case closeArray:

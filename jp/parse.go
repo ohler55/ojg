@@ -4,6 +4,7 @@ package jp
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -214,18 +215,23 @@ func (p *parser) afterBracket() (Frag, error) {
 		default:
 			return nil, fmt.Errorf("invalid bracket fragment")
 		}
+	default:
+		p.pos--
+		return nil, fmt.Errorf("parse error")
 	}
-	return nil, nil
 }
 
 func (p *parser) readInt(b byte) (int, byte, error) {
-	if b == '0' {
-		if p.pos < len(p.buf) {
-			b = p.buf[p.pos]
-			p.pos++
+	// Allow numbers to begin with a zero.
+	/*
+		if b == '0' {
+			if p.pos < len(p.buf) {
+				b = p.buf[p.pos]
+				p.pos++
+			}
+			return 0, b, nil
 		}
-		return 0, b, nil
-	}
+	*/
 	neg := b == '-'
 	if neg {
 		if len(p.buf) <= p.pos {
@@ -234,6 +240,7 @@ func (p *parser) readInt(b byte) (int, byte, error) {
 		b = p.buf[p.pos]
 		p.pos++
 	}
+	start := p.pos
 	var i int
 	for {
 		if b < '0' || '9' < b {
@@ -246,7 +253,7 @@ func (p *parser) readInt(b byte) (int, byte, error) {
 		b = p.buf[p.pos]
 		p.pos++
 	}
-	if i == 0 {
+	if p.pos == start {
 		return 0, 0, fmt.Errorf("expected a number")
 	}
 	if neg {
@@ -329,23 +336,26 @@ func (p *parser) readSlice(i int) (Frag, error) {
 	f := Slice{i}
 	b := p.buf[p.pos]
 	if b == ']' {
-		f = append(f, -1)
+		f = append(f, math.MaxInt64)
+		p.pos++
 		return f, nil
 	}
 	b = p.skipSpace()
 	var err error
 	// read the end
 	if b == ':' {
-		f = append(f, -1)
+		f = append(f, math.MaxInt64)
 		if len(p.buf) <= p.pos {
 			return nil, fmt.Errorf("not terminated")
 		}
 		b = p.buf[p.pos]
 		p.pos++
-		if i, b, err = p.readInt(b); err != nil {
-			return nil, err
+		if b != ']' {
+			if i, b, err = p.readInt(b); err != nil {
+				return nil, err
+			}
+			f = append(f, i)
 		}
-		f = append(f, i)
 	} else if i, b, err = p.readInt(b); err == nil {
 		f = append(f, i)
 		if b == ':' {
@@ -354,10 +364,12 @@ func (p *parser) readSlice(i int) (Frag, error) {
 			}
 			b = p.buf[p.pos]
 			p.pos++
-			if i, b, err = p.readInt(b); err != nil {
-				return nil, err
+			if b != ']' {
+				if i, b, err = p.readInt(b); err != nil {
+					return nil, err
+				}
+				f = append(f, i)
 			}
-			f = append(f, i)
 		}
 	}
 	if b != ']' {

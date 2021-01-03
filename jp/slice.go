@@ -2,7 +2,10 @@
 
 package jp
 
-import "strconv"
+import (
+	"math"
+	"strconv"
+)
 
 // Slice is a slice operation for a JSON path expression.
 type Slice []int
@@ -22,7 +25,7 @@ func (f Slice) Append(buf []byte, _, _ bool) []byte {
 					buf = append(buf, strconv.FormatInt(int64(n), 10)...)
 				}
 			case 1:
-				if n != -1 {
+				if n != math.MaxInt64 {
 					buf = append(buf, strconv.FormatInt(int64(n), 10)...)
 				}
 			default:
