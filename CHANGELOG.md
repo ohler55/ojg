@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.4.0] - [unreleased]
+## [1.4.0] - [2020-01-03]
 ### Fixed
 - JSONPath Slice end is now exclusive as called for in the Goessner description and the consensus.
 - Nested array parsing bug fixed.
