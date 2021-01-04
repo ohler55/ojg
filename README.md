@@ -120,6 +120,9 @@ See [CHANGELOG.md](CHANGELOG.md)
 
 - *JSONPath* description: https://goessner.net/articles/JsonPath
 
+- *JSONPath Comparisons* https://cburgmer.github.io/json-path-comparison
+
+
 #### Links of Interest
 
  - *Oj, a Ruby JSON parser*: http://www.ohler.com/oj/doc/index.html also at https://github.com/ohler55/oj

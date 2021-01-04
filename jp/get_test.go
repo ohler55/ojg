@@ -152,6 +152,13 @@ var (
 		},
 		{path: "$[1:3:]", expect: []interface{}{2, 3}, data: []interface{}{1, 2, 3, 4, 5}},
 		{path: "$[01:03:01]", expect: []interface{}{2, 3}, data: []interface{}{1, 2, 3, 4, 5}},
+		{path: "$[:]['x','y']",
+			expect: []interface{}{1, 2, 4, 5},
+			data: []interface{}{
+				map[string]interface{}{"x": 1, "y": 2, "z": 3},
+				map[string]interface{}{"x": 4, "y": 5, "z": 6},
+			},
+		},
 	}
 	getTestReflectData = []*getData{
 		{path: "['a','b']", expect: []interface{}{"sample", 3}, data: &Sample{A: 3, B: "sample"}},
