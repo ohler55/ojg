@@ -220,13 +220,11 @@ func (o *Options) buildString(s string) {
 		case '\f':
 			o.buf = append(o.buf, []byte{'\\', 'f'}...)
 		case '\n':
-			o.buf = append(o.buf, []byte{'\\', 'n'}...)
+			o.buf = append(o.buf, []byte{'\n'}...)
 		case '\r':
 			o.buf = append(o.buf, []byte{'\\', 'r'}...)
 		case '\t':
-			o.buf = append(o.buf, []byte{'\\', 't'}...)
-		case '&', '<', '>': // prefectly okay for JSON but commonly escaped
-			o.buf = append(o.buf, []byte{'\\', 'u', '0', '0', hex[r>>4], hex[r&0x0f]}...)
+			o.buf = append(o.buf, []byte{'\t'}...)
 		case '\u2028':
 			o.buf = append(o.buf, []byte(`\u2028`)...)
 		case '\u2029':

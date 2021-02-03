@@ -152,7 +152,7 @@ const (
 		"................................n" //  0xe0
 	//   0123456789abcdef0123456789abcdef
 	stringMap = "" +
-		"................................" + // 0x00
+		".........RR....................." + // 0x00
 		"RRzRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" + // 0x20
 		"RRRRRRRRRRRRRRRRRRRRRRRRRRRRARRR" + // 0x40
 		"RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" + // 0x60

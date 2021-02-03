@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.4.1] - [2021-02-02]
+### Fixed
+- The SEN parser and writer did not allow `\n` or `\t` in strings. It
+  now does as would be expected from a friendly format.
+
 ## [1.4.0] - [2020-01-03]
 ### Fixed
 - JSONPath Slice end is now exclusive as called for in the Goessner description and the consensus.

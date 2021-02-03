@@ -132,7 +132,7 @@ func TestParserParseString(t *testing.T) {
 		{src: `1.2e2]`, expect: "unexpected array close at 1:6"},
 		{src: `1.2e2}`, expect: "unexpected object close at 1:6"},
 		{src: `1.2e2x`, expect: "invalid number at 1:6"},
-		{src: "\"x\ty\"", expect: "invalid JSON character 0x09 at 1:3"},
+		{src: "\"x\ry\"", expect: "invalid JSON character 0x0d at 1:3"},
 		{src: `"x\zy"`, expect: "invalid JSON escape character '\\z' at 1:4"},
 		{src: `"x\u004z"`, expect: "invalid JSON unicode character 'z' at 1:8"},
 		{src: "\xef\xbb[]", expect: "expected BOM at 1:3"},

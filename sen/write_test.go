@@ -72,7 +72,9 @@ func TestString(t *testing.T) {
 		{value: true, expect: "true"},
 		{value: false, expect: "false"},
 		{value: "string", expect: "string"},
-		{value: "\\\t\n\r\b\f\"&<>\u2028\u2029\x07\U0001D122", expect: `"\\\t\n\r\b\f\"\u0026\u003c\u003e\u2028\u2029\u0007𝄢"`},
+		{value: "\\\tx\n\r\b\f\"&<>\u2028\u2029\x07\U0001D122",
+			expect: `"\\	x
+\r\b\f\"&<>\u2028\u2029\u0007𝄢"`},
 		{value: gen.String("string"), expect: "string"},
 		{value: []interface{}{true, nil}, expect: "[true null]"},
 		{value: gen.Array{gen.Bool(true), nil}, expect: "[true null]"},
