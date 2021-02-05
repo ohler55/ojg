@@ -59,7 +59,10 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			switch tv := prev.(type) {
 			case nil:
 			case map[string]interface{}:
-				v, has = tv[string(tf)]
+				v = tv[string(tf)]
+
+				// always enable to allow for undefined data elements
+				has = true
 			case gen.Object:
 				v, has = tv[string(tf)]
 			default:
