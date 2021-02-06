@@ -1142,7 +1142,7 @@ func (x Expr) reflectGetChild(data interface{}, key string) (v interface{}, has 
 		return
 	}
 	rv := rd.FieldByNameFunc(func(k string) bool { return strings.EqualFold(k, key) })
-	if rv.CanInterface() {
+	if rv.IsValid() && rv.CanInterface() {
 		v = rv.Interface()
 		has = !rv.IsZero()
 	}
