@@ -202,3 +202,27 @@ func TestColorShort(t *testing.T) {
 	err = sen.Write(&shortWriter{max: 11}, sobj, &opt)
 	tt.NotNil(t, err)
 }
+
+func TestColorObject(t *testing.T) {
+	opt := sen.Options{
+		Color: true,
+		// use visible character to make it easier to verify
+		SyntaxColor: "s",
+		KeyColor:    "k",
+		NullColor:   "n",
+		BoolColor:   "b",
+		NumberColor: "0",
+		StringColor: "q",
+		Indent:      0,
+		WriteLimit:  2,
+	}
+	var b strings.Builder
+	err := sen.Write(&b, map[string]interface{}{"a": 1, "b": 3}, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 21, len(b.String()))
+
+	b.Reset()
+	err = sen.Write(&b, gen.Object{"a": gen.True, "b": gen.False}, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 28, len(b.String()))
+}

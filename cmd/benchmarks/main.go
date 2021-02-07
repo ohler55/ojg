@@ -62,7 +62,6 @@ func main() {
 		filename = flag.Args()[0]
 	}
 	gen.TimeFormat = "nano"
-
 	benchSuite("Parse string/[]byte", []*bench{
 		{pkg: "json", name: "Unmarshal", fun: goParse},
 		{pkg: "oj", name: "Parse", fun: ojParse},
@@ -97,7 +96,6 @@ func main() {
 		{pkg: "json", name: "Decode", fun: goDecodeReader},
 		{pkg: "oj", name: "Valdate", fun: ojValidateReader},
 	})
-
 	benchSuite("to JSON", []*bench{
 		{pkg: "json", name: "Marshal", fun: marshalJSON},
 		{pkg: "oj", name: "JSON", fun: ojJSON},
@@ -129,7 +127,6 @@ func main() {
 	benchSuite("JSONPath First  $..a[2].c", []*bench{
 		{pkg: "jp", name: "First", fun: jpFirst},
 	})
-
 	fmt.Println()
 	fmt.Println(" Higher values (longer bars) are better in all cases. The bar graph compares the")
 	fmt.Println(" parsing performance. The lighter colored bar is the reference, usually the go")

@@ -51,6 +51,13 @@ func (d *Dummy) String() string {
 	return fmt.Sprintf("{val: %d}", d.Val)
 }
 
+type Panik struct {
+}
+
+func (p *Panik) Simplify() interface{} {
+	panic("force panic")
+}
+
 type shortWriter struct {
 	max int
 }
@@ -285,4 +292,15 @@ func TestWriteShort(t *testing.T) {
 		err = sen.Write(&shortWriter{max: i}, sobj, &opt)
 		tt.NotNil(t, err)
 	}
+}
+
+func TestWriteBad(t *testing.T) {
+	var b strings.Builder
+	err := sen.Write(&b, []interface{}{true, &Panik{}})
+	tt.NotNil(t, err)
+}
+
+func TestStringBad(t *testing.T) {
+	out := sen.String([]interface{}{true, &Panik{}})
+	tt.Equal(t, 0, len(out))
 }

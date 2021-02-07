@@ -9,6 +9,9 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 - Fixed reflection bug that occurred when a struct did not have the requested field.
 ### Added
 - Added tab option for indentation.
+### Changed
+- Write operations now use panic and recovery internally for more
+  robust error handling and for a very slight performance improvement.
 
 ## [1.4.1] - 2021-02-02
 ### Fixed

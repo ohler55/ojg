@@ -12,7 +12,7 @@ import (
 	"github.com/ohler55/ojg/gen"
 )
 
-func (o *Options) cbuildJSON(data interface{}, depth int) (err error) {
+func (o *Options) cbuildJSON(data interface{}, depth int) {
 	switch td := data.(type) {
 	case nil:
 		o.buf = append(o.buf, o.NullColor...)
@@ -92,22 +92,24 @@ func (o *Options) cbuildJSON(data interface{}, depth int) (err error) {
 		o.buildTime(time.Time(td))
 
 	case []interface{}:
-		err = o.cbuildSimpleArray(td, depth)
+		o.cbuildSimpleArray(td, depth)
 	case gen.Array:
-		err = o.cbuildArray(td, depth)
+		o.cbuildArray(td, depth)
 
 	case map[string]interface{}:
-		err = o.cbuildSimpleObject(td, depth)
+		o.cbuildSimpleObject(td, depth)
 	case gen.Object:
-		err = o.cbuildObject(td, depth)
+		o.cbuildObject(td, depth)
 
 	default:
 		if g, _ := data.(alt.Genericer); g != nil {
-			return o.cbuildJSON(g.Generic(), depth)
+			o.cbuildJSON(g.Generic(), depth)
+			return
 		}
 		if simp, _ := data.(alt.Simplifier); simp != nil {
 			data = simp.Simplify()
-			return o.cbuildJSON(data, depth)
+			o.cbuildJSON(data, depth)
+			return
 		}
 		if 0 < len(o.CreateKey) {
 			ao := alt.Options{
@@ -116,7 +118,8 @@ func (o *Options) cbuildJSON(data interface{}, depth int) (err error) {
 				FullTypePath: o.FullTypePath,
 				UseTags:      o.UseTags,
 			}
-			return o.cbuildJSON(alt.Decompose(data, &ao), depth)
+			o.cbuildJSON(alt.Decompose(data, &ao), depth)
+			return
 		}
 		if !o.NoReflect {
 			ao := alt.Options{
@@ -126,19 +129,21 @@ func (o *Options) cbuildJSON(data interface{}, depth int) (err error) {
 				UseTags:      o.UseTags,
 			}
 			if dec := alt.Decompose(data, &ao); dec != nil {
-				return o.cbuildJSON(dec, depth)
+				o.cbuildJSON(dec, depth)
+				return
 			}
 		}
 		o.buildString(fmt.Sprintf("%v", td))
 	}
 	if o.w != nil && o.WriteLimit < len(o.buf) {
-		_, err = o.w.Write(o.buf)
+		if _, err := o.w.Write(o.buf); err != nil {
+			panic(err)
+		}
 		o.buf = o.buf[:0]
 	}
-	return
 }
 
-func (o *Options) cbuildArray(n gen.Array, depth int) (err error) {
+func (o *Options) cbuildArray(n gen.Array, depth int) {
 	o.buf = append(o.buf, o.SyntaxColor...)
 	o.buf = append(o.buf, '[')
 
@@ -174,21 +179,14 @@ func (o *Options) cbuildArray(n gen.Array, depth int) (err error) {
 			o.buf = append(o.buf, ',')
 		}
 		o.buf = append(o.buf, []byte(cs)...)
-		if m == nil {
-			o.buf = append(o.buf, o.NullColor...)
-			o.buf = append(o.buf, []byte("null")...)
-		} else if err = o.cbuildJSON(m, d2); err != nil {
-			return
-		}
+		o.cbuildJSON(m, d2)
 	}
 	o.buf = append(o.buf, []byte(is)...)
 	o.buf = append(o.buf, o.SyntaxColor...)
 	o.buf = append(o.buf, ']')
-
-	return
 }
 
-func (o *Options) cbuildSimpleArray(n []interface{}, depth int) (err error) {
+func (o *Options) cbuildSimpleArray(n []interface{}, depth int) {
 	o.buf = append(o.buf, o.SyntaxColor...)
 	o.buf = append(o.buf, '[')
 
@@ -224,20 +222,14 @@ func (o *Options) cbuildSimpleArray(n []interface{}, depth int) (err error) {
 			o.buf = append(o.buf, ',')
 		}
 		o.buf = append(o.buf, []byte(cs)...)
-		if m == nil {
-			o.buf = append(o.buf, o.NullColor...)
-			o.buf = append(o.buf, []byte("null")...)
-		} else if err = o.cbuildJSON(m, d2); err != nil {
-			return
-		}
+		o.cbuildJSON(m, d2)
 	}
 	o.buf = append(o.buf, []byte(is)...)
 	o.buf = append(o.buf, o.SyntaxColor...)
 	o.buf = append(o.buf, ']')
-	return
 }
 
-func (o *Options) cbuildObject(n gen.Object, depth int) (err error) {
+func (o *Options) cbuildObject(n gen.Object, depth int) {
 	o.buf = append(o.buf, o.SyntaxColor...)
 	o.buf = append(o.buf, '{')
 
@@ -293,12 +285,7 @@ func (o *Options) cbuildObject(n gen.Object, depth int) (err error) {
 			if 0 < o.Indent {
 				o.buf = append(o.buf, ' ')
 			}
-			if m := n[k]; m == nil {
-				o.buf = append(o.buf, o.NullColor...)
-				o.buf = append(o.buf, []byte("null")...)
-			} else if err = o.cbuildJSON(m, d2); err != nil {
-				return
-			}
+			o.cbuildJSON(n[k], d2)
 		}
 	} else {
 		for k, m := range n {
@@ -319,22 +306,15 @@ func (o *Options) cbuildObject(n gen.Object, depth int) (err error) {
 			if 0 < o.Indent {
 				o.buf = append(o.buf, ' ')
 			}
-			if m == nil {
-				o.buf = append(o.buf, o.NullColor...)
-				o.buf = append(o.buf, []byte("null")...)
-			} else if err = o.cbuildJSON(m, d2); err != nil {
-				return
-			}
+			o.cbuildJSON(m, d2)
 		}
 	}
 	o.buf = append(o.buf, []byte(is)...)
 	o.buf = append(o.buf, o.SyntaxColor...)
 	o.buf = append(o.buf, '}')
-
-	return
 }
 
-func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) (err error) {
+func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) {
 	o.buf = append(o.buf, o.SyntaxColor...)
 	o.buf = append(o.buf, '{')
 
@@ -390,12 +370,7 @@ func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) (err e
 			if 0 < o.Indent {
 				o.buf = append(o.buf, ' ')
 			}
-			if m := n[k]; m == nil {
-				o.buf = append(o.buf, o.NullColor...)
-				o.buf = append(o.buf, []byte("null")...)
-			} else if err = o.cbuildJSON(m, d2); err != nil {
-				return
-			}
+			o.cbuildJSON(n[k], d2)
 		}
 	} else {
 		for k, m := range n {
@@ -416,17 +391,10 @@ func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) (err e
 			if 0 < o.Indent {
 				o.buf = append(o.buf, ' ')
 			}
-			if m == nil {
-				o.buf = append(o.buf, o.NullColor...)
-				o.buf = append(o.buf, []byte("null")...)
-			} else if err = o.cbuildJSON(m, d2); err != nil {
-				return
-			}
+			o.cbuildJSON(m, d2)
 		}
 	}
 	o.buf = append(o.buf, []byte(is)...)
 	o.buf = append(o.buf, o.SyntaxColor...)
 	o.buf = append(o.buf, '}')
-
-	return
 }

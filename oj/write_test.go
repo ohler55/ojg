@@ -43,6 +43,13 @@ func (s Stew) String() string {
 	return fmt.Sprintf("%v", []int(s))
 }
 
+type Panik struct {
+}
+
+func (p *Panik) Simplify() interface{} {
+	panic("force panic")
+}
+
 type shortWriter struct {
 	max int
 }
@@ -293,6 +300,9 @@ func TestMarshal(t *testing.T) {
 	_, err = oj.Marshal([]interface{}{true, TestMarshal})
 	tt.NotNil(t, err)
 
+	_, err = oj.Marshal([]interface{}{true, &Panik{}})
+	tt.NotNil(t, err)
+
 	b, err = oj.Marshal([]interface{}{true, &Dummy{Val: 3}})
 	tt.Nil(t, err)
 	tt.Equal(t, `[true,{"Val":3}]`, string(b))
@@ -303,4 +313,19 @@ func TestMarshal(t *testing.T) {
 
 	_, err = oj.Marshal([]interface{}{true, &Dummy{Val: 3}}, &oj.Options{NoReflect: true})
 	tt.NotNil(t, err)
+}
+
+func TestWriteBad(t *testing.T) {
+	var b strings.Builder
+
+	err := oj.Write(&b, []interface{}{true, TestWriteBad})
+	tt.NotNil(t, err)
+
+	err = oj.Write(&b, []interface{}{true, &Panik{}})
+	tt.NotNil(t, err)
+}
+
+func TestJSONBad(t *testing.T) {
+	out := oj.JSON([]interface{}{true, &Panik{}})
+	tt.Equal(t, 0, len(out))
 }
