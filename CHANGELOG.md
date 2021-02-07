@@ -4,9 +4,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.4.2] - [unreleased]
+## [1.5.0] - [unreleased]
 ### Fixed
 - Fixed reflection bug that occurred when a struct did not have the requested field.
+### Added
+- Added tab option for indentation.
 
 ## [1.4.1] - 2021-02-02
 ### Fixed
