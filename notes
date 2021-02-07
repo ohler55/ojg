@@ -6,10 +6,33 @@
   - child, ok
   - script, not
 
-- coverage
- - set
-
 - cmd/oj
+ - -tab instead of indent
+  - add Tab to option
+   - if set then ignore indent and use tab instead
+
+ - building output - build-out
+  - seed
+   - ^={a:123 b: @.bar}
+  -  ^ for current build
+   - ^.foo.bar=@.foo.baz
+    - foo.bar=foo.baz as shortcut
+  - % for globals
+   - %.top+=^
+  - = indicates Set(first, Get(second))
+  - + indicates append is list otherwise nothing
+ - display ^ at each input json
+ - display % at end
+ - ^.foo.bar=@.boo.hoo - first match (GetOne)
+ - ^.foo.bar=[@.*.hoo] - array (Get)
+ - ^.foo.bar+@.boo.hoo - add to array
+ - ^.foo.del=
+ - foo[2]=   - deletes array element 2
+ - $top.array+=@.bar
+ - $top.array+=@@
+
+- try using panic instead of returning errors for writes
+
  - set option
   - |$.foo|| for delete
   - |$.foo|{"x":1}| for replace/set

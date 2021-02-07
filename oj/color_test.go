@@ -121,6 +121,38 @@ func TestColorWide(t *testing.T) {
 	tt.Equal(t, 561, len(b.String()))
 }
 
+func TestColorDeep(t *testing.T) {
+	var b strings.Builder
+	opt := oj.Options{
+		Color: true,
+		// use visible character to make it easier to verify
+		SyntaxColor: "s",
+		KeyColor:    "k",
+		NullColor:   "n",
+		BoolColor:   "b",
+		NumberColor: "0",
+		StringColor: "q",
+		Tab:         true,
+		WriteLimit:  2,
+	}
+	a := []interface{}{map[string]interface{}{"x": true}}
+	for i := 40; 0 < i; i-- {
+		a = []interface{}{a}
+	}
+	err := oj.Write(&b, a, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 1886, len(b.String()))
+
+	b.Reset()
+	g := gen.Array{gen.Object{"x": gen.True}}
+	for i := 40; 0 < i; i-- {
+		g = gen.Array{g}
+	}
+	err = oj.Write(&b, g, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 1886, len(b.String()))
+}
+
 func TestColorShort(t *testing.T) {
 	opt := oj.Options{
 		Color: true,

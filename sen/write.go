@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	spaces = "\n                                                                                                                                "
-
+	spaces      = "\n                                                                                                                                "
+	tabs        = "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
 	hex         = "0123456789abcdef"
 	maxTokenLen = 64
 
@@ -281,19 +281,34 @@ func (o *Options) buildTime(t time.Time) {
 
 func (o *Options) buildArray(n gen.Array, depth int) (err error) {
 	o.buf = append(o.buf, '[')
-	if 0 < o.Indent {
-		x := depth*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		is := spaces[0:x]
-		d2 := depth + 1
-		x = d2*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		cs := spaces[0:x]
+	d2 := depth + 1
+	var is string
+	var cs string
 
+	if o.Tab || 0 < o.Indent {
+		if o.Tab {
+			x := depth + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			is = tabs[0:x]
+			x = d2 + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			cs = tabs[0:x]
+		} else {
+			x := depth*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			is = spaces[0:x]
+			x = d2*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			cs = spaces[0:x]
+		}
 		for _, m := range n {
 			o.buf = append(o.buf, []byte(cs)...)
 			if m == nil {
@@ -322,19 +337,34 @@ func (o *Options) buildArray(n gen.Array, depth int) (err error) {
 
 func (o *Options) buildSimpleArray(n []interface{}, depth int) (err error) {
 	o.buf = append(o.buf, '[')
-	if 0 < o.Indent {
-		x := depth*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		is := spaces[0:x]
-		d2 := depth + 1
-		x = d2*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		cs := spaces[0:x]
+	d2 := depth + 1
+	var is string
+	var cs string
 
+	if o.Tab || 0 < o.Indent {
+		if o.Tab {
+			x := depth + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			is = tabs[0:x]
+			x = d2 + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			cs = tabs[0:x]
+		} else {
+			x := depth*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			is = spaces[0:x]
+			x = d2*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			cs = spaces[0:x]
+		}
 		for _, m := range n {
 			o.buf = append(o.buf, []byte(cs)...)
 			if m == nil {
@@ -362,18 +392,34 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) (err error) {
 
 func (o *Options) buildObject(n gen.Object, depth int) (err error) {
 	o.buf = append(o.buf, '{')
-	if 0 < o.Indent {
-		x := depth*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
+	d2 := depth + 1
+	var is string
+	var cs string
+
+	if o.Tab || 0 < o.Indent {
+		if o.Tab {
+			x := depth + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			is = tabs[0:x]
+			x = d2 + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			cs = tabs[0:x]
+		} else {
+			x := depth*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			is = spaces[0:x]
+			x = d2*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			cs = spaces[0:x]
 		}
-		is := spaces[0:x]
-		d2 := depth + 1
-		x = d2*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		cs := spaces[0:x]
 		if o.Sort {
 			keys := make([]string, 0, len(n))
 			for k := range n {
@@ -465,18 +511,34 @@ func (o *Options) buildObject(n gen.Object, depth int) (err error) {
 
 func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err error) {
 	o.buf = append(o.buf, '{')
-	if 0 < o.Indent {
-		x := depth*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
+	d2 := depth + 1
+	var is string
+	var cs string
+
+	if o.Tab || 0 < o.Indent {
+		if o.Tab {
+			x := depth + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			is = tabs[0:x]
+			x = d2 + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			cs = tabs[0:x]
+		} else {
+			x := depth*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			is = spaces[0:x]
+			x = d2*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			cs = spaces[0:x]
 		}
-		is := spaces[0:x]
-		d2 := depth + 1
-		x = d2*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		cs := spaces[0:x]
 		if o.Sort {
 			keys := make([]string, 0, len(n))
 			for k := range n {

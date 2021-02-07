@@ -121,6 +121,38 @@ func TestColorWide(t *testing.T) {
 	tt.Equal(t, 553, len(b.String()))
 }
 
+func TestColorDeep(t *testing.T) {
+	var b strings.Builder
+	opt := sen.Options{
+		Color: true,
+		// use visible character to make it easier to verify
+		SyntaxColor: "s",
+		KeyColor:    "k",
+		NullColor:   "n",
+		BoolColor:   "b",
+		NumberColor: "0",
+		StringColor: "q",
+		Tab:         true,
+		WriteLimit:  2,
+	}
+	a := []interface{}{map[string]interface{}{"x": true, "y": false}}
+	for i := 40; 0 < i; i-- {
+		a = []interface{}{a}
+	}
+	err := sen.Write(&b, a, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 1925, len(b.String()))
+
+	b.Reset()
+	g := gen.Array{gen.Object{"x": gen.True, "y": gen.False}}
+	for i := 40; 0 < i; i-- {
+		g = gen.Array{g}
+	}
+	err = sen.Write(&b, g, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 1925, len(b.String()))
+}
+
 func TestColorShort(t *testing.T) {
 	opt := sen.Options{
 		Color: true,

@@ -145,7 +145,18 @@ func (o *Options) cbuildArray(n gen.Array, depth int) (err error) {
 	d2 := depth + 1
 	var is string
 	var cs string
-	if 0 < o.Indent {
+	if o.Tab {
+		x := depth + 1
+		if len(tabs) < x {
+			x = len(tabs)
+		}
+		is = tabs[0:x]
+		x = d2 + 1
+		if len(tabs) < x {
+			x = len(tabs)
+		}
+		cs = tabs[0:x]
+	} else if 0 < o.Indent {
 		x := depth*o.Indent + 1
 		if len(spaces) < x {
 			x = len(spaces)
@@ -184,7 +195,18 @@ func (o *Options) cbuildSimpleArray(n []interface{}, depth int) (err error) {
 	d2 := depth + 1
 	var is string
 	var cs string
-	if 0 < o.Indent {
+	if o.Tab {
+		x := depth + 1
+		if len(tabs) < x {
+			x = len(tabs)
+		}
+		is = tabs[0:x]
+		x = d2 + 1
+		if len(tabs) < x {
+			x = len(tabs)
+		}
+		cs = tabs[0:x]
+	} else if 0 < o.Indent {
 		x := depth*o.Indent + 1
 		if len(spaces) < x {
 			x = len(spaces)
@@ -223,7 +245,18 @@ func (o *Options) cbuildObject(n gen.Object, depth int) (err error) {
 	var is string
 	var cs string
 	first := true
-	if 0 < o.Indent {
+	if o.Tab {
+		x := depth + 1
+		if len(tabs) < x {
+			x = len(tabs)
+		}
+		is = tabs[0:x]
+		x = d2 + 1
+		if len(tabs) < x {
+			x = len(tabs)
+		}
+		cs = tabs[0:x]
+	} else if 0 < o.Indent {
 		x := depth*o.Indent + 1
 		if len(spaces) < x {
 			x = len(spaces)
@@ -309,7 +342,18 @@ func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) (err e
 	var is string
 	var cs string
 	first := true
-	if 0 < o.Indent {
+	if o.Tab {
+		x := depth + 1
+		if len(tabs) < x {
+			x = len(tabs)
+		}
+		is = tabs[0:x]
+		x = d2 + 1
+		if len(tabs) < x {
+			x = len(tabs)
+		}
+		cs = tabs[0:x]
+	} else if 0 < o.Indent {
 		x := depth*o.Indent + 1
 		if len(spaces) < x {
 			x = len(spaces)
