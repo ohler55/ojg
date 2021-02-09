@@ -32,6 +32,9 @@ type Options struct {
 	// Indent for the output.
 	Indent int
 
+	// Tab if true will indent using tabs and ignore the Indent member.
+	Tab bool
+
 	// Sort object members if true.
 	Sort bool
 

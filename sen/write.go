@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	spaces = "\n                                                                                                                                "
-
+	spaces      = "\n                                                                                                                                "
+	tabs        = "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
 	hex         = "0123456789abcdef"
 	maxTokenLen = 64
 
@@ -57,7 +57,12 @@ func String(data interface{}, args ...interface{}) string {
 	} else {
 		o.buf = o.buf[:0]
 	}
-	_ = o.buildSen(data, 0)
+	defer func() {
+		if r := recover(); r != nil {
+			o.buf = o.buf[:0]
+		}
+	}()
+	o.buildSen(data, 0)
 
 	return string(o.buf)
 }
@@ -91,21 +96,29 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	} else {
 		o.buf = o.buf[:0]
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			o.buf = o.buf[:0]
+			if err, _ = r.(error); err == nil {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
 	if o.Color {
-		err = o.cbuildJSON(data, 0)
+		o.cbuildJSON(data, 0)
 	} else {
-		err = o.buildSen(data, 0)
+		o.buildSen(data, 0)
 	}
 	if o.Color {
 		o.buf = append(o.buf, Normal...)
 	}
-	if err == nil && w != nil && 0 < len(o.buf) {
+	if w != nil && 0 < len(o.buf) {
 		_, err = o.w.Write(o.buf)
 	}
 	return
 }
 
-func (o *Options) buildSen(data interface{}, depth int) (err error) {
+func (o *Options) buildSen(data interface{}, depth int) {
 	switch td := data.(type) {
 	case nil:
 		o.buf = append(o.buf, []byte("null")...)
@@ -164,35 +177,39 @@ func (o *Options) buildSen(data interface{}, depth int) (err error) {
 		o.buildTime(time.Time(td))
 
 	case []interface{}:
-		err = o.buildSimpleArray(td, depth)
+		o.buildSimpleArray(td, depth)
 	case gen.Array:
-		err = o.buildArray(td, depth)
+		o.buildArray(td, depth)
 
 	case map[string]interface{}:
-		err = o.buildSimpleObject(td, depth)
+		o.buildSimpleObject(td, depth)
 	case gen.Object:
-		err = o.buildObject(td, depth)
+		o.buildObject(td, depth)
 
 	default:
 		if g, _ := data.(alt.Genericer); g != nil {
-			return o.buildSen(g.Generic(), depth)
+			o.buildSen(g.Generic(), depth)
+			return
 		}
 		if simp, _ := data.(alt.Simplifier); simp != nil {
 			data = simp.Simplify()
-			return o.buildSen(data, depth)
+			o.buildSen(data, depth)
+			return
 		}
 		if 0 < len(o.CreateKey) {
 			ao := alt.Options{CreateKey: o.CreateKey, OmitNil: o.OmitNil, FullTypePath: o.FullTypePath}
-			return o.buildSen(alt.Decompose(data, &ao), depth)
+			o.buildSen(alt.Decompose(data, &ao), depth)
+			return
 		} else {
 			o.buildString(fmt.Sprintf("%v", td))
 		}
 	}
 	if o.w != nil && o.WriteLimit < len(o.buf) {
-		_, err = o.w.Write(o.buf)
+		if _, err := o.w.Write(o.buf); err != nil {
+			panic(err)
+		}
 		o.buf = o.buf[:0]
 	}
-	return
 }
 
 func (o *Options) buildString(s string) {
@@ -279,28 +296,39 @@ func (o *Options) buildTime(t time.Time) {
 	}
 }
 
-func (o *Options) buildArray(n gen.Array, depth int) (err error) {
+func (o *Options) buildArray(n gen.Array, depth int) {
 	o.buf = append(o.buf, '[')
-	if 0 < o.Indent {
-		x := depth*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		is := spaces[0:x]
-		d2 := depth + 1
-		x = d2*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		cs := spaces[0:x]
+	d2 := depth + 1
+	var is string
+	var cs string
 
+	if o.Tab || 0 < o.Indent {
+		if o.Tab {
+			x := depth + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			is = tabs[0:x]
+			x = d2 + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			cs = tabs[0:x]
+		} else {
+			x := depth*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			is = spaces[0:x]
+			x = d2*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			cs = spaces[0:x]
+		}
 		for _, m := range n {
 			o.buf = append(o.buf, []byte(cs)...)
-			if m == nil {
-				o.buf = append(o.buf, []byte("null")...)
-			} else if err = o.buildSen(m, d2); err != nil {
-				return
-			}
+			o.buildSen(m, d2)
 		}
 		o.buf = append(o.buf, []byte(is)...)
 	} else {
@@ -308,40 +336,45 @@ func (o *Options) buildArray(n gen.Array, depth int) (err error) {
 			if 0 < j {
 				o.buf = append(o.buf, ' ')
 			}
-			if m == nil {
-				o.buf = append(o.buf, []byte("null")...)
-			} else if err = o.buildSen(m, depth); err != nil {
-				return
-			}
+			o.buildSen(m, depth)
 		}
 	}
 	o.buf = append(o.buf, ']')
-
-	return
 }
 
-func (o *Options) buildSimpleArray(n []interface{}, depth int) (err error) {
+func (o *Options) buildSimpleArray(n []interface{}, depth int) {
 	o.buf = append(o.buf, '[')
-	if 0 < o.Indent {
-		x := depth*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		is := spaces[0:x]
-		d2 := depth + 1
-		x = d2*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		cs := spaces[0:x]
+	d2 := depth + 1
+	var is string
+	var cs string
 
+	if o.Tab || 0 < o.Indent {
+		if o.Tab {
+			x := depth + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			is = tabs[0:x]
+			x = d2 + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			cs = tabs[0:x]
+		} else {
+			x := depth*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			is = spaces[0:x]
+			x = d2*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			cs = spaces[0:x]
+		}
 		for _, m := range n {
 			o.buf = append(o.buf, []byte(cs)...)
-			if m == nil {
-				o.buf = append(o.buf, []byte("null")...)
-			} else if err = o.buildSen(m, d2); err != nil {
-				return
-			}
+			o.buildSen(m, d2)
 		}
 		o.buf = append(o.buf, []byte(is)...)
 	} else {
@@ -349,31 +382,42 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) (err error) {
 			if 0 < j {
 				o.buf = append(o.buf, ' ')
 			}
-			if m == nil {
-				o.buf = append(o.buf, []byte("null")...)
-			} else if err = o.buildSen(m, depth); err != nil {
-				return
-			}
+			o.buildSen(m, depth)
 		}
 	}
 	o.buf = append(o.buf, ']')
-	return
 }
 
-func (o *Options) buildObject(n gen.Object, depth int) (err error) {
+func (o *Options) buildObject(n gen.Object, depth int) {
 	o.buf = append(o.buf, '{')
-	if 0 < o.Indent {
-		x := depth*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
+	d2 := depth + 1
+	var is string
+	var cs string
+
+	if o.Tab || 0 < o.Indent {
+		if o.Tab {
+			x := depth + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			is = tabs[0:x]
+			x = d2 + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			cs = tabs[0:x]
+		} else {
+			x := depth*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			is = spaces[0:x]
+			x = d2*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			cs = spaces[0:x]
 		}
-		is := spaces[0:x]
-		d2 := depth + 1
-		x = d2*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		cs := spaces[0:x]
 		if o.Sort {
 			keys := make([]string, 0, len(n))
 			for k := range n {
@@ -389,11 +433,7 @@ func (o *Options) buildObject(n gen.Object, depth int) (err error) {
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
 				o.buf = append(o.buf, ' ')
-				if m := n[k]; m == nil {
-					o.buf = append(o.buf, []byte("null")...)
-				} else if err = o.buildSen(m, d2); err != nil {
-					return
-				}
+				o.buildSen(m, d2)
 			}
 		} else {
 			for k, m := range n {
@@ -404,11 +444,7 @@ func (o *Options) buildObject(n gen.Object, depth int) (err error) {
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
 				o.buf = append(o.buf, ' ')
-				if m == nil {
-					o.buf = append(o.buf, []byte("null")...)
-				} else if err = o.buildSen(m, d2); err != nil {
-					return
-				}
+				o.buildSen(m, d2)
 			}
 		}
 		o.buf = append(o.buf, []byte(is)...)
@@ -432,11 +468,7 @@ func (o *Options) buildObject(n gen.Object, depth int) (err error) {
 				}
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
-				if m == nil {
-					o.buf = append(o.buf, []byte("null")...)
-				} else if err = o.buildSen(m, 0); err != nil {
-					return
-				}
+				o.buildSen(m, 0)
 			}
 		} else {
 			for k, m := range n {
@@ -450,33 +482,43 @@ func (o *Options) buildObject(n gen.Object, depth int) (err error) {
 				}
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
-				if m == nil {
-					o.buf = append(o.buf, []byte("null")...)
-				} else if err = o.buildSen(m, 0); err != nil {
-					return
-				}
+				o.buildSen(m, 0)
 			}
 		}
 	}
 	o.buf = append(o.buf, '}')
-
-	return
 }
 
-func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err error) {
+func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 	o.buf = append(o.buf, '{')
-	if 0 < o.Indent {
-		x := depth*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
+	d2 := depth + 1
+	var is string
+	var cs string
+
+	if o.Tab || 0 < o.Indent {
+		if o.Tab {
+			x := depth + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			is = tabs[0:x]
+			x = d2 + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			cs = tabs[0:x]
+		} else {
+			x := depth*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			is = spaces[0:x]
+			x = d2*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			cs = spaces[0:x]
 		}
-		is := spaces[0:x]
-		d2 := depth + 1
-		x = d2*o.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		cs := spaces[0:x]
 		if o.Sort {
 			keys := make([]string, 0, len(n))
 			for k := range n {
@@ -492,11 +534,7 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err er
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
 				o.buf = append(o.buf, ' ')
-				if m := n[k]; m == nil {
-					o.buf = append(o.buf, []byte("null")...)
-				} else if err = o.buildSen(m, d2); err != nil {
-					return
-				}
+				o.buildSen(m, d2)
 			}
 		} else {
 			for k, m := range n {
@@ -507,11 +545,7 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err er
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
 				o.buf = append(o.buf, ' ')
-				if m == nil {
-					o.buf = append(o.buf, []byte("null")...)
-				} else if err = o.buildSen(m, d2); err != nil {
-					return
-				}
+				o.buildSen(m, d2)
 			}
 		}
 		o.buf = append(o.buf, []byte(is)...)
@@ -535,11 +569,7 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err er
 				}
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
-				if m == nil {
-					o.buf = append(o.buf, []byte("null")...)
-				} else if err = o.buildSen(m, 0); err != nil {
-					return
-				}
+				o.buildSen(m, 0)
 			}
 		} else {
 			for k, m := range n {
@@ -553,15 +583,9 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) (err er
 				}
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
-				if m == nil {
-					o.buf = append(o.buf, []byte("null")...)
-				} else if err = o.buildSen(m, 0); err != nil {
-					return
-				}
+				o.buildSen(m, 0)
 			}
 		}
 	}
 	o.buf = append(o.buf, '}')
-
-	return
 }

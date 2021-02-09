@@ -43,6 +43,13 @@ func (s Stew) String() string {
 	return fmt.Sprintf("%v", []int(s))
 }
 
+type Panik struct {
+}
+
+func (p *Panik) Simplify() interface{} {
+	panic("force panic")
+}
+
 type shortWriter struct {
 	max int
 }
@@ -69,6 +76,7 @@ func TestString(t *testing.T) {
 		{value: []interface{}{true, false}, expect: "[true,false]"},
 		{value: gen.Array{gen.Bool(true), nil}, expect: "[true,null]"},
 		{value: []interface{}{true, false}, indent: 2, expect: "[\n  true,\n  false\n]"},
+		{value: []interface{}{true, false}, expect: "[\n\ttrue,\n\tfalse\n]", options: &oj.Options{Tab: true}},
 		{value: gen.Array{gen.True, gen.False}, indent: 2, expect: "[\n  true,\n  false\n]"},
 		{value: gen.Object{"t": gen.True, "f": gen.False}, expect: `{"f":false,"t":true}`, options: &oj.Options{Sort: true}},
 		{value: map[string]interface{}{"t": true, "f": false}, expect: `{"f":false,"t":true}`, options: &oj.Options{Sort: true}},
@@ -81,11 +89,13 @@ func TestString(t *testing.T) {
 		{value: []interface{}{tm}, expect: "[1588879759123456789]"},
 		{value: tm2, expect: "-10.100000000", options: &oj.Options{TimeFormat: "second"}},
 		{value: gen.Array{gen.Time(tm)}, expect: "[1588879759123456789]"},
-		{value: gen.Array{gen.Time(tm)}, expect: `["2020-05-07T19:29:19.123456789Z"]`, options: &oj.Options{TimeFormat: time.RFC3339Nano}},
+		{value: gen.Array{gen.Time(tm)}, expect: `["2020-05-07T19:29:19.123456789Z"]`,
+			options: &oj.Options{TimeFormat: time.RFC3339Nano}},
 		{value: gen.Array{gen.Time(tm)}, expect: "[1588879759.123456789]", options: &oj.Options{TimeFormat: "second"}},
 		{value: gen.Array{gen.Time(tm)}, expect: `[{"@":1588879759123456789}]`, options: &oj.Options{TimeWrap: "@"}},
 		{value: map[string]interface{}{"t": true, "x": nil}, expect: "{\"t\":true}", options: &oj.Options{OmitNil: true}},
-		{value: map[string]interface{}{"t": true, "f": false}, expect: "{\n  \"f\": false,\n  \"t\": true\n}", options: &oj.Options{Sort: true, Indent: 2}},
+		{value: map[string]interface{}{"t": true, "f": false}, expect: "{\n  \"f\": false,\n  \"t\": true\n}",
+			options: &oj.Options{Sort: true, Indent: 2}},
 
 		{value: map[string]interface{}{"t": true}, expect: "{\n  \"t\": true\n}", options: &oj.Options{Indent: 2}},
 		{value: map[string]interface{}{"t": true, "n": nil, "f": false}, expect: "{\"f\":false,\"t\":true}",
@@ -98,6 +108,8 @@ func TestString(t *testing.T) {
 			options: &oj.Options{OmitNil: true, Sort: true}},
 		{value: map[string]interface{}{"t": true, "n": nil, "f": false}, expect: "{\"f\":false,\"n\":null,\"t\":true}",
 			options: &oj.Options{OmitNil: false, Sort: true}},
+		{value: map[string]interface{}{"t": true, "n": nil, "f": false}, expect: "{\n\t\"f\": false,\n\t\"n\": null,\n\t\"t\": true\n}",
+			options: &oj.Options{OmitNil: false, Sort: true, Tab: true}},
 		{value: map[string]interface{}{"n": nil}, expect: "{\"n\":null}"},
 		{value: map[string]interface{}{"n": nil}, expect: "{\n}", options: &oj.Options{OmitNil: true, Sort: false, Indent: 2}},
 
@@ -212,6 +224,27 @@ func TestWriteWide(t *testing.T) {
 	tt.Equal(t, 545, len(b.String()))
 }
 
+func TestWriteDeep(t *testing.T) {
+	var b strings.Builder
+	opt := oj.Options{Tab: true}
+	a := []interface{}{map[string]interface{}{"x": true}}
+	for i := 40; 0 < i; i-- {
+		a = []interface{}{a}
+	}
+	err := oj.Write(&b, a, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 1797, len(b.String()))
+
+	b.Reset()
+	g := gen.Array{gen.Object{"x": gen.True}}
+	for i := 40; 0 < i; i-- {
+		g = gen.Array{g}
+	}
+	err = oj.Write(&b, g, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 1797, len(b.String()))
+}
+
 func TestWriteShort(t *testing.T) {
 	opt := oj.Options{Indent: 2, WriteLimit: 2}
 	err := oj.Write(&shortWriter{max: 3}, []interface{}{true, nil}, &opt)
@@ -267,6 +300,9 @@ func TestMarshal(t *testing.T) {
 	_, err = oj.Marshal([]interface{}{true, TestMarshal})
 	tt.NotNil(t, err)
 
+	_, err = oj.Marshal([]interface{}{true, &Panik{}})
+	tt.NotNil(t, err)
+
 	b, err = oj.Marshal([]interface{}{true, &Dummy{Val: 3}})
 	tt.Nil(t, err)
 	tt.Equal(t, `[true,{"Val":3}]`, string(b))
@@ -277,4 +313,19 @@ func TestMarshal(t *testing.T) {
 
 	_, err = oj.Marshal([]interface{}{true, &Dummy{Val: 3}}, &oj.Options{NoReflect: true})
 	tt.NotNil(t, err)
+}
+
+func TestWriteBad(t *testing.T) {
+	var b strings.Builder
+
+	err := oj.Write(&b, []interface{}{true, TestWriteBad})
+	tt.NotNil(t, err)
+
+	err = oj.Write(&b, []interface{}{true, &Panik{}})
+	tt.NotNil(t, err)
+}
+
+func TestJSONBad(t *testing.T) {
+	out := oj.JSON([]interface{}{true, &Panik{}})
+	tt.Equal(t, 0, len(out))
 }

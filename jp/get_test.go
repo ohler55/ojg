@@ -577,3 +577,29 @@ func TestExprGetGenSlice(t *testing.T) {
 	y = x.FirstNode(obj)
 	tt.Equal(t, "2", oj.JSON(y))
 }
+
+func TestExprGetBadPath(t *testing.T) {
+	type Instance struct {
+		ID          string
+		BackendName string
+		Name        string
+		Type        string
+		Status      string
+		PrivateIP   string
+		PublicIP    string
+	}
+	items := []*Instance{
+		{
+			Name:        "sds-sds",
+			BackendName: "sd",
+			ID:          "i-0sdsd44c0",
+			PublicIP:    "23.23.23.23",
+			PrivateIP:   "12.12.2.2",
+			Status:      "Running",
+			Type:        "r5d.large",
+		},
+	}
+	expr, err := jp.ParseString("$[*].{}")
+	tt.Nil(t, err)
+	tt.Equal(t, []interface{}{}, expr.Get(items))
+}

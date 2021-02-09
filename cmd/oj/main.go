@@ -13,6 +13,8 @@ import (
 	"github.com/ohler55/ojg/sen"
 )
 
+const version = "1.5.0"
+
 var (
 	indent = 2
 	color  = false
@@ -20,11 +22,13 @@ var (
 	sort   = false
 	lazy   = false
 	senOut = false
+	tab    = false
 
 	// If true wrap extracts with an array.
 	wrapExtract = false
 	extracts    = []jp.Expr{}
 	matches     = []*jp.Script{}
+	showVersion bool
 )
 
 func init() {
@@ -35,8 +39,10 @@ func init() {
 	flag.BoolVar(&wrapExtract, "w", wrapExtract, "wrap extracts in an array")
 	flag.BoolVar(&lazy, "z", lazy, "lazy mode accepts Simple Encoding Notation (quotes and commas mostly optional)")
 	flag.BoolVar(&senOut, "sen", senOut, "output in Simple Encoding Notation")
+	flag.BoolVar(&tab, "t", tab, "indent with tabs")
 	flag.Var(&exValue{}, "x", "extract path")
 	flag.Var(&matchValue{}, "m", "match equation/script")
+	flag.BoolVar(&showVersion, "version", showVersion, "display version and exit")
 }
 
 func main() {
@@ -44,7 +50,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, `
 usage: %s [<options>] [@<extraction>]... [(<match>)]... [<json-file>]...
 
-The default bahavior it to write the JSON formatted according to the color
+The default behavior it to write the JSON formatted according to the color
 options and the indentation option. If no files are specified JSON input is
 expected from stdin.
 
@@ -66,7 +72,11 @@ follows the oj.Script format.
   oj -m "(@.name == 'Pete')" myfile.json "(@.name == "Makie")"
 
 An argument that starts with a { or [ marks the start of a JSON document that
-is composed of the remaining argument concatenated together.
+is composed of the remaining argument concatenated together. That document is
+then used as the input.
+
+  oj -i 0 -z {a:1, b:two}
+  => {"a":1,"b":"two"}
 
 `, filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
@@ -74,6 +84,10 @@ is composed of the remaining argument concatenated together.
 	}
 	flag.Parse()
 
+	if showVersion {
+		fmt.Printf("oj %s\n", version)
+		os.Exit(0)
+	}
 	var input []byte
 	var files []string
 	for _, arg := range flag.Args() {
@@ -180,12 +194,14 @@ func writeJSON(v interface{}) {
 		o.Indent = indent
 		o.Color = true
 		o.Sort = sort
+		o.Tab = tab
 		_ = oj.Write(os.Stdout, v, &o)
-	} else if color || sort {
+	} else if color || sort || tab {
 		o := oj.DefaultOptions
 		o.Indent = indent
 		o.Color = color
 		o.Sort = sort
+		o.Tab = tab
 		_ = oj.Write(os.Stdout, v, &o)
 	} else {
 		_ = oj.Write(os.Stdout, v, indent)
@@ -199,12 +215,14 @@ func writeSEN(v interface{}) {
 		o.Indent = indent
 		o.Color = true
 		o.Sort = sort
+		o.Tab = tab
 		_ = sen.Write(os.Stdout, v, &o)
-	} else if color || sort {
+	} else if color || sort || tab {
 		o := sen.DefaultOptions
 		o.Indent = indent
 		o.Color = color
 		o.Sort = sort
+		o.Tab = tab
 		_ = sen.Write(os.Stdout, v, &o)
 	} else {
 		_ = sen.Write(os.Stdout, v, indent)

@@ -51,6 +51,13 @@ func (d *Dummy) String() string {
 	return fmt.Sprintf("{val: %d}", d.Val)
 }
 
+type Panik struct {
+}
+
+func (p *Panik) Simplify() interface{} {
+	panic("force panic")
+}
+
 type shortWriter struct {
 	max int
 }
@@ -223,6 +230,27 @@ func TestWriteWide(t *testing.T) {
 	tt.Equal(t, 538, len(b.String()))
 }
 
+func TestWriteDeep(t *testing.T) {
+	var b strings.Builder
+	opt := sen.Options{Tab: true}
+	a := []interface{}{map[string]interface{}{"x": true}}
+	for i := 40; 0 < i; i-- {
+		a = []interface{}{a}
+	}
+	err := sen.Write(&b, a, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 1795, len(b.String()))
+
+	b.Reset()
+	g := gen.Array{gen.Object{"x": gen.True}}
+	for i := 40; 0 < i; i-- {
+		g = gen.Array{g}
+	}
+	err = sen.Write(&b, g, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 1795, len(b.String()))
+}
+
 func TestWriteShort(t *testing.T) {
 	opt := sen.Options{Indent: 2, WriteLimit: 2}
 	err := sen.Write(&shortWriter{max: 3}, []interface{}{true, nil}, &opt)
@@ -264,4 +292,15 @@ func TestWriteShort(t *testing.T) {
 		err = sen.Write(&shortWriter{max: i}, sobj, &opt)
 		tt.NotNil(t, err)
 	}
+}
+
+func TestWriteBad(t *testing.T) {
+	var b strings.Builder
+	err := sen.Write(&b, []interface{}{true, &Panik{}})
+	tt.NotNil(t, err)
+}
+
+func TestStringBad(t *testing.T) {
+	out := sen.String([]interface{}{true, &Panik{}})
+	tt.Equal(t, 0, len(out))
 }
