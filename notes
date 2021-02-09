@@ -1,10 +1,13 @@
 
 ----------------
 
-- token
- - decide if - is a valid character or where
-  - child, ok
-  - script, not
+- write
+ - use stack
+  - use key type
+  - reverse items on stack if from list
+  - if next on stack is array or map then no trailing comma
+ - article
+  - how to write optimized go code
 
 - cmd/oj
  - -tab instead of indent
@@ -30,8 +33,6 @@
  - foo[2]=   - deletes array element 2
  - $top.array+=@.bar
  - $top.array+=@@
-
-- try using panic instead of returning errors for writes
 
  - set option
   - |$.foo|| for delete
