@@ -7,34 +7,39 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 
+	"github.com/ohler55/ojg/asm"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/sen"
 )
 
-const version = "1.5.0"
+const version = "1.6.0"
 
 var (
-	indent = 2
-	color  = false
-	bright = false
-	sort   = false
-	lazy   = false
-	senOut = false
-	tab    = false
+	indent     = 2
+	color      = false
+	bright     = false
+	sortKeys   = false
+	lazy       = false
+	senOut     = false
+	tab        = false
+	showFnDocs = false
 
 	// If true wrap extracts with an array.
 	wrapExtract = false
 	extracts    = []jp.Expr{}
 	matches     = []*jp.Script{}
+	plan        = ""
 	showVersion bool
 )
 
 func init() {
 	flag.IntVar(&indent, "i", indent, "indent")
 	flag.BoolVar(&color, "c", color, "color")
-	flag.BoolVar(&sort, "s", sort, "sort")
+	flag.BoolVar(&sortKeys, "s", sortKeys, "sort")
 	flag.BoolVar(&bright, "b", bright, "bright color")
 	flag.BoolVar(&wrapExtract, "w", wrapExtract, "wrap extracts in an array")
 	flag.BoolVar(&lazy, "z", lazy, "lazy mode accepts Simple Encoding Notation (quotes and commas mostly optional)")
@@ -43,6 +48,8 @@ func init() {
 	flag.Var(&exValue{}, "x", "extract path")
 	flag.Var(&matchValue{}, "m", "match equation/script")
 	flag.BoolVar(&showVersion, "version", showVersion, "display version and exit")
+	flag.StringVar(&plan, "a", plan, "assembly plan or plan file using @<plan>")
+	flag.BoolVar(&showFnDocs, "fn", showFnDocs, "describe assembly plan functions")
 }
 
 func main() {
@@ -78,6 +85,10 @@ then used as the input.
   oj -i 0 -z {a:1, b:two}
   => {"a":1,"b":"two"}
 
+Oj can also be used to assemble new JSON output from input data. An assembly
+plan that describes how to assemble the new JSON if specified by the -a
+option. The -fn option will display the documentation for assembly.
+
 `, filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr)
@@ -86,6 +97,10 @@ then used as the input.
 
 	if showVersion {
 		fmt.Printf("oj %s\n", version)
+		os.Exit(0)
+	}
+	if showFnDocs {
+		displayFnDocs()
 		os.Exit(0)
 	}
 	var input []byte
@@ -193,14 +208,14 @@ func writeJSON(v interface{}) {
 		o := oj.BrightOptions
 		o.Indent = indent
 		o.Color = true
-		o.Sort = sort
+		o.Sort = sortKeys
 		o.Tab = tab
 		_ = oj.Write(os.Stdout, v, &o)
-	} else if color || sort || tab {
+	} else if color || sortKeys || tab {
 		o := oj.DefaultOptions
 		o.Indent = indent
 		o.Color = color
-		o.Sort = sort
+		o.Sort = sortKeys
 		o.Tab = tab
 		_ = oj.Write(os.Stdout, v, &o)
 	} else {
@@ -214,14 +229,14 @@ func writeSEN(v interface{}) {
 		o := sen.BrightOptions
 		o.Indent = indent
 		o.Color = true
-		o.Sort = sort
+		o.Sort = sortKeys
 		o.Tab = tab
 		_ = sen.Write(os.Stdout, v, &o)
-	} else if color || sort || tab {
+	} else if color || sortKeys || tab {
 		o := sen.DefaultOptions
 		o.Indent = indent
 		o.Color = color
-		o.Sort = sort
+		o.Sort = sortKeys
 		o.Tab = tab
 		_ = sen.Write(os.Stdout, v, &o)
 	} else {
@@ -258,4 +273,35 @@ func (mv matchValue) Set(s string) error {
 		matches = append(matches, script)
 	}
 	return err
+}
+
+func displayFnDocs() {
+	fmt.Println(`
+An assembly plan is described by a JSON document or a SEN document. The format
+is much like LISP but with brackets instead of parenthesis. A plan is
+evaluated by evaluating the plan function which is usually an 'asm'
+function. The plan operates on a data map which is the root during
+evaluation. The source data is in the $.src and the expected assembled output
+should be in $.asm.
+
+An example of a plan in SEN format is (the first asm is optional):
+
+  [ asm
+    [set $.asm { good: bye }]
+    [set $.asm.hello world]
+  ]
+
+The functions available are:
+`)
+	var b []byte
+	var keys []string
+	docs := asm.FnDocs()
+	for k := range docs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		b = append(b, fmt.Sprintf("  %10s: %s\n\n", k, strings.ReplaceAll(docs[k], "\n", "\n              "))...)
+	}
+	fmt.Println(string(b))
 }

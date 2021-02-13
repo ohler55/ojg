@@ -1,47 +1,61 @@
 
 ----------------
 
-- write
- - use stack
-  - use key type
-  - reverse items on stack if from list
-  - if next on stack is array or map then no trailing comma
- - article
-  - how to write optimized go code
-
 - cmd/oj
- - -tab instead of indent
-  - add Tab to option
-   - if set then ignore indent and use tab instead
+ - add -a and -asm option
+  - allow sen format
+  - if starts with [ then inline else a file
 
- - building output - build-out
-  - seed
-   - ^={a:123 b: @.bar}
-  -  ^ for current build
-   - ^.foo.bar=@.foo.baz
-    - foo.bar=foo.baz as shortcut
-  - % for globals
-   - %.top+=^
-  - = indicates Set(first, Get(second))
-  - + indicates append is list otherwise nothing
- - display ^ at each input json
- - display % at end
- - ^.foo.bar=@.boo.hoo - first match (GetOne)
- - ^.foo.bar=[@.*.hoo] - array (Get)
- - ^.foo.bar+@.boo.hoo - add to array
- - ^.foo.del=
- - foo[2]=   - deletes array element 2
- - $top.array+=@.bar
- - $top.array+=@@
+- asm package
+ - should an alias be added to Fn?
+ - functions
+  + asm
+  + inspect
+  - add
+  - sub or minus
+  - divide div
+  - multiple times
+  - mod
+  - get
+  - set
+  - append - strings or to a list
+  - list - builds a list
+  - quote
+  - and
+  - or
+  - not
+  - gt >
+  - lt <
+  - gte >=
+  - lte <=
+  - equal ==
+  - cond switch
+  - each
+  - float
+  - int
+  - string - optional format specific to type being converted
+  - time - option format if from string
+  - zone - time to utc, local, offset
+  - include
+  - downcase
+  - upcase
+  - title
+  - substr
+  - trim
+  - replace
+  - join
+  - split
+  - has
+  - len or length or size
+  - sort
+  - reverse
+  - nth - list or can jp handle that
 
- - set option
-  - |$.foo|| for delete
-  - |$.foo|{"x":1}| for replace/set
-  - |$.foo|@.bar| for set from within
-  - eval in order
-  - use any char as separator
-  - also jp.Expr.Set(jp.Expr)
-   - find with first path and replace with path arg relative to found
+
+
+- pretty json format
+ - tighten up when possible
+  - kind of like lisp
 
  - regex op =~
   - /^xyz&/
