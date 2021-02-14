@@ -25,9 +25,10 @@ func inspect(root map[string]interface{}, at interface{}, args ...interface{}) i
 			val := evalArg(root, at, a)
 			switch tv := val.(type) {
 			case string:
-				fmt.Printf("%s: ", tv)
 				if 0 < indent {
-					fmt.Println()
+					fmt.Printf("%s:\n", tv)
+				} else {
+					fmt.Printf("%s: ", tv)
 				}
 			case int:
 				indent = tv

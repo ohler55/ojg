@@ -11,16 +11,17 @@
  - functions
   + asm
   + inspect
+  + quote
+  + set
+  + setall
+  - get
   - add
   - sub or minus
   - divide div
   - multiple times
   - mod
-  - get
-  - set
   - append - strings or to a list
   - list - builds a list
-  - quote
   - and
   - or
   - not
@@ -56,6 +57,13 @@
 - pretty json format
  - tighten up when possible
   - kind of like lisp
+ - specify suggested max width
+ - run through json and create a new node for each slice and map
+  - node points to slice or map and calculates length if indent of 0 and store size and depth
+ - if max < depth * indent + size then indent 2 or 1
+ - else indent of 0
+ - if deeper than 3/8 or maybe 1/3 of max then use single space for indent
+
 
  - regex op =~
   - /^xyz&/

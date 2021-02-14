@@ -22,3 +22,50 @@ func TestPlanSimplify(t *testing.T) {
 	}
 	tt.Equal(t, "[fun [+ 3 4] [list 1 2 3]]", sen.String(&p), "plan simplify")
 }
+
+func TestPlanNil(t *testing.T) {
+	p := asm.NewPlan(nil)
+	tt.Nil(t, p)
+
+	p = asm.NewPlan([]interface{}{})
+	tt.Nil(t, p)
+}
+
+func TestPlanNonAsm(t *testing.T) {
+	p := asm.NewPlan([]interface{}{"set", "$.asm.x", 1})
+	tt.NotNil(t, p)
+
+	root := map[string]interface{}{"src": []interface{}{}}
+	err := p.Execute(root)
+	tt.Nil(t, err)
+	tt.Equal(t, "{asm:{x:1} src:[]}", sen.String(root, &sopt))
+}
+
+func TestPlanImpliedAsm(t *testing.T) {
+	p := asm.NewPlan([]interface{}{
+		[]interface{}{"set", "$.asm.x", 1},
+	})
+	tt.NotNil(t, p)
+
+	root := map[string]interface{}{"src": []interface{}{}}
+	err := p.Execute(root)
+	tt.Nil(t, err)
+	tt.Equal(t, "{asm:{x:1} src:[]}", sen.String(root, &sopt))
+}
+
+func TestPlanPanic(t *testing.T) {
+	asm.Define(&asm.Fn{
+		Name: "panic",
+		Eval: func(_ map[string]interface{}, _ interface{}, _ ...interface{}) interface{} {
+			panic("abort")
+		},
+	})
+	p := asm.NewPlan([]interface{}{
+		[]interface{}{"panic"},
+	})
+	tt.NotNil(t, p)
+
+	root := map[string]interface{}{"src": []interface{}{}}
+	err := p.Execute(root)
+	tt.NotNil(t, err)
+}

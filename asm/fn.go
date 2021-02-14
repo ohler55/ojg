@@ -60,10 +60,6 @@ func (f *Fn) String() string {
 	return sen.String(f)
 }
 
-func (f *Fn) appendArg(arg interface{}) {
-	f.Args = append(f.Args, arg)
-}
-
 func (f *Fn) compile() {
 	if f.Compile != nil {
 		f.Compile(f)
