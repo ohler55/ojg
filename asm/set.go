@@ -29,13 +29,12 @@ func set(root map[string]interface{}, at interface{}, args ...interface{}) inter
 	}
 	arg := evalArg(root, at, args[1])
 	var err error
-	switch x[0].(type) {
-	case jp.Root:
-		err = x.SetOne(root, arg)
-	case jp.At:
-		err = x.SetOne(at, arg)
-	default:
-		err = x.SetOne(root, arg)
+	if 0 < len(x) {
+		if _, ok := x[0].(jp.At); ok {
+			err = x.SetOne(at, arg)
+		} else {
+			err = x.SetOne(root, arg)
+		}
 	}
 	if err != nil {
 		panic(err)

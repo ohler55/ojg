@@ -89,12 +89,9 @@ func evalArg(root map[string]interface{}, at, arg interface{}) (val interface{})
 		val = ta.Eval(root, at, ta.Args...)
 	case jp.Expr:
 		if 0 < len(ta) {
-			switch ta[0].(type) {
-			case jp.Root:
-				val = ta.First(root)
-			case jp.At:
+			if _, ok := ta[0].(jp.At); ok {
 				val = ta.First(at)
-			default:
+			} else {
 				val = ta.First(root)
 			}
 		}

@@ -14,14 +14,12 @@
   + quote
   + set
   + setall
-  - get
-  - add
-  - sub or minus
-  - divide div
-  - multiple times
-  - mod
-  - append - strings or to a list
-  - list - builds a list
+  + get
+  + del
+  + delall
+  + list
+  + len or length or size
+
   - and
   - or
   - not
@@ -30,14 +28,24 @@
   - gte >=
   - lte <=
   - equal ==
+
   - cond switch
   - each
+   - @ points to {src:x}
+   - let user define target as 2nd arg else default to @.asm
+
+  - add
+  - sub or minus
+  - divide div
+  - multiple times
+  - mod
+
   - float
   - int
   - string - optional format specific to type being converted
   - time - option format if from string
   - zone - time to utc, local, offset
-  - include
+
   - downcase
   - upcase
   - title
@@ -46,23 +54,51 @@
   - replace
   - join
   - split
-  - has
-  - len or length or size
-  - sort
-  - reverse
+
+  - include - string or list
+  - append - strings or to a list
+  - sort - list
+  - reverse - list
   - nth - list or can jp handle that
 
 
 
 - pretty json format
+ - pretty package to form intermediate (pnode) tree
+ - oj and sen to write
+ - pretty.Tree(interface{})
+  - build node tree
+   - call alt.Decompose() first
+   - or copy sen buildSen and build nodes in one pass
+  - node
+   - key string
+   - val interface{} ([]pnode or simple)
+    - use Val for []byte instead of a separate buf
+   - asMap bool
+   - size() int
+    - a method on node calculates once Buf is set
+ - open up oj.buildJSON and sen.buildSen
+  - then can use pretty.JSON and pretty.Sen/SEN
+  - maybe there is no need to open up
+   - only string is different, with without quotes
+    - maybe just open up buildString
+    - or just copy
+  - just need rules for comma
+   - either ", " or " "
+
+
  - tighten up when possible
   - kind of like lisp
  - specify suggested max width
- - run through json and create a new node for each slice and map
-  - node points to slice or map and calculates length if indent of 0 and store size and depth
  - if max < depth * indent + size then indent 2 or 1
  - else indent of 0
  - if deeper than 3/8 or maybe 1/3 of max then use single space for indent
+ - create first pass set of structs
+
+ - run through json and create a new node for each slice and map
+  - node points to slice or map and calculates length if indent of 0 and store size and depth
+
+
 
 
  - regex op =~

@@ -12,18 +12,14 @@ import (
 )
 
 func TestSet(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		map[string]interface{}{}, // Sets @
-		[]interface{}{"set", "@.one", 1},
-		[]interface{}{"set", "$.asm", "@"},
-	})
-	tt.Equal(t, "[asm {} [set @.one 1] [set $.asm @]]", sen.String(p), "plan string")
-
-	root := map[string]interface{}{
-		"src": []interface{}{1, 2, 3},
-	}
-	err := p.Execute(root)
-	tt.Nil(t, err)
+	root := testPlan(t,
+		`[
+           {}
+           [set @.one 1]
+           [set $.asm @]
+         ]`,
+		"{src: [1 2 3]}",
+	)
 	tt.Equal(t, "{one:1}", sen.String(root["asm"]))
 }
 
