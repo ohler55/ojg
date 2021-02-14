@@ -23,7 +23,7 @@ func TestInspect(t *testing.T) {
 	tt.Equal(t, "[inspect test $]", fn.String(), "inspect string")
 }
 
-func ExampleInspect() {
+func Example_inspect() {
 	p := asm.NewPlan([]interface{}{
 		"asm",
 		[]interface{}{"inspect", 0, "one", []interface{}{1}, "@", jp.C("src").N(1), "test", "$"},
