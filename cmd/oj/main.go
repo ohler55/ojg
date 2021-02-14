@@ -276,7 +276,7 @@ func (mv matchValue) Set(s string) error {
 }
 
 func displayFnDocs() {
-	fmt.Println(`
+	fmt.Printf(`
 An assembly plan is described by a JSON document or a SEN document. The format
 is much like LISP but with brackets instead of parenthesis. A plan is
 evaluated by evaluating the plan function which is usually an 'asm'
@@ -292,6 +292,7 @@ An example of a plan in SEN format is (the first asm is optional):
   ]
 
 The functions available are:
+
 `)
 	var b []byte
 	var keys []string
