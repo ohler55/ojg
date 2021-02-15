@@ -20,14 +20,15 @@
   + list
   + len or length or size
 
-  - and
-  - or
-  - not
-  - gt >
+  + and
+  + or
+  + not
+  + equal ==
+  + neq !=
+  + gt >
   - lt <
   - gte >=
   - lte <=
-  - equal ==
 
   - cond switch
   - each
