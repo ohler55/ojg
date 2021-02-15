@@ -15,20 +15,33 @@
   + set
   + setall
   + get
+  + getall
   + del
   + delall
   + list
   + len or length or size
-
   + and
   + or
   + not
   + equal ==
   + neq !=
   + gt >
-  - lt <
-  - gte >=
-  - lte <=
+  + lt <
+  + gte >=
+  + lte <=
+  + null? nil?
+  + num?
+  + string?
+  + bool?
+  + time?
+  + array?
+  + map?
+
+  - float
+  - int
+  - string - optional format specific to type being converted
+  + time
+  - zone - time to utc, local, offset
 
   - cond switch
   - each
@@ -40,12 +53,6 @@
   - divide div
   - multiple times
   - mod
-
-  - float
-  - int
-  - string - optional format specific to type being converted
-  - time - option format if from string
-  - zone - time to utc, local, offset
 
   - downcase
   - upcase
@@ -59,6 +66,7 @@
   - include - string or list
   - append - strings or to a list
   - sort - list
+   [sort @.list @.key]
   - reverse - list
   - nth - list or can jp handle that
 

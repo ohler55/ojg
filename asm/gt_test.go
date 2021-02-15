@@ -24,8 +24,8 @@ func TestGtInt(t *testing.T) {
 func TestGtFloat(t *testing.T) {
 	root := testPlan(t,
 		`[
-           [set $.asm.a [gt 4.1 "$.src[1]" 1]]
-           [set $.asm.b [gt 1.0 2.0]]
+           [set $.asm.a [">" 4.1 "$.src[1]" 1]]
+           [set $.asm.b [">" 1.0 2.0]]
          ]`,
 		"{src: [1.1 2.2]}",
 	)

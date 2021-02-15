@@ -3,7 +3,6 @@
 package asm_test
 
 import (
-	"sort"
 	"testing"
 
 	"github.com/ohler55/ojg/asm"
@@ -15,26 +14,15 @@ func TestGet(t *testing.T) {
 	root := testPlan(t,
 		`[
            {one:1 two:2}
-           [set $.at [get "@.*"]]
-           [set $.root [get "$.src.*"]]
+           [set $.at [get @.one]]
+           [set $.root [get $.src.b]]
+           [set $.arg [get @.x {x:1 y:2}]]
          ]`,
 		"{src: {a:1 b:2 c:3}}",
 	)
-	got, _ := root["at"].([]interface{})
-	sort.Slice(got, func(i, j int) bool {
-		a, _ := got[i].(int64)
-		b, _ := got[j].(int64)
-		return a < b
-	})
-	tt.Equal(t, "[1 2]", sen.String(got))
-
-	got, _ = root["root"].([]interface{})
-	sort.Slice(got, func(i, j int) bool {
-		a, _ := got[i].(int64)
-		b, _ := got[j].(int64)
-		return a < b
-	})
-	tt.Equal(t, "[1 2 3]", sen.String(got))
+	tt.Equal(t, "1", sen.String(root["at"]))
+	tt.Equal(t, "2", sen.String(root["root"]))
+	tt.Equal(t, "1", sen.String(root["arg"]))
 }
 
 func TestGetArgCount(t *testing.T) {
