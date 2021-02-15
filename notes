@@ -36,11 +36,11 @@
   + time?
   + array?
   + map?
-
-  - float
-  - int
-  - string - optional format specific to type being converted
+  + float
+  + int
+  + string - optional format specific to type being converted
   + time
+
   - zone - time to utc, local, offset
 
   - cond switch

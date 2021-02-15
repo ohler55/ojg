@@ -38,7 +38,6 @@ func TestTimeConv(t *testing.T) {
            [set $.asm.d [time 1612832523123456789]]
            [set $.asm.e [time 1612832523.123456789]]
            [set $.asm.f [time "05 Jan 2021 -0400" "02 Jan 2006 -0700"]]
-
          ]`,
 		"{src: []}",
 	)
