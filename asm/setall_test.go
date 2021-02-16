@@ -41,7 +41,7 @@ func TestSetallArgCount(t *testing.T) {
 	tt.NotNil(t, err)
 }
 
-func TestSetallArgNotExprT(t *testing.T) {
+func TestSetallArgNotExpr(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"setall", 1, 2},
 	})

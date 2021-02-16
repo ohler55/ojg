@@ -41,7 +41,7 @@ func TestDelallArgCount(t *testing.T) {
 	tt.NotNil(t, err)
 }
 
-func TestDelallArgNotExprT(t *testing.T) {
+func TestDelallArgNotExpr(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"delall", 1},
 	})

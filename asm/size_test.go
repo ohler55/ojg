@@ -50,7 +50,7 @@ func TestSizeOther(t *testing.T) {
 	tt.Equal(t, "0", sen.String(root["asm"]))
 }
 
-func TestSizeArgCountT(t *testing.T) {
+func TestSizeArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"size", 1, 2},
 	})

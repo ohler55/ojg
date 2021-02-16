@@ -40,35 +40,32 @@
   + int
   + string - optional format specific to type being converted
   + time
+  + zone
+  + sum
+  + dif
+  + quotient
+  + product
+  + mod
+  + downcase
+  + upcase
+  + title
+  + trim
+  + split
+  + replace
+  + substr
+  + join
+  + reverse
+  + nth
+  + append
+  + cond
 
-  - zone - time to utc, local, offset
-
-  - cond switch
+  - include - string or list
+  - sort - list
+    [sort @.list @.key]
   - each
    - @ points to {src:x}
    - let user define target as 2nd arg else default to @.asm
 
-  - add
-  - sub or minus
-  - divide div
-  - multiple times
-  - mod
-
-  - downcase
-  - upcase
-  - title
-  - substr
-  - trim
-  - replace
-  - join
-  - split
-
-  - include - string or list
-  - append - strings or to a list
-  - sort - list
-   [sort @.list @.key]
-  - reverse - list
-  - nth - list or can jp handle that
 
 
 

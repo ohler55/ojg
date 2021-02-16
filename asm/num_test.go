@@ -22,7 +22,7 @@ func TestNum(t *testing.T) {
 	tt.Equal(t, "{a:true b:true c:false}", sen.String(root["asm"], &sopt))
 }
 
-func TestNumArgCountT(t *testing.T) {
+func TestNumArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"num?", 1, 2},
 	})

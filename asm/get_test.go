@@ -33,7 +33,7 @@ func TestGetArgCount(t *testing.T) {
 	tt.NotNil(t, err)
 }
 
-func TestGetArgNotExprT(t *testing.T) {
+func TestGetArgNotExpr(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"get", 1},
 	})

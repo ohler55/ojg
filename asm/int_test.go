@@ -35,7 +35,7 @@ func TestInt(t *testing.T) {
 }`, sen.String(root["asm"], &opt))
 }
 
-func TestIntArgCountT(t *testing.T) {
+func TestIntArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"int", 1, 2},
 	})

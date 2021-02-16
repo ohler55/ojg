@@ -214,7 +214,7 @@ func (o *Options) buildSen(data interface{}, depth int) {
 
 func (o *Options) buildString(s string) {
 	tokenOk := false
-	if len(s) < maxTokenLen { // arbitrary length, langer strings look better in quotes
+	if 0 < len(s) && len(s) < maxTokenLen { // arbitrary length, longer strings look better in quotes
 		tokenOk = true
 		for _, b := range []byte(s) {
 			if tokMap[b] != 'o' {

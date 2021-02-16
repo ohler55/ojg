@@ -22,7 +22,7 @@ func TestMap(t *testing.T) {
 	tt.Equal(t, "{a:true b:true c:false}", sen.String(root["asm"], &sopt))
 }
 
-func TestMapArgCountT(t *testing.T) {
+func TestMapArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"map?", 1, 2},
 	})

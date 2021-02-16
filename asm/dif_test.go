@@ -10,15 +10,16 @@ import (
 	"github.com/ohler55/ojg/tt"
 )
 
-func TestFloat(t *testing.T) {
+func TestDif(t *testing.T) {
 	root := testPlan(t,
 		`[
-           [set $.asm.a [float 1]]
-           [set $.asm.b [float 2.2]]
-           [set $.asm.c [float "1.23"]]
-           [set $.asm.d [float [time "2021-02-09T01:02:03.123456Z"]]]
-           [set $.asm.e [float true]]
-           [set $.asm.f [float abc]]
+           [set $.asm.a [dif 5 3 1]]
+           [set $.asm.b ["-" 2.5 1]]
+           [set $.asm.c [dif 5 2.5 1]]
+           [set $.asm.d [dif]]
+           [set $.asm.e [dif 1]]
+           [set $.asm.f [dif 1.2]]
+           [set $.asm.g ["-" 2.5 1.5]]
          ]`,
 		"{src: []}",
 	)
@@ -27,17 +28,18 @@ func TestFloat(t *testing.T) {
 	tt.Equal(t,
 		`{
   a: 1
-  b: 2.2
-  c: 1.23
-  d: 1.612832523123456e+09
-  e: null
-  f: null
+  b: 1.5
+  c: 1.5
+  d: 0
+  e: 1
+  f: 1.2
+  g: 1
 }`, sen.String(root["asm"], &opt))
 }
 
-func TestFloatArgCount(t *testing.T) {
+func TestDifArgType(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
-		[]interface{}{"float", 1, 2},
+		[]interface{}{"dif", 1, true},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)

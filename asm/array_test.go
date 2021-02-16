@@ -22,7 +22,7 @@ func TestArray(t *testing.T) {
 	tt.Equal(t, "{a:true b:true c:false}", sen.String(root["asm"], &sopt))
 }
 
-func TestArrayArgCountT(t *testing.T) {
+func TestArrayArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"array?", 1, 2},
 	})

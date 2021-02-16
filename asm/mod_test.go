@@ -6,44 +6,46 @@ import (
 	"testing"
 
 	"github.com/ohler55/ojg/asm"
-	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/sen"
 	"github.com/ohler55/ojg/tt"
 )
 
-func TestSet(t *testing.T) {
+func TestMod(t *testing.T) {
 	root := testPlan(t,
 		`[
-           {}
-           [set @.one 1]
-           [set $.asm @]
+           [set $.asm.a [mod 7 3]]
+           [set $.asm.b [mod 6 3]]
          ]`,
-		"{src: [1 2 3]}",
+		"{src: []}",
 	)
-	tt.Equal(t, "{one:1}", sen.String(root["asm"]))
+	opt := sopt
+	opt.Indent = 2
+	tt.Equal(t,
+		`{
+  a: 1
+  b: 0
+}`, sen.String(root["asm"], &opt))
 }
 
-func TestSetExprError(t *testing.T) {
+func TestModArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
-		map[string]interface{}{}, // Sets @
-		[]interface{}{"set", jp.D(), 1},
-		[]interface{}{"set", "$.asm", "@"},
+		[]interface{}{"mod", 1, 2, 3},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)
 }
 
-func TestSetArgCount(t *testing.T) {
+func TestModArgType(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", "@.x"},
+		[]interface{}{"mod", 1, true},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)
 }
 
-func TestSetArgNotExpr(t *testing.T) {
+func TestModArgType2(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", 1, 2},
+		[]interface{}{"mod", true, 1},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)

@@ -21,7 +21,7 @@ func TestNull(t *testing.T) {
 	tt.Equal(t, "{a:true b:false}", sen.String(root["asm"], &sopt))
 }
 
-func TestNullArgCountT(t *testing.T) {
+func TestNullArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"null?", 1, 2},
 	})

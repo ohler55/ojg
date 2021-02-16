@@ -51,7 +51,11 @@ func equalVals(v0, v1 interface{}) (eq bool) {
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		x, _ := asInt(v0)
 		a, ok := asInt(v1)
-		eq = ok && x == a
+		if ok {
+			eq = x == a
+		} else if f, ok2 := asFloat(v1); ok2 {
+			eq = float64(x) == f
+		}
 	case float32, float64:
 		x, _ := asFloat(v0)
 		a, ok := asFloat(v1)

@@ -6,44 +6,48 @@ import (
 	"testing"
 
 	"github.com/ohler55/ojg/asm"
-	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/sen"
 	"github.com/ohler55/ojg/tt"
 )
 
-func TestSet(t *testing.T) {
+func TestNth(t *testing.T) {
 	root := testPlan(t,
 		`[
-           {}
-           [set @.one 1]
-           [set $.asm @]
+           [set $.asm.a [nth [a b c] 1]]
+           [set $.asm.b [nth [a b c] -1]]
+           [set $.asm.c [nth [a b c] 3]]
          ]`,
-		"{src: [1 2 3]}",
+		"{src: []}",
 	)
-	tt.Equal(t, "{one:1}", sen.String(root["asm"]))
+	opt := sopt
+	opt.Indent = 2
+	tt.Equal(t,
+		`{
+  a: b
+  b: c
+  c: null
+}`, sen.String(root["asm"], &opt))
 }
 
-func TestSetExprError(t *testing.T) {
+func TestNthArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
-		map[string]interface{}{}, // Sets @
-		[]interface{}{"set", jp.D(), 1},
-		[]interface{}{"set", "$.asm", "@"},
+		[]interface{}{"nth", []interface{}{}, 1, 2},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)
 }
 
-func TestSetArgCount(t *testing.T) {
+func TestNthArgType(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", "@.x"},
+		[]interface{}{"nth", 1, "x"},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)
 }
 
-func TestSetArgNotExpr(t *testing.T) {
+func TestNthArgType2(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", 1, 2},
+		[]interface{}{"nth", []interface{}{}, true},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)

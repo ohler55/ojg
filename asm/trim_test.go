@@ -6,44 +6,48 @@ import (
 	"testing"
 
 	"github.com/ohler55/ojg/asm"
-	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/sen"
 	"github.com/ohler55/ojg/tt"
 )
 
-func TestSet(t *testing.T) {
+func TestTrim(t *testing.T) {
 	root := testPlan(t,
 		`[
-           {}
-           [set @.one 1]
-           [set $.asm @]
+           [set $.asm.a [trim " a string "]]
+           [set $.asm.b [trim str]]
+           [set $.asm.c [trim "-- a string ---" " -"]]
          ]`,
-		"{src: [1 2 3]}",
+		"{src: []}",
 	)
-	tt.Equal(t, "{one:1}", sen.String(root["asm"]))
+	opt := sopt
+	opt.Indent = 2
+	tt.Equal(t,
+		`{
+  a: "a string"
+  b: str
+  c: "a string"
+}`, sen.String(root["asm"], &opt))
 }
 
-func TestSetExprError(t *testing.T) {
+func TestTrimArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
-		map[string]interface{}{}, // Sets @
-		[]interface{}{"set", jp.D(), 1},
-		[]interface{}{"set", "$.asm", "@"},
+		[]interface{}{"trim", "x", "y", 1},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)
 }
 
-func TestSetArgCount(t *testing.T) {
+func TestTrimArgType(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", "@.x"},
+		[]interface{}{"trim", 1, "x"},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)
 }
 
-func TestSetArgNotExpr(t *testing.T) {
+func TestTrimArgType2(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", 1, 2},
+		[]interface{}{"trim", "x", 1},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)

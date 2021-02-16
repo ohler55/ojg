@@ -43,7 +43,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	valueMap = "" +
 		".........ab..a.................." + // 0x00
-		"a.i.j.......afjcghhhhhhhhh.....j" + // 0x20
+		"a.i.j.....jjafjcghhhhhhhhh.....j" + // 0x20
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjk.mjj" + // 0x40
 		".jjjjjjjjjjjjjjjjjjjjjjjjjjl.nj." + // 0x60
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" + // 0x80
@@ -51,9 +51,9 @@ const (
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" + // 0xc0
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjv" //  0xe0
 	//   0123456789abcdef0123456789abcdef
-	tokenMap = "" + // TBD need end of token cases
+	tokenMap = "" +
 		".........GJ..G.................." + // 0x00
-		"G...u......uGuucuuuuuuuuuuI....u" + // 0x20
+		"G...u.....uuGuucuuuuuuuuuuI....u" + // 0x20
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuk.muu" + // 0x40
 		".uuuuuuuuuuuuuuuuuuuuuuuuuul.nu." + // 0x60
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0x80

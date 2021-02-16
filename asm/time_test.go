@@ -21,7 +21,7 @@ func TestTimeCheck(t *testing.T) {
 	tt.Equal(t, "{a:true b:false}", sen.String(root["asm"], &sopt))
 }
 
-func TestTimeCheckArgCountT(t *testing.T) {
+func TestTimeCheckArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"time?", 1, 2},
 	})
@@ -56,7 +56,7 @@ func TestTimeConv(t *testing.T) {
 }`, sen.String(root["asm"], &opt))
 }
 
-func TestTimeConvArgCountT(t *testing.T) {
+func TestTimeConvArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"time", 1, 2, 3},
 	})

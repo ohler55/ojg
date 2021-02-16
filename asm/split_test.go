@@ -6,44 +6,41 @@ import (
 	"testing"
 
 	"github.com/ohler55/ojg/asm"
-	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/sen"
 	"github.com/ohler55/ojg/tt"
 )
 
-func TestSet(t *testing.T) {
+func TestSplit(t *testing.T) {
 	root := testPlan(t,
 		`[
-           {}
-           [set @.one 1]
-           [set $.asm @]
+           [set $.asm.a [split "a b c" " "]]
+           [set $.asm.b [split file-path-name "-"]]
          ]`,
-		"{src: [1 2 3]}",
+		"{src: []}",
 	)
-	tt.Equal(t, "{one:1}", sen.String(root["asm"]))
+	tt.Equal(t,
+		`{a:[a b c] b:[file path name]}`, sen.String(root["asm"], &sopt))
 }
 
-func TestSetExprError(t *testing.T) {
+func TestSplitArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
-		map[string]interface{}{}, // Sets @
-		[]interface{}{"set", jp.D(), 1},
-		[]interface{}{"set", "$.asm", "@"},
+		[]interface{}{"split", "x", "y", 1},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)
 }
 
-func TestSetArgCount(t *testing.T) {
+func TestSplitArgType(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", "@.x"},
+		[]interface{}{"split", 1, "x"},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)
 }
 
-func TestSetArgNotExpr(t *testing.T) {
+func TestSplitArgType2(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", 1, 2},
+		[]interface{}{"split", "x", 1},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)

@@ -10,15 +10,11 @@ import (
 	"github.com/ohler55/ojg/tt"
 )
 
-func TestFloat(t *testing.T) {
+func TestToupper(t *testing.T) {
 	root := testPlan(t,
 		`[
-           [set $.asm.a [float 1]]
-           [set $.asm.b [float 2.2]]
-           [set $.asm.c [float "1.23"]]
-           [set $.asm.d [float [time "2021-02-09T01:02:03.123456Z"]]]
-           [set $.asm.e [float true]]
-           [set $.asm.f [float abc]]
+           [set $.asm.a [toupper low]]
+           [set $.asm.b [toupper UP]]
          ]`,
 		"{src: []}",
 	)
@@ -26,18 +22,22 @@ func TestFloat(t *testing.T) {
 	opt.Indent = 2
 	tt.Equal(t,
 		`{
-  a: 1
-  b: 2.2
-  c: 1.23
-  d: 1.612832523123456e+09
-  e: null
-  f: null
+  a: LOW
+  b: UP
 }`, sen.String(root["asm"], &opt))
 }
 
-func TestFloatArgCount(t *testing.T) {
+func TestToupperArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
-		[]interface{}{"float", 1, 2},
+		[]interface{}{"toupper", "x", "y"},
+	})
+	err := p.Execute(map[string]interface{}{})
+	tt.NotNil(t, err)
+}
+
+func TestToupperArgType(t *testing.T) {
+	p := asm.NewPlan([]interface{}{
+		[]interface{}{"toupper", 1},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)

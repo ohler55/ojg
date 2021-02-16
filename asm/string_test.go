@@ -22,7 +22,7 @@ func TestStringCheck(t *testing.T) {
 	tt.Equal(t, "{a:true b:false c:false}", sen.String(root["asm"], &sopt))
 }
 
-func TestStringCheckArgCountT(t *testing.T) {
+func TestStringCheckArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"string?", 1, 2},
 	})
@@ -63,7 +63,7 @@ func TestStringConv(t *testing.T) {
 }`, sen.String(root["asm"], &opt))
 }
 
-func TestStringConvArgCountT(t *testing.T) {
+func TestStringConvArgCount(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"string", 1, "x", 3},
 	})
@@ -71,7 +71,7 @@ func TestStringConvArgCountT(t *testing.T) {
 	tt.NotNil(t, err)
 }
 
-func TestStringConvFormatTypeT(t *testing.T) {
+func TestStringConvFormatType(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"string", 1, 2},
 	})
