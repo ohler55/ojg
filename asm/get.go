@@ -24,9 +24,16 @@ func get(root map[string]interface{}, at interface{}, args ...interface{}) (val 
 	if len(args) < 1 || 2 < len(args) {
 		panic(fmt.Errorf("get expects one or two arguments. %d given", len(args)))
 	}
-	x, _ := args[0].(jp.Expr)
-	if x == nil {
-		panic(fmt.Errorf("the first argument to get must be a path not a %T", args[0]))
+	var x jp.Expr
+	switch v := args[0].(type) {
+	case jp.Expr:
+		x = v
+	case *Fn:
+		if x, _ = evalArg(root, at, v).(jp.Expr); x == nil {
+			panic(fmt.Errorf("the first argument to get must be a path not a %T", v))
+		}
+	default:
+		panic(fmt.Errorf("the first argument to get must be a path not a %T", v))
 	}
 	if 0 < len(x) {
 		if 1 < len(args) {

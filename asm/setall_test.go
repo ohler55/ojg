@@ -48,3 +48,11 @@ func TestSetallArgNotExpr(t *testing.T) {
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)
 }
+
+func TestSetallArgType(t *testing.T) {
+	p := asm.NewPlan([]interface{}{
+		[]interface{}{"setall", []interface{}{"sum"}, 1},
+	})
+	err := p.Execute(map[string]interface{}{})
+	tt.NotNil(t, err)
+}

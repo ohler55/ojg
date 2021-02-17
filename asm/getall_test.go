@@ -61,3 +61,11 @@ func TestGetallArgNotExpr(t *testing.T) {
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)
 }
+
+func TestGetallArgType(t *testing.T) {
+	p := asm.NewPlan([]interface{}{
+		[]interface{}{"getall", []interface{}{"sum"}},
+	})
+	err := p.Execute(map[string]interface{}{})
+	tt.NotNil(t, err)
+}

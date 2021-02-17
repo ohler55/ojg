@@ -23,6 +23,18 @@ func TestSet(t *testing.T) {
 	tt.Equal(t, "{one:1}", sen.String(root["asm"]))
 }
 
+func TestSetFn(t *testing.T) {
+	root := testPlan(t,
+		`[
+           {}
+           [set [at one two] 2]
+           [set [root asm] @]
+         ]`,
+		"{src: []}",
+	)
+	tt.Equal(t, "{one:{two:2}}", sen.String(root["asm"]))
+}
+
 func TestSetExprError(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		map[string]interface{}{}, // Sets @
@@ -44,6 +56,14 @@ func TestSetArgCount(t *testing.T) {
 func TestSetArgNotExpr(t *testing.T) {
 	p := asm.NewPlan([]interface{}{
 		[]interface{}{"set", 1, 2},
+	})
+	err := p.Execute(map[string]interface{}{})
+	tt.NotNil(t, err)
+}
+
+func TestSetArgType(t *testing.T) {
+	p := asm.NewPlan([]interface{}{
+		[]interface{}{"set", []interface{}{"sum"}, 1},
 	})
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)

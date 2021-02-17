@@ -23,9 +23,16 @@ func setall(root map[string]interface{}, at interface{}, args ...interface{}) in
 	if len(args) != 2 {
 		panic(fmt.Errorf("setall expects exactly two arguments. %d given", len(args)))
 	}
-	x, _ := args[0].(jp.Expr)
-	if x == nil {
-		panic(fmt.Errorf("the first argument to setall must be a path not a %T", args[0]))
+	var x jp.Expr
+	switch v := args[0].(type) {
+	case jp.Expr:
+		x = v
+	case *Fn:
+		if x, _ = evalArg(root, at, v).(jp.Expr); x == nil {
+			panic(fmt.Errorf("the first argument to setall must be a path not a %T", v))
+		}
+	default:
+		panic(fmt.Errorf("the first argument to setall must be a path not a %T", v))
 	}
 	arg := evalArg(root, at, args[1])
 	var err error

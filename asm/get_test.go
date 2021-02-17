@@ -40,3 +40,11 @@ func TestGetArgNotExpr(t *testing.T) {
 	err := p.Execute(map[string]interface{}{})
 	tt.NotNil(t, err)
 }
+
+func TestGetArgType(t *testing.T) {
+	p := asm.NewPlan([]interface{}{
+		[]interface{}{"get", []interface{}{"sum"}},
+	})
+	err := p.Execute(map[string]interface{}{})
+	tt.NotNil(t, err)
+}

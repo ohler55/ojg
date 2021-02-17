@@ -5,6 +5,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -32,8 +33,11 @@ var (
 	wrapExtract = false
 	extracts    = []jp.Expr{}
 	matches     = []*jp.Script{}
-	plan        = ""
+	planDef     = ""
 	showVersion bool
+	plan        *asm.Plan
+	root        = map[string]interface{}{}
+	showRoot    bool
 )
 
 func init() {
@@ -48,8 +52,9 @@ func init() {
 	flag.Var(&exValue{}, "x", "extract path")
 	flag.Var(&matchValue{}, "m", "match equation/script")
 	flag.BoolVar(&showVersion, "version", showVersion, "display version and exit")
-	flag.StringVar(&plan, "a", plan, "assembly plan or plan file using @<plan>")
+	flag.StringVar(&planDef, "a", planDef, "assembly plan or plan file using @<plan>")
 	flag.BoolVar(&showFnDocs, "fn", showFnDocs, "describe assembly plan functions")
+	flag.BoolVar(&showRoot, "r", showRoot, "print root if an assemble plan provided")
 }
 
 func main() {
@@ -137,6 +142,28 @@ option. The -fn option will display the documentation for assembly.
 	} else {
 		p = &oj.Parser{Reuse: true}
 	}
+	planDef = strings.TrimSpace(planDef)
+	if 0 < len(planDef) {
+		if planDef[0] != '[' {
+			var b []byte
+			if b, err = ioutil.ReadFile(planDef); err != nil {
+				fmt.Fprintf(os.Stderr, "*-*-* %s\n", err)
+				os.Exit(1)
+			}
+			planDef = string(b)
+		}
+		var pd interface{}
+		if pd, err = (&sen.Parser{}).Parse([]byte(planDef)); err != nil {
+			fmt.Fprintf(os.Stderr, "*-*-* %s\n", err)
+			os.Exit(1)
+		}
+		plist, _ := pd.([]interface{})
+		if len(plist) == 0 {
+			fmt.Fprintf(os.Stderr, "*-*-* assemble pkan not an array\n")
+			os.Exit(1)
+		}
+		plan = asm.NewPlan(plist)
+	}
 	if 0 < len(files) {
 		var f *os.File
 		for _, file := range files {
@@ -157,6 +184,12 @@ option. The -fn option will display the documentation for assembly.
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "*-*-* %s\n", err)
+	}
+	if showRoot && plan != nil {
+		plan = nil
+		delete(root, "src")
+		delete(root, "asm")
+		write(root)
 	}
 }
 
@@ -198,6 +231,15 @@ func write(v interface{}) bool {
 	} else if senOut {
 		writeSEN(v)
 	} else {
+		if plan != nil {
+			root["src"] = v
+			if err := plan.Execute(root); err != nil {
+				fmt.Fprintf(os.Stderr, "*-*-* %s\n", err)
+				os.Exit(1)
+			} else {
+				v = root["asm"]
+			}
+		}
 		writeJSON(v)
 	}
 	return false

@@ -1,0 +1,8 @@
+[
+  {}
+  [set @.street "$.src.address[0].line[0]"]
+  [set @.city "$.src.address[0].city"]
+  [set @.state "$.src.address[0].state"]
+  [set [root states @.state] true]
+  [set $.asm @]
+]

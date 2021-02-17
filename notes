@@ -1,11 +1,6 @@
 
 ----------------
 
-- cmd/oj
- - add -a and -asm option
-  - allow sen format
-  - if starts with [ then inline else a file
-
 - asm package
  - should an alias be added to Fn?
  - functions
@@ -58,15 +53,11 @@
   + nth
   + append
   + cond
-
-  - include - string or list
-  - sort - list
-    [sort @.list @.key]
-  - each
-   - @ points to {src:x}
-   - let user define target as 2nd arg else default to @.asm
-
-
+  + include
+  + sort
+  + root
+  + at
+  + each
 
 
 - pretty json format
