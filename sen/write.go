@@ -23,8 +23,8 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	tokMap = "" +
 		"................................" + // 0x00
-		"..............o.oooooooooo......" + // 0x20
-		".oooooooooooooooooooooooooo...oo" + // 0x40
+		"....o......o.oo.oooooooooo......" + // 0x20
+		"ooooooooooooooooooooooooooo...oo" + // 0x40
 		".oooooooooooooooooooooooooo...o." + // 0x60
 		"oooooooooooooooooooooooooooooooo" + // 0x80
 		"oooooooooooooooooooooooooooooooo" + // 0xa0
@@ -214,7 +214,7 @@ func (o *Options) buildSen(data interface{}, depth int) {
 
 func (o *Options) buildString(s string) {
 	tokenOk := false
-	if len(s) < maxTokenLen { // arbitrary length, langer strings look better in quotes
+	if 0 < len(s) && len(s) < maxTokenLen { // arbitrary length, longer strings look better in quotes
 		tokenOk = true
 		for _, b := range []byte(s) {
 			if tokMap[b] != 'o' {
