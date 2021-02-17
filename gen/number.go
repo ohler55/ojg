@@ -108,7 +108,7 @@ func (n *Number) FillBig() {
 func (n *Number) AsNum() (num interface{}) {
 	if 0 < len(n.BigBuf) {
 		num = string(n.BigBuf)
-	} else if n.Frac == 0 && n.Exp == 0 {
+	} else if n.Div == 1 && n.Exp == 0 {
 		i := int64(n.I)
 		if n.Neg {
 			i = -i
