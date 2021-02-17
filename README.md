@@ -12,6 +12,7 @@ additional JSON tools.
  - Generic types. Not the proposed golang generics but type safe JSON elements.
  - Fast JSON validator (4 times faster with io.Reader).
  - Fast JSON writer with a sort option (1.6 times faster).
+ - JSON builder from JSON sources using a simple assembly plan.
  - Simple data builders using a push and pop approach.
  - Object encoding and decoding using an approach similar to that used with Oj for Ruby.
  - [Simple Encoding Notation](sen.md), a lazy way to write JSON omitting commas and quotes.
@@ -58,6 +59,7 @@ or just import in your `.go` files.
 ```
 import (
     "github.com/ohler55/ojg/alt"
+    "github.com/ohler55/ojg/asm"
     "github.com/ohler55/ojg/gen"
     "github.com/ohler55/ojg/jp"
     "github.com/ohler55/ojg/oj"
