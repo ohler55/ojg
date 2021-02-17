@@ -1,64 +1,11 @@
 
 ----------------
 
-- asm package
- - should an alias be added to Fn?
- - functions
-  + asm
-  + inspect
-  + quote
-  + set
-  + setall
-  + get
-  + getall
-  + del
-  + delall
-  + list
-  + len or length or size
-  + and
-  + or
-  + not
-  + equal ==
-  + neq !=
-  + gt >
-  + lt <
-  + gte >=
-  + lte <=
-  + null? nil?
-  + num?
-  + string?
-  + bool?
-  + time?
-  + array?
-  + map?
-  + float
-  + int
-  + string - optional format specific to type being converted
-  + time
-  + zone
-  + sum
-  + dif
-  + quotient
-  + product
-  + mod
-  + downcase
-  + upcase
-  + title
-  + trim
-  + split
-  + replace
-  + substr
-  + join
-  + reverse
-  + nth
-  + append
-  + cond
-  + include
-  + sort
-  + root
-  + at
-  + each
-
+- sen
+ - get rid of extra space after } and ]
+ - buildString => BuildString
+  - make just a func
+  - pass in []byte with &o.buf
 
 - pretty json format
  - pretty package to form intermediate (pnode) tree

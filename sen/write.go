@@ -19,17 +19,6 @@ const (
 	tabs        = "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
 	hex         = "0123456789abcdef"
 	maxTokenLen = 64
-
-	//   0123456789abcdef0123456789abcdef
-	tokMap = "" +
-		"................................" + // 0x00
-		"....o......o.oo.oooooooooo......" + // 0x20
-		"ooooooooooooooooooooooooooo...oo" + // 0x40
-		".oooooooooooooooooooooooooo...o." + // 0x60
-		"oooooooooooooooooooooooooooooooo" + // 0x80
-		"oooooooooooooooooooooooooooooooo" + // 0xa0
-		"oooooooooooooooooooooooooooooooo" + // 0xc0
-		"oooooooooooooooooooooooooooooooo" //   0xe0
 )
 
 // String returns a SEN string for the data provided. The data can be a simple
@@ -213,17 +202,19 @@ func (o *Options) buildSen(data interface{}, depth int) {
 }
 
 func (o *Options) buildString(s string) {
-	tokenOk := false
-	if 0 < len(s) && len(s) < maxTokenLen { // arbitrary length, longer strings look better in quotes
-		tokenOk = true
+	tokOk := false
+	if 0 < len(s) &&
+		valueMap[s[0]] == tokenStart &&
+		len(s) < maxTokenLen { // arbitrary length, longer strings look better in quotes
+		tokOk = true
 		for _, b := range []byte(s) {
-			if tokMap[b] != 'o' {
-				tokenOk = false
+			if tokenMap[b] != tokenOk {
+				tokOk = false
 				break
 			}
 		}
 	}
-	if !tokenOk {
+	if !tokOk {
 		o.buf = append(o.buf, '"')
 	}
 	for _, r := range s {
@@ -262,7 +253,7 @@ func (o *Options) buildString(s string) {
 			}
 		}
 	}
-	if !tokenOk {
+	if !tokOk {
 		o.buf = append(o.buf, '"')
 	}
 }
