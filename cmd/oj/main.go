@@ -38,6 +38,7 @@ var (
 	plan        *asm.Plan
 	root        = map[string]interface{}{}
 	showRoot    bool
+	edge        = 0
 )
 
 func init() {
@@ -55,6 +56,7 @@ func init() {
 	flag.StringVar(&planDef, "a", planDef, "assembly plan or plan file using @<plan>")
 	flag.BoolVar(&showFnDocs, "fn", showFnDocs, "describe assembly plan functions")
 	flag.BoolVar(&showRoot, "r", showRoot, "print root if an assemble plan provided")
+	flag.IntVar(&edge, "p", edge, "pretty print with the edge as specified")
 }
 
 func main() {

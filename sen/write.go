@@ -41,19 +41,19 @@ func String(data interface{}, args ...interface{}) string {
 	if o.InitSize == 0 {
 		o.InitSize = 256
 	}
-	if cap(o.buf) < o.InitSize {
-		o.buf = make([]byte, 0, o.InitSize)
+	if cap(o.Buf) < o.InitSize {
+		o.Buf = make([]byte, 0, o.InitSize)
 	} else {
-		o.buf = o.buf[:0]
+		o.Buf = o.Buf[:0]
 	}
 	defer func() {
 		if r := recover(); r != nil {
-			o.buf = o.buf[:0]
+			o.Buf = o.Buf[:0]
 		}
 	}()
 	o.buildSen(data, 0)
 
-	return string(o.buf)
+	return string(o.Buf)
 }
 
 // Write a JSON string for the data provided. The data can be a simple type of
@@ -80,14 +80,14 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	if o.WriteLimit == 0 {
 		o.WriteLimit = 1024
 	}
-	if cap(o.buf) < o.InitSize {
-		o.buf = make([]byte, 0, o.InitSize)
+	if cap(o.Buf) < o.InitSize {
+		o.Buf = make([]byte, 0, o.InitSize)
 	} else {
-		o.buf = o.buf[:0]
+		o.Buf = o.Buf[:0]
 	}
 	defer func() {
 		if r := recover(); r != nil {
-			o.buf = o.buf[:0]
+			o.Buf = o.Buf[:0]
 			if err, _ = r.(error); err == nil {
 				err = fmt.Errorf("%v", r)
 			}
@@ -99,10 +99,10 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 		o.buildSen(data, 0)
 	}
 	if o.Color {
-		o.buf = append(o.buf, Normal...)
+		o.Buf = append(o.Buf, Normal...)
 	}
-	if w != nil && 0 < len(o.buf) {
-		_, err = o.w.Write(o.buf)
+	if w != nil && 0 < len(o.Buf) {
+		_, err = o.w.Write(o.Buf)
 	}
 	return
 }
@@ -110,60 +110,60 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 func (o *Options) buildSen(data interface{}, depth int) {
 	switch td := data.(type) {
 	case nil:
-		o.buf = append(o.buf, []byte("null")...)
+		o.Buf = append(o.Buf, []byte("null")...)
 
 	case bool:
 		if td {
-			o.buf = append(o.buf, []byte("true")...)
+			o.Buf = append(o.Buf, []byte("true")...)
 		} else {
-			o.buf = append(o.buf, []byte("false")...)
+			o.Buf = append(o.Buf, []byte("false")...)
 		}
 	case gen.Bool:
 		if td {
-			o.buf = append(o.buf, []byte("true")...)
+			o.Buf = append(o.Buf, []byte("true")...)
 		} else {
-			o.buf = append(o.buf, []byte("false")...)
+			o.Buf = append(o.Buf, []byte("false")...)
 		}
 
 	case int:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case int8:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case int16:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case int32:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case int64:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(td, 10))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(td, 10))...)
 	case uint:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint8:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint16:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint32:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint64:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case gen.Int:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 
 	case float32:
-		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 32))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 32))...)
 	case float64:
-		o.buf = append(o.buf, []byte(strconv.FormatFloat(td, 'g', -1, 64))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatFloat(td, 'g', -1, 64))...)
 	case gen.Float:
-		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 64))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 64))...)
 
 	case string:
-		o.buildString(td)
+		o.BuildString(td)
 	case gen.String:
-		o.buildString(string(td))
+		o.BuildString(string(td))
 
 	case time.Time:
-		o.buildTime(td)
+		o.BuildTime(td)
 	case gen.Time:
-		o.buildTime(time.Time(td))
+		o.BuildTime(time.Time(td))
 
 	case []interface{}:
 		o.buildSimpleArray(td, depth)
@@ -190,20 +190,21 @@ func (o *Options) buildSen(data interface{}, depth int) {
 			o.buildSen(alt.Decompose(data, &ao), depth)
 			return
 		} else {
-			o.buildString(fmt.Sprintf("%v", td))
+			o.BuildString(fmt.Sprintf("%v", td))
 		}
 	}
-	if o.w != nil && o.WriteLimit < len(o.buf) {
-		if _, err := o.w.Write(o.buf); err != nil {
+	if o.w != nil && o.WriteLimit < len(o.Buf) {
+		if _, err := o.w.Write(o.Buf); err != nil {
 			panic(err)
 		}
-		o.buf = o.buf[:0]
+		o.Buf = o.Buf[:0]
 	}
 }
 
-func (o *Options) buildString(s string) {
+func (o *Options) BuildString(s string) {
 	tokOk := false
-	if 0 < len(s) &&
+	if !o.Quote &&
+		0 < len(s) &&
 		valueMap[s[0]] == tokenStart &&
 		len(s) < maxTokenLen { // arbitrary length, longer strings look better in quotes
 		tokOk = true
@@ -215,80 +216,79 @@ func (o *Options) buildString(s string) {
 		}
 	}
 	if !tokOk {
-		o.buf = append(o.buf, '"')
+		o.Buf = append(o.Buf, '"')
 	}
 	for _, r := range s {
 		switch r {
 		case '\\':
-			o.buf = append(o.buf, []byte{'\\', '\\'}...)
+			o.Buf = append(o.Buf, []byte{'\\', '\\'}...)
 		case '"':
-			o.buf = append(o.buf, []byte{'\\', '"'}...)
+			o.Buf = append(o.Buf, []byte{'\\', '"'}...)
 		case '\b':
-			o.buf = append(o.buf, []byte{'\\', 'b'}...)
+			o.Buf = append(o.Buf, []byte{'\\', 'b'}...)
 		case '\f':
-			o.buf = append(o.buf, []byte{'\\', 'f'}...)
+			o.Buf = append(o.Buf, []byte{'\\', 'f'}...)
 		case '\n':
-			o.buf = append(o.buf, []byte{'\n'}...)
+			o.Buf = append(o.Buf, []byte{'\n'}...)
 		case '\r':
-			o.buf = append(o.buf, []byte{'\\', 'r'}...)
+			o.Buf = append(o.Buf, []byte{'\\', 'r'}...)
 		case '\t':
-			o.buf = append(o.buf, []byte{'\t'}...)
+			o.Buf = append(o.Buf, []byte{'\t'}...)
 		case '\u2028':
-			o.buf = append(o.buf, []byte(`\u2028`)...)
+			o.Buf = append(o.Buf, []byte(`\u2028`)...)
 		case '\u2029':
-			o.buf = append(o.buf, []byte(`\u2029`)...)
+			o.Buf = append(o.Buf, []byte(`\u2029`)...)
 		default:
 			if r < ' ' {
-				o.buf = append(o.buf, []byte{'\\', 'u', '0', '0', hex[(r>>4)&0x0f], hex[r&0x0f]}...)
+				o.Buf = append(o.Buf, []byte{'\\', 'u', '0', '0', hex[(r>>4)&0x0f], hex[r&0x0f]}...)
 			} else if r < 0x80 {
-				o.buf = append(o.buf, byte(r))
+				o.Buf = append(o.Buf, byte(r))
 			} else {
 				if len(o.utf) < utf8.UTFMax {
 					o.utf = make([]byte, utf8.UTFMax)
-				} else {
-					o.utf = o.utf[:cap(o.utf)]
 				}
 				n := utf8.EncodeRune(o.utf, r)
-				o.buf = append(o.buf, o.utf[:n]...)
+				o.Buf = append(o.Buf, o.utf[:n]...)
 			}
 		}
 	}
 	if !tokOk {
-		o.buf = append(o.buf, '"')
+		o.Buf = append(o.Buf, '"')
 	}
 }
 
-func (o *Options) buildTime(t time.Time) {
+// BuildTime appends a time string to the buffer.
+func (o *Options) BuildTime(t time.Time) {
 	if 0 < len(o.TimeWrap) {
-		o.buf = append(o.buf, []byte(`{"`)...)
-		o.buf = append(o.buf, []byte(o.TimeWrap)...)
-		o.buf = append(o.buf, []byte(`":`)...)
+		o.Buf = append(o.Buf, []byte(`{"`)...)
+		o.Buf = append(o.Buf, []byte(o.TimeWrap)...)
+		o.Buf = append(o.Buf, []byte(`":`)...)
 	}
 	switch o.TimeFormat {
 	case "", "nano":
-		o.buf = append(o.buf, []byte(strconv.FormatInt(t.UnixNano(), 10))...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(t.UnixNano(), 10))...)
 	case "second":
 		// Decimal format but float is not accurate enough so build the output
 		// in two parts.
 		nano := t.UnixNano()
 		secs := nano / int64(time.Second)
 		if 0 < nano {
-			o.buf = append(o.buf, []byte(fmt.Sprintf("%d.%09d", secs, nano-(secs*int64(time.Second))))...)
+			o.Buf = append(o.Buf, []byte(fmt.Sprintf("%d.%09d", secs, nano-(secs*int64(time.Second))))...)
 		} else {
-			o.buf = append(o.buf, []byte(fmt.Sprintf("%d.%09d", secs, -(nano-(secs*int64(time.Second)))))...)
+			o.Buf = append(o.Buf, []byte(fmt.Sprintf("%d.%09d", secs, -(nano-(secs*int64(time.Second)))))...)
 		}
 	default:
-		o.buf = append(o.buf, '"')
-		o.buf = append(o.buf, []byte(t.Format(o.TimeFormat))...)
-		o.buf = append(o.buf, '"')
+		o.Buf = append(o.Buf, '"')
+		o.Buf = append(o.Buf, []byte(t.Format(o.TimeFormat))...)
+		o.Buf = append(o.Buf, '"')
 	}
 	if 0 < len(o.TimeWrap) {
-		o.buf = append(o.buf, '}')
+		o.Buf = append(o.Buf, '}')
 	}
 }
 
 func (o *Options) buildArray(n gen.Array, depth int) {
-	o.buf = append(o.buf, '[')
+	o.Buf = append(o.Buf, '[')
 	d2 := depth + 1
 	var is string
 	var cs string
@@ -318,23 +318,23 @@ func (o *Options) buildArray(n gen.Array, depth int) {
 			cs = spaces[0:x]
 		}
 		for _, m := range n {
-			o.buf = append(o.buf, []byte(cs)...)
+			o.Buf = append(o.Buf, []byte(cs)...)
 			o.buildSen(m, d2)
 		}
-		o.buf = append(o.buf, []byte(is)...)
+		o.Buf = append(o.Buf, []byte(is)...)
 	} else {
 		for j, m := range n {
 			if 0 < j {
-				o.buf = append(o.buf, ' ')
+				o.Buf = append(o.Buf, ' ')
 			}
 			o.buildSen(m, depth)
 		}
 	}
-	o.buf = append(o.buf, ']')
+	o.Buf = append(o.Buf, ']')
 }
 
 func (o *Options) buildSimpleArray(n []interface{}, depth int) {
-	o.buf = append(o.buf, '[')
+	o.Buf = append(o.Buf, '[')
 	d2 := depth + 1
 	var is string
 	var cs string
@@ -364,23 +364,23 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) {
 			cs = spaces[0:x]
 		}
 		for _, m := range n {
-			o.buf = append(o.buf, []byte(cs)...)
+			o.Buf = append(o.Buf, []byte(cs)...)
 			o.buildSen(m, d2)
 		}
-		o.buf = append(o.buf, []byte(is)...)
+		o.Buf = append(o.Buf, []byte(is)...)
 	} else {
 		for j, m := range n {
 			if 0 < j {
-				o.buf = append(o.buf, ' ')
+				o.Buf = append(o.Buf, ' ')
 			}
 			o.buildSen(m, depth)
 		}
 	}
-	o.buf = append(o.buf, ']')
+	o.Buf = append(o.Buf, ']')
 }
 
 func (o *Options) buildObject(n gen.Object, depth int) {
-	o.buf = append(o.buf, '{')
+	o.Buf = append(o.Buf, '{')
 	d2 := depth + 1
 	var is string
 	var cs string
@@ -420,10 +420,10 @@ func (o *Options) buildObject(n gen.Object, depth int) {
 				if m == nil && o.OmitNil {
 					continue
 				}
-				o.buf = append(o.buf, []byte(cs)...)
-				o.buildString(k)
-				o.buf = append(o.buf, ':')
-				o.buf = append(o.buf, ' ')
+				o.Buf = append(o.Buf, []byte(cs)...)
+				o.BuildString(k)
+				o.Buf = append(o.Buf, ':')
+				o.Buf = append(o.Buf, ' ')
 				o.buildSen(m, d2)
 			}
 		} else {
@@ -431,14 +431,14 @@ func (o *Options) buildObject(n gen.Object, depth int) {
 				if m == nil && o.OmitNil {
 					continue
 				}
-				o.buf = append(o.buf, []byte(cs)...)
-				o.buildString(k)
-				o.buf = append(o.buf, ':')
-				o.buf = append(o.buf, ' ')
+				o.Buf = append(o.Buf, []byte(cs)...)
+				o.BuildString(k)
+				o.Buf = append(o.Buf, ':')
+				o.Buf = append(o.Buf, ' ')
 				o.buildSen(m, d2)
 			}
 		}
-		o.buf = append(o.buf, []byte(is)...)
+		o.Buf = append(o.Buf, []byte(is)...)
 	} else {
 		first := true
 		if o.Sort {
@@ -455,10 +455,10 @@ func (o *Options) buildObject(n gen.Object, depth int) {
 				if first {
 					first = false
 				} else {
-					o.buf = append(o.buf, ' ')
+					o.Buf = append(o.Buf, ' ')
 				}
-				o.buildString(k)
-				o.buf = append(o.buf, ':')
+				o.BuildString(k)
+				o.Buf = append(o.Buf, ':')
 				o.buildSen(m, 0)
 			}
 		} else {
@@ -469,19 +469,19 @@ func (o *Options) buildObject(n gen.Object, depth int) {
 				if first {
 					first = false
 				} else {
-					o.buf = append(o.buf, ' ')
+					o.Buf = append(o.Buf, ' ')
 				}
-				o.buildString(k)
-				o.buf = append(o.buf, ':')
+				o.BuildString(k)
+				o.Buf = append(o.Buf, ':')
 				o.buildSen(m, 0)
 			}
 		}
 	}
-	o.buf = append(o.buf, '}')
+	o.Buf = append(o.Buf, '}')
 }
 
 func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
-	o.buf = append(o.buf, '{')
+	o.Buf = append(o.Buf, '{')
 	d2 := depth + 1
 	var is string
 	var cs string
@@ -521,10 +521,10 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 				if m == nil && o.OmitNil {
 					continue
 				}
-				o.buf = append(o.buf, []byte(cs)...)
-				o.buildString(k)
-				o.buf = append(o.buf, ':')
-				o.buf = append(o.buf, ' ')
+				o.Buf = append(o.Buf, []byte(cs)...)
+				o.BuildString(k)
+				o.Buf = append(o.Buf, ':')
+				o.Buf = append(o.Buf, ' ')
 				o.buildSen(m, d2)
 			}
 		} else {
@@ -532,14 +532,14 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 				if m == nil && o.OmitNil {
 					continue
 				}
-				o.buf = append(o.buf, []byte(cs)...)
-				o.buildString(k)
-				o.buf = append(o.buf, ':')
-				o.buf = append(o.buf, ' ')
+				o.Buf = append(o.Buf, []byte(cs)...)
+				o.BuildString(k)
+				o.Buf = append(o.Buf, ':')
+				o.Buf = append(o.Buf, ' ')
 				o.buildSen(m, d2)
 			}
 		}
-		o.buf = append(o.buf, []byte(is)...)
+		o.Buf = append(o.Buf, []byte(is)...)
 	} else {
 		first := true
 		if o.Sort {
@@ -556,10 +556,10 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 				if first {
 					first = false
 				} else {
-					o.buf = append(o.buf, ' ')
+					o.Buf = append(o.Buf, ' ')
 				}
-				o.buildString(k)
-				o.buf = append(o.buf, ':')
+				o.BuildString(k)
+				o.Buf = append(o.Buf, ':')
 				o.buildSen(m, 0)
 			}
 		} else {
@@ -570,13 +570,13 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 				if first {
 					first = false
 				} else {
-					o.buf = append(o.buf, ' ')
+					o.Buf = append(o.Buf, ' ')
 				}
-				o.buildString(k)
-				o.buf = append(o.buf, ':')
+				o.BuildString(k)
+				o.Buf = append(o.Buf, ':')
 				o.buildSen(m, 0)
 			}
 		}
 	}
-	o.buf = append(o.buf, '}')
+	o.Buf = append(o.Buf, '}')
 }

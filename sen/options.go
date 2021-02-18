@@ -4,6 +4,7 @@ package sen
 
 import (
 	"io"
+	"unicode/utf8"
 )
 
 const (
@@ -94,7 +95,10 @@ type Options struct {
 	// StringColor is the color for a string in the JSON output.
 	StringColor string
 
-	buf []byte
+	// Quote forces the use of quotes on strings.
+	Quote bool
+
+	Buf []byte
 	utf []byte
 	w   io.Writer
 }
@@ -107,7 +111,8 @@ var DefaultOptions = Options{
 	BoolColor:   Yellow,
 	NumberColor: Cyan,
 	StringColor: Green,
-	buf:         make([]byte, 0, 256),
+	Buf:         make([]byte, 0, 256),
+	utf:         make([]byte, utf8.UTFMax),
 }
 
 var BrightOptions = Options{
@@ -118,5 +123,6 @@ var BrightOptions = Options{
 	BoolColor:   BrightYellow,
 	NumberColor: BrightCyan,
 	StringColor: BrightGreen,
-	buf:         make([]byte, 0, 256),
+	Buf:         make([]byte, 0, 256),
+	utf:         make([]byte, utf8.UTFMax),
 }

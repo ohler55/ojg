@@ -1,16 +1,26 @@
 
 ----------------
 
+- pretty.WriteSEN and pretty.WriteJSON
+ - or maybe flag for lazy?
+
 - sen
  - get rid of extra space after } and ]
  - buildString => BuildString
-  - make just a func
-  - pass in []byte with &o.buf
+ - can dates be parsed easily, not times, just dates
 
 - pretty json format
- - pretty package to form intermediate (pnode) tree
- - oj and sen to write
- - pretty.Tree(interface{})
+ - pretty.Option embeds sen.Options
+  - uses colors, omit nil, time formating
+  - create key also or not?
+  - indent only as 2 or 1
+ - pretty package to form intermediate (node) tree
+  - pretty.Sen() and pretty.JSON()
+   - defaults no color and omit null, string time formatting
+
+ - oj and sen to write string
+
+ - pretty.tree(interface{})
   - build node tree
    - call alt.Decompose() first
    - or copy sen buildSen and build nodes in one pass
@@ -21,13 +31,7 @@
    - asMap bool
    - size() int
     - a method on node calculates once Buf is set
- - open up oj.buildJSON and sen.buildSen
-  - then can use pretty.JSON and pretty.Sen/SEN
-  - maybe there is no need to open up
-   - only string is different, with without quotes
-    - maybe just open up buildString
-    - or just copy
-  - just need rules for comma
+  - just need rules for comma and string builder function
    - either ", " or " "
 
 

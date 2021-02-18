@@ -62,71 +62,75 @@ func main() {
 		filename = flag.Args()[0]
 	}
 	gen.TimeFormat = "nano"
-	benchSuite("Parse string/[]byte", []*bench{
-		{pkg: "json", name: "Unmarshal", fun: goParse},
-		{pkg: "oj", name: "Parse", fun: ojParse},
-		{pkg: "oj-reuse", name: "Parse", fun: ojParseReuse},
-		{pkg: "gen", name: "Parse", fun: genParse},
-		{pkg: "gen-reuse", name: "Parse", fun: genParseReuse},
-		{pkg: "sen", name: "Parse", fun: senParse},
-		{pkg: "sen-reuse", name: "Parse", fun: senParseReuse},
-	})
-	benchSuite("Parse io.Reader", []*bench{
-		{pkg: "json", name: "Decode", fun: goDecodeReader},
-		{pkg: "oj", name: "ParseReader", fun: ojParseReader},
-		{pkg: "oj-reuse", name: "ParseReader", fun: ojParseReaderReuse},
-		{pkg: "gen", name: "ParseReder", fun: genParseReader},
-		{pkg: "gen-reuse", name: "ParseReder", fun: genParseReaderReuse},
-		{pkg: "sen", name: "ParseReader", fun: senParseReader},
-		{pkg: "sen-reuse", name: "ParseReader", fun: senParseReaderReuse},
-	})
-	benchSuite("Parse chan interface{}", []*bench{
-		{pkg: "json", name: "Parse-chan", fun: goParseChan},
-		{pkg: "oj", name: "Parse", fun: ojParseChan},
-		{pkg: "gen", name: "Parse", fun: genParseChan},
-		{pkg: "sen", name: "Parse", fun: senParseChan},
-	})
+	/*
+		benchSuite("Parse string/[]byte", []*bench{
+			{pkg: "json", name: "Unmarshal", fun: goParse},
+			{pkg: "oj", name: "Parse", fun: ojParse},
+			{pkg: "oj-reuse", name: "Parse", fun: ojParseReuse},
+			{pkg: "gen", name: "Parse", fun: genParse},
+			{pkg: "gen-reuse", name: "Parse", fun: genParseReuse},
+			{pkg: "sen", name: "Parse", fun: senParse},
+			{pkg: "sen-reuse", name: "Parse", fun: senParseReuse},
+		})
+		benchSuite("Parse io.Reader", []*bench{
+			{pkg: "json", name: "Decode", fun: goDecodeReader},
+			{pkg: "oj", name: "ParseReader", fun: ojParseReader},
+			{pkg: "oj-reuse", name: "ParseReader", fun: ojParseReaderReuse},
+			{pkg: "gen", name: "ParseReder", fun: genParseReader},
+			{pkg: "gen-reuse", name: "ParseReder", fun: genParseReaderReuse},
+			{pkg: "sen", name: "ParseReader", fun: senParseReader},
+			{pkg: "sen-reuse", name: "ParseReader", fun: senParseReaderReuse},
+		})
+		benchSuite("Parse chan interface{}", []*bench{
+			{pkg: "json", name: "Parse-chan", fun: goParseChan},
+			{pkg: "oj", name: "Parse", fun: ojParseChan},
+			{pkg: "gen", name: "Parse", fun: genParseChan},
+			{pkg: "sen", name: "Parse", fun: senParseChan},
+		})
 
-	benchSuite("Validate string/[]byte", []*bench{
-		{pkg: "json", name: "Valid", fun: goValidate},
-		{pkg: "oj", name: "Valdate", fun: ojValidate},
-	})
+		benchSuite("Validate string/[]byte", []*bench{
+			{pkg: "json", name: "Valid", fun: goValidate},
+			{pkg: "oj", name: "Valdate", fun: ojValidate},
+		})
 
-	benchSuite("Validate io.Reader", []*bench{
-		{pkg: "json", name: "Decode", fun: goDecodeReader},
-		{pkg: "oj", name: "Valdate", fun: ojValidateReader},
-	})
+		benchSuite("Validate io.Reader", []*bench{
+			{pkg: "json", name: "Decode", fun: goDecodeReader},
+			{pkg: "oj", name: "Valdate", fun: ojValidateReader},
+		})
+	*/
 	benchSuite("to JSON", []*bench{
 		{pkg: "json", name: "Marshal", fun: marshalJSON},
 		{pkg: "oj", name: "JSON", fun: ojJSON},
 		{pkg: "sen", name: "String", fun: senString},
 	})
-	benchSuite("to JSON with indentation", []*bench{
-		{pkg: "json", name: "Marshal", fun: marshalJSONIndent},
-		{pkg: "oj", name: "JSON", fun: ojJSONIndent},
-		{pkg: "sen", name: "String", fun: senStringIndent},
-	})
-	benchSuite("to JSON with indentation and sorted keys", []*bench{
-		{pkg: "oj", name: "JSON", fun: ojJSONSort},
-		{pkg: "sen", name: "String", fun: senStringSort},
-	})
+	/*
+		benchSuite("to JSON with indentation", []*bench{
+			{pkg: "json", name: "Marshal", fun: marshalJSONIndent},
+			{pkg: "oj", name: "JSON", fun: ojJSONIndent},
+			{pkg: "sen", name: "String", fun: senStringIndent},
+		})
+		benchSuite("to JSON with indentation and sorted keys", []*bench{
+			{pkg: "oj", name: "JSON", fun: ojJSONSort},
+			{pkg: "sen", name: "String", fun: senStringSort},
+		})
 
-	benchSuite("Write indented JSON", []*bench{
-		{pkg: "json", name: "Encode", fun: jsonEncodeIndent},
-		{pkg: "oj", name: "Write", fun: ojWriteIndent},
-	})
+		benchSuite("Write indented JSON", []*bench{
+			{pkg: "json", name: "Encode", fun: jsonEncodeIndent},
+			{pkg: "oj", name: "Write", fun: ojWriteIndent},
+		})
 
-	benchSuite("Convert or Alter", []*bench{
-		{pkg: "alt", name: "Generify", fun: altGenerify},
-		{pkg: "alt", name: "Alter", fun: altGenAlter},
-	})
+		benchSuite("Convert or Alter", []*bench{
+			{pkg: "alt", name: "Generify", fun: altGenerify},
+			{pkg: "alt", name: "Alter", fun: altGenAlter},
+		})
 
-	benchSuite("JSONPath Get $..a[2].c", []*bench{
-		{pkg: "jp", name: "Get", fun: jpGet},
-	})
-	benchSuite("JSONPath First  $..a[2].c", []*bench{
-		{pkg: "jp", name: "First", fun: jpFirst},
-	})
+		benchSuite("JSONPath Get $..a[2].c", []*bench{
+			{pkg: "jp", name: "Get", fun: jpGet},
+		})
+		benchSuite("JSONPath First  $..a[2].c", []*bench{
+			{pkg: "jp", name: "First", fun: jpFirst},
+		})
+	*/
 	fmt.Println()
 	fmt.Println(" Higher values (longer bars) are better in all cases. The bar graph compares the")
 	fmt.Println(" parsing performance. The lighter colored bar is the reference, usually the go")

@@ -15,81 +15,81 @@ import (
 func (o *Options) cbuildJSON(data interface{}, depth int) {
 	switch td := data.(type) {
 	case nil:
-		o.buf = append(o.buf, o.NullColor...)
-		o.buf = append(o.buf, []byte("null")...)
+		o.Buf = append(o.Buf, o.NullColor...)
+		o.Buf = append(o.Buf, []byte("null")...)
 
 	case bool:
-		o.buf = append(o.buf, o.BoolColor...)
+		o.Buf = append(o.Buf, o.BoolColor...)
 		if td {
-			o.buf = append(o.buf, []byte("true")...)
+			o.Buf = append(o.Buf, []byte("true")...)
 		} else {
-			o.buf = append(o.buf, []byte("false")...)
+			o.Buf = append(o.Buf, []byte("false")...)
 		}
 	case gen.Bool:
-		o.buf = append(o.buf, o.BoolColor...)
+		o.Buf = append(o.Buf, o.BoolColor...)
 		if td {
-			o.buf = append(o.buf, []byte("true")...)
+			o.Buf = append(o.Buf, []byte("true")...)
 		} else {
-			o.buf = append(o.buf, []byte("false")...)
+			o.Buf = append(o.Buf, []byte("false")...)
 		}
 
 	case int:
-		o.buf = append(o.buf, o.NumberColor...)
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, o.NumberColor...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case int8:
-		o.buf = append(o.buf, o.NumberColor...)
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, o.NumberColor...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case int16:
-		o.buf = append(o.buf, o.NumberColor...)
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, o.NumberColor...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case int32:
-		o.buf = append(o.buf, o.NumberColor...)
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, o.NumberColor...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case int64:
-		o.buf = append(o.buf, o.NumberColor...)
-		o.buf = append(o.buf, []byte(strconv.FormatInt(td, 10))...)
+		o.Buf = append(o.Buf, o.NumberColor...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(td, 10))...)
 	case uint:
-		o.buf = append(o.buf, o.NumberColor...)
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, o.NumberColor...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint8:
-		o.buf = append(o.buf, o.NumberColor...)
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, o.NumberColor...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint16:
-		o.buf = append(o.buf, o.NumberColor...)
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, o.NumberColor...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint32:
-		o.buf = append(o.buf, o.NumberColor...)
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, o.NumberColor...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint64:
-		o.buf = append(o.buf, o.NumberColor...)
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, o.NumberColor...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case gen.Int:
-		o.buf = append(o.buf, o.NumberColor...)
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.Buf = append(o.Buf, o.NumberColor...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
 
 	case float32:
-		o.buf = append(o.buf, o.NumberColor...)
-		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 32))...)
+		o.Buf = append(o.Buf, o.NumberColor...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 32))...)
 	case float64:
-		o.buf = append(o.buf, o.NumberColor...)
-		o.buf = append(o.buf, []byte(strconv.FormatFloat(td, 'g', -1, 64))...)
+		o.Buf = append(o.Buf, o.NumberColor...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatFloat(td, 'g', -1, 64))...)
 	case gen.Float:
-		o.buf = append(o.buf, o.NumberColor...)
-		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 64))...)
+		o.Buf = append(o.Buf, o.NumberColor...)
+		o.Buf = append(o.Buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 64))...)
 
 	case string:
-		o.buf = append(o.buf, o.StringColor...)
-		o.buildString(td)
+		o.Buf = append(o.Buf, o.StringColor...)
+		o.BuildString(td)
 	case gen.String:
-		o.buf = append(o.buf, o.StringColor...)
-		o.buildString(string(td))
+		o.Buf = append(o.Buf, o.StringColor...)
+		o.BuildString(string(td))
 
 	case time.Time:
-		o.buf = append(o.buf, o.StringColor...)
-		o.buildTime(td)
+		o.Buf = append(o.Buf, o.StringColor...)
+		o.BuildTime(td)
 	case gen.Time:
-		o.buf = append(o.buf, o.StringColor...)
-		o.buildTime(time.Time(td))
+		o.Buf = append(o.Buf, o.StringColor...)
+		o.BuildTime(time.Time(td))
 
 	case []interface{}:
 		o.cbuildSimpleArray(td, depth)
@@ -116,20 +116,20 @@ func (o *Options) cbuildJSON(data interface{}, depth int) {
 			o.cbuildJSON(alt.Decompose(data, &ao), depth)
 			return
 		} else {
-			o.buildString(fmt.Sprintf("%v", td))
+			o.BuildString(fmt.Sprintf("%v", td))
 		}
 	}
-	if o.w != nil && o.WriteLimit < len(o.buf) {
-		if _, err := o.w.Write(o.buf); err != nil {
+	if o.w != nil && o.WriteLimit < len(o.Buf) {
+		if _, err := o.w.Write(o.Buf); err != nil {
 			panic(err)
 		}
-		o.buf = o.buf[:0]
+		o.Buf = o.Buf[:0]
 	}
 }
 
 func (o *Options) cbuildArray(n gen.Array, depth int) {
-	o.buf = append(o.buf, o.SyntaxColor...)
-	o.buf = append(o.buf, '[')
+	o.Buf = append(o.Buf, o.SyntaxColor...)
+	o.Buf = append(o.Buf, '[')
 
 	d2 := depth + 1
 	var is string
@@ -159,20 +159,20 @@ func (o *Options) cbuildArray(n gen.Array, depth int) {
 	}
 	for j, m := range n {
 		if 0 < j && len(cs) == 0 {
-			o.buf = append(o.buf, o.SyntaxColor...)
-			o.buf = append(o.buf, ' ')
+			o.Buf = append(o.Buf, o.SyntaxColor...)
+			o.Buf = append(o.Buf, ' ')
 		}
-		o.buf = append(o.buf, []byte(cs)...)
+		o.Buf = append(o.Buf, []byte(cs)...)
 		o.cbuildJSON(m, d2)
 	}
-	o.buf = append(o.buf, []byte(is)...)
-	o.buf = append(o.buf, o.SyntaxColor...)
-	o.buf = append(o.buf, ']')
+	o.Buf = append(o.Buf, []byte(is)...)
+	o.Buf = append(o.Buf, o.SyntaxColor...)
+	o.Buf = append(o.Buf, ']')
 }
 
 func (o *Options) cbuildSimpleArray(n []interface{}, depth int) {
-	o.buf = append(o.buf, o.SyntaxColor...)
-	o.buf = append(o.buf, '[')
+	o.Buf = append(o.Buf, o.SyntaxColor...)
+	o.Buf = append(o.Buf, '[')
 
 	d2 := depth + 1
 	var is string
@@ -202,20 +202,20 @@ func (o *Options) cbuildSimpleArray(n []interface{}, depth int) {
 	}
 	for j, m := range n {
 		if 0 < j && len(cs) == 0 {
-			o.buf = append(o.buf, o.SyntaxColor...)
-			o.buf = append(o.buf, ' ')
+			o.Buf = append(o.Buf, o.SyntaxColor...)
+			o.Buf = append(o.Buf, ' ')
 		}
-		o.buf = append(o.buf, []byte(cs)...)
+		o.Buf = append(o.Buf, []byte(cs)...)
 		o.cbuildJSON(m, d2)
 	}
-	o.buf = append(o.buf, []byte(is)...)
-	o.buf = append(o.buf, o.SyntaxColor...)
-	o.buf = append(o.buf, ']')
+	o.Buf = append(o.Buf, []byte(is)...)
+	o.Buf = append(o.Buf, o.SyntaxColor...)
+	o.Buf = append(o.Buf, ']')
 }
 
 func (o *Options) cbuildObject(n gen.Object, depth int) {
-	o.buf = append(o.buf, o.SyntaxColor...)
-	o.buf = append(o.buf, '{')
+	o.Buf = append(o.Buf, o.SyntaxColor...)
+	o.Buf = append(o.Buf, '{')
 
 	d2 := depth + 1
 	var is string
@@ -258,16 +258,16 @@ func (o *Options) cbuildObject(n gen.Object, depth int) {
 			if first {
 				first = false
 			} else if len(cs) == 0 {
-				o.buf = append(o.buf, o.SyntaxColor...)
-				o.buf = append(o.buf, ' ')
+				o.Buf = append(o.Buf, o.SyntaxColor...)
+				o.Buf = append(o.Buf, ' ')
 			}
-			o.buf = append(o.buf, []byte(cs)...)
-			o.buf = append(o.buf, o.KeyColor...)
-			o.buildString(k)
-			o.buf = append(o.buf, o.SyntaxColor...)
-			o.buf = append(o.buf, ':')
+			o.Buf = append(o.Buf, []byte(cs)...)
+			o.Buf = append(o.Buf, o.KeyColor...)
+			o.BuildString(k)
+			o.Buf = append(o.Buf, o.SyntaxColor...)
+			o.Buf = append(o.Buf, ':')
 			if 0 < o.Indent {
-				o.buf = append(o.buf, ' ')
+				o.Buf = append(o.Buf, ' ')
 			}
 			o.cbuildJSON(m, d2)
 		}
@@ -279,28 +279,28 @@ func (o *Options) cbuildObject(n gen.Object, depth int) {
 			if first {
 				first = false
 			} else if len(cs) == 0 {
-				o.buf = append(o.buf, o.SyntaxColor...)
-				o.buf = append(o.buf, ' ')
+				o.Buf = append(o.Buf, o.SyntaxColor...)
+				o.Buf = append(o.Buf, ' ')
 			}
-			o.buf = append(o.buf, []byte(cs)...)
-			o.buf = append(o.buf, o.KeyColor...)
-			o.buildString(k)
-			o.buf = append(o.buf, o.SyntaxColor...)
-			o.buf = append(o.buf, ':')
+			o.Buf = append(o.Buf, []byte(cs)...)
+			o.Buf = append(o.Buf, o.KeyColor...)
+			o.BuildString(k)
+			o.Buf = append(o.Buf, o.SyntaxColor...)
+			o.Buf = append(o.Buf, ':')
 			if 0 < o.Indent {
-				o.buf = append(o.buf, ' ')
+				o.Buf = append(o.Buf, ' ')
 			}
 			o.cbuildJSON(m, d2)
 		}
 	}
-	o.buf = append(o.buf, []byte(is)...)
-	o.buf = append(o.buf, o.SyntaxColor...)
-	o.buf = append(o.buf, '}')
+	o.Buf = append(o.Buf, []byte(is)...)
+	o.Buf = append(o.Buf, o.SyntaxColor...)
+	o.Buf = append(o.Buf, '}')
 }
 
 func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) {
-	o.buf = append(o.buf, o.SyntaxColor...)
-	o.buf = append(o.buf, '{')
+	o.Buf = append(o.Buf, o.SyntaxColor...)
+	o.Buf = append(o.Buf, '{')
 
 	d2 := depth + 1
 	var is string
@@ -343,16 +343,16 @@ func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) {
 			if first {
 				first = false
 			} else if len(cs) == 0 {
-				o.buf = append(o.buf, o.SyntaxColor...)
-				o.buf = append(o.buf, ' ')
+				o.Buf = append(o.Buf, o.SyntaxColor...)
+				o.Buf = append(o.Buf, ' ')
 			}
-			o.buf = append(o.buf, []byte(cs)...)
-			o.buf = append(o.buf, o.KeyColor...)
-			o.buildString(k)
-			o.buf = append(o.buf, o.SyntaxColor...)
-			o.buf = append(o.buf, ':')
+			o.Buf = append(o.Buf, []byte(cs)...)
+			o.Buf = append(o.Buf, o.KeyColor...)
+			o.BuildString(k)
+			o.Buf = append(o.Buf, o.SyntaxColor...)
+			o.Buf = append(o.Buf, ':')
 			if 0 < o.Indent {
-				o.buf = append(o.buf, ' ')
+				o.Buf = append(o.Buf, ' ')
 			}
 			o.cbuildJSON(m, d2)
 		}
@@ -364,21 +364,21 @@ func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) {
 			if first {
 				first = false
 			} else if len(cs) == 0 {
-				o.buf = append(o.buf, o.SyntaxColor...)
-				o.buf = append(o.buf, ' ')
+				o.Buf = append(o.Buf, o.SyntaxColor...)
+				o.Buf = append(o.Buf, ' ')
 			}
-			o.buf = append(o.buf, []byte(cs)...)
-			o.buf = append(o.buf, o.KeyColor...)
-			o.buildString(k)
-			o.buf = append(o.buf, o.SyntaxColor...)
-			o.buf = append(o.buf, ':')
+			o.Buf = append(o.Buf, []byte(cs)...)
+			o.Buf = append(o.Buf, o.KeyColor...)
+			o.BuildString(k)
+			o.Buf = append(o.Buf, o.SyntaxColor...)
+			o.Buf = append(o.Buf, ':')
 			if 0 < o.Indent {
-				o.buf = append(o.buf, ' ')
+				o.Buf = append(o.Buf, ' ')
 			}
 			o.cbuildJSON(m, d2)
 		}
 	}
-	o.buf = append(o.buf, []byte(is)...)
-	o.buf = append(o.buf, o.SyntaxColor...)
-	o.buf = append(o.buf, '}')
+	o.Buf = append(o.Buf, []byte(is)...)
+	o.Buf = append(o.Buf, o.SyntaxColor...)
+	o.Buf = append(o.Buf, '}')
 }
