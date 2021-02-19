@@ -141,6 +141,7 @@ func (w *writer) encode(data interface{}, args ...interface{}) (out []byte, err 
 		if r := recover(); r != nil {
 			if err, _ = r.(error); err == nil {
 				err = fmt.Errorf("%v", r)
+				out = []byte{}
 			}
 		}
 	}()
@@ -440,7 +441,11 @@ func (w *writer) buildMapNode(v map[string]interface{}) (n *node) {
 		n.members = append(n.members, mn)
 		// build key
 		w.Buf = w.Buf[:0]
-		w.BuildString(k)
+		if w.lazy {
+			w.BuildString(k)
+		} else {
+			w.BuildQuotedString(k)
+		}
 		mn.key = make([]byte, len(w.Buf))
 		copy(mn.key, w.Buf)
 		if 2 < n.size {
@@ -476,7 +481,11 @@ func (w *writer) buildGenMapNode(v gen.Object) (n *node) {
 		n.members = append(n.members, mn)
 		// build key
 		w.Buf = w.Buf[:0]
-		w.BuildString(k)
+		if w.lazy {
+			w.BuildString(k)
+		} else {
+			w.BuildQuotedString(k)
+		}
 		mn.key = make([]byte, len(w.Buf))
 		copy(mn.key, w.Buf)
 		if 2 < n.size {
