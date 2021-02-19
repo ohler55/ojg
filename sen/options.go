@@ -95,12 +95,9 @@ type Options struct {
 	// StringColor is the color for a string in the JSON output.
 	StringColor string
 
-	// Quote forces the use of quotes on strings.
-	Quote bool
-
 	Buf []byte
-	utf []byte
-	w   io.Writer
+	Utf []byte
+	W   io.Writer
 }
 
 var DefaultOptions = Options{
@@ -112,7 +109,7 @@ var DefaultOptions = Options{
 	NumberColor: Cyan,
 	StringColor: Green,
 	Buf:         make([]byte, 0, 256),
-	utf:         make([]byte, utf8.UTFMax),
+	Utf:         make([]byte, utf8.UTFMax),
 }
 
 var BrightOptions = Options{
@@ -124,5 +121,5 @@ var BrightOptions = Options{
 	NumberColor: BrightCyan,
 	StringColor: BrightGreen,
 	Buf:         make([]byte, 0, 256),
-	utf:         make([]byte, utf8.UTFMax),
+	Utf:         make([]byte, utf8.UTFMax),
 }

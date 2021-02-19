@@ -32,10 +32,10 @@ func TestSum(t *testing.T) {
   b: 3.2
   c: x1
   d: xy
-  e: 1.1x2.2
+  e: "1.1x2.2"
   f: 0
   g: 3.3
-  h: 1x2
+  h: "1x2"
 }`, sen.String(root["asm"], &opt))
 }
 

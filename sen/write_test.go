@@ -79,9 +79,11 @@ func TestString(t *testing.T) {
 		{value: true, expect: "true"},
 		{value: false, expect: "false"},
 		{value: "string", expect: "string"},
+		{value: "str#ing", expect: `"str#ing"`},
 		{value: "\\\tx\n\r\b\f\"&<>\u2028\u2029\x07\U0001D122",
 			expect: `"\\	x
 \r\b\f\"&<>\u2028\u2029\u0007𝄢"`},
+		{value: "ぴーたー", expect: "ぴーたー", options: &sen.Options{}},
 		{value: gen.String("string"), expect: "string"},
 		{value: []interface{}{true, nil}, expect: "[true null]"},
 		{value: gen.Array{gen.Bool(true), nil}, expect: "[true null]"},

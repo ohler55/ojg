@@ -119,8 +119,8 @@ func (o *Options) cbuildJSON(data interface{}, depth int) {
 			o.BuildString(fmt.Sprintf("%v", td))
 		}
 	}
-	if o.w != nil && o.WriteLimit < len(o.Buf) {
-		if _, err := o.w.Write(o.Buf); err != nil {
+	if o.W != nil && o.WriteLimit < len(o.Buf) {
+		if _, err := o.W.Write(o.Buf); err != nil {
 			panic(err)
 		}
 		o.Buf = o.Buf[:0]

@@ -102,6 +102,7 @@ func main() {
 		{pkg: "json", name: "Marshal", fun: marshalJSON},
 		{pkg: "oj", name: "JSON", fun: ojJSON},
 		{pkg: "sen", name: "String", fun: senString},
+		{pkg: "pretty", name: "SEN", fun: prettySEN},
 	})
 	/*
 		benchSuite("to JSON with indentation", []*bench{

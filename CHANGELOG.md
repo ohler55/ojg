@@ -7,6 +7,8 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.6.0] - [unreleased]
 ### Added
 - Added assembly plan package and cmd/oj option that allows assembling a new JSON from parsed data.
+- Added sen.Parse() and sen.ParseReader() that use a new sen.DefaultParser
+- Added the pretty package for prettier JSON layout.
 
 ## [1.5.0] - 2021-02-09
 ### Fixed

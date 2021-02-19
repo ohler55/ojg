@@ -14,6 +14,7 @@ import (
 	"github.com/ohler55/ojg/asm"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
+	"github.com/ohler55/ojg/pretty"
 	"github.com/ohler55/ojg/sen"
 )
 
@@ -38,7 +39,7 @@ var (
 	plan        *asm.Plan
 	root        = map[string]interface{}{}
 	showRoot    bool
-	edge        = 0
+	edgeDepth   = 0.0
 )
 
 func init() {
@@ -56,7 +57,7 @@ func init() {
 	flag.StringVar(&planDef, "a", planDef, "assembly plan or plan file using @<plan>")
 	flag.BoolVar(&showFnDocs, "fn", showFnDocs, "describe assembly plan functions")
 	flag.BoolVar(&showRoot, "r", showRoot, "print root if an assemble plan provided")
-	flag.IntVar(&edge, "p", edge, "pretty print with the edge as specified")
+	flag.Float64Var(&edgeDepth, "p", edgeDepth, "pretty print with the edge and depth as a float <edge>.<max-depth>")
 }
 
 func main() {
@@ -95,6 +96,11 @@ then used as the input.
 Oj can also be used to assemble new JSON output from input data. An assembly
 plan that describes how to assemble the new JSON if specified by the -a
 option. The -fn option will display the documentation for assembly.
+
+Pretty mode output can be used with JSON or the -sen option. It indents
+according to a defined edge and maximum depth in a best effort approach. The
+-p takes and edge and a maximum depth as the numerator and fractional part of
+a decimal.
 
 `, filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
@@ -166,6 +172,8 @@ option. The -fn option will display the documentation for assembly.
 		}
 		plan = asm.NewPlan(plist)
 	}
+	// TBD define writer of correct type and use for write
+	//   take advantage of buffer reuse
 	if 0 < len(files) {
 		var f *os.File
 		for _, file := range files {
@@ -248,43 +256,45 @@ func write(v interface{}) bool {
 }
 
 func writeJSON(v interface{}) {
+	var o oj.Options
 	if bright {
-		o := oj.BrightOptions
-		o.Indent = indent
+		o = oj.BrightOptions
 		o.Color = true
 		o.Sort = sortKeys
 		o.Tab = tab
-		_ = oj.Write(os.Stdout, v, &o)
 	} else if color || sortKeys || tab {
-		o := oj.DefaultOptions
-		o.Indent = indent
+		o = oj.DefaultOptions
 		o.Color = color
 		o.Sort = sortKeys
 		o.Tab = tab
-		_ = oj.Write(os.Stdout, v, &o)
+	}
+	o.Indent = indent
+	if 0.0 < edgeDepth {
+		_ = pretty.WriteJSON(os.Stdout, v, &o, edgeDepth)
 	} else {
-		_ = oj.Write(os.Stdout, v, indent)
+		_ = oj.Write(os.Stdout, v, &o)
 	}
 	os.Stdout.Write([]byte{'\n'})
 }
 
 func writeSEN(v interface{}) {
+	var o sen.Options
 	if bright {
-		o := sen.BrightOptions
-		o.Indent = indent
+		o = sen.BrightOptions
 		o.Color = true
 		o.Sort = sortKeys
 		o.Tab = tab
-		_ = sen.Write(os.Stdout, v, &o)
 	} else if color || sortKeys || tab {
-		o := sen.DefaultOptions
-		o.Indent = indent
+		o = sen.DefaultOptions
 		o.Color = color
 		o.Sort = sortKeys
 		o.Tab = tab
-		_ = sen.Write(os.Stdout, v, &o)
+	}
+	o.Indent = indent
+	if 0.0 < edgeDepth {
+		_ = pretty.WriteSEN(os.Stdout, v, &o, edgeDepth)
 	} else {
-		_ = sen.Write(os.Stdout, v, indent)
+		_ = sen.Write(os.Stdout, v, &o)
 	}
 	os.Stdout.Write([]byte{'\n'})
 }

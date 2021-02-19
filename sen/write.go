@@ -73,7 +73,7 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 			o = ta
 		}
 	}
-	o.w = w
+	o.W = w
 	if o.InitSize == 0 {
 		o.InitSize = 256
 	}
@@ -102,7 +102,7 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 		o.Buf = append(o.Buf, Normal...)
 	}
 	if w != nil && 0 < len(o.Buf) {
-		_, err = o.w.Write(o.Buf)
+		_, err = o.W.Write(o.Buf)
 	}
 	return
 }
@@ -193,8 +193,8 @@ func (o *Options) buildSen(data interface{}, depth int) {
 			o.BuildString(fmt.Sprintf("%v", td))
 		}
 	}
-	if o.w != nil && o.WriteLimit < len(o.Buf) {
-		if _, err := o.w.Write(o.Buf); err != nil {
+	if o.W != nil && o.WriteLimit < len(o.Buf) {
+		if _, err := o.W.Write(o.Buf); err != nil {
 			panic(err)
 		}
 		o.Buf = o.Buf[:0]
@@ -203,8 +203,7 @@ func (o *Options) buildSen(data interface{}, depth int) {
 
 func (o *Options) BuildString(s string) {
 	tokOk := false
-	if !o.Quote &&
-		0 < len(s) &&
+	if 0 < len(s) &&
 		valueMap[s[0]] == tokenStart &&
 		len(s) < maxTokenLen { // arbitrary length, longer strings look better in quotes
 		tokOk = true
@@ -244,11 +243,11 @@ func (o *Options) BuildString(s string) {
 			} else if r < 0x80 {
 				o.Buf = append(o.Buf, byte(r))
 			} else {
-				if len(o.utf) < utf8.UTFMax {
-					o.utf = make([]byte, utf8.UTFMax)
+				if len(o.Utf) < utf8.UTFMax {
+					o.Utf = make([]byte, utf8.UTFMax)
 				}
-				n := utf8.EncodeRune(o.utf, r)
-				o.Buf = append(o.Buf, o.utf[:n]...)
+				n := utf8.EncodeRune(o.Utf, r)
+				o.Buf = append(o.Buf, o.Utf[:n]...)
 			}
 		}
 	}

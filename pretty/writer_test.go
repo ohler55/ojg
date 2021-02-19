@@ -6,25 +6,143 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/pretty"
 	"github.com/ohler55/ojg/sen"
 	"github.com/ohler55/ojg/tt"
 )
 
-func TestSEN(t *testing.T) {
-	p := sen.Parser{}
-	val, err := p.Parse([]byte(`[true false [3 2 1] [1 2 3 [x y z []]]]`))
+const sample = `[true false [3 2 1] {a:1 b:2 c:3 d:[x y z []]}]`
+
+func TestJSONDepth(t *testing.T) {
+	val, err := sen.Parse([]byte(sample))
 	tt.Nil(t, err)
 	opt := sen.DefaultOptions
-	opt.Color = true
-	s := pretty.JSON(val, 32, &opt)
+	s := pretty.JSON(val, &opt, 80.1)
+	tt.Equal(t, `[
+  true,
+  false,
+  [
+    3,
+    2,
+    1
+  ],
+  {
+    a: 1,
+    b: 2,
+    c: 3,
+    d: [
+      "x",
+      "y",
+      "z",
+      []
+    ]
+  }
+]`, s)
 
-	fmt.Printf("*** %s\n", s)
+	s = pretty.JSON(val, &opt, 80.0)
+	tt.Equal(t, `[
+  true,
+  false,
+  [3, 2, 1],
+  {
+    a: 1,
+    b: 2,
+    c: 3,
+    d: ["x", "y", "z", []]
+  }
+]`, s)
 
-	s = pretty.SEN(val, 60)
+	s = pretty.JSON(val, &opt, 80.3)
+	tt.Equal(t, `[
+  true,
+  false,
+  [3, 2, 1],
+  {a: 1, b: 2, c: 3, d: ["x", "y", "z", []]}
+]`, s)
 
-	fmt.Printf("*** %s\n", s)
+	s = pretty.JSON(val, &opt, 0.4)
+	tt.Equal(t, `[true, false, [3, 2, 1], {a: 1, b: 2, c: 3, d: ["x", "y", "z", []]}]`, s)
+}
 
+func TestJSONEdge(t *testing.T) {
+	val, err := sen.Parse([]byte(sample))
+	tt.Nil(t, err)
+	opt := sen.DefaultOptions
+	s := pretty.JSON(val, &opt, 60.4)
+	tt.Equal(t, `[
+  true,
+  false,
+  [3, 2, 1],
+  {a: 1, b: 2, c: 3, d: ["x", "y", "z", []]}
+]`, s)
+
+	s = pretty.JSON(val, &opt, 40.4)
+	tt.Equal(t, `[
+  true,
+  false,
+  [3, 2, 1],
+  {
+    a: 1,
+    b: 2,
+    c: 3,
+    d: ["x", "y", "z", []]
+  }
+]`, s)
+
+	s = pretty.JSON(val, &opt, 20.4)
+	tt.Equal(t, `[
+  true,
+  false,
+  [3, 2, 1],
+  {
+    a: 1,
+    b: 2,
+    c: 3,
+    d: [
+      "x",
+      "y",
+      "z",
+      []
+    ]
+  }
+]`, s)
+}
+
+func TestJSONIntArg(t *testing.T) {
+	val, err := sen.Parse([]byte(sample))
+	tt.Nil(t, err)
+	opt := sen.DefaultOptions
+	s := pretty.JSON(val, &opt, 30)
+	tt.Equal(t, `[
+  true,
+  false,
+  [3, 2, 1],
+  {
+    a: 1,
+    b: 2,
+    c: 3,
+    d: ["x", "y", "z", []]
+  }
+]`, s)
+}
+
+func TestJSONOjOptions(t *testing.T) {
+	val, err := sen.Parse([]byte(sample))
+	tt.Nil(t, err)
+	opt := oj.DefaultOptions
+	s := pretty.JSON(val, &opt)
+	tt.Equal(t, `[
+  true,
+  false,
+  [3, 2, 1],
+  {
+    a: 1,
+    b: 2,
+    c: 3,
+    d: ["x", "y", "z", []]
+  }
+]`, s)
 }
 
 func TestSEN2(t *testing.T) {

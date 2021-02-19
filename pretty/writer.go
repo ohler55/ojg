@@ -4,11 +4,16 @@ package pretty
 
 import (
 	"fmt"
+	"io"
+	"math"
+	"sort"
 	"strconv"
 	"time"
+	"unicode/utf8"
 
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
+	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/sen"
 )
 
@@ -17,24 +22,23 @@ const (
 	trueStr  = "true"
 	falseStr = "false"
 	spaces   = "\n                                                                                                                                "
+	hex      = "0123456789abcdef"
 )
 
 type writer struct {
 	sen.Options
-	edge  int
-	lazy  bool
-	depth int
+	edge     int
+	maxDepth int
+	lazy     bool
 }
 
 func JSON(data interface{}, args ...interface{}) string {
 	w := writer{
-		Options: sen.DefaultOptions,
-		edge:    80,
-		lazy:    false,
-		depth:   0,
+		Options:  sen.DefaultOptions,
+		edge:     80,
+		maxDepth: 2,
+		lazy:     false,
 	}
-	w.Quote = true
-
 	b, _ := w.encode(data, args...)
 
 	return string(b)
@@ -42,15 +46,41 @@ func JSON(data interface{}, args ...interface{}) string {
 
 func SEN(data interface{}, args ...interface{}) string {
 	w := writer{
-		Options: sen.DefaultOptions,
-		edge:    80,
-		lazy:    true,
-		depth:   0,
+		Options:  sen.DefaultOptions,
+		edge:     80,
+		maxDepth: 2,
+		lazy:     true,
 	}
-	w.Quote = false
 	b, _ := w.encode(data, args...)
 
 	return string(b)
+}
+
+func WriteJSON(w io.Writer, data interface{}, args ...interface{}) (err error) {
+	pw := writer{
+		Options:  sen.DefaultOptions,
+		edge:     80,
+		maxDepth: 2,
+		lazy:     false,
+	}
+	pw.W = w
+	_, err = pw.encode(data, args...)
+
+	return
+
+}
+
+func WriteSEN(w io.Writer, data interface{}, args ...interface{}) (err error) {
+	pw := writer{
+		Options:  sen.DefaultOptions,
+		edge:     80,
+		maxDepth: 2,
+		lazy:     true,
+	}
+	pw.W = w
+	_, err = pw.encode(data, args...)
+
+	return
 }
 
 func (w *writer) encode(data interface{}, args ...interface{}) (out []byte, err error) {
@@ -58,12 +88,49 @@ func (w *writer) encode(data interface{}, args ...interface{}) (out []byte, err 
 		switch ta := arg.(type) {
 		case int:
 			w.edge = ta
+		case float64:
+			if 0.0 < ta {
+				if ta < 1.0 {
+					w.maxDepth = int(math.Round(ta * 10.0))
+				} else {
+					w.edge = int(ta)
+					w.maxDepth = int(math.Round((ta - float64(w.edge)) * 10.0))
+				}
+				if w.maxDepth == 0 { // use the default
+					w.maxDepth = 2
+				}
+			}
 		case *sen.Options:
+			sw := w.W
 			w.Options = *ta
+			w.W = sw
+		case *oj.Options:
+			sw := w.W
+			w.Options.Indent = ta.Indent
+			w.Options.Tab = ta.Tab
+			w.Options.Sort = ta.Sort
+			w.Options.OmitNil = ta.OmitNil
+			w.Options.InitSize = ta.InitSize
+			w.Options.WriteLimit = ta.WriteLimit
+			w.Options.TimeFormat = ta.TimeFormat
+			w.Options.TimeWrap = ta.TimeWrap
+			w.Options.CreateKey = ta.CreateKey
+			w.Options.FullTypePath = ta.FullTypePath
+			w.Options.Color = ta.Color
+			w.Options.SyntaxColor = ta.SyntaxColor
+			w.Options.KeyColor = ta.KeyColor
+			w.Options.NullColor = ta.NullColor
+			w.Options.BoolColor = ta.BoolColor
+			w.Options.NumberColor = ta.NumberColor
+			w.Options.StringColor = ta.StringColor
+			w.W = sw
 		}
 	}
 	if w.InitSize == 0 {
 		w.InitSize = 256
+	}
+	if w.WriteLimit == 0 {
+		w.WriteLimit = 1024
 	}
 	if cap(w.Buf) < w.InitSize {
 		w.Buf = make([]byte, 0, w.InitSize)
@@ -80,18 +147,23 @@ func (w *writer) encode(data interface{}, args ...interface{}) (out []byte, err 
 	tree := w.build(data)
 	w.Buf = w.Buf[:0]
 	w.Indent = 2
-	if w.edge*3/8 < w.depth {
+	if w.edge*3/8 < tree.depth {
 		w.Indent = 1
 	}
 	w.fill(tree, 0, false)
+	if w.Color {
+		w.Buf = append(w.Buf, sen.Normal...)
+	}
+	if w.W != nil && 0 < len(w.Buf) {
+		_, err = w.W.Write(w.Buf)
+		w.Buf = w.Buf[:0]
+	}
 	out = w.Buf
 
 	return
 }
 
 func (w *writer) build(data interface{}) (n *node) {
-	w.depth++
-	n = &node{}
 	switch td := data.(type) {
 	case nil:
 		n = w.buildNull()
@@ -157,8 +229,11 @@ func (w *writer) build(data interface{}) (n *node) {
 			n = w.buildStringNode(fmt.Sprintf("%v", td))
 		}
 	}
-	if w.Color {
-		w.Buf = append(w.Buf, sen.Normal...)
+	if w.W != nil && w.WriteLimit < len(w.Buf) {
+		if _, err := w.W.Write(w.Buf); err != nil {
+			panic(err)
+		}
+		w.Buf = w.Buf[:0]
 	}
 	return
 }
@@ -233,7 +308,11 @@ func (w *writer) buildFloat64(v float64) (n *node) {
 
 func (w *writer) buildStringNode(v string) (n *node) {
 	w.Buf = w.Buf[:0]
-	w.BuildString(v)
+	if w.lazy {
+		w.BuildString(v)
+	} else {
+		w.BuildQuotedString(v)
+	}
 	n = &node{size: len(w.Buf), kind: bytesNode}
 	n.buf = make([]byte, len(w.Buf))
 	copy(n.buf, w.Buf)
@@ -241,6 +320,49 @@ func (w *writer) buildStringNode(v string) (n *node) {
 		n.buf = append(append([]byte(w.StringColor), n.buf...), sen.Normal...)
 	}
 	return
+}
+
+func (w *writer) BuildQuotedString(s string) {
+	w.Buf = append(w.Buf, '"')
+	for _, r := range s {
+		switch r {
+		case '\\':
+			w.Buf = append(w.Buf, []byte{'\\', '\\'}...)
+		case '"':
+			w.Buf = append(w.Buf, []byte{'\\', '"'}...)
+		case '\b':
+			w.Buf = append(w.Buf, []byte{'\\', 'b'}...)
+		case '\f':
+			w.Buf = append(w.Buf, []byte{'\\', 'f'}...)
+		case '\n':
+			w.Buf = append(w.Buf, []byte{'\\', 'n'}...)
+		case '\r':
+			w.Buf = append(w.Buf, []byte{'\\', 'r'}...)
+		case '\t':
+			w.Buf = append(w.Buf, []byte{'\\', 't'}...)
+		case '&', '<', '>': // prefectly okay for JSON but commonly escaped
+			w.Buf = append(w.Buf, []byte{'\\', 'u', '0', '0', hex[r>>4], hex[r&0x0f]}...)
+		case '\u2028':
+			w.Buf = append(w.Buf, []byte(`\u2028`)...)
+		case '\u2029':
+			w.Buf = append(w.Buf, []byte(`\u2029`)...)
+		default:
+			if r < ' ' {
+				w.Buf = append(w.Buf, []byte{'\\', 'u', '0', '0', hex[(r>>4)&0x0f], hex[r&0x0f]}...)
+			} else if r < 0x80 {
+				w.Buf = append(w.Buf, byte(r))
+			} else {
+				if len(w.Utf) < utf8.UTFMax {
+					w.Utf = make([]byte, utf8.UTFMax)
+				} else {
+					w.Utf = w.Utf[:cap(w.Utf)]
+				}
+				n := utf8.EncodeRune(w.Utf, r)
+				w.Buf = append(w.Buf, w.Utf[:n]...)
+			}
+		}
+	}
+	w.Buf = append(w.Buf, '"')
 }
 
 func (w *writer) buildTimeNode(v time.Time) (n *node) {
@@ -272,6 +394,9 @@ func (w *writer) buildArrayNode(v []interface{}) (n *node) {
 			}
 		}
 		n.size += mn.size
+		if n.depth < mn.depth+1 {
+			n.depth = mn.depth + 1
+		}
 	}
 	return
 }
@@ -292,6 +417,9 @@ func (w *writer) buildGenArrayNode(v gen.Array) (n *node) {
 			}
 		}
 		n.size += mn.size
+		if n.depth < mn.depth+1 {
+			n.depth = mn.depth + 1
+		}
 	}
 	return
 }
@@ -302,8 +430,13 @@ func (w *writer) buildMapNode(v map[string]interface{}) (n *node) {
 		size:    2, // {}
 		kind:    mapNode,
 	}
-	for k, m := range v {
-		mn := w.build(m)
+	keys := make([]string, 0, len(v))
+	for k := range v {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		mn := w.build(v[k])
 		n.members = append(n.members, mn)
 		// build key
 		w.Buf = w.Buf[:0]
@@ -317,6 +450,9 @@ func (w *writer) buildMapNode(v map[string]interface{}) (n *node) {
 			}
 		}
 		n.size += len(mn.key) + 2 + mn.size // key, colon, space, value
+		if n.depth < mn.depth+1 {
+			n.depth = mn.depth + 1
+		}
 		if w.Color {
 			mn.key = append(append([]byte(w.KeyColor), mn.key...), sen.Normal...)
 		}
@@ -330,8 +466,13 @@ func (w *writer) buildGenMapNode(v gen.Object) (n *node) {
 		size:    2, // {}
 		kind:    mapNode,
 	}
-	for k, m := range v {
-		mn := w.build(m)
+	keys := make([]string, 0, len(v))
+	for k := range v {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		mn := w.build(v[k])
 		n.members = append(n.members, mn)
 		// build key
 		w.Buf = w.Buf[:0]
@@ -345,6 +486,9 @@ func (w *writer) buildGenMapNode(v gen.Object) (n *node) {
 			}
 		}
 		n.size += len(mn.key) + 2 + mn.size // key, colon, space, value
+		if n.depth < mn.depth+1 {
+			n.depth = mn.depth + 1
+		}
 		if w.Color {
 			mn.key = append(append([]byte(w.KeyColor), mn.key...), sen.Normal...)
 		}
@@ -363,7 +507,7 @@ func (w *writer) fill(n *node, depth int, flat bool) {
 		}
 		w.Buf = append(w.Buf, '[')
 		d2 := depth + 1
-		if flat || start+n.size < w.edge {
+		if flat || (start+n.size < w.edge && n.depth < w.maxDepth) {
 			for i, m := range n.members {
 				if 0 < i {
 					if !w.lazy {
@@ -403,7 +547,7 @@ func (w *writer) fill(n *node, depth int, flat bool) {
 		}
 		w.Buf = append(w.Buf, '{')
 		d2 := depth + 1
-		if flat || start+n.size < w.edge {
+		if flat || (start+n.size < w.edge && n.depth < w.maxDepth) {
 			for i, m := range n.members {
 				if 0 < i {
 					if !w.lazy {

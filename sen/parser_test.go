@@ -176,11 +176,7 @@ func TestParserParseString(t *testing.T) {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %q\n", i, d.src)
 		}
-		var err error
-		var v interface{}
-		var p sen.Parser
-		v, err = p.Parse([]byte(d.src))
-
+		v, err := sen.Parse([]byte(d.src))
 		if 0 < len(d.expect) {
 			tt.NotNil(t, err, d.src)
 			tt.Equal(t, d.expect, err.Error(), i, ": ", d.src)
@@ -363,8 +359,7 @@ func TestParserParseChan(t *testing.T) {
 func TestParserParseReaderChan(t *testing.T) {
 	var results []byte
 	rc := make(chan interface{}, 10)
-	var p sen.Parser
-	_, err := p.ParseReader(strings.NewReader(callbackSEN), rc)
+	_, err := sen.ParseReader(strings.NewReader(callbackSEN), rc)
 	tt.Nil(t, err)
 	rc <- nil
 	for {

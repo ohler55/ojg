@@ -13,20 +13,6 @@ type node struct {
 	members []*node
 	buf     []byte
 	size    int
+	depth   int
 	kind    byte
-}
-
-// Simplify is use for debugging.
-func (n *node) Simplify() interface{} {
-	var members []interface{}
-	for _, m := range n.members {
-		members = append(members, m)
-	}
-	return map[string]interface{}{
-		"key":     string(n.key),
-		"buf":     string(n.buf),
-		"size":    n.size,
-		"kind":    n.kind,
-		"members": members,
-	}
 }

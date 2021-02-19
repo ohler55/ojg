@@ -1,53 +1,11 @@
 
 ----------------
 
-- pretty.WriteSEN and pretty.WriteJSON
- - or maybe flag for lazy?
-
 - sen
  - get rid of extra space after } and ]
- - buildString => BuildString
  - can dates be parsed easily, not times, just dates
 
-- pretty json format
- - pretty.Option embeds sen.Options
-  - uses colors, omit nil, time formating
-  - create key also or not?
-  - indent only as 2 or 1
- - pretty package to form intermediate (node) tree
-  - pretty.Sen() and pretty.JSON()
-   - defaults no color and omit null, string time formatting
-
- - oj and sen to write string
-
- - pretty.tree(interface{})
-  - build node tree
-   - call alt.Decompose() first
-   - or copy sen buildSen and build nodes in one pass
-  - node
-   - key string
-   - val interface{} ([]pnode or simple)
-    - use Val for []byte instead of a separate buf
-   - asMap bool
-   - size() int
-    - a method on node calculates once Buf is set
-  - just need rules for comma and string builder function
-   - either ", " or " "
-
-
- - tighten up when possible
-  - kind of like lisp
- - specify suggested max width
- - if max < depth * indent + size then indent 2 or 1
- - else indent of 0
- - if deeper than 3/8 or maybe 1/3 of max then use single space for indent
- - create first pass set of structs
-
- - run through json and create a new node for each slice and map
-  - node points to slice or map and calculates length if indent of 0 and store size and depth
-
-
-
+- benchmarks back to normal
 
  - regex op =~
   - /^xyz&/
