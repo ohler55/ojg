@@ -98,9 +98,6 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	} else {
 		o.buildSen(data, 0)
 	}
-	if o.Color {
-		o.Buf = append(o.Buf, Normal...)
-	}
 	if w != nil && 0 < len(o.Buf) {
 		_, err = o.W.Write(o.Buf)
 	}

@@ -23,47 +23,48 @@ func TestColor(t *testing.T) {
 		BoolColor:   "b",
 		NumberColor: "0",
 		StringColor: "q",
+		NoColor:     "x",
 	}
 	tm := time.Date(2020, time.May, 7, 19, 29, 19, 123456789, time.UTC)
 	for i, d := range []wdata{
-		{value: nil, expect: "nnull" + sen.Normal},
-		{value: true, expect: "btrue" + sen.Normal},
-		{value: false, expect: "bfalse" + sen.Normal},
-		{value: "string", expect: `qstring` + sen.Normal},
-		{value: gen.String("string"), expect: `qstring` + sen.Normal},
-		{value: []interface{}{true, false}, expect: "s[btrues bfalses]" + sen.Normal},
-		{value: gen.Array{gen.Bool(true), gen.Bool(false)}, expect: "s[btrues bfalses]" + sen.Normal},
-		{value: gen.Object{"f": gen.False}, expect: `s{kfs:bfalses}` + sen.Normal},
-		{value: gen.Object{"f": gen.False}, expect: `s{kfs:bfalses}` + sen.Normal, options: &sen.Options{Sort: true}},
+		{value: nil, expect: "nnullx"},
+		{value: true, expect: "btruex"},
+		{value: false, expect: "bfalsex"},
+		{value: "string", expect: `qstringx`},
+		{value: gen.String("string"), expect: `qstringx`},
+		{value: []interface{}{true, false}, expect: "s[xbtruex bfalsexs]x"},
+		{value: gen.Array{gen.Bool(true), gen.Bool(false)}, expect: "s[xbtruex bfalsexs]x"},
+		{value: gen.Object{"f": gen.False}, expect: `s{xkfxs:xbfalsexs}x`},
+		{value: gen.Object{"f": gen.False}, expect: `s{xkfxs:xbfalsexs}x`, options: &sen.Options{Sort: true}},
 		{value: map[string]interface{}{"t": true, "f": false},
-			expect: `s{kfs:bfalses kts:btrues}` + sen.Normal, options: &sen.Options{Sort: true}},
-		{value: gen.Array{gen.True, gen.False}, expect: "s[btrues bfalses]" + sen.Normal},
-		{value: gen.Array{gen.False, gen.True}, expect: "s[bfalses btrues]" + sen.Normal},
-		{value: []interface{}{-1, int8(2), int16(-3), int32(4), int64(-5)}, expect: "s[0-1s 02s 0-3s 04s 0-5s]" + sen.Normal},
-		{value: []interface{}{uint(1), 'A', uint8(2), uint16(3), uint32(4), uint64(5)}, expect: "s[01s 065s 02s 03s 04s 05s]" + sen.Normal},
-		{value: gen.Array{gen.Int(1), gen.Float(1.2)}, expect: "s[01s 01.2s]" + sen.Normal},
-		{value: []interface{}{float32(1.2), float64(2.1)}, expect: "s[01.2s 02.1s]" + sen.Normal},
-		{value: []interface{}{tm}, expect: "s[q1588879759123456789s]" + sen.Normal},
-		{value: gen.Array{gen.Time(tm)}, expect: "s[q1588879759123456789s]" + sen.Normal},
+			expect: `s{xkfxs:xbfalsex ktxs:xbtruexs}x`, options: &sen.Options{Sort: true}},
+		{value: gen.Array{gen.True, gen.False}, expect: "s[xbtruex bfalsexs]x"},
+		{value: gen.Array{gen.False, gen.True}, expect: "s[xbfalsex btruexs]x"},
+		{value: []interface{}{-1, int8(2), int16(-3), int32(4), int64(-5)}, expect: "s[x0-1x 02x 0-3x 04x 0-5xs]x"},
+		{value: []interface{}{uint(1), 'A', uint8(2), uint16(3), uint32(4), uint64(5)}, expect: "s[x01x 065x 02x 03x 04x 05xs]x"},
+		{value: gen.Array{gen.Int(1), gen.Float(1.2)}, expect: "s[x01x 01.2xs]x"},
+		{value: []interface{}{float32(1.2), float64(2.1)}, expect: "s[x01.2x 02.1xs]x"},
+		{value: []interface{}{tm}, expect: "s[xq1588879759123456789xs]x"},
+		{value: gen.Array{gen.Time(tm)}, expect: "s[xq1588879759123456789xs]x"},
 
-		{value: map[string]interface{}{"t": true, "x": nil}, expect: "s{kts:btrues}" + sen.Normal,
+		{value: map[string]interface{}{"t": true, "x": nil}, expect: "s{xktxs:xbtruexs}x",
 			options: &sen.Options{OmitNil: true}},
-		{value: map[string]interface{}{"t": true, "x": nil}, expect: "s{kts:btrues}" + sen.Normal,
+		{value: map[string]interface{}{"t": true, "x": nil}, expect: "s{xktxs:xbtruexs}x",
 			options: &sen.Options{OmitNil: true, Sort: true}},
-		{value: map[string]interface{}{"t": true, "f": false}, expect: "s{\n  kfs: bfalse\n  kts: btrue\ns}" + sen.Normal,
+		{value: map[string]interface{}{"t": true, "f": false}, expect: "s{x\n  kfxs:x bfalsex\n  ktxs:x btruex\ns}x",
 			options: &sen.Options{Sort: true, Indent: 2}},
-		{value: map[string]interface{}{"t": true}, expect: "s{\n  kts: btrue\ns}" + sen.Normal, options: &sen.Options{Indent: 2}},
-		{value: gen.Object{"t": gen.True, "x": nil}, expect: "s{kts:btrues}" + sen.Normal,
+		{value: map[string]interface{}{"t": true}, expect: "s{x\n  ktxs:x btruex\ns}x", options: &sen.Options{Indent: 2}},
+		{value: gen.Object{"t": gen.True, "x": nil}, expect: "s{xktxs:xbtruexs}x",
 			options: &sen.Options{OmitNil: true}},
-		{value: gen.Object{"t": gen.True, "x": nil}, expect: "s{kts:btrues}" + sen.Normal,
+		{value: gen.Object{"t": gen.True, "x": nil}, expect: "s{xktxs:xbtruexs}x",
 			options: &sen.Options{OmitNil: true, Sort: true}},
-		{value: gen.Object{"t": gen.True}, expect: "s{\n  kts: btrue\ns}" + sen.Normal, options: &sen.Options{Indent: 2}},
-		{value: gen.Object{"t": gen.True}, expect: "s{\n  kts: btrue\ns}" + sen.Normal, options: &sen.Options{Indent: 2, Sort: true}},
+		{value: gen.Object{"t": gen.True}, expect: "s{x\n  ktxs:x btruex\ns}x", options: &sen.Options{Indent: 2}},
+		{value: gen.Object{"t": gen.True}, expect: "s{x\n  ktxs:x btruex\ns}x", options: &sen.Options{Indent: 2, Sort: true}},
 
-		{value: &simon{x: 3}, expect: `s{ktypes:qsimons kxs:03s}` + sen.Normal, options: &sen.Options{Sort: true}},
-		{value: &genny{val: 3}, expect: `s{ktypes:qgennys kvals:03s}` + sen.Normal, options: &sen.Options{Sort: true}},
-		{value: &Dummy{Val: 3}, expect: `s{k^s:qDummys kvals:03s}` + sen.Normal, options: &sen.Options{Sort: true, CreateKey: "^"}},
-		{value: &Dummy{Val: 3}, expect: `"{val: 3}"` + sen.Normal, options: &sen.Options{CreateKey: ""}},
+		{value: &simon{x: 3}, expect: `s{xktypexs:xqsimonx kxxs:x03xs}x`, options: &sen.Options{Sort: true}},
+		{value: &genny{val: 3}, expect: `s{xktypexs:xqgennyx kvalxs:x03xs}x`, options: &sen.Options{Sort: true}},
+		{value: &Dummy{Val: 3}, expect: `s{xk^xs:xqDummyx kvalxs:x03xs}x`, options: &sen.Options{Sort: true, CreateKey: "^"}},
+		{value: &Dummy{Val: 3}, expect: `q"{val: 3}"x`, options: &sen.Options{CreateKey: ""}},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %v\n", i, d.value)
@@ -78,6 +79,7 @@ func TestColor(t *testing.T) {
 			d.options.BoolColor = "b"
 			d.options.NumberColor = "0"
 			d.options.StringColor = "q"
+			d.options.NoColor = "x"
 			err = sen.Write(&b, d.value, d.options)
 		} else {
 			err = sen.Write(&b, d.value, opt)
@@ -98,27 +100,28 @@ func TestColorWide(t *testing.T) {
 		BoolColor:   "b",
 		NumberColor: "0",
 		StringColor: "q",
+		NoColor:     "x",
 		Indent:      300,
 		WriteLimit:  2,
 	}
 	err := sen.Write(&b, []interface{}{[]interface{}{true, nil}}, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, 538, len(b.String()))
+	tt.Equal(t, 541, len(b.String()))
 
 	b.Reset()
 	err = sen.Write(&b, gen.Array{gen.Array{gen.True, nil}}, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, 538, len(b.String()))
+	tt.Equal(t, 541, len(b.String()))
 
 	b.Reset()
 	err = sen.Write(&b, map[string]interface{}{"x": map[string]interface{}{"y": true, "z": nil}}, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, 553, len(b.String()))
+	tt.Equal(t, 562, len(b.String()))
 
 	b.Reset()
 	err = sen.Write(&b, gen.Object{"x": gen.Object{"y": gen.True, "z": nil}}, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, 553, len(b.String()))
+	tt.Equal(t, 562, len(b.String()))
 }
 
 func TestColorDeep(t *testing.T) {
@@ -132,6 +135,7 @@ func TestColorDeep(t *testing.T) {
 		BoolColor:   "b",
 		NumberColor: "0",
 		StringColor: "q",
+		NoColor:     "x",
 		Tab:         true,
 		WriteLimit:  2,
 	}
@@ -141,7 +145,7 @@ func TestColorDeep(t *testing.T) {
 	}
 	err := sen.Write(&b, a, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, 1925, len(b.String()))
+	tt.Equal(t, 2012, len(b.String()))
 
 	b.Reset()
 	g := gen.Array{gen.Object{"x": gen.True, "y": gen.False}}
@@ -150,7 +154,7 @@ func TestColorDeep(t *testing.T) {
 	}
 	err = sen.Write(&b, g, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, 1925, len(b.String()))
+	tt.Equal(t, 2012, len(b.String()))
 }
 
 func TestColorShort(t *testing.T) {
@@ -163,6 +167,7 @@ func TestColorShort(t *testing.T) {
 		BoolColor:   "b",
 		NumberColor: "0",
 		StringColor: "q",
+		NoColor:     "x",
 		Indent:      2,
 		WriteLimit:  2,
 	}
@@ -213,16 +218,17 @@ func TestColorObject(t *testing.T) {
 		BoolColor:   "b",
 		NumberColor: "0",
 		StringColor: "q",
+		NoColor:     "x",
 		Indent:      0,
 		WriteLimit:  2,
 	}
 	var b strings.Builder
 	err := sen.Write(&b, map[string]interface{}{"a": 1, "b": 3}, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, 21, len(b.String()))
+	tt.Equal(t, 25, len(b.String()))
 
 	b.Reset()
 	err = sen.Write(&b, gen.Object{"a": gen.True, "b": gen.False}, &opt)
 	tt.Nil(t, err)
-	tt.Equal(t, 28, len(b.String()))
+	tt.Equal(t, 32, len(b.String()))
 }

@@ -123,6 +123,7 @@ func (w *writer) encode(data interface{}, args ...interface{}) (out []byte, err 
 			w.Options.BoolColor = ta.BoolColor
 			w.Options.NumberColor = ta.NumberColor
 			w.Options.StringColor = ta.StringColor
+			w.Options.NoColor = ta.NoColor
 			w.W = sw
 		}
 	}
@@ -142,6 +143,9 @@ func (w *writer) encode(data interface{}, args ...interface{}) (out []byte, err 
 			if err, _ = r.(error); err == nil {
 				err = fmt.Errorf("%v", r)
 				out = []byte{}
+				if w.Color && w.W != nil {
+					_, err = w.W.Write([]byte(w.NoColor))
+				}
 			}
 		}
 	}()
@@ -152,9 +156,6 @@ func (w *writer) encode(data interface{}, args ...interface{}) (out []byte, err 
 		w.Indent = 1
 	}
 	w.fill(tree, 0, false)
-	if w.Color {
-		w.Buf = append(w.Buf, sen.Normal...)
-	}
 	if w.W != nil && 0 < len(w.Buf) {
 		_, err = w.W.Write(w.Buf)
 		w.Buf = w.Buf[:0]
@@ -230,12 +231,6 @@ func (w *writer) build(data interface{}) (n *node) {
 			n = w.buildStringNode(fmt.Sprintf("%v", td))
 		}
 	}
-	if w.W != nil && w.WriteLimit < len(w.Buf) {
-		if _, err := w.W.Write(w.Buf); err != nil {
-			panic(err)
-		}
-		w.Buf = w.Buf[:0]
-	}
 	return
 }
 
@@ -246,7 +241,7 @@ func (w *writer) buildNull() *node {
 		kind: bytesNode,
 	}
 	if w.Color {
-		n.buf = append(append([]byte(w.NullColor), n.buf...), sen.Normal...)
+		n.buf = append(append([]byte(w.NullColor), n.buf...), w.NoColor...)
 	}
 	return &n
 }
@@ -266,7 +261,7 @@ func (w *writer) buildBool(v bool) (n *node) {
 		}
 	}
 	if w.Color {
-		n.buf = append(append([]byte(w.BoolColor), n.buf...), sen.Normal...)
+		n.buf = append(append([]byte(w.BoolColor), n.buf...), w.NoColor...)
 	}
 	return
 }
@@ -278,7 +273,7 @@ func (w *writer) buildInt(v int64) (n *node) {
 	}
 	n.size = len(n.buf)
 	if w.Color {
-		n.buf = append(append([]byte(w.NumberColor), n.buf...), sen.Normal...)
+		n.buf = append(append([]byte(w.NumberColor), n.buf...), w.NoColor...)
 	}
 	return
 }
@@ -290,7 +285,7 @@ func (w *writer) buildFloat32(v float32) (n *node) {
 	}
 	n.size = len(n.buf)
 	if w.Color {
-		n.buf = append(append([]byte(w.NumberColor), n.buf...), sen.Normal...)
+		n.buf = append(append([]byte(w.NumberColor), n.buf...), w.NoColor...)
 	}
 	return
 }
@@ -302,7 +297,7 @@ func (w *writer) buildFloat64(v float64) (n *node) {
 	}
 	n.size = len(n.buf)
 	if w.Color {
-		n.buf = append(append([]byte(w.NumberColor), n.buf...), sen.Normal...)
+		n.buf = append(append([]byte(w.NumberColor), n.buf...), w.NoColor...)
 	}
 	return
 }
@@ -318,7 +313,7 @@ func (w *writer) buildStringNode(v string) (n *node) {
 	n.buf = make([]byte, len(w.Buf))
 	copy(n.buf, w.Buf)
 	if w.Color {
-		n.buf = append(append([]byte(w.StringColor), n.buf...), sen.Normal...)
+		n.buf = append(append([]byte(w.StringColor), n.buf...), w.NoColor...)
 	}
 	return
 }
@@ -374,7 +369,7 @@ func (w *writer) buildTimeNode(v time.Time) (n *node) {
 	copy(n.buf, w.Buf)
 	if w.Color {
 		// TBD could be more detailed or better, have a separate time color
-		n.buf = append(append([]byte(w.StringColor), n.buf...), sen.Normal...)
+		n.buf = append(append([]byte(w.StringColor), n.buf...), w.NoColor...)
 	}
 	return
 }
@@ -459,7 +454,7 @@ func (w *writer) buildMapNode(v map[string]interface{}) (n *node) {
 			n.depth = mn.depth + 1
 		}
 		if w.Color {
-			mn.key = append(append([]byte(w.KeyColor), mn.key...), sen.Normal...)
+			mn.key = append(append([]byte(w.KeyColor), mn.key...), w.NoColor...)
 		}
 	}
 	return
@@ -499,7 +494,7 @@ func (w *writer) buildGenMapNode(v gen.Object) (n *node) {
 			n.depth = mn.depth + 1
 		}
 		if w.Color {
-			mn.key = append(append([]byte(w.KeyColor), mn.key...), sen.Normal...)
+			mn.key = append(append([]byte(w.KeyColor), mn.key...), w.NoColor...)
 		}
 	}
 	return
@@ -511,104 +506,120 @@ func (w *writer) fill(n *node, depth int, flat bool) {
 	case bytesNode:
 		w.Buf = append(w.Buf, n.buf...)
 	case arrayNode:
+		var comma []byte
 		if w.Color {
-			w.Buf = append(w.Buf, w.SyntaxColor...)
-		}
-		w.Buf = append(w.Buf, '[')
-		d2 := depth + 1
-		if flat || (start+n.size < w.edge && n.depth < w.maxDepth) {
-			for i, m := range n.members {
-				if 0 < i {
-					if !w.lazy {
-						w.Buf = append(w.Buf, ',')
-					}
-					w.Buf = append(w.Buf, ' ')
-				}
-				w.fill(m, d2, true)
+			if !w.lazy {
+				comma = append(comma, w.SyntaxColor...)
+				comma = append(comma, ',')
+				comma = append(comma, w.NoColor...)
 			}
+			w.Buf = append(w.Buf, w.SyntaxColor...)
+			w.Buf = append(w.Buf, '[')
+			w.Buf = append(w.Buf, w.NoColor...)
 		} else {
-			x := depth*w.Indent + 1
-			if len(spaces) < x {
-				x = len(spaces)
+			if !w.lazy {
+				comma = append(comma, ',')
 			}
-			is := spaces[0:x]
-			x = d2*w.Indent + 1
-			if len(spaces) < x {
-				x = len(spaces)
-			}
-			cs := spaces[0:x]
-			for i, m := range n.members {
-				if 0 < i && !w.lazy {
-					w.Buf = append(w.Buf, ',')
-				}
-				w.Buf = append(w.Buf, []byte(cs)...)
-				w.fill(m, d2, flat)
-			}
-			w.Buf = append(w.Buf, []byte(is)...)
+			w.Buf = append(w.Buf, '[')
 		}
+		d2 := depth + 1
+		var cs []byte
+		var is []byte
+
+		if flat || (start+n.size < w.edge && n.depth < w.maxDepth) {
+			cs = []byte{' '}
+			flat = true
+		} else {
+			x := d2*w.Indent + 1
+			if len(spaces) < x {
+				flat = true
+			} else {
+				cs = []byte(spaces[0:x])
+				x = depth*w.Indent + 1
+				is = []byte(spaces[0:x])
+			}
+		}
+		for i, m := range n.members {
+			if 0 < i {
+				w.Buf = append(w.Buf, comma...)
+				w.Buf = append(w.Buf, []byte(cs)...)
+			} else if !flat {
+				w.Buf = append(w.Buf, []byte(cs)...)
+			}
+			w.fill(m, d2, flat)
+		}
+		w.Buf = append(w.Buf, []byte(is)...)
 		if w.Color {
 			w.Buf = append(w.Buf, w.SyntaxColor...)
+			w.Buf = append(w.Buf, ']')
+			w.Buf = append(w.Buf, w.NoColor...)
+		} else {
+			w.Buf = append(w.Buf, ']')
 		}
-		w.Buf = append(w.Buf, ']')
 	case mapNode:
+		var comma []byte
 		if w.Color {
-			w.Buf = append(w.Buf, w.SyntaxColor...)
-		}
-		w.Buf = append(w.Buf, '{')
-		d2 := depth + 1
-		if flat || (start+n.size < w.edge && n.depth < w.maxDepth) {
-			for i, m := range n.members {
-				if 0 < i {
-					if !w.lazy {
-						w.Buf = append(w.Buf, ',')
-					}
-					w.Buf = append(w.Buf, ' ')
-				}
-				if w.Color {
-					w.Buf = append(w.Buf, w.KeyColor...)
-				}
-				w.Buf = append(w.Buf, m.key...)
-				if w.Color {
-					w.Buf = append(w.Buf, w.SyntaxColor...)
-					w.Buf = append(w.Buf, ": "...)
-				} else {
-					w.Buf = append(w.Buf, ": "...)
-				}
-				w.fill(m, d2, true)
+			if !w.lazy {
+				comma = append(comma, w.SyntaxColor...)
+				comma = append(comma, ',')
+				comma = append(comma, w.NoColor...)
 			}
+			w.Buf = append(w.Buf, w.SyntaxColor...)
+			w.Buf = append(w.Buf, '{')
+			w.Buf = append(w.Buf, w.NoColor...)
 		} else {
-			x := depth*w.Indent + 1
-			if len(spaces) < x {
-				x = len(spaces)
+			if !w.lazy {
+				comma = append(comma, ',')
 			}
-			is := spaces[0:x]
-			x = d2*w.Indent + 1
-			if len(spaces) < x {
-				x = len(spaces)
-			}
-			cs := spaces[0:x]
-			for i, m := range n.members {
-				if 0 < i && !w.lazy {
-					w.Buf = append(w.Buf, ',')
-				}
-				w.Buf = append(w.Buf, []byte(cs)...)
-				if w.Color {
-					w.Buf = append(w.Buf, w.KeyColor...)
-				}
-				w.Buf = append(w.Buf, m.key...)
-				if w.Color {
-					w.Buf = append(w.Buf, w.SyntaxColor...)
-					w.Buf = append(w.Buf, ": "...)
-				} else {
-					w.Buf = append(w.Buf, ": "...)
-				}
-				w.fill(m, d2, flat)
-			}
-			w.Buf = append(w.Buf, []byte(is)...)
+			w.Buf = append(w.Buf, '{')
 		}
+		d2 := depth + 1
+		var cs []byte
+		var is []byte
+		if flat || (start+n.size < w.edge && n.depth < w.maxDepth) {
+			cs = []byte{' '}
+			flat = true
+		} else {
+			x := d2*w.Indent + 1
+			if len(spaces) < x {
+				flat = true
+			} else {
+				cs = []byte(spaces[0:x])
+				x = depth*w.Indent + 1
+				is = []byte(spaces[0:x])
+			}
+		}
+		for i, m := range n.members {
+			if 0 < i {
+				w.Buf = append(w.Buf, comma...)
+				w.Buf = append(w.Buf, []byte(cs)...)
+			} else if !flat {
+				w.Buf = append(w.Buf, []byte(cs)...)
+			}
+			w.Buf = append(w.Buf, m.key...)
+			if w.Color {
+				w.Buf = append(w.Buf, w.SyntaxColor...)
+				w.Buf = append(w.Buf, ':')
+				w.Buf = append(w.Buf, w.NoColor...)
+				w.Buf = append(w.Buf, ' ')
+			} else {
+				w.Buf = append(w.Buf, ": "...)
+			}
+			w.fill(m, d2, flat)
+		}
+		w.Buf = append(w.Buf, []byte(is)...)
 		if w.Color {
 			w.Buf = append(w.Buf, w.SyntaxColor...)
+			w.Buf = append(w.Buf, '}')
+			w.Buf = append(w.Buf, w.NoColor...)
+		} else {
+			w.Buf = append(w.Buf, '}')
 		}
-		w.Buf = append(w.Buf, '}')
+	}
+	if w.W != nil && w.WriteLimit < len(w.Buf) {
+		if _, err := w.W.Write(w.Buf); err != nil {
+			panic(err)
+		}
+		w.Buf = w.Buf[:0]
 	}
 }

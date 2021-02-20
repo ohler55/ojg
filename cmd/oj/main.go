@@ -40,6 +40,7 @@ var (
 	root        = map[string]interface{}{}
 	showRoot    bool
 	edgeDepth   = 0.0
+	html        = false
 )
 
 func init() {
@@ -58,6 +59,7 @@ func init() {
 	flag.BoolVar(&showFnDocs, "fn", showFnDocs, "describe assembly plan functions")
 	flag.BoolVar(&showRoot, "r", showRoot, "print root if an assemble plan provided")
 	flag.Float64Var(&edgeDepth, "p", edgeDepth, "pretty print with the edge and depth as a float <edge>.<max-depth>")
+	flag.BoolVar(&html, "html", html, "output colored output as HTML")
 }
 
 func main() {
@@ -269,6 +271,15 @@ func writeJSON(v interface{}) {
 		o.Tab = tab
 	}
 	o.Indent = indent
+	if html && color {
+		o.SyntaxColor = sen.HTMLOptions.SyntaxColor
+		o.KeyColor = sen.HTMLOptions.KeyColor
+		o.NullColor = sen.HTMLOptions.NullColor
+		o.BoolColor = sen.HTMLOptions.BoolColor
+		o.NumberColor = sen.HTMLOptions.NumberColor
+		o.StringColor = sen.HTMLOptions.StringColor
+		o.NoColor = sen.HTMLOptions.NoColor
+	}
 	if 0.0 < edgeDepth {
 		_ = pretty.WriteJSON(os.Stdout, v, &o, edgeDepth)
 	} else {
@@ -279,12 +290,18 @@ func writeJSON(v interface{}) {
 
 func writeSEN(v interface{}) {
 	var o sen.Options
-	if bright {
+	switch {
+	case html:
+		o = sen.HTMLOptions
+		o.Color = true
+		o.Sort = sortKeys
+		o.Tab = tab
+	case bright:
 		o = sen.BrightOptions
 		o.Color = true
 		o.Sort = sortKeys
 		o.Tab = tab
-	} else if color || sortKeys || tab {
+	case color || sortKeys || tab:
 		o = sen.DefaultOptions
 		o.Color = color
 		o.Sort = sortKeys

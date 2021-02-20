@@ -116,9 +116,12 @@ func (o *Options) cbuildJSON(data interface{}, depth int) {
 			o.cbuildJSON(alt.Decompose(data, &ao), depth)
 			return
 		} else {
+			o.Buf = append(o.Buf, o.StringColor...)
 			o.BuildString(fmt.Sprintf("%v", td))
 		}
 	}
+	o.Buf = append(o.Buf, o.NoColor...)
+
 	if o.W != nil && o.WriteLimit < len(o.Buf) {
 		if _, err := o.W.Write(o.Buf); err != nil {
 			panic(err)
@@ -130,6 +133,7 @@ func (o *Options) cbuildJSON(data interface{}, depth int) {
 func (o *Options) cbuildArray(n gen.Array, depth int) {
 	o.Buf = append(o.Buf, o.SyntaxColor...)
 	o.Buf = append(o.Buf, '[')
+	o.Buf = append(o.Buf, o.NoColor...)
 
 	d2 := depth + 1
 	var is string
@@ -159,7 +163,6 @@ func (o *Options) cbuildArray(n gen.Array, depth int) {
 	}
 	for j, m := range n {
 		if 0 < j && len(cs) == 0 {
-			o.Buf = append(o.Buf, o.SyntaxColor...)
 			o.Buf = append(o.Buf, ' ')
 		}
 		o.Buf = append(o.Buf, []byte(cs)...)
@@ -173,6 +176,7 @@ func (o *Options) cbuildArray(n gen.Array, depth int) {
 func (o *Options) cbuildSimpleArray(n []interface{}, depth int) {
 	o.Buf = append(o.Buf, o.SyntaxColor...)
 	o.Buf = append(o.Buf, '[')
+	o.Buf = append(o.Buf, o.NoColor...)
 
 	d2 := depth + 1
 	var is string
@@ -202,7 +206,6 @@ func (o *Options) cbuildSimpleArray(n []interface{}, depth int) {
 	}
 	for j, m := range n {
 		if 0 < j && len(cs) == 0 {
-			o.Buf = append(o.Buf, o.SyntaxColor...)
 			o.Buf = append(o.Buf, ' ')
 		}
 		o.Buf = append(o.Buf, []byte(cs)...)
@@ -216,6 +219,7 @@ func (o *Options) cbuildSimpleArray(n []interface{}, depth int) {
 func (o *Options) cbuildObject(n gen.Object, depth int) {
 	o.Buf = append(o.Buf, o.SyntaxColor...)
 	o.Buf = append(o.Buf, '{')
+	o.Buf = append(o.Buf, o.NoColor...)
 
 	d2 := depth + 1
 	var is string
@@ -258,14 +262,15 @@ func (o *Options) cbuildObject(n gen.Object, depth int) {
 			if first {
 				first = false
 			} else if len(cs) == 0 {
-				o.Buf = append(o.Buf, o.SyntaxColor...)
 				o.Buf = append(o.Buf, ' ')
 			}
 			o.Buf = append(o.Buf, []byte(cs)...)
 			o.Buf = append(o.Buf, o.KeyColor...)
 			o.BuildString(k)
+			o.Buf = append(o.Buf, o.NoColor...)
 			o.Buf = append(o.Buf, o.SyntaxColor...)
 			o.Buf = append(o.Buf, ':')
+			o.Buf = append(o.Buf, o.NoColor...)
 			if 0 < o.Indent {
 				o.Buf = append(o.Buf, ' ')
 			}
@@ -279,14 +284,15 @@ func (o *Options) cbuildObject(n gen.Object, depth int) {
 			if first {
 				first = false
 			} else if len(cs) == 0 {
-				o.Buf = append(o.Buf, o.SyntaxColor...)
 				o.Buf = append(o.Buf, ' ')
 			}
 			o.Buf = append(o.Buf, []byte(cs)...)
 			o.Buf = append(o.Buf, o.KeyColor...)
 			o.BuildString(k)
+			o.Buf = append(o.Buf, o.NoColor...)
 			o.Buf = append(o.Buf, o.SyntaxColor...)
 			o.Buf = append(o.Buf, ':')
+			o.Buf = append(o.Buf, o.NoColor...)
 			if 0 < o.Indent {
 				o.Buf = append(o.Buf, ' ')
 			}
@@ -301,6 +307,7 @@ func (o *Options) cbuildObject(n gen.Object, depth int) {
 func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) {
 	o.Buf = append(o.Buf, o.SyntaxColor...)
 	o.Buf = append(o.Buf, '{')
+	o.Buf = append(o.Buf, o.NoColor...)
 
 	d2 := depth + 1
 	var is string
@@ -343,14 +350,15 @@ func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) {
 			if first {
 				first = false
 			} else if len(cs) == 0 {
-				o.Buf = append(o.Buf, o.SyntaxColor...)
 				o.Buf = append(o.Buf, ' ')
 			}
 			o.Buf = append(o.Buf, []byte(cs)...)
 			o.Buf = append(o.Buf, o.KeyColor...)
 			o.BuildString(k)
+			o.Buf = append(o.Buf, o.NoColor...)
 			o.Buf = append(o.Buf, o.SyntaxColor...)
 			o.Buf = append(o.Buf, ':')
+			o.Buf = append(o.Buf, o.NoColor...)
 			if 0 < o.Indent {
 				o.Buf = append(o.Buf, ' ')
 			}
@@ -364,14 +372,15 @@ func (o *Options) cbuildSimpleObject(n map[string]interface{}, depth int) {
 			if first {
 				first = false
 			} else if len(cs) == 0 {
-				o.Buf = append(o.Buf, o.SyntaxColor...)
 				o.Buf = append(o.Buf, ' ')
 			}
 			o.Buf = append(o.Buf, []byte(cs)...)
 			o.Buf = append(o.Buf, o.KeyColor...)
 			o.BuildString(k)
+			o.Buf = append(o.Buf, o.NoColor...)
 			o.Buf = append(o.Buf, o.SyntaxColor...)
 			o.Buf = append(o.Buf, ':')
+			o.Buf = append(o.Buf, o.NoColor...)
 			if 0 < o.Indent {
 				o.Buf = append(o.Buf, ' ')
 			}

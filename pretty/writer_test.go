@@ -4,6 +4,7 @@ package pretty_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,6 +16,52 @@ import (
 )
 
 const sample = `[true false [3 2 1] {a:1 b:2 c:3 d:[x y z []]}]`
+
+var testColor = sen.Options{
+	Color:       true,
+	SyntaxColor: "s",
+	KeyColor:    "k",
+	NullColor:   "n",
+	BoolColor:   "b",
+	NumberColor: "0",
+	StringColor: "q",
+	NoColor:     "x",
+	TimeFormat:  time.RFC3339Nano,
+}
+
+type Dummy struct {
+	Val int
+}
+
+func (d *Dummy) String() string {
+	return fmt.Sprintf("{val: %d}", d.Val)
+}
+
+type genny struct {
+	val int
+}
+
+func (g *genny) Generic() gen.Node {
+	return gen.Object{"type": gen.String("genny"), "val": gen.Int(g.val)}
+}
+
+type Pan int
+
+func (p Pan) Simplify() interface{} {
+	panic("force fail")
+}
+
+type shortWriter struct {
+	max int
+}
+
+func (w *shortWriter) Write(p []byte) (n int, err error) {
+	w.max -= len(p)
+	if w.max < 0 {
+		return 0, fmt.Errorf("fail now")
+	}
+	return len(p), nil
+}
 
 func TestJSONDepth(t *testing.T) {
 	val, err := sen.Parse([]byte(sample))
@@ -166,11 +213,15 @@ func TestInit(t *testing.T) {
 
 func TestTypes(t *testing.T) {
 	when := time.Date(2021, 2, 9, 10, 11, 12, 111, time.UTC)
-	val := []interface{}{nil, 1.25, float32(1.5), "abc", when}
+	val := []interface{}{nil, 1.25, float32(1.5), "abc", when, map[string]interface{}{}}
 	opt := sen.DefaultOptions
 	opt.TimeFormat = time.RFC3339Nano
 	s := pretty.JSON(val, &opt)
-	tt.Equal(t, `[null, 1.25, 1.5, "abc", "2021-02-09T10:11:12.000000111Z"]`, s)
+	tt.Equal(t, `[null, 1.25, 1.5, "abc", "2021-02-09T10:11:12.000000111Z", {}]`, s)
+
+	opt = testColor
+	s = pretty.JSON(val, &opt)
+	tt.Equal(t, `s[xnnullxs,x 01.25xs,x 01.5xs,x q"abc"xs,x q"2021-02-09T10:11:12.000000111Z"xs,x s{xs}xs]x`, s)
 }
 
 func TestQuotedString(t *testing.T) {
@@ -214,12 +265,6 @@ func TestGen(t *testing.T) {
 ]`, s)
 }
 
-type Pan int
-
-func (p Pan) Simplify() interface{} {
-	panic("force fail")
-}
-
 func TestPanic(t *testing.T) {
 	s := pretty.JSON(Pan(1), &sen.Options{})
 	tt.Equal(t, "", s)
@@ -232,21 +277,141 @@ func TestSEN(t *testing.T) {
 	a, _ := val.([]interface{})
 	a = append(a, when)
 	tt.Nil(t, err)
-	opt := sen.DefaultOptions
-	opt.Color = true
-	opt.TimeFormat = time.RFC3339Nano
+	opt := testColor
 	s := pretty.SEN(a, &opt)
 
-	// Uncomment the next two lines to see the colored string and the
-	// corresponding hex.
-	// fmt.Printf("*** %s\n", s)
-	// fmt.Printf("*** % 2x\n", s)
-	tt.Equal(t,
-		"1b 5b 6d 5b 0a 20 20 1b 5b 33 33 6d 74 72 75 65 1b 5b 6d 0a 20 20 1b 5b 6d 7b 1b 5b 33 34 6d 1b "+
-			"5b 33 34 6d 61 62 63 1b 5b 6d 1b 5b 6d 3a 20 1b 5b 33 36 6d 31 32 33 1b 5b 6d 20 1b 5b 33 34 6d "+
-			"1b 5b 33 34 6d 64 65 66 1b 5b 6d 1b 5b 6d 3a 20 1b 5b 33 31 6d 6e 75 6c 6c 1b 5b 6d 1b 5b 6d 7d "+
-			"0a 20 20 1b 5b 33 36 6d 31 2e 32 35 1b 5b 6d 0a 20 20 1b 5b 33 32 6d 78 79 7a 1b 5b 6d 0a 20 20 "+
-			"1b 5b 33 32 6d 22 32 30 32 31 2d 30 32 2d 30 39 54 31 30 3a 31 31 3a 31 32 2e 30 30 30 30 30 30 "+
-			"31 31 31 5a 22 1b 5b 6d 0a 1b 5b 6d 5d 1b 5b 6d",
-		fmt.Sprintf("% 2x", s))
+	tt.Equal(t, `s[x
+  btruex
+  s{xkabcxs:x 0123x kdefxs:x nnullxs}x
+  01.25x
+  qxyzx
+  q"2021-02-09T10:11:12.000000111Z"x
+s]x`, s)
+}
+
+func TestSENGenMap(t *testing.T) {
+	val := gen.Object{"a": gen.Int(1), "b": gen.Int(2)}
+	opt := testColor
+	s := pretty.SEN(val, &opt)
+	tt.Equal(t, `s{xkaxs:x 01x kbxs:x 02xs}x`, s)
+}
+
+func TestDeep(t *testing.T) {
+	val := []interface{}{}
+	for i := 0; i < 10; i++ {
+		val = []interface{}{val}
+	}
+	opt := sen.DefaultOptions
+	s := pretty.SEN(val, &opt, 10.1)
+	tt.Equal(t, `[
+ [
+  [
+   [
+    [
+     [
+      [
+       [
+        [
+         [
+          [
+          ]
+         ]
+        ]
+       ]
+      ]
+     ]
+    ]
+   ]
+  ]
+ ]
+]`, s)
+
+	// Deeper still to hit the max indent.
+	for i := 0; i < 120; i++ {
+		val = []interface{}{val}
+	}
+	s = pretty.SEN(val, &opt, 120.1)
+	tt.Equal(t, 16902, len(s))
+
+	// Deep map
+	m := map[string]interface{}{}
+	for i := 0; i < 130; i++ {
+		m = map[string]interface{}{"o": m}
+	}
+	s = pretty.SEN(m, &opt, 120.1)
+	tt.Equal(t, 17292, len(s))
+}
+
+func TestWriteJSON(t *testing.T) {
+	val, err := sen.Parse([]byte(sample))
+	tt.Nil(t, err)
+	opt := sen.DefaultOptions
+	opt.WriteLimit = 20
+	var b strings.Builder
+	err = pretty.WriteJSON(&b, val, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, `[
+  true,
+  false,
+  [3, 2, 1],
+  {
+    "a": 1,
+    "b": 2,
+    "c": 3,
+    "d": ["x", "y", "z", []]
+  }
+]`, b.String())
+}
+
+func TestWriteSEN(t *testing.T) {
+	val, err := sen.Parse([]byte(sample))
+	tt.Nil(t, err)
+	opt := sen.DefaultOptions
+	opt.WriteLimit = 20
+	var b strings.Builder
+	err = pretty.WriteSEN(&b, val, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, `[
+  true
+  false
+  [3 2 1]
+  {
+    a: 1
+    b: 2
+    c: 3
+    d: [x y z []]
+  }
+]`, b.String())
+}
+
+func TestWritePanic(t *testing.T) {
+	opt := testColor
+	var b strings.Builder
+	err := pretty.WriteSEN(&b, Pan(1), &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, "x", b.String())
+}
+
+func TestWriteShort(t *testing.T) {
+	opt := sen.DefaultOptions
+	opt.WriteLimit = 2
+	err := pretty.WriteJSON(&shortWriter{max: 3}, []interface{}{"abcdef"}, &opt)
+	tt.NotNil(t, err)
+}
+
+func TestGenericer(t *testing.T) {
+	s := pretty.JSON(&genny{val: 3})
+	tt.Equal(t, `{"type": "genny", "val": 3}`, s)
+}
+
+func TestCreateKey(t *testing.T) {
+	opt := sen.DefaultOptions
+	opt.CreateKey = "^"
+	s := pretty.JSON(&Dummy{Val: 3}, &opt)
+	tt.Equal(t, `{"^": "Dummy", "val": 3}`, s)
+}
+
+func TestAsString(t *testing.T) {
+	s := pretty.JSON(&Dummy{Val: 3})
+	tt.Equal(t, `"{val: 3}"`, s)
 }
