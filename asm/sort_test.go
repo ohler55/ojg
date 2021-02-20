@@ -29,7 +29,7 @@ func TestSortDeep(t *testing.T) {
          ]`,
 		"{src: []}",
 	)
-	tt.Equal(t, `[{x:1} {x:2} {x:5}]`, sen.String(root["asm"], &sopt))
+	tt.Equal(t, `[{x:1}{x:2}{x:5}]`, sen.String(root["asm"], &sopt))
 }
 
 func TestSortTime(t *testing.T) {
