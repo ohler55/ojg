@@ -141,9 +141,6 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	} else {
 		o.buildJSON(data, 0)
 	}
-	if o.Color {
-		o.buf = append(o.buf, Normal...)
-	}
 	if err == nil && w != nil && 0 < len(o.buf) {
 		_, err = o.w.Write(o.buf)
 	}

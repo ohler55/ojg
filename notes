@@ -1,12 +1,6 @@
 
 ----------------
 
-- sen
- - get rid of extra space after } and ]
- - can dates be parsed easily, not times, just dates
-
-- benchmarks back to normal
-
  - regex op =~
   - /^xyz&/
  - in addition to parse callback support chan for results

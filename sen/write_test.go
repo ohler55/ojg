@@ -88,6 +88,8 @@ func TestString(t *testing.T) {
 		{value: []interface{}{true, nil}, expect: "[true null]"},
 		{value: gen.Array{gen.Bool(true), nil}, expect: "[true null]"},
 		{value: []interface{}{true, false}, indent: 2, expect: "[\n  true\n  false\n]"},
+		{value: []interface{}{[]interface{}{}, []interface{}{}}, expect: "[[][]]"},
+		{value: []interface{}{map[string]interface{}{}, map[string]interface{}{}}, expect: "[{}{}]"},
 		{value: gen.Array{gen.True, gen.False}, indent: 2, expect: "[\n  true\n  false\n]"},
 		{value: map[string]interface{}{"t": true, "f": false}, expect: `{f:false t:true}`, options: &sen.Options{Sort: true}},
 		{value: gen.Object{"t": gen.True, "f": gen.False}, expect: `{f:false t:true}`, options: &sen.Options{Sort: true}},

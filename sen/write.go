@@ -319,10 +319,16 @@ func (o *Options) buildArray(n gen.Array, depth int) {
 		}
 		o.Buf = append(o.Buf, []byte(is)...)
 	} else {
+		var prev interface{}
 		for j, m := range n {
 			if 0 < j {
-				o.Buf = append(o.Buf, ' ')
+				switch prev.(type) {
+				case []interface{}, map[string]interface{}:
+				default:
+					o.Buf = append(o.Buf, ' ')
+				}
 			}
+			prev = m
 			o.buildSen(m, depth)
 		}
 	}
@@ -365,10 +371,16 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) {
 		}
 		o.Buf = append(o.Buf, []byte(is)...)
 	} else {
+		var prev interface{}
 		for j, m := range n {
 			if 0 < j {
-				o.Buf = append(o.Buf, ' ')
+				switch prev.(type) {
+				case []interface{}, map[string]interface{}:
+				default:
+					o.Buf = append(o.Buf, ' ')
+				}
 			}
+			prev = m
 			o.buildSen(m, depth)
 		}
 	}
