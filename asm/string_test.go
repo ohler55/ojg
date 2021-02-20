@@ -50,10 +50,10 @@ func TestStringConv(t *testing.T) {
 	opt.Indent = 2
 	tt.Equal(t,
 		`{
-  a: 1
-  b: 0x01
-  c: 2.2
-  d: 2.200000e+00
+  a: "1"
+  b: "0x01"
+  c: "2.2"
+  d: "2.200000e+00"
   e: "2021-02-09T01:02:03.123456789Z"
   f: "09 Feb 2021"
   g: true

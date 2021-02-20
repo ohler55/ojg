@@ -131,3 +131,15 @@ func senStringSort(b *testing.B) {
 		_ = sen.String(data, &opt)
 	}
 }
+
+func senWriteIndent(b *testing.B) {
+	data := loadSample()
+	var w noWriter
+	b.ResetTimer()
+	opt := oj.Options{OmitNil: true, Indent: 2}
+	for n := 0; n < b.N; n++ {
+		if err := sen.Write(w, data, &opt); err != nil {
+			log.Fatal(err)
+		}
+	}
+}

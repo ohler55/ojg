@@ -98,6 +98,9 @@ type Options struct {
 	// StringColor is the color for a string in the JSON output.
 	StringColor string
 
+	// NoColor turns the color off.
+	NoColor string
+
 	// UseTags if true will use the json annotation tags when marhsalling,
 	// writing, or decomposing an struct. If no tag is present then the
 	// KeyExact flag is referenced to determine the key.

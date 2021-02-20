@@ -4,9 +4,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.6.0] - [unreleased]
+## [1.6.0] - 2021-02-19
 ### Added
 - Added assembly plan package and cmd/oj option that allows assembling a new JSON from parsed data.
+- Added sen.Parse() and sen.ParseReader() that use a new sen.DefaultParser
+- Added the pretty package for prettier JSON layout.
+- Added HTMLOptions for generating HTML color styled text.
 
 ## [1.5.0] - 2021-02-09
 ### Fixed

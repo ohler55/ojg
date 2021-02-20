@@ -19,7 +19,13 @@ const (
 	readBufSize   = 4096
 )
 
-var emptySlice = []interface{}{}
+var (
+	emptySlice = []interface{}{}
+
+	// DefaultParser is the default parser. Like any other instance of the
+	// parser it can not be used to parse concurrently.
+	DefaultParser = Parser{}
+)
 
 // Parser is a reusable JSON parser. It can be reused for multiple parsings
 // which allows buffer reuse for a performance advantage.
@@ -46,6 +52,16 @@ type Parser struct {
 
 	// OnlyOne returns an error if more than one JSON is in the string or stream.
 	OnlyOne bool
+}
+
+// Parse a JSON string in to simple types. An error is returned if not valid JSON.
+func Parse(buf []byte, args ...interface{}) (interface{}, error) {
+	return DefaultParser.Parse(buf, args...)
+}
+
+// ParseReader a JSON io.Reader. An error is returned if not valid JSON.
+func ParseReader(r io.Reader, args ...interface{}) (data interface{}, err error) {
+	return DefaultParser.ParseReader(r, args...)
 }
 
 // Parse a JSON string in to simple types. An error is returned if not valid JSON.

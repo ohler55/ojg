@@ -4,6 +4,7 @@ package sen
 
 import (
 	"io"
+	"unicode/utf8"
 )
 
 const (
@@ -94,11 +95,15 @@ type Options struct {
 	// StringColor is the color for a string in the JSON output.
 	StringColor string
 
-	buf []byte
-	utf []byte
-	w   io.Writer
+	// NoColor turns the color off.
+	NoColor string
+
+	Buf []byte
+	Utf []byte
+	W   io.Writer
 }
 
+// DefaultOptions are common defaults.
 var DefaultOptions = Options{
 	InitSize:    256,
 	SyntaxColor: Normal,
@@ -107,9 +112,12 @@ var DefaultOptions = Options{
 	BoolColor:   Yellow,
 	NumberColor: Cyan,
 	StringColor: Green,
-	buf:         make([]byte, 0, 256),
+	NoColor:     Normal,
+	Buf:         make([]byte, 0, 256),
+	Utf:         make([]byte, utf8.UTFMax),
 }
 
+// BrightOptions bright color options.
 var BrightOptions = Options{
 	InitSize:    256,
 	SyntaxColor: Normal,
@@ -118,5 +126,22 @@ var BrightOptions = Options{
 	BoolColor:   BrightYellow,
 	NumberColor: BrightCyan,
 	StringColor: BrightGreen,
-	buf:         make([]byte, 0, 256),
+	NoColor:     Normal,
+	Buf:         make([]byte, 0, 256),
+	Utf:         make([]byte, utf8.UTFMax),
+}
+
+// HTMLOptions defines color options for generating colored HTML. The encoding
+// is suitable for use in a <pre> element.
+var HTMLOptions = Options{
+	InitSize:    256,
+	SyntaxColor: "<span>",
+	KeyColor:    `<span style="color:#44f">`,
+	NullColor:   `<span style="color:red">`,
+	BoolColor:   `<span style="color:#a40">`,
+	NumberColor: `<span style="color:#04a">`,
+	StringColor: `<span style="color:green">`,
+	NoColor:     "</span>",
+	Buf:         make([]byte, 0, 256),
+	Utf:         make([]byte, utf8.UTFMax),
 }

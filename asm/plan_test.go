@@ -20,7 +20,7 @@ func TestPlanSimplify(t *testing.T) {
 			},
 		},
 	}
-	tt.Equal(t, "[fun [+ 3 4] [list 1 2 3]]", sen.String(&p), "plan simplify")
+	tt.Equal(t, "[fun [+ 3 4][list 1 2 3]]", sen.String(&p), "plan simplify")
 }
 
 func TestPlanNil(t *testing.T) {

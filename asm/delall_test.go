@@ -21,7 +21,7 @@ func TestDelall(t *testing.T) {
          ]`,
 		"{src: [1 2 3]}",
 	)
-	tt.Equal(t, "[{two:2} {two:5}]", sen.String(root["asm"]))
+	tt.Equal(t, "[{two:2}{two:5}]", sen.String(root["asm"]))
 }
 
 func TestDelallExprError(t *testing.T) {

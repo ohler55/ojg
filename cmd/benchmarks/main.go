@@ -62,6 +62,7 @@ func main() {
 		filename = flag.Args()[0]
 	}
 	gen.TimeFormat = "nano"
+
 	benchSuite("Parse string/[]byte", []*bench{
 		{pkg: "json", name: "Unmarshal", fun: goParse},
 		{pkg: "oj", name: "Parse", fun: ojParse},
@@ -96,6 +97,7 @@ func main() {
 		{pkg: "json", name: "Decode", fun: goDecodeReader},
 		{pkg: "oj", name: "Valdate", fun: ojValidateReader},
 	})
+
 	benchSuite("to JSON", []*bench{
 		{pkg: "json", name: "Marshal", fun: marshalJSON},
 		{pkg: "oj", name: "JSON", fun: ojJSON},
@@ -105,15 +107,21 @@ func main() {
 		{pkg: "json", name: "Marshal", fun: marshalJSONIndent},
 		{pkg: "oj", name: "JSON", fun: ojJSONIndent},
 		{pkg: "sen", name: "String", fun: senStringIndent},
+		{pkg: "pretty", name: "JSON", fun: prettyJSON},
+		{pkg: "pretty", name: "SEN", fun: prettySEN},
 	})
 	benchSuite("to JSON with indentation and sorted keys", []*bench{
 		{pkg: "oj", name: "JSON", fun: ojJSONSort},
 		{pkg: "sen", name: "String", fun: senStringSort},
+		{pkg: "pretty", name: "JSON", fun: prettyJSON},
+		{pkg: "pretty", name: "SEN", fun: prettySEN},
 	})
-
 	benchSuite("Write indented JSON", []*bench{
 		{pkg: "json", name: "Encode", fun: jsonEncodeIndent},
 		{pkg: "oj", name: "Write", fun: ojWriteIndent},
+		{pkg: "sen", name: "Write", fun: senWriteIndent},
+		{pkg: "pretty", name: "WriteJSON", fun: prettyWriteJSON},
+		{pkg: "pretty", name: "WriteSEN", fun: prettyWriteSEN},
 	})
 
 	benchSuite("Convert or Alter", []*bench{
@@ -127,6 +135,7 @@ func main() {
 	benchSuite("JSONPath First  $..a[2].c", []*bench{
 		{pkg: "jp", name: "First", fun: jpFirst},
 	})
+
 	fmt.Println()
 	fmt.Println(" Higher values (longer bars) are better in all cases. The bar graph compares the")
 	fmt.Println(" parsing performance. The lighter colored bar is the reference, usually the go")
@@ -181,7 +190,7 @@ func benchSuite(title string, suite []*bench) {
 			frac := int(size*8.0) - (int(size) * 8)
 			bar += string([]rune(blocks)[frac : frac+1])
 		}
-		fmt.Printf(" %10s %s %3.2f\n", b.pkg, bar, x)
+		fmt.Printf(" %10s.%-12s %s %3.2f\n", b.pkg, b.name, bar, x)
 	}
 }
 
