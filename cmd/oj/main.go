@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/asm"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
@@ -18,7 +19,7 @@ import (
 	"github.com/ohler55/ojg/sen"
 )
 
-const version = "1.6.0"
+const version = "1.7.0"
 
 var (
 	indent     = 2
@@ -29,6 +30,7 @@ var (
 	senOut     = false
 	tab        = false
 	showFnDocs = false
+	showConf   = false
 
 	// If true wrap extracts with an array.
 	wrapExtract = false
@@ -41,6 +43,7 @@ var (
 	showRoot    bool
 	edgeDepth   = 0.0
 	html        = false
+	confFile    = ""
 )
 
 func init() {
@@ -56,10 +59,13 @@ func init() {
 	flag.Var(&matchValue{}, "m", "match equation/script")
 	flag.BoolVar(&showVersion, "version", showVersion, "display version and exit")
 	flag.StringVar(&planDef, "a", planDef, "assembly plan or plan file using @<plan>")
-	flag.BoolVar(&showFnDocs, "fn", showFnDocs, "describe assembly plan functions")
 	flag.BoolVar(&showRoot, "r", showRoot, "print root if an assemble plan provided")
 	flag.Float64Var(&edgeDepth, "p", edgeDepth, "pretty print with the edge and depth as a float <edge>.<max-depth>")
 	flag.BoolVar(&html, "html", html, "output colored output as HTML")
+	flag.StringVar(&confFile, "f", confFile, "configuration file (see -help-config)")
+	flag.BoolVar(&showFnDocs, "fn", showFnDocs, "describe assembly plan functions")
+	flag.BoolVar(&showFnDocs, "help-fn", showFnDocs, "describe assembly plan functions")
+	flag.BoolVar(&showConf, "help-config", showConf, "describe .oj-config.sen format")
 }
 
 func main() {
@@ -108,16 +114,35 @@ a decimal.
 		flag.PrintDefaults()
 		fmt.Fprintln(os.Stderr)
 	}
-	flag.Parse()
-
+	flag.Parse() // get config file if specified
 	if showVersion {
 		fmt.Printf("oj %s\n", version)
+		os.Exit(0)
+	}
+	if showConf {
+		displayConf()
 		os.Exit(0)
 	}
 	if showFnDocs {
 		displayFnDocs()
 		os.Exit(0)
 	}
+	if err := run(); err != nil {
+		fmt.Fprintf(os.Stderr, "*-*-* %s\n", err)
+		os.Exit(1)
+	}
+}
+
+func run() (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err, _ = r.(error)
+		}
+	}()
+	loadConfig()
+
+	flag.Parse() // load again to over-ride loaded config
+
 	var input []byte
 	var files []string
 	for _, arg := range flag.Args() {
@@ -146,7 +171,6 @@ a decimal.
 		}
 	}
 	var p oj.SimpleParser
-	var err error
 	if lazy {
 		p = &sen.Parser{}
 	} else {
@@ -164,13 +188,11 @@ a decimal.
 		}
 		var pd interface{}
 		if pd, err = (&sen.Parser{}).Parse([]byte(planDef)); err != nil {
-			fmt.Fprintf(os.Stderr, "*-*-* %s\n", err)
-			os.Exit(1)
+			panic(err)
 		}
 		plist, _ := pd.([]interface{})
 		if len(plist) == 0 {
-			fmt.Fprintf(os.Stderr, "*-*-* assemble pkan not an array\n")
-			os.Exit(1)
+			panic(fmt.Errorf("assemble plan not an array"))
 		}
 		plan = asm.NewPlan(plist)
 	}
@@ -184,18 +206,19 @@ a decimal.
 				f.Close()
 			}
 			if err != nil {
-				break
+				panic(err)
 			}
 		}
 	}
 	if 0 < len(input) {
-		_, err = p.Parse(input, write)
+		if _, err = p.Parse(input, write); err != nil {
+			panic(err)
+		}
 	}
 	if len(files) == 0 && len(input) == 0 {
-		_, err = p.ParseReader(os.Stdin, write)
-	}
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "*-*-* %s\n", err)
+		if _, err = p.ParseReader(os.Stdin, write); err != nil {
+			panic(err)
+		}
 	}
 	if showRoot && plan != nil {
 		plan = nil
@@ -203,6 +226,7 @@ a decimal.
 		delete(root, "asm")
 		write(root)
 	}
+	return
 }
 
 func write(v interface{}) bool {
@@ -346,6 +370,170 @@ func (mv matchValue) Set(s string) error {
 	return err
 }
 
+func loadConfig() {
+	var conf interface{}
+	if 0 < len(confFile) {
+		f, err := os.Open(confFile)
+		if err != nil {
+			panic(err)
+		}
+		if conf, err = sen.ParseReader(f); err != nil {
+			panic(err)
+		}
+		applyConf(conf)
+	}
+	home := os.Getenv("HOME")
+	for _, path := range []string{
+		"./.oj-config.sen",
+		"./.oj-config.json",
+		home + "/.oj-config.sen",
+		home + "/.oj-config.json",
+	} {
+		f, err := os.Open(path)
+		if err == nil {
+			if conf, err = sen.ParseReader(f); err == nil {
+				applyConf(conf)
+				return
+			}
+		}
+	}
+}
+
+func applyConf(conf interface{}) {
+	bright, _ = jp.C("bright").First(conf).(bool)
+	color, _ = jp.C("color").First(conf).(bool)
+	for _, v := range jp.C("format").C("indent").Get(conf) {
+		indent = int(alt.Int(v))
+	}
+	for _, v := range jp.C("format").C("tab").Get(conf) {
+		tab = alt.Bool(v)
+	}
+	for _, v := range jp.C("format").C("pretty").Get(conf) {
+		edgeDepth = alt.Float(v)
+	}
+	lazy, _ = jp.C("lazy").First(conf).(bool)
+	senOut, _ = jp.C("sen").First(conf).(bool)
+
+	setOptionsColor(conf, "bool", setBoolColor)
+	setOptionsColor(conf, "key", setKeyColor)
+	setOptionsColor(conf, "no-color", setNoColor)
+	setOptionsColor(conf, "null", setNullColor)
+	setOptionsColor(conf, "number", setNumberColor)
+	setOptionsColor(conf, "string", setStringColor)
+	setOptionsColor(conf, "syntax", setSyntaxColor)
+
+	setHTMLColor(conf, "bool", &sen.HTMLOptions.BoolColor)
+	setHTMLColor(conf, "key", &sen.HTMLOptions.KeyColor)
+	setHTMLColor(conf, "no-color", &sen.HTMLOptions.NoColor)
+	setHTMLColor(conf, "null", &sen.HTMLOptions.NullColor)
+	setHTMLColor(conf, "number", &sen.HTMLOptions.NumberColor)
+	setHTMLColor(conf, "string", &sen.HTMLOptions.StringColor)
+	setHTMLColor(conf, "syntax", &sen.HTMLOptions.SyntaxColor)
+}
+
+func setOptionsColor(conf interface{}, key string, fun func(color string)) {
+	for _, v := range jp.C("colors").C(key).Get(conf) {
+		fun(pickColor(alt.String(v)))
+	}
+}
+
+func setBoolColor(color string) {
+	oj.DefaultOptions.BoolColor = color
+	oj.BrightOptions.BoolColor = color
+	sen.DefaultOptions.BoolColor = color
+	sen.BrightOptions.BoolColor = color
+}
+
+func setKeyColor(color string) {
+	oj.DefaultOptions.KeyColor = color
+	oj.BrightOptions.KeyColor = color
+	sen.DefaultOptions.KeyColor = color
+	sen.BrightOptions.KeyColor = color
+}
+
+func setNoColor(color string) {
+	oj.DefaultOptions.NoColor = color
+	oj.BrightOptions.NoColor = color
+	sen.DefaultOptions.NoColor = color
+	sen.BrightOptions.NoColor = color
+}
+
+func setNullColor(color string) {
+	oj.DefaultOptions.NullColor = color
+	oj.BrightOptions.NullColor = color
+	sen.DefaultOptions.NullColor = color
+	sen.BrightOptions.NullColor = color
+}
+
+func setNumberColor(color string) {
+	oj.DefaultOptions.NumberColor = color
+	oj.BrightOptions.NumberColor = color
+	sen.DefaultOptions.NumberColor = color
+	sen.BrightOptions.NumberColor = color
+}
+
+func setStringColor(color string) {
+	oj.DefaultOptions.StringColor = color
+	oj.BrightOptions.StringColor = color
+	sen.DefaultOptions.StringColor = color
+	sen.BrightOptions.StringColor = color
+}
+
+func setSyntaxColor(color string) {
+	oj.DefaultOptions.SyntaxColor = color
+	oj.BrightOptions.SyntaxColor = color
+	sen.DefaultOptions.SyntaxColor = color
+	sen.BrightOptions.SyntaxColor = color
+}
+
+func setHTMLColor(conf interface{}, key string, sp *string) {
+	for _, v := range jp.C("colors").C(key).Get(conf) {
+		*sp = pickColor(alt.String(v))
+	}
+}
+
+func pickColor(s string) (color string) {
+	switch strings.ToLower(s) {
+	case "normal":
+		color = "\x1b[m"
+	case "black":
+		color = "\x1b[30m"
+	case "red":
+		color = "\x1b[31m"
+	case "green":
+		color = "\x1b[32m"
+	case "yellow":
+		color = "\x1b[33m"
+	case "blue":
+		color = "\x1b[34m"
+	case "magenta":
+		color = "\x1b[35m"
+	case "cyan":
+		color = "\x1b[36m"
+	case "white":
+		color = "\x1b[37m"
+	case "gray":
+		color = "\x1b[90m"
+	case "bright-red":
+		color = "\x1b[91m"
+	case "bright-green":
+		color = "\x1b[92m"
+	case "bright-yellow":
+		color = "\x1b[93m"
+	case "bright-blue":
+		color = "\x1b[94m"
+	case "bright-magenta":
+		color = "\x1b[95m"
+	case "bright-cyan":
+		color = "\x1b[96m"
+	case "bright-white":
+		color = "\x1b[97m"
+	default:
+		panic(fmt.Errorf("%s is not a valid color choice", s))
+	}
+	return
+}
+
 func displayFnDocs() {
 	fmt.Printf(`
 An assembly plan is described by a JSON document or a SEN document. The format
@@ -376,4 +564,63 @@ The functions available are:
 		b = append(b, fmt.Sprintf("  %10s: %s\n\n", k, strings.ReplaceAll(docs[k], "\n", "\n              "))...)
 	}
 	fmt.Println(string(b))
+}
+
+func displayConf() {
+	fmt.Printf(`
+If an oj configuration file is present in the local directory or the home
+directory that file is used to set the defaults for oj. The file can be in
+either SEN or JSON format. The paths check, in order are:
+
+  ./.oj-config.sen
+  ./.oj-config.json
+  ~/.oj-config.sen
+  ~/.oj-config.json
+
+The file format (SEN with comments) is:
+
+{
+  bright: true // Color if true will colorize the output with bright colors.
+  color: false // Color if true will colorize the output. The bright option takes precedence.
+  colors: {
+    // Color values can be one of the following:
+    //   normal
+    //   black
+    //   red
+    //   green
+    //   yellow
+    //   blue
+    //   magenta
+    //   cyan
+    //   white
+    //   gray
+    //   bright-red
+    //   bright-green
+    //   bright-yellow
+    //   bright-blue
+    //   bright-magenta
+    //   bright-cyan
+    //   bright-white
+    syntax: normal
+    key: bright-blue
+    null: bright-red
+    bool: bright-yellow
+    number: bright-cyan
+    string: bright-green
+    no-color: normal // NoColor turns the color off.
+  }
+  format: {indent: 2 tab: false pretty: 80.3}
+  html: {
+    syntax: "<span>"
+    key: "<span style=\"color:#44f\">"
+    null: "<span style=\"color:red\">"
+    bool: "<span style=\"color:#a40\">"
+    number: "<span style=\"color:#04a\">"
+    string: "<span style=\"color:green\">"
+    no-color: "</span>"
+  }
+  lazy: true // -z option, lazy read for SEN format
+  sen: true
+}
+`)
 }

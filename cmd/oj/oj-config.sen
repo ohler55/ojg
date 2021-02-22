@@ -1,0 +1,44 @@
+// Sample .oj-config.sen file.
+{
+  bright: true // Color if true will colorize the output with bright colors.
+  color: false // Color if true will colorize the output. The bright option takes precedence.
+  colors: {
+    // Color values can be one of the following:
+    //   normal
+    //   black
+    //   red
+    //   green
+    //   yellow
+    //   blue
+    //   magenta
+    //   cyan
+    //   white
+    //   gray
+    //   bright-red
+    //   bright-green
+    //   bright-yellow
+    //   bright-blue
+    //   bright-magenta
+    //   bright-cyan
+    //   bright-white
+    syntax: normal
+    key: bright-blue
+    null: bright-red
+    bool: bright-yellow
+    number: bright-cyan
+    string: bright-green
+    no-color: normal // NoColor turns the color off.
+  }
+  format: {indent: 2 tab: false pretty: 80.3}
+  html: {
+    syntax: "<span>"
+    key: "<span style=\"color:#44f\">"
+    null: "<span style=\"color:red\">"
+    bool: "<span style=\"color:#a40\">"
+    number: "<span style=\"color:#04a\">"
+    string: "<span style=\"color:green\">"
+    no-color: "</span>"
+  }
+  lazy: true // -z option, lazy read for SEN format
+  sen: true
+}
