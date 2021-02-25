@@ -1,19 +1,8 @@
 
 ----------------
 
-- help for conf
-- option for conf file (-f <file>)
-- .oj-config.sen or .oj-config.json
- - colors - map of kind: color-name
- - html - map of kind: string
- - pretty options
- - indent
-  - tab
- - color / bright
- - -sen
- - -z
-
-- proof read article
+- html safe option for write
+- align option
 
  - regex op =~
   - /^xyz&/

@@ -284,11 +284,23 @@ func (o *Options) buildString(s string) {
 		case '\t':
 			o.buf = append(o.buf, []byte{'\\', 't'}...)
 		case '&', '<', '>': // prefectly okay for JSON but commonly escaped
-			o.buf = append(o.buf, []byte{'\\', 'u', '0', '0', hex[r>>4], hex[r&0x0f]}...)
+			if o.HTMLUnsafe {
+				o.buf = append(o.buf, byte(r))
+			} else {
+				o.buf = append(o.buf, []byte{'\\', 'u', '0', '0', hex[r>>4], hex[r&0x0f]}...)
+			}
 		case '\u2028':
-			o.buf = append(o.buf, []byte(`\u2028`)...)
+			if o.HTMLUnsafe {
+				o.buf = append(o.buf, byte(r))
+			} else {
+				o.buf = append(o.buf, []byte(`\u2028`)...)
+			}
 		case '\u2029':
-			o.buf = append(o.buf, []byte(`\u2029`)...)
+			if o.HTMLUnsafe {
+				o.buf = append(o.buf, byte(r))
+			} else {
+				o.buf = append(o.buf, []byte(`\u2029`)...)
+			}
 		default:
 			if r < ' ' {
 				o.buf = append(o.buf, []byte{'\\', 'u', '0', '0', hex[(r>>4)&0x0f], hex[r&0x0f]}...)
