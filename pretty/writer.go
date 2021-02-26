@@ -124,6 +124,7 @@ func (w *writer) encode(data interface{}, args ...interface{}) (out []byte, err 
 			w.Options.NumberColor = ta.NumberColor
 			w.Options.StringColor = ta.StringColor
 			w.Options.NoColor = ta.NoColor
+			w.Options.HTMLSafe = !ta.HTMLUnsafe
 			w.W = sw
 		}
 	}
@@ -337,7 +338,11 @@ func (w *writer) BuildQuotedString(s string) {
 		case '\t':
 			w.Buf = append(w.Buf, []byte{'\\', 't'}...)
 		case '&', '<', '>': // prefectly okay for JSON but commonly escaped
-			w.Buf = append(w.Buf, []byte{'\\', 'u', '0', '0', hex[r>>4], hex[r&0x0f]}...)
+			if w.HTMLSafe {
+				w.Buf = append(w.Buf, []byte{'\\', 'u', '0', '0', hex[r>>4], hex[r&0x0f]}...)
+			} else {
+				w.Buf = append(w.Buf, byte(r))
+			}
 		case '\u2028':
 			w.Buf = append(w.Buf, []byte(`\u2028`)...)
 		case '\u2029':

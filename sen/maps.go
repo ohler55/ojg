@@ -43,7 +43,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	valueMap = "" +
 		".........ab..a.................." + // 0x00
-		"a.i.j.....jjafjcghhhhhhhhh.....j" + // 0x20
+		"a.i.j.....jjafjcghhhhhhhhh..j.jj" + // 0x20
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjk.mjj" + // 0x40
 		".jjjjjjjjjjjjjjjjjjjjjjjjjjl.nj." + // 0x60
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" + // 0x80
@@ -52,6 +52,26 @@ const (
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjv" //  0xe0
 	//   0123456789abcdef0123456789abcdef
 	tokenMap = "" +
+		".........GJ..G.................." + // 0x00
+		"G...u.....uuGuucuuuuuuuuuuI.u.uu" + // 0x20
+		"uuuuuuuuuuuuuuuuuuuuuuuuuuuk.muu" + // 0x40
+		".uuuuuuuuuuuuuuuuuuuuuuuuuul.nu." + // 0x60
+		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0x80
+		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0xa0
+		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0xc0
+		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuut" //  0xe0
+	//   0123456789abcdef0123456789abcdef
+	htmlValueMap = "" +
+		".........ab..a.................." + // 0x00
+		"a.i.j.....jjafjcghhhhhhhhh.....j" + // 0x20
+		"jjjjjjjjjjjjjjjjjjjjjjjjjjjk.mjj" + // 0x40
+		".jjjjjjjjjjjjjjjjjjjjjjjjjjl.nj." + // 0x60
+		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" + // 0x80
+		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" + // 0xa0
+		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" + // 0xc0
+		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjv" //  0xe0
+	//   0123456789abcdef0123456789abcdef
+	htmlTokenMap = "" +
 		".........GJ..G.................." + // 0x00
 		"G...u.....uuGuucuuuuuuuuuuI....u" + // 0x20
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuk.muu" + // 0x40

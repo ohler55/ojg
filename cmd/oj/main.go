@@ -31,6 +31,7 @@ var (
 	tab        = false
 	showFnDocs = false
 	showConf   = false
+	safe       = false
 
 	// If true wrap extracts with an array.
 	wrapExtract = false
@@ -62,6 +63,7 @@ func init() {
 	flag.BoolVar(&showRoot, "r", showRoot, "print root if an assemble plan provided")
 	flag.Float64Var(&edgeDepth, "p", edgeDepth, "pretty print with the edge and depth as a float <edge>.<max-depth>")
 	flag.BoolVar(&html, "html", html, "output colored output as HTML")
+	flag.BoolVar(&safe, "safe", safe, "escape &, <, and > for HTML inclusion")
 	flag.StringVar(&confFile, "f", confFile, "configuration file (see -help-config)")
 	flag.BoolVar(&showFnDocs, "fn", showFnDocs, "describe assembly plan functions")
 	flag.BoolVar(&showFnDocs, "help-fn", showFnDocs, "describe assembly plan functions")
@@ -295,14 +297,18 @@ func writeJSON(v interface{}) {
 		o.Tab = tab
 	}
 	o.Indent = indent
-	if html && color {
-		o.SyntaxColor = sen.HTMLOptions.SyntaxColor
-		o.KeyColor = sen.HTMLOptions.KeyColor
-		o.NullColor = sen.HTMLOptions.NullColor
-		o.BoolColor = sen.HTMLOptions.BoolColor
-		o.NumberColor = sen.HTMLOptions.NumberColor
-		o.StringColor = sen.HTMLOptions.StringColor
-		o.NoColor = sen.HTMLOptions.NoColor
+	o.HTMLUnsafe = !safe
+	if html {
+		o.HTMLUnsafe = false
+		if color {
+			o.SyntaxColor = sen.HTMLOptions.SyntaxColor
+			o.KeyColor = sen.HTMLOptions.KeyColor
+			o.NullColor = sen.HTMLOptions.NullColor
+			o.BoolColor = sen.HTMLOptions.BoolColor
+			o.NumberColor = sen.HTMLOptions.NumberColor
+			o.StringColor = sen.HTMLOptions.StringColor
+			o.NoColor = sen.HTMLOptions.NoColor
+		}
 	}
 	if 0.0 < edgeDepth {
 		_ = pretty.WriteJSON(os.Stdout, v, &o, edgeDepth)
@@ -320,6 +326,7 @@ func writeSEN(v interface{}) {
 		o.Color = true
 		o.Sort = sortKeys
 		o.Tab = tab
+		o.HTMLSafe = true
 	case bright:
 		o = sen.BrightOptions
 		o.Color = true
@@ -332,6 +339,7 @@ func writeSEN(v interface{}) {
 		o.Tab = tab
 	}
 	o.Indent = indent
+	o.HTMLSafe = safe
 	if 0.0 < edgeDepth {
 		_ = pretty.WriteSEN(os.Stdout, v, &o, edgeDepth)
 	} else {
@@ -411,6 +419,7 @@ func applyConf(conf interface{}) {
 	for _, v := range jp.C("format").C("pretty").Get(conf) {
 		edgeDepth = alt.Float(v)
 	}
+	safe, _ = jp.C("html-safe").First(conf).(bool)
 	lazy, _ = jp.C("lazy").First(conf).(bool)
 	senOut, _ = jp.C("sen").First(conf).(bool)
 
@@ -546,7 +555,7 @@ should be in $.asm.
 An example of a plan in SEN format is (the first asm is optional):
 
   [ asm
-    [set $.asm { good: bye }]
+    [set $.asm {good: bye}]
     [set $.asm.hello world]
   ]
 
@@ -619,6 +628,7 @@ The file format (SEN with comments) is:
     string: "<span style=\"color:green\">"
     no-color: "</span>"
   }
+  html-safe: false
   lazy: true // -z option, lazy read for SEN format
   sen: true
 }

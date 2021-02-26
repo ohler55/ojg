@@ -98,6 +98,9 @@ type Options struct {
 	// NoColor turns the color off.
 	NoColor string
 
+	// HTMLSafe if true turns on escaping of &, <, and >.
+	HTMLSafe bool
+
 	Buf []byte
 	Utf []byte
 	W   io.Writer
@@ -144,4 +147,5 @@ var HTMLOptions = Options{
 	NoColor:     "</span>",
 	Buf:         make([]byte, 0, 256),
 	Utf:         make([]byte, utf8.UTFMax),
+	HTMLSafe:    true,
 }

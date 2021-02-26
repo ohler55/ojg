@@ -226,8 +226,10 @@ func TestTypes(t *testing.T) {
 
 func TestQuotedString(t *testing.T) {
 	val := []interface{}{"\\\t\n\r\b\f\"&<>\u2028\u2029\x07\U0001D122 ぴーたー"}
-	s := pretty.JSON(val, &sen.Options{})
+	s := pretty.JSON(val, &sen.Options{HTMLSafe: true})
 	tt.Equal(t, `["\\\t\n\r\b\f\"\u0026\u003c\u003e\u2028\u2029\u0007𝄢 ぴーたー"]`, s)
+	s = pretty.JSON(val, &sen.Options{HTMLSafe: false})
+	tt.Equal(t, `["\\\t\n\r\b\f\"&<>\u2028\u2029\u0007𝄢 ぴーたー"]`, s)
 }
 
 func TestIntTypes(t *testing.T) {

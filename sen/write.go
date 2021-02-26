@@ -200,14 +200,21 @@ func (o *Options) buildSen(data interface{}, depth int) {
 
 func (o *Options) BuildString(s string) {
 	tokOk := false
-	if 0 < len(s) &&
-		valueMap[s[0]] == tokenStart &&
-		len(s) < maxTokenLen { // arbitrary length, longer strings look better in quotes
-		tokOk = true
-		for _, b := range []byte(s) {
-			if tokenMap[b] != tokenOk {
-				tokOk = false
-				break
+	if 0 < len(s) {
+		vm := valueMap
+		tm := tokenMap
+		if o.HTMLSafe {
+			vm = htmlValueMap
+			tm = htmlTokenMap
+		}
+		if vm[s[0]] == tokenStart &&
+			len(s) < maxTokenLen { // arbitrary length, longer strings look better in quotes
+			tokOk = true
+			for _, b := range []byte(s) {
+				if tm[b] != tokenOk {
+					tokOk = false
+					break
+				}
 			}
 		}
 	}
@@ -230,6 +237,12 @@ func (o *Options) BuildString(s string) {
 			o.Buf = append(o.Buf, []byte{'\\', 'r'}...)
 		case '\t':
 			o.Buf = append(o.Buf, []byte{'\t'}...)
+		case '&', '<', '>': // prefectly okay for JSON but commonly escaped
+			if o.HTMLSafe {
+				o.Buf = append(o.Buf, []byte{'\\', 'u', '0', '0', hex[r>>4], hex[r&0x0f]}...)
+			} else {
+				o.Buf = append(o.Buf, byte(r))
+			}
 		case '\u2028':
 			o.Buf = append(o.Buf, []byte(`\u2028`)...)
 		case '\u2029':

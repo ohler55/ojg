@@ -111,6 +111,9 @@ type Options struct {
 	// first character of the object keys is lowercase.
 	KeyExact bool
 
+	// HTMLUnsafe if true turns off escaping of &, <, and >.
+	HTMLUnsafe bool
+
 	buf    []byte
 	utf    []byte
 	w      io.Writer
