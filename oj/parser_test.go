@@ -298,3 +298,9 @@ func TestParserParseReaderChan(t *testing.T) {
 	}
 	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
 }
+
+func TestParserParseBadQuotes(t *testing.T) {
+	p := oj.Parser{}
+	_, err := p.Parse([]byte(`{"""":0}`))
+	tt.NotNil(t, err)
+}

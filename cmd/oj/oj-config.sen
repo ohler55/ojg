@@ -39,6 +39,7 @@
     string: "<span style=\"color:green\">"
     no-color: "</span>"
   }
+  html-safe: false
   lazy: true // -z option, lazy read for SEN format
   sen: true
 }

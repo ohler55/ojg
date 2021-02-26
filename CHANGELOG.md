@@ -6,7 +6,10 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 
 ## [1.8.0] - [unreleased]
 ### Added
-- Added HTMLUnsafe option to oj JSON writing to not encode &, <, > \u2028, and \u2029.
+- Added HTMLUnsafe option to oj JSON writing to not encode &, <, and >.
+- Added HTMLSafe option to sen options to encode &, <, and >.
+### Fixed
+- Fixed panic for `{"""":0}`. Now an error is returned.
 
 ## [1.7.0] - 2021-02-21
 ### Added
