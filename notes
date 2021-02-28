@@ -2,6 +2,25 @@
 ----------------
 
 - align option
+ - change the -p option to take a string
+  - either 80.3 format or {width:80 depth:3 align:true}
+ - node table should cover all columns including nested
+  - what format? flat or nested?
+  - if flat then walk for values, driven by table
+   - linear search is no great but okay for small size with align
+
+- add time color
+
+- data diff
+ - which package (alt?) or a new one or throw it in oj **alt**
+ - what else is related?
+  - deep copy
+
+- option to detect duplicate keys or make part of validator
+ - change stack to include array and map or maybe just map and nil means array
+  - check performance hit
+  - check added condition of whether keys should be checked. If too high then copy code
+ - or separate stack in func for key maps along with dip code
 
  - regex op =~
   - /^xyz&/

@@ -180,7 +180,7 @@ func TestJSONOjOptions(t *testing.T) {
 	val, err := sen.Parse([]byte(sample))
 	tt.Nil(t, err)
 	opt := oj.DefaultOptions
-	s := pretty.JSON(val, &opt)
+	s := pretty.JSON(val, &opt, 80.2)
 	tt.Equal(t, `[
   true,
   false,
@@ -197,7 +197,7 @@ func TestJSONOjOptions(t *testing.T) {
 func TestInit(t *testing.T) {
 	val, err := sen.Parse([]byte(sample))
 	tt.Nil(t, err)
-	s := pretty.JSON(val, &sen.Options{})
+	s := pretty.JSON(val, &sen.Options{}, 80.2)
 	tt.Equal(t, `[
   true,
   false,
@@ -237,7 +237,7 @@ func TestIntTypes(t *testing.T) {
 		[]interface{}{int8(-8), int16(-16), int32(-32), int64(-64), int(-1)},
 		[]interface{}{uint8(8), uint16(16), uint32(32), uint64(64), uint(1)},
 	}
-	s := pretty.JSON(val)
+	s := pretty.JSON(val, 80.2)
 	tt.Equal(t, `[
   [-8, -16, -32, -64, -1],
   [8, 16, 32, 64, 1]
@@ -280,7 +280,7 @@ func TestSEN(t *testing.T) {
 	a = append(a, when)
 	tt.Nil(t, err)
 	opt := testColor
-	s := pretty.SEN(a, &opt)
+	s := pretty.SEN(a, &opt, 80.2)
 
 	tt.Equal(t, `s[x
   btruex
@@ -350,7 +350,7 @@ func TestWriteJSON(t *testing.T) {
 	opt := sen.DefaultOptions
 	opt.WriteLimit = 20
 	var b strings.Builder
-	err = pretty.WriteJSON(&b, val, &opt)
+	err = pretty.WriteJSON(&b, val, &opt, 80.2)
 	tt.Nil(t, err)
 	tt.Equal(t, `[
   true,
@@ -371,7 +371,7 @@ func TestWriteSEN(t *testing.T) {
 	opt := sen.DefaultOptions
 	opt.WriteLimit = 20
 	var b strings.Builder
-	err = pretty.WriteSEN(&b, val, &opt)
+	err = pretty.WriteSEN(&b, val, &opt, 80.2)
 	tt.Nil(t, err)
 	tt.Equal(t, `[
   true
