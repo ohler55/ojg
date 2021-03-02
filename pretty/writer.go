@@ -340,185 +340,71 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 // Return true if not filled.
 func (w *Writer) checkAlign(n *node, start int, comma, cs []byte) bool {
 	c := n.genCols(w.SEN)
+	fmt.Printf("*** flat size: %d - %s\n", n.size, sen.String(c, 2))
 	if c == nil || w.Width < start+c.size {
 		return true
 	}
-	w.fillAlign(n, c, comma, cs)
-
+	for i, m := range n.members {
+		if 0 < i {
+			w.Buf = append(w.Buf, comma...)
+		}
+		w.Buf = append(w.Buf, []byte(cs)...)
+		switch m.kind {
+		case arrayNode:
+			w.alignArray(m, c, comma, cs)
+		case mapNode:
+			// TBD
+		}
+	}
 	return false
 }
 
-// Return true if not filled.
-func (w *Writer) fillAlign(n *node, c *col, comma, cs []byte) {
-	fmt.Printf("*** flat size: %d - %s\n", n.size, sen.String(c))
-	for i, m := range n.members {
-		if 0 < i {
-			w.Buf = append(w.Buf, comma...)
-		}
-		w.Buf = append(w.Buf, []byte(cs)...)
-		switch m.kind {
-		case arrayNode:
-			if w.Color {
-				w.Buf = append(w.Buf, w.SyntaxColor...)
-				w.Buf = append(w.Buf, '[')
-				w.Buf = append(w.Buf, w.NoColor...)
-			} else {
-				w.Buf = append(w.Buf, '[')
-			}
-			for j, sub := range c.subs {
-				k, _ := sub.key.(int)
-				if i < len(m.members) {
-					m2 := m.members[k]
-					if 0 < j {
-						w.Buf = append(w.Buf, comma...)
-					}
-					w.Buf = append(w.Buf, ' ')
-					cw := sub.size
-					switch m2.kind {
-					case strNode:
-						w.Buf = append(w.Buf, m2.buf...)
-						if m2.size < cw {
-							w.Buf = append(w.Buf, spaces[1:cw-m2.size+1]...)
-						}
-					case numNode:
-						if m2.size < cw {
-							w.Buf = append(w.Buf, spaces[1:cw-m2.size+1]...)
-						}
-						w.Buf = append(w.Buf, m2.buf...)
-					case arrayNode:
-						// TBD fill with sub.subs
-						w.fillAlign(m, sub, comma, []byte{' '})
-					case mapNode:
-						// TBD
-						w.fill(m2, 0, true)
-					}
-				} else {
-					// TBD pad
-				}
-			}
-			if w.Color {
-				w.Buf = append(w.Buf, w.SyntaxColor...)
-				w.Buf = append(w.Buf, ']')
-				w.Buf = append(w.Buf, w.NoColor...)
-			} else {
-				w.Buf = append(w.Buf, ']')
-			}
-		}
-
+func (w *Writer) alignArray(n *node, c *col, comma, cs []byte) {
+	if w.Color {
+		w.Buf = append(w.Buf, w.SyntaxColor...)
+		w.Buf = append(w.Buf, '[')
+		w.Buf = append(w.Buf, w.NoColor...)
+	} else {
+		w.Buf = append(w.Buf, '[')
 	}
-}
-
-/*
-func (w *Writer) fillAlign(n *node, comma, cs []byte) bool {
-	for i, m := range n.members {
-		if 0 < i {
-			w.Buf = append(w.Buf, comma...)
-		}
-		w.Buf = append(w.Buf, []byte(cs)...)
-		switch m.kind {
-		case arrayNode:
-			if w.Color {
-				w.Buf = append(w.Buf, w.SyntaxColor...)
-				w.Buf = append(w.Buf, '[')
-				w.Buf = append(w.Buf, w.NoColor...)
+	first := true
+	for _, sub := range c.subs {
+		k, _ := sub.key.(int)
+		if k < len(n.members) {
+			if first {
+				first = false
 			} else {
-				w.Buf = append(w.Buf, '[')
-			}
-			for j, m2 := range m.members {
-				if 0 < j {
-					w.Buf = append(w.Buf, comma...)
-				}
+				w.Buf = append(w.Buf, comma...)
 				w.Buf = append(w.Buf, ' ')
-				cw := n.table.columns[j]
-				switch m2.kind {
-				case strNode:
-					w.Buf = append(w.Buf, m2.buf...)
-					if m2.size < cw {
-						w.Buf = append(w.Buf, spaces[1:cw-m2.size+1]...)
-					}
-				case numNode:
-					if m2.size < cw {
-						w.Buf = append(w.Buf, spaces[1:cw-m2.size+1]...)
-					}
-					w.Buf = append(w.Buf, m2.buf...)
-				case arrayNode:
-					if m2.table != nil {
-						w.fillAlign(m2, comma, []byte{})
-					} else {
-						w.fill(m2, 0, true)
-					}
-				case mapNode:
-					w.fill(m2, 0, true)
+			}
+			m := n.members[k]
+			cw := sub.size
+			switch m.kind {
+			case strNode:
+				w.Buf = append(w.Buf, m.buf...)
+				if m.size < cw {
+					w.Buf = append(w.Buf, spaces[1:cw-m.size+1]...)
 				}
-			}
-			if w.Color {
-				w.Buf = append(w.Buf, w.SyntaxColor...)
-				w.Buf = append(w.Buf, ']')
-				w.Buf = append(w.Buf, w.NoColor...)
-			} else {
-				w.Buf = append(w.Buf, ']')
-			}
-		case mapNode:
-			if w.Color {
-				w.Buf = append(w.Buf, w.SyntaxColor...)
-				w.Buf = append(w.Buf, '{')
-				w.Buf = append(w.Buf, w.NoColor...)
-			} else {
-				w.Buf = append(w.Buf, '{')
-			}
-			for j, m2 := range m.members {
-				if 0 < j {
-					w.Buf = append(w.Buf, comma...)
+			case numNode:
+				if m.size < cw {
+					w.Buf = append(w.Buf, spaces[1:cw-m.size+1]...)
 				}
-				w.Buf = append(w.Buf, ' ')
-				w.Buf = append(w.Buf, m2.key...)
-				if w.Color {
-					w.Buf = append(w.Buf, w.SyntaxColor...)
-					w.Buf = append(w.Buf, ':')
-					w.Buf = append(w.Buf, w.NoColor...)
-					w.Buf = append(w.Buf, ' ')
-				} else {
-					w.Buf = append(w.Buf, ": "...)
-				}
-				cw := n.table.columns[string(m2.key)]
-				switch m2.kind {
-				case strNode:
-					w.Buf = append(w.Buf, m2.buf...)
-					if m2.size < cw {
-						w.Buf = append(w.Buf, spaces[1:cw-m2.size+1]...)
-					}
-				case numNode:
-					if m2.size < cw {
-						w.Buf = append(w.Buf, spaces[1:cw-m2.size+1]...)
-					}
-					w.Buf = append(w.Buf, m2.buf...)
-				case arrayNode:
-					if m2.table != nil {
-						w.fillAlign(m2, comma, []byte{})
-					} else {
-						w.fill(m2, 0, true)
-					}
-				case mapNode:
-					w.fill(m2, 0, true)
-				}
+				w.Buf = append(w.Buf, m.buf...)
+			case arrayNode:
+				w.alignArray(m, sub, comma, []byte{' '})
+			case mapNode:
+				// TBD
+				w.fill(m, 0, true)
 			}
-			if w.Color {
-				w.Buf = append(w.Buf, w.SyntaxColor...)
-				w.Buf = append(w.Buf, '}')
-				w.Buf = append(w.Buf, w.NoColor...)
-			} else {
-				w.Buf = append(w.Buf, '}')
-			}
+		} else {
+			// TBD pad
 		}
 	}
-
-	// TBD change to calculating table
-	//  tables whould allow nesting
-
-	// TBD handle nested
-	//  sort keys on table
-	//  walk keys and get from node(s) or maybe walk both together
-	//    if missing then fill with spaces
-
+	if w.Color {
+		w.Buf = append(w.Buf, w.SyntaxColor...)
+		w.Buf = append(w.Buf, ']')
+		w.Buf = append(w.Buf, w.NoColor...)
+	} else {
+		w.Buf = append(w.Buf, ']')
+	}
 }
-*/

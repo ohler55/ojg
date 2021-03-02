@@ -55,54 +55,16 @@ func (n *node) subKind() (kind byte) {
 func (n *node) genCols(lazy bool) *col {
 	switch n.subKind() {
 	case arrayNode:
-		return n.genArrayCols(lazy)
+		c := col{}
+		for _, m := range n.members {
+			m.updateArrayCol(&c, lazy)
+		}
+		return &c
 	case mapNode:
 		return nil // TBD
 	default:
 		return nil
 	}
-}
-
-func (n *node) genArrayCols(lazy bool) *col {
-	c := col{}
-	// TBD use updateArray
-	// n.updateArrayCol(&c, lazy)
-	subs := map[interface{}]*col{}
-	for _, m := range n.members {
-		for i, m2 := range m.members {
-			sub := subs[i]
-			if sub == nil {
-				sub = &col{key: i}
-				subs[i] = sub
-			}
-			switch m2.kind {
-			case arrayNode:
-				m2.updateArrayCol(sub, lazy)
-			case mapNode:
-				// TBD
-			default:
-				if sub.size < m2.size {
-					sub.size = m2.size
-				}
-			}
-		}
-	}
-	c.subs = make([]*col, 0, len(subs))
-	for _, sub := range subs {
-		c.subs = append(c.subs, sub)
-		c.size += sub.size
-	}
-	sort.Slice(c.subs, func(i, j int) bool {
-		ki, _ := c.subs[i].key.(int)
-		kj, _ := c.subs[j].key.(int)
-		return ki < kj
-	})
-	if lazy {
-		c.size += len(c.subs) + 1
-	} else {
-		c.size += len(c.subs) * 2
-	}
-	return &c
 }
 
 func (n *node) updateArrayCol(c *col, lazy bool) {
@@ -123,7 +85,7 @@ func (n *node) updateArrayCol(c *col, lazy bool) {
 				sub.size = m.size
 			}
 		case arrayNode:
-			// TBD call update
+			m.updateArrayCol(sub, lazy)
 		case mapNode:
 			// TBD
 		}
