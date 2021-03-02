@@ -11,6 +11,8 @@
 
 - add time color
 
+- check oj @foo works the same as -x
+
 - data diff
  - which package (alt?) or a new one or throw it in oj **alt**
  - what else is related?

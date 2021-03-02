@@ -228,13 +228,8 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 			}
 			w.Buf = append(w.Buf, '[')
 		}
-		align := false
-		if !flat {
-			if w.Align && n.table != nil && start+n.table.size < w.Width {
-				align = true
-			} else if start+n.size < w.Width && n.depth < w.MaxDepth {
-				flat = true
-			}
+		if !flat && start+n.size < w.Width && n.depth < w.MaxDepth {
+			flat = true
 		}
 		d2 := depth + 1
 		var cs []byte
@@ -252,9 +247,7 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 				is = []byte(spaces[0:x])
 			}
 		}
-		if align {
-			w.fillAlign(n, comma, cs)
-		} else {
+		if !w.Align || w.MaxDepth < n.depth || w.checkAlign(n, start, comma, cs) {
 			for i, m := range n.members {
 				if 0 < i {
 					w.Buf = append(w.Buf, comma...)
@@ -344,7 +337,79 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 	}
 }
 
-func (w *Writer) fillAlign(n *node, comma, cs []byte) {
+// Return true if not filled.
+func (w *Writer) checkAlign(n *node, start int, comma, cs []byte) bool {
+	c := n.genCols(w.SEN)
+	if c == nil || w.Width < start+c.size {
+		return true
+	}
+	w.fillAlign(n, c, comma, cs)
+
+	return false
+}
+
+// Return true if not filled.
+func (w *Writer) fillAlign(n *node, c *col, comma, cs []byte) {
+	fmt.Printf("*** flat size: %d - %s\n", n.size, sen.String(c))
+	for i, m := range n.members {
+		if 0 < i {
+			w.Buf = append(w.Buf, comma...)
+		}
+		w.Buf = append(w.Buf, []byte(cs)...)
+		switch m.kind {
+		case arrayNode:
+			if w.Color {
+				w.Buf = append(w.Buf, w.SyntaxColor...)
+				w.Buf = append(w.Buf, '[')
+				w.Buf = append(w.Buf, w.NoColor...)
+			} else {
+				w.Buf = append(w.Buf, '[')
+			}
+			for j, sub := range c.subs {
+				k, _ := sub.key.(int)
+				if i < len(m.members) {
+					m2 := m.members[k]
+					if 0 < j {
+						w.Buf = append(w.Buf, comma...)
+					}
+					w.Buf = append(w.Buf, ' ')
+					cw := sub.size
+					switch m2.kind {
+					case strNode:
+						w.Buf = append(w.Buf, m2.buf...)
+						if m2.size < cw {
+							w.Buf = append(w.Buf, spaces[1:cw-m2.size+1]...)
+						}
+					case numNode:
+						if m2.size < cw {
+							w.Buf = append(w.Buf, spaces[1:cw-m2.size+1]...)
+						}
+						w.Buf = append(w.Buf, m2.buf...)
+					case arrayNode:
+						// TBD fill with sub.subs
+						w.fillAlign(m, sub, comma, []byte{' '})
+					case mapNode:
+						// TBD
+						w.fill(m2, 0, true)
+					}
+				} else {
+					// TBD pad
+				}
+			}
+			if w.Color {
+				w.Buf = append(w.Buf, w.SyntaxColor...)
+				w.Buf = append(w.Buf, ']')
+				w.Buf = append(w.Buf, w.NoColor...)
+			} else {
+				w.Buf = append(w.Buf, ']')
+			}
+		}
+
+	}
+}
+
+/*
+func (w *Writer) fillAlign(n *node, comma, cs []byte) bool {
 	for i, m := range n.members {
 		if 0 < i {
 			w.Buf = append(w.Buf, comma...)
@@ -447,9 +512,13 @@ func (w *Writer) fillAlign(n *node, comma, cs []byte) {
 		}
 	}
 
+	// TBD change to calculating table
+	//  tables whould allow nesting
+
 	// TBD handle nested
 	//  sort keys on table
 	//  walk keys and get from node(s) or maybe walk both together
 	//    if missing then fill with spaces
 
 }
+*/

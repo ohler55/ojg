@@ -246,9 +246,6 @@ func (w *Writer) buildArrayNode(v []interface{}) (n *node) {
 			n.depth = mn.depth + 1
 		}
 	}
-	if w.Align {
-		n.genTable(w.SEN)
-	}
 	return
 }
 
@@ -271,9 +268,6 @@ func (w *Writer) buildGenArrayNode(v gen.Array) (n *node) {
 		if n.depth < mn.depth+1 {
 			n.depth = mn.depth + 1
 		}
-	}
-	if w.Align {
-		n.genTable(w.SEN)
 	}
 	return
 }

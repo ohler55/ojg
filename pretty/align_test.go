@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/ohler55/ojg/pretty"
+	"github.com/ohler55/ojg/tt"
 )
 
 func TestWriteAlignSENArray(t *testing.T) {
@@ -15,10 +16,11 @@ func TestWriteAlignSENArray(t *testing.T) {
 		MaxDepth: 3,
 		Align:    true,
 	}
-	out := w.Encode([]interface{}{
+	out, err := w.Marshal([]interface{}{
 		[]interface{}{1, 2, 3},
 		[]interface{}{100, 200, 300},
 	})
+	tt.Nil(t, err)
 	fmt.Printf("***\n%s\n", out)
 
 	w.Width = 40

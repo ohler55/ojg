@@ -2,17 +2,16 @@
 
 package pretty
 
+import (
+	"sort"
+)
+
 const (
 	strNode   = 's'
 	numNode   = 'n'
 	arrayNode = 'a'
 	mapNode   = 'm'
 )
-
-type table struct {
-	size    int
-	columns map[interface{}]int
-}
 
 type node struct {
 	key     []byte
@@ -21,57 +20,126 @@ type node struct {
 	size    int
 	depth   int
 	kind    byte
-	table   *table
 }
 
-// TBD walk all below and create table with dotted keys like x.0.y
+type col struct {
+	key  interface{} // string or int
+	size int
+	subs []*col
+}
 
-// only called for lists
-func (n *node) genTable(lazy bool) {
-	t := table{columns: map[interface{}]int{}}
-	mkind := byte(0)
+func (c *col) Simplify() interface{} {
+	simple := map[string]interface{}{"key": c.key, "size": c.size}
+	if 0 < len(c.subs) {
+		var subs []interface{}
+		for _, sub := range c.subs {
+			subs = append(subs, sub.Simplify())
+		}
+		simple["subs"] = subs
+	}
+	return simple
+}
+
+func (n *node) subKind() (kind byte) {
 	for _, m := range n.members {
-		switch m.kind {
-		case byte(0):
-			mkind = m.kind
-		case arrayNode:
-			if mkind != m.kind {
-				if mkind != 0 {
-					return
-				}
-				mkind = m.kind
+		if kind != m.kind {
+			if kind != 0 {
+				return 0
 			}
-			for i, m2 := range m.members {
-				w := m2.size
-				if m2.table != nil {
-					w = m2.table.size
-				}
-				if t.columns[i] < w {
-					t.columns[i] = w
-				}
-			}
-		case mapNode:
-			if mkind != m.kind {
-				if mkind != 0 {
-					return
-				}
-				mkind = m.kind
-			}
-			for _, m2 := range m.members {
-				w := m2.size
-				if m2.table != nil {
-					w = m2.table.size
-				}
-				if t.columns[string(m2.key)] < w {
-					t.columns[string(m2.key)] = w
-				}
-			}
-		default:
-			return
+			kind = m.kind
 		}
 	}
-	for _, w := range t.columns {
-		t.size += w
+	return
+}
+
+func (n *node) genCols(lazy bool) *col {
+	switch n.subKind() {
+	case arrayNode:
+		return n.genArrayCols(lazy)
+	case mapNode:
+		return nil // TBD
+	default:
+		return nil
 	}
-	n.table = &t
+}
+
+func (n *node) genArrayCols(lazy bool) *col {
+	c := col{}
+	// TBD use updateArray
+	// n.updateArrayCol(&c, lazy)
+	subs := map[interface{}]*col{}
+	for _, m := range n.members {
+		for i, m2 := range m.members {
+			sub := subs[i]
+			if sub == nil {
+				sub = &col{key: i}
+				subs[i] = sub
+			}
+			switch m2.kind {
+			case arrayNode:
+				m2.updateArrayCol(sub, lazy)
+			case mapNode:
+				// TBD
+			default:
+				if sub.size < m2.size {
+					sub.size = m2.size
+				}
+			}
+		}
+	}
+	c.subs = make([]*col, 0, len(subs))
+	for _, sub := range subs {
+		c.subs = append(c.subs, sub)
+		c.size += sub.size
+	}
+	sort.Slice(c.subs, func(i, j int) bool {
+		ki, _ := c.subs[i].key.(int)
+		kj, _ := c.subs[j].key.(int)
+		return ki < kj
+	})
+	if lazy {
+		c.size += len(c.subs) + 1
+	} else {
+		c.size += len(c.subs) * 2
+	}
+	return &c
+}
+
+func (n *node) updateArrayCol(c *col, lazy bool) {
+	for i, m := range n.members {
+		var sub *col
+		for _, s := range c.subs {
+			if s.key == i {
+				sub = s
+			}
+		}
+		if sub == nil {
+			sub = &col{key: i}
+			c.subs = append(c.subs, sub)
+		}
+		switch m.kind {
+		case strNode, numNode:
+			if sub.size < m.size {
+				sub.size = m.size
+			}
+		case arrayNode:
+			// TBD call update
+		case mapNode:
+			// TBD
+		}
+	}
+	sort.Slice(c.subs, func(i, j int) bool {
+		ki, _ := c.subs[i].key.(int)
+		kj, _ := c.subs[j].key.(int)
+		return ki < kj
+	})
+	c.size = 0
+	for _, sub := range c.subs {
+		c.size += sub.size
+	}
+	if lazy {
+		c.size += len(c.subs) + 1
+	} else {
+		c.size += len(c.subs) * 2
+	}
 }
