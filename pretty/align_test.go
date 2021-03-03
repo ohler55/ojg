@@ -3,7 +3,6 @@
 package pretty_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/ohler55/ojg/pretty"
@@ -259,7 +258,6 @@ s]x`, string(out))
 
 	w.SEN = true
 	out = w.Encode(data)
-	fmt.Println(string(out))
 	tt.Equal(t, `s[x
   s[x  01x   02x   03x s{xkxx: 01x kyx:  02x kzx:   03xs}xs]x
   s[x0100x 0200x 0300x s{xkxx: 01x kyx: 020x kzx: 0300xs}xs]x
