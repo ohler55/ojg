@@ -1,10 +1,6 @@
 
 ----------------
 
-- align option
- - change the -p option to take a string
-  - either 80.3 format or {width:80 depth:3 align:true}
-
 - add time color
 
 - check oj @foo works the same as -x
