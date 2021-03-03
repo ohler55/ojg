@@ -15,8 +15,9 @@ const (
 	nullStr  = "null"
 	trueStr  = "true"
 	falseStr = "false"
-	spaces   = "\n                                                                                                                                "
-	hex      = "0123456789abcdef"
+	spaces   = "\n                                                                " +
+		"                                                                "
+	hex = "0123456789abcdef"
 )
 
 // Writer writes data in either JSON or SEN format using setting to determine
@@ -171,6 +172,9 @@ func (w *Writer) encode(data interface{}) (out []byte, err error) {
 	if w.InitSize == 0 {
 		w.InitSize = 256
 	}
+	if len(spaces)-1 < w.Width {
+		w.Width = len(spaces) - 1
+	}
 	if w.WriteLimit == 0 {
 		w.WriteLimit = 1024
 	}
@@ -247,7 +251,7 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 				is = []byte(spaces[0:x])
 			}
 		}
-		if !w.Align || w.MaxDepth < n.depth || w.checkAlign(n, start, comma, cs) {
+		if !w.Align || w.MaxDepth < n.depth || len(n.members) < 2 || w.checkAlign(n, start, comma, cs) {
 			for i, m := range n.members {
 				if 0 < i {
 					w.Buf = append(w.Buf, comma...)
@@ -339,8 +343,7 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 
 // Return true if not filled.
 func (w *Writer) checkAlign(n *node, start int, comma, cs []byte) bool {
-	c := n.genCols(w.SEN)
-	fmt.Printf("*** flat size: %d - %s\n", n.size, sen.String(c, 2))
+	c := n.genTables(w.SEN)
 	if c == nil || w.Width < start+c.size {
 		return true
 	}
@@ -353,13 +356,13 @@ func (w *Writer) checkAlign(n *node, start int, comma, cs []byte) bool {
 		case arrayNode:
 			w.alignArray(m, c, comma, cs)
 		case mapNode:
-			// TBD
+			w.alignMap(m, c, comma, cs)
 		}
 	}
 	return false
 }
 
-func (w *Writer) alignArray(n *node, c *col, comma, cs []byte) {
+func (w *Writer) alignArray(n *node, t *table, comma, cs []byte) {
 	if w.Color {
 		w.Buf = append(w.Buf, w.SyntaxColor...)
 		w.Buf = append(w.Buf, '[')
@@ -367,18 +370,81 @@ func (w *Writer) alignArray(n *node, c *col, comma, cs []byte) {
 	} else {
 		w.Buf = append(w.Buf, '[')
 	}
-	first := true
-	for _, sub := range c.subs {
-		k, _ := sub.key.(int)
-		if k < len(n.members) {
-			if first {
-				first = false
-			} else {
-				w.Buf = append(w.Buf, comma...)
-				w.Buf = append(w.Buf, ' ')
+	for k, col := range t.columns {
+		if len(n.members) <= k {
+			break
+		}
+		if 0 < k {
+			w.Buf = append(w.Buf, comma...)
+			w.Buf = append(w.Buf, ' ')
+		}
+		m := n.members[k]
+		cw := col.size
+		switch m.kind {
+		case strNode:
+			w.Buf = append(w.Buf, m.buf...)
+			if m.size < cw {
+				w.Buf = append(w.Buf, spaces[1:cw-m.size+1]...)
 			}
-			m := n.members[k]
-			cw := sub.size
+		case numNode:
+			if m.size < cw {
+				w.Buf = append(w.Buf, spaces[1:cw-m.size+1]...)
+			}
+			w.Buf = append(w.Buf, m.buf...)
+		case arrayNode:
+			w.alignArray(m, col, comma, []byte{' '})
+		case mapNode:
+			w.alignMap(m, col, comma, []byte{' '})
+		}
+	}
+	if w.Color {
+		w.Buf = append(w.Buf, w.SyntaxColor...)
+		w.Buf = append(w.Buf, ']')
+		w.Buf = append(w.Buf, w.NoColor...)
+	} else {
+		w.Buf = append(w.Buf, ']')
+	}
+}
+
+func (w *Writer) alignMap(n *node, t *table, comma, cs []byte) {
+	if w.Color {
+		w.Buf = append(w.Buf, w.SyntaxColor...)
+		w.Buf = append(w.Buf, '{')
+		w.Buf = append(w.Buf, w.NoColor...)
+	} else {
+		w.Buf = append(w.Buf, '{')
+	}
+	prevExist := false
+	for i, col := range t.columns {
+		k, _ := col.key.(string)
+		var m *node
+		for _, mm := range n.members {
+			if string(mm.key) == k {
+				m = mm
+				break
+			}
+		}
+		if prevExist {
+			w.Buf = append(w.Buf, comma...)
+			w.Buf = append(w.Buf, ' ')
+		}
+		if m == nil {
+			prevExist = false
+			pad := len(k) + 2 + col.size
+			if i < len(t.columns)-1 {
+				if w.SEN {
+					pad += 1
+				} else {
+					pad += 2
+				}
+			}
+			w.Buf = append(w.Buf, spaces[1:pad+1]...)
+		} else {
+			prevExist = true
+			w.Buf = append(w.Buf, k...)
+			w.Buf = append(w.Buf, ':')
+			w.Buf = append(w.Buf, ' ')
+			cw := col.size
 			switch m.kind {
 			case strNode:
 				w.Buf = append(w.Buf, m.buf...)
@@ -391,20 +457,17 @@ func (w *Writer) alignArray(n *node, c *col, comma, cs []byte) {
 				}
 				w.Buf = append(w.Buf, m.buf...)
 			case arrayNode:
-				w.alignArray(m, sub, comma, []byte{' '})
+				w.alignArray(m, col, comma, []byte{' '})
 			case mapNode:
-				// TBD
-				w.fill(m, 0, true)
+				w.alignMap(m, col, comma, []byte{' '})
 			}
-		} else {
-			// TBD pad
 		}
 	}
 	if w.Color {
 		w.Buf = append(w.Buf, w.SyntaxColor...)
-		w.Buf = append(w.Buf, ']')
+		w.Buf = append(w.Buf, '}')
 		w.Buf = append(w.Buf, w.NoColor...)
 	} else {
-		w.Buf = append(w.Buf, ']')
+		w.Buf = append(w.Buf, '}')
 	}
 }

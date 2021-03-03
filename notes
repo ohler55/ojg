@@ -4,10 +4,6 @@
 - align option
  - change the -p option to take a string
   - either 80.3 format or {width:80 depth:3 align:true}
- - node table should cover all columns including nested
-  - what format? flat or nested?
-  - if flat then walk for values, driven by table
-   - linear search is no great but okay for small size with align
 
 - add time color
 

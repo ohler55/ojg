@@ -417,3 +417,23 @@ func TestAsString(t *testing.T) {
 	s := pretty.JSON(&Dummy{Val: 3})
 	tt.Equal(t, `"{val: 3}"`, s)
 }
+
+func TestJSONMaxWidth(t *testing.T) {
+	var b strings.Builder
+	w := pretty.Writer{Width: 200, MaxDepth: 3}
+	err := w.Write(&b, []interface{}{1, 2, 3})
+	tt.Nil(t, err)
+	tt.Equal(t, `[1, 2, 3]`, b.String())
+	tt.Equal(t, 128, w.Width)
+}
+
+func TestAlignArg(t *testing.T) {
+	out := pretty.SEN([]interface{}{
+		[]interface{}{1, 2, 3},
+		[]interface{}{100, 200, 300},
+	}, true, 20.3)
+	tt.Equal(t, `[
+  [  1   2   3]
+  [100 200 300]
+]`, out)
+}

@@ -22,22 +22,10 @@ type node struct {
 	kind    byte
 }
 
-type col struct {
-	key  interface{} // string or int
-	size int
-	subs []*col
-}
-
-func (c *col) Simplify() interface{} {
-	simple := map[string]interface{}{"key": c.key, "size": c.size}
-	if 0 < len(c.subs) {
-		var subs []interface{}
-		for _, sub := range c.subs {
-			subs = append(subs, sub.Simplify())
-		}
-		simple["subs"] = subs
-	}
-	return simple
+type table struct {
+	key     interface{} // string or int
+	size    int
+	columns []*table
 }
 
 func (n *node) subKind() (kind byte) {
@@ -52,56 +40,101 @@ func (n *node) subKind() (kind byte) {
 	return
 }
 
-func (n *node) genCols(lazy bool) *col {
+func (n *node) genTables(lazy bool) *table {
 	switch n.subKind() {
 	case arrayNode:
-		c := col{}
+		t := table{}
 		for _, m := range n.members {
-			m.updateArrayCol(&c, lazy)
+			m.updateArrayTable(&t, lazy)
 		}
-		return &c
+		return &t
 	case mapNode:
-		return nil // TBD
+		t := table{}
+		for _, m := range n.members {
+			m.updateMapTable(&t, lazy)
+		}
+		return &t
 	default:
 		return nil
 	}
 }
 
-func (n *node) updateArrayCol(c *col, lazy bool) {
+func (n *node) updateArrayTable(t *table, lazy bool) {
 	for i, m := range n.members {
-		var sub *col
-		for _, s := range c.subs {
+		var col *table
+		for _, s := range t.columns {
 			if s.key == i {
-				sub = s
+				col = s
 			}
 		}
-		if sub == nil {
-			sub = &col{key: i}
-			c.subs = append(c.subs, sub)
+		if col == nil {
+			col = &table{key: i}
+			t.columns = append(t.columns, col)
 		}
 		switch m.kind {
 		case strNode, numNode:
-			if sub.size < m.size {
-				sub.size = m.size
+			if col.size < m.size {
+				col.size = m.size
 			}
 		case arrayNode:
-			m.updateArrayCol(sub, lazy)
+			m.updateArrayTable(col, lazy)
 		case mapNode:
-			// TBD
+			m.updateMapTable(col, lazy)
 		}
 	}
-	sort.Slice(c.subs, func(i, j int) bool {
-		ki, _ := c.subs[i].key.(int)
-		kj, _ := c.subs[j].key.(int)
+	sort.Slice(t.columns, func(i, j int) bool {
+		ki, _ := t.columns[i].key.(int)
+		kj, _ := t.columns[j].key.(int)
 		return ki < kj
 	})
-	c.size = 0
-	for _, sub := range c.subs {
-		c.size += sub.size
+	t.size = 0
+	for _, col := range t.columns {
+		t.size += col.size
 	}
 	if lazy {
-		c.size += len(c.subs) + 1
+		t.size += len(t.columns) + 1
 	} else {
-		c.size += len(c.subs) * 2
+		t.size += len(t.columns) * 2
+	}
+}
+
+func (n *node) updateMapTable(t *table, lazy bool) {
+	for _, m := range n.members {
+		k := string(m.key)
+		var col *table
+		for _, s := range t.columns {
+			if s.key == k {
+				col = s
+			}
+		}
+		if col == nil {
+			col = &table{key: k}
+			t.columns = append(t.columns, col)
+		}
+		switch m.kind {
+		case strNode, numNode:
+			if col.size < m.size {
+				col.size = m.size
+			}
+		case arrayNode:
+			m.updateArrayTable(col, lazy)
+		case mapNode:
+			m.updateMapTable(col, lazy)
+		}
+	}
+	sort.Slice(t.columns, func(i, j int) bool {
+		ki, _ := t.columns[i].key.(string)
+		kj, _ := t.columns[j].key.(string)
+		return ki < kj
+	})
+	t.size = 0
+	for _, col := range t.columns {
+		k, _ := col.key.(string)
+		t.size += col.size + len(k)
+	}
+	if lazy {
+		t.size += len(t.columns)*2 + 1
+	} else {
+		t.size += len(t.columns) * 4
 	}
 }
