@@ -95,6 +95,9 @@ type Options struct {
 	// StringColor is the color for a string in the JSON output.
 	StringColor string
 
+	// TimeColor is the color for a time.Time in the JSON output.
+	TimeColor string
+
 	// NoColor turns the color off.
 	NoColor string
 
@@ -115,6 +118,7 @@ var DefaultOptions = Options{
 	BoolColor:   Yellow,
 	NumberColor: Cyan,
 	StringColor: Green,
+	TimeColor:   Magenta,
 	NoColor:     Normal,
 	Buf:         make([]byte, 0, 256),
 	Utf:         make([]byte, utf8.UTFMax),
@@ -129,6 +133,7 @@ var BrightOptions = Options{
 	BoolColor:   BrightYellow,
 	NumberColor: BrightCyan,
 	StringColor: BrightGreen,
+	TimeColor:   BrightMagenta,
 	NoColor:     Normal,
 	Buf:         make([]byte, 0, 256),
 	Utf:         make([]byte, utf8.UTFMax),
@@ -144,6 +149,7 @@ var HTMLOptions = Options{
 	BoolColor:   `<span style="color:#a40">`,
 	NumberColor: `<span style="color:#04a">`,
 	StringColor: `<span style="color:green">`,
+	TimeColor:   `<span style="color:#f0f">`,
 	NoColor:     "</span>",
 	Buf:         make([]byte, 0, 256),
 	Utf:         make([]byte, utf8.UTFMax),

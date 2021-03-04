@@ -7,6 +7,8 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.8.0] - unreleased
 ### Added
 - Added alignment option for pretty printing.
+- Added alt.Diff() and alt.Compare().
+- Added color option for encoded time.
 
 ## [1.7.1] - 2021-02-25
 ### Added

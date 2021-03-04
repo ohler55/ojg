@@ -20,7 +20,7 @@ import (
 	"github.com/ohler55/ojg/sen"
 )
 
-const version = "1.7.0"
+const version = "1.8.0"
 
 var (
 	indent     = 2
@@ -483,6 +483,7 @@ func applyConf(conf interface{}) {
 	setOptionsColor(conf, "null", setNullColor)
 	setOptionsColor(conf, "number", setNumberColor)
 	setOptionsColor(conf, "string", setStringColor)
+	setOptionsColor(conf, "time", setTimeColor)
 	setOptionsColor(conf, "syntax", setSyntaxColor)
 
 	setHTMLColor(conf, "bool", &sen.HTMLOptions.BoolColor)
@@ -540,6 +541,13 @@ func setStringColor(color string) {
 	oj.BrightOptions.StringColor = color
 	sen.DefaultOptions.StringColor = color
 	sen.BrightOptions.StringColor = color
+}
+
+func setTimeColor(color string) {
+	oj.DefaultOptions.TimeColor = color
+	oj.BrightOptions.TimeColor = color
+	sen.DefaultOptions.TimeColor = color
+	sen.BrightOptions.TimeColor = color
 }
 
 func setSyntaxColor(color string) {
@@ -670,6 +678,7 @@ The file format (SEN with comments) is:
     bool: bright-yellow
     number: bright-cyan
     string: bright-green
+    time: bright-magenta
     no-color: normal // NoColor turns the color off.
   }
   // Either the pretty element can be used or the individual width, depth, and
@@ -683,6 +692,7 @@ The file format (SEN with comments) is:
     bool: "<span style=\"color:#a40\">"
     number: "<span style=\"color:#04a\">"
     string: "<span style=\"color:green\">"
+    time: "<span style=\"color:#f0f\">"
     no-color: "</span>"
   }
   html-safe: false

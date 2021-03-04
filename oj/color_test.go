@@ -23,6 +23,7 @@ func TestColor(t *testing.T) {
 		BoolColor:   "b",
 		NumberColor: "0",
 		StringColor: "q",
+		TimeColor:   "t",
 		NoColor:     "x",
 	}
 	tm := time.Date(2020, time.May, 7, 19, 29, 19, 123456789, time.UTC)
@@ -46,8 +47,8 @@ func TestColor(t *testing.T) {
 			expect: "s[x01xs,x065xs,x02xs,x03xs,x04xs,x05xs]x"},
 		{value: gen.Array{gen.Int(1), gen.Float(1.2)}, expect: "s[x01xs,x01.2xs]x"},
 		{value: []interface{}{float32(1.2), float64(2.1)}, expect: "s[x01.2xs,x02.1xs]x"},
-		{value: []interface{}{tm}, expect: "s[xq1588879759123456789xs]x"},
-		{value: gen.Array{gen.Time(tm)}, expect: "s[xq1588879759123456789xs]x"},
+		{value: []interface{}{tm}, expect: "s[xt1588879759123456789xs]x"},
+		{value: gen.Array{gen.Time(tm)}, expect: "s[xt1588879759123456789xs]x"},
 
 		{value: map[string]interface{}{"t": true, "x": nil}, expect: "s{xk\"t\"xs:xbtruexs}x",
 			options: &oj.Options{OmitNil: true}},

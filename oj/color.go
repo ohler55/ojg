@@ -85,10 +85,10 @@ func (o *Options) cbuildJSON(data interface{}, depth int) {
 		o.buildString(string(td))
 
 	case time.Time:
-		o.buf = append(o.buf, o.StringColor...)
+		o.buf = append(o.buf, o.TimeColor...)
 		o.buildTime(td)
 	case gen.Time:
-		o.buf = append(o.buf, o.StringColor...)
+		o.buf = append(o.buf, o.TimeColor...)
 		o.buildTime(time.Time(td))
 
 	case []interface{}:
