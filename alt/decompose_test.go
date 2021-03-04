@@ -29,7 +29,7 @@ func (s *silly) Simplify() interface{} {
 
 func TestDecomposeNumbers(t *testing.T) {
 	a := []interface{}{int8(-8), int16(-16), int32(-32), uint(0), uint8(8), uint16(16), uint32(32), uint64(64), float32(3.2)}
-	v := alt.Decompose(a)
+	v := alt.Dup(a)
 	tt.Equal(t, []interface{}{-8, -16, -32, 0, 8, 16, 32, 64, 3.2}, v)
 }
 

@@ -13,6 +13,11 @@ import (
 // 10 so that numbers look correct when displayed in base 10.
 const fracMax = 10000000.0
 
+// Dup is an alias for Decompose.
+func Dup(v interface{}, options ...*Options) interface{} {
+	return Decompose(v, options...)
+}
+
 // Decompose creates a simple type converting non simple to simple types using
 // either the Simplify() interface or reflection. Unlike Alter() a deep copy
 // is returned leaving the original data unchanged.
