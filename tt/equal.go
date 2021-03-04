@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
 )
 
@@ -171,6 +172,22 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 			}
 		default:
 			eq = false
+		}
+	case alt.Path:
+		if ta, ok := actual.(alt.Path); ok {
+			eq = true
+			for i := 0; i < len(te); i++ {
+				if len(ta) <= i {
+					eq = false
+					break
+				}
+				if eq = Equal(t, te[i], ta[i], args...); !eq {
+					break
+				}
+			}
+			if eq && len(te) != len(ta) {
+				eq = false
+			}
 		}
 	}
 	if !eq {

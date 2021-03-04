@@ -3,6 +3,7 @@
 package alt
 
 import (
+	"reflect"
 	"time"
 
 	"github.com/ohler55/ojg/gen"
@@ -75,10 +76,10 @@ func diff(v0, v1 interface{}, one bool, ignores ...Path) (diffs []Path) {
 			}
 			ds := diff(m1, t1[i], one, childIgnores...)
 			for _, d := range ds {
-				if len(d) == 1 && ds[0] == nil {
+				if len(d) == 1 && d[0] == nil {
 					d[0] = i
 				} else {
-					d = append(d, i)
+					d = append(Path{i}, d...)
 				}
 				diffs = append(diffs, d)
 				if one {
@@ -86,7 +87,7 @@ func diff(v0, v1 interface{}, one bool, ignores ...Path) (diffs []Path) {
 				}
 			}
 		}
-		if len(t0) != len(t1) {
+		if len(t0) != len(t1) && !ignoreIndex(len(t0), ignores) {
 			diffs = append(diffs, Path{len(t0)})
 		}
 	case map[string]interface{}:
@@ -117,10 +118,10 @@ func diff(v0, v1 interface{}, one bool, ignores ...Path) (diffs []Path) {
 			}
 			ds := diff(t0[k], t1[k], one, childIgnores...)
 			for _, d := range ds {
-				if len(d) == 1 && ds[0] == nil {
+				if len(d) == 1 && d[0] == nil {
 					d[0] = k
 				} else {
-					d = append(d, k)
+					d = append(Path{k}, d...)
 				}
 				diffs = append(diffs, d)
 				if one {
@@ -135,8 +136,16 @@ func diff(v0, v1 interface{}, one bool, ignores ...Path) (diffs []Path) {
 					return diff(s0.Simplify(), s1.Simplify(), one, ignores...)
 				}
 			}
-			// TBD try reflectData(v, opt) if v0 and v1 types are the same
-
+			r0 := reflect.ValueOf(v0)
+			r1 := reflect.ValueOf(v1)
+			if r0.Type().Name() == r1.Type().Name() {
+				opt := &Options{}
+				v0 = reflectValue(r0, opt)
+				v1 = reflectValue(r1, opt)
+				if v0 != nil && v1 != nil {
+					return diff(v0, v1, one, ignores...)
+				}
+			}
 			diffs = append(diffs, Path{nil})
 		}
 	}
