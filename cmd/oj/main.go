@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/ohler55/ojg/alt"
@@ -42,7 +43,11 @@ var (
 	plan        *asm.Plan
 	root        = map[string]interface{}{}
 	showRoot    bool
-	edgeDepth   = 0.0
+	prettyOpt   = ""
+	width       = 80
+	maxDepth    = 3
+	prettyOn    = false
+	align       = false
 	html        = false
 	confFile    = ""
 )
@@ -61,7 +66,7 @@ func init() {
 	flag.BoolVar(&showVersion, "version", showVersion, "display version and exit")
 	flag.StringVar(&planDef, "a", planDef, "assembly plan or plan file using @<plan>")
 	flag.BoolVar(&showRoot, "r", showRoot, "print root if an assemble plan provided")
-	flag.Float64Var(&edgeDepth, "p", edgeDepth, "pretty print with the edge and depth as a float <edge>.<max-depth>")
+	flag.StringVar(&prettyOpt, "p", prettyOpt, `pretty print with the width, depth, and align as <width>.<max-depth>.<align>`)
 	flag.BoolVar(&html, "html", html, "output colored output as HTML")
 	flag.BoolVar(&safe, "safe", safe, "escape &, <, and > for HTML inclusion")
 	flag.StringVar(&confFile, "f", confFile, "configuration file (see -help-config)")
@@ -108,9 +113,9 @@ plan that describes how to assemble the new JSON if specified by the -a
 option. The -fn option will display the documentation for assembly.
 
 Pretty mode output can be used with JSON or the -sen option. It indents
-according to a defined edge and maximum depth in a best effort approach. The
--p takes and edge and a maximum depth as the numerator and fractional part of
-a decimal.
+according to a defined width and maximum depth in a best effort approach. The
+-p takes a pattern of <width>.<max-depth>.<align> where width and max-depth
+are integers and align is a boolean.
 
 `, filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
@@ -310,8 +315,11 @@ func writeJSON(v interface{}) {
 			o.NoColor = sen.HTMLOptions.NoColor
 		}
 	}
-	if 0.0 < edgeDepth {
-		_ = pretty.WriteJSON(os.Stdout, v, &o, edgeDepth)
+	if 0 < len(prettyOpt) {
+		parsePrettyOpt()
+	}
+	if prettyOn {
+		_ = pretty.WriteJSON(os.Stdout, v, &o, float64(width)+float64(maxDepth)/10.0, align)
 	} else {
 		_ = oj.Write(os.Stdout, v, &o)
 	}
@@ -340,12 +348,45 @@ func writeSEN(v interface{}) {
 	}
 	o.Indent = indent
 	o.HTMLSafe = safe
-	if 0.0 < edgeDepth {
-		_ = pretty.WriteSEN(os.Stdout, v, &o, edgeDepth)
+
+	if 0 < len(prettyOpt) {
+		parsePrettyOpt()
+	}
+	if prettyOn {
+		_ = pretty.WriteSEN(os.Stdout, v, &o, float64(width)+float64(maxDepth)/10.0, align)
 	} else {
 		_ = sen.Write(os.Stdout, v, &o)
 	}
 	os.Stdout.Write([]byte{'\n'})
+}
+
+func parsePrettyOpt() {
+	if 0 < len(prettyOpt) {
+		parts := strings.Split(prettyOpt, ".")
+		if 0 < len(parts[0]) {
+			if i, err := strconv.ParseInt(parts[0], 10, 64); err == nil {
+				width = int(i)
+				prettyOn = true
+			} else {
+				panic(err)
+			}
+		}
+		if 1 < len(parts) && 0 < len(parts[1]) {
+			if i, err := strconv.ParseInt(parts[1], 10, 64); err == nil {
+				maxDepth = int(i)
+				prettyOn = true
+			} else {
+				panic(err)
+			}
+		}
+		if 2 < len(parts) && 0 < len(parts[2]) {
+			var err error
+			if align, err = strconv.ParseBool(parts[2]); err != nil {
+				panic(err)
+			}
+			prettyOn = true
+		}
+	}
 }
 
 type exValue struct {
@@ -417,7 +458,20 @@ func applyConf(conf interface{}) {
 		tab = alt.Bool(v)
 	}
 	for _, v := range jp.C("format").C("pretty").Get(conf) {
-		edgeDepth = alt.Float(v)
+		prettyOpt, _ = v.(string)
+		parsePrettyOpt()
+	}
+	for _, v := range jp.C("format").C("width").Get(conf) {
+		width = int(alt.Int(v))
+		prettyOn = true
+	}
+	for _, v := range jp.C("format").C("depth").Get(conf) {
+		maxDepth = int(alt.Int(v))
+		prettyOn = true
+	}
+	for _, v := range jp.C("format").C("align").Get(conf) {
+		align = alt.Bool(v)
+		prettyOn = true
 	}
 	safe, _ = jp.C("html-safe").First(conf).(bool)
 	lazy, _ = jp.C("lazy").First(conf).(bool)
@@ -618,7 +672,10 @@ The file format (SEN with comments) is:
     string: bright-green
     no-color: normal // NoColor turns the color off.
   }
-  format: {indent: 2 tab: false pretty: 80.3}
+  // Either the pretty element can be used or the individual width, depth, and
+  // align options can be specified separately.
+  format: {indent: 2 tab: false pretty: 80.3.false}
+  //format: {indent: 2 tab: false width: 80 depth: 3 align: false}
   html: {
     syntax: "<span>"
     key: "<span style=\"color:#44f\">"

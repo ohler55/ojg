@@ -1,9 +1,22 @@
 
 ----------------
 
-- align option
+- add time color
 
- - regex op =~
+- data diff
+ - which package (alt?) or a new one or throw it in oj **alt**
+ - what else is related?
+  - deep copy
+
+- options to create time from one of the time output formats in alt
+
+- option to detect duplicate keys or make part of validator
+ - change stack to include array and map or maybe just map and nil means array
+  - check performance hit
+  - check added condition of whether keys should be checked. If too high then copy code
+ - or separate stack in func for key maps along with dip code
+
+- regex op =~
   - /^xyz&/
  - in addition to parse callback support chan for results
  - cmd/oj
@@ -17,12 +30,6 @@
  - exists, empty, or has
  - size or length - [?(@.x size > 3)] or [?(size @.x > 3)]
 -------------
-- cmd/oj
-  -colors list of colors or maybe map?
-   -p (palette) key=red
-   -key red
-
-------------------
 
 - Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)]
 - Exists syntax? [?(@.x exists)]

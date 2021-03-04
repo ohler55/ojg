@@ -6,13 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"sort"
-	"strconv"
-	"time"
-	"unicode/utf8"
 
-	"github.com/ohler55/ojg/alt"
-	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/sen"
 )
@@ -21,85 +15,129 @@ const (
 	nullStr  = "null"
 	trueStr  = "true"
 	falseStr = "false"
-	spaces   = "\n                                                                                                                                "
-	hex      = "0123456789abcdef"
+	spaces   = "\n                                                                " +
+		"                                                                "
+	hex = "0123456789abcdef"
 )
 
-type writer struct {
+// Writer writes data in either JSON or SEN format using setting to determine
+// the output.
+type Writer struct {
 	sen.Options
-	edge     int
-	maxDepth int
-	lazy     bool
+
+	// Width is the suggested maximum width. In some cases it may not be
+	// possible to stay withing the specified width.
+	Width int
+
+	// MaxDepth is the maximum depth of an element on a single line.
+	MaxDepth int
+
+	// Align if true attempts to align elements of children in list.
+	Align bool
+
+	// SEN format if true otherwise JSON encoding.
+	SEN bool
 }
 
+// JSON encoded output.
 func JSON(data interface{}, args ...interface{}) string {
-	w := writer{
+	w := Writer{
 		Options:  sen.DefaultOptions,
-		edge:     80,
-		maxDepth: 2,
-		lazy:     false,
+		Width:    80,
+		MaxDepth: 3,
+		SEN:      false,
 	}
-	b, _ := w.encode(data, args...)
+	w.config(args)
+	b, _ := w.encode(data)
 
 	return string(b)
 }
 
+// SEN encoded output.
 func SEN(data interface{}, args ...interface{}) string {
-	w := writer{
+	w := Writer{
 		Options:  sen.DefaultOptions,
-		edge:     80,
-		maxDepth: 2,
-		lazy:     true,
+		Width:    80,
+		MaxDepth: 3,
+		SEN:      true,
 	}
-	b, _ := w.encode(data, args...)
+	w.config(args)
+	b, _ := w.encode(data)
 
 	return string(b)
 }
 
+// JSON encoded output written to the provided io.Writer.
 func WriteJSON(w io.Writer, data interface{}, args ...interface{}) (err error) {
-	pw := writer{
+	pw := Writer{
 		Options:  sen.DefaultOptions,
-		edge:     80,
-		maxDepth: 2,
-		lazy:     false,
+		Width:    80,
+		MaxDepth: 3,
+		SEN:      false,
 	}
 	pw.W = w
-	_, err = pw.encode(data, args...)
+	pw.config(args)
+	_, err = pw.encode(data)
 
 	return
-
 }
 
+// SEN encoded output written to the provided io.Writer.
 func WriteSEN(w io.Writer, data interface{}, args ...interface{}) (err error) {
-	pw := writer{
+	pw := Writer{
 		Options:  sen.DefaultOptions,
-		edge:     80,
-		maxDepth: 2,
-		lazy:     true,
+		Width:    80,
+		MaxDepth: 3,
+		SEN:      true,
 	}
 	pw.W = w
-	_, err = pw.encode(data, args...)
+	pw.config(args)
+	_, err = pw.encode(data)
 
 	return
 }
 
-func (w *writer) encode(data interface{}, args ...interface{}) (out []byte, err error) {
+// Encode data. Any panics during encoding will cause an empty return but will
+// not fail.
+func (w *Writer) Encode(data interface{}) []byte {
+	b, _ := w.encode(data)
+
+	return b
+}
+
+// Marshal data. The same as Encode but a panics during encoding will result
+// in an error return.
+func (w *Writer) Marshal(data interface{}) ([]byte, error) {
+	return w.encode(data)
+}
+
+// Write encoded data to the op.Writer.
+func (w *Writer) Write(wr io.Writer, data interface{}) (err error) {
+	w.W = wr
+	_, err = w.encode(data)
+
+	return
+}
+
+func (w *Writer) config(args []interface{}) {
 	for _, arg := range args {
 		switch ta := arg.(type) {
 		case int:
-			w.edge = ta
+			w.Width = ta
 		case float64:
 			if 0.0 < ta {
 				if ta < 1.0 {
-					w.maxDepth = int(math.Round(ta * 10.0))
+					w.MaxDepth = int(math.Round(ta * 10.0))
 				} else {
-					w.edge = int(ta)
-					w.maxDepth = int(math.Round((ta - float64(w.edge)) * 10.0))
+					w.Width = int(ta)
+					w.MaxDepth = int(math.Round((ta - float64(w.Width)) * 10.0))
 				}
-				if w.maxDepth == 0 { // use the default
-					w.maxDepth = 2
+				if w.MaxDepth == 0 { // use the default
+					w.MaxDepth = 2
 				}
 			}
+		case bool:
+			w.Align = ta
 		case *sen.Options:
 			sw := w.W
 			w.Options = *ta
@@ -128,8 +166,14 @@ func (w *writer) encode(data interface{}, args ...interface{}) (out []byte, err 
 			w.W = sw
 		}
 	}
+}
+
+func (w *Writer) encode(data interface{}) (out []byte, err error) {
 	if w.InitSize == 0 {
 		w.InitSize = 256
+	}
+	if len(spaces)-1 < w.Width {
+		w.Width = len(spaces) - 1
 	}
 	if w.WriteLimit == 0 {
 		w.WriteLimit = 1024
@@ -153,7 +197,7 @@ func (w *writer) encode(data interface{}, args ...interface{}) (out []byte, err 
 	tree := w.build(data)
 	w.Buf = w.Buf[:0]
 	w.Indent = 2
-	if w.edge*3/8 < tree.depth {
+	if w.Width*3/8 < tree.depth {
 		w.Indent = 1
 	}
 	w.fill(tree, 0, false)
@@ -166,354 +210,15 @@ func (w *writer) encode(data interface{}, args ...interface{}) (out []byte, err 
 	return
 }
 
-func (w *writer) build(data interface{}) (n *node) {
-	switch td := data.(type) {
-	case nil:
-		n = w.buildNull()
-	case bool:
-		n = w.buildBool(td)
-	case gen.Bool:
-		n = w.buildBool(bool(td))
-	case int:
-		n = w.buildInt(int64(td))
-	case int8:
-		n = w.buildInt(int64(td))
-	case int16:
-		n = w.buildInt(int64(td))
-	case int32:
-		n = w.buildInt(int64(td))
-	case int64:
-		n = w.buildInt(int64(td))
-	case uint:
-		n = w.buildInt(int64(td))
-	case uint8:
-		n = w.buildInt(int64(td))
-	case uint16:
-		n = w.buildInt(int64(td))
-	case uint32:
-		n = w.buildInt(int64(td))
-	case uint64:
-		n = w.buildInt(int64(td))
-	case gen.Int:
-		n = w.buildInt(int64(td))
-	case float32:
-		n = w.buildFloat32(td)
-	case float64:
-		n = w.buildFloat64(td)
-	case gen.Float:
-		n = w.buildFloat64(float64(td))
-	case string:
-		n = w.buildStringNode(td)
-	case gen.String:
-		n = w.buildStringNode(string(td))
-	case time.Time:
-		n = w.buildTimeNode(td)
-	case gen.Time:
-		n = w.buildTimeNode(time.Time(td))
-	case []interface{}:
-		n = w.buildArrayNode(td)
-	case gen.Array:
-		n = w.buildGenArrayNode(td)
-	case map[string]interface{}:
-		n = w.buildMapNode(td)
-	case gen.Object:
-		n = w.buildGenMapNode(td)
-	default:
-		if g, _ := data.(alt.Genericer); g != nil {
-			return w.build(g.Generic())
-		}
-		if simp, _ := data.(alt.Simplifier); simp != nil {
-			return w.build(simp.Simplify())
-		}
-		if 0 < len(w.CreateKey) {
-			ao := alt.Options{CreateKey: w.CreateKey, OmitNil: w.OmitNil, FullTypePath: w.FullTypePath}
-			return w.build(alt.Decompose(data, &ao))
-		} else {
-			n = w.buildStringNode(fmt.Sprintf("%v", td))
-		}
-	}
-	return
-}
-
-func (w *writer) buildNull() *node {
-	n := node{
-		buf:  []byte(nullStr),
-		size: 4,
-		kind: bytesNode,
-	}
-	if w.Color {
-		n.buf = append(append([]byte(w.NullColor), n.buf...), w.NoColor...)
-	}
-	return &n
-}
-
-func (w *writer) buildBool(v bool) (n *node) {
-	if v {
-		n = &node{
-			buf:  []byte(trueStr),
-			size: 4,
-			kind: bytesNode,
-		}
-	} else {
-		n = &node{
-			buf:  []byte(falseStr),
-			size: 5,
-			kind: bytesNode,
-		}
-	}
-	if w.Color {
-		n.buf = append(append([]byte(w.BoolColor), n.buf...), w.NoColor...)
-	}
-	return
-}
-
-func (w *writer) buildInt(v int64) (n *node) {
-	n = &node{
-		buf:  []byte(strconv.FormatInt(v, 10)),
-		kind: bytesNode,
-	}
-	n.size = len(n.buf)
-	if w.Color {
-		n.buf = append(append([]byte(w.NumberColor), n.buf...), w.NoColor...)
-	}
-	return
-}
-
-func (w *writer) buildFloat32(v float32) (n *node) {
-	n = &node{
-		buf:  []byte(strconv.FormatFloat(float64(v), 'g', -1, 32)),
-		kind: bytesNode,
-	}
-	n.size = len(n.buf)
-	if w.Color {
-		n.buf = append(append([]byte(w.NumberColor), n.buf...), w.NoColor...)
-	}
-	return
-}
-
-func (w *writer) buildFloat64(v float64) (n *node) {
-	n = &node{
-		buf:  []byte(strconv.FormatFloat(v, 'g', -1, 64)),
-		kind: bytesNode,
-	}
-	n.size = len(n.buf)
-	if w.Color {
-		n.buf = append(append([]byte(w.NumberColor), n.buf...), w.NoColor...)
-	}
-	return
-}
-
-func (w *writer) buildStringNode(v string) (n *node) {
-	w.Buf = w.Buf[:0]
-	if w.lazy {
-		w.BuildString(v)
-	} else {
-		w.BuildQuotedString(v)
-	}
-	n = &node{size: len(w.Buf), kind: bytesNode}
-	n.buf = make([]byte, len(w.Buf))
-	copy(n.buf, w.Buf)
-	if w.Color {
-		n.buf = append(append([]byte(w.StringColor), n.buf...), w.NoColor...)
-	}
-	return
-}
-
-func (w *writer) BuildQuotedString(s string) {
-	w.Buf = append(w.Buf, '"')
-	for _, r := range s {
-		switch r {
-		case '\\':
-			w.Buf = append(w.Buf, []byte{'\\', '\\'}...)
-		case '"':
-			w.Buf = append(w.Buf, []byte{'\\', '"'}...)
-		case '\b':
-			w.Buf = append(w.Buf, []byte{'\\', 'b'}...)
-		case '\f':
-			w.Buf = append(w.Buf, []byte{'\\', 'f'}...)
-		case '\n':
-			w.Buf = append(w.Buf, []byte{'\\', 'n'}...)
-		case '\r':
-			w.Buf = append(w.Buf, []byte{'\\', 'r'}...)
-		case '\t':
-			w.Buf = append(w.Buf, []byte{'\\', 't'}...)
-		case '&', '<', '>': // prefectly okay for JSON but commonly escaped
-			if w.HTMLSafe {
-				w.Buf = append(w.Buf, []byte{'\\', 'u', '0', '0', hex[r>>4], hex[r&0x0f]}...)
-			} else {
-				w.Buf = append(w.Buf, byte(r))
-			}
-		case '\u2028':
-			w.Buf = append(w.Buf, []byte(`\u2028`)...)
-		case '\u2029':
-			w.Buf = append(w.Buf, []byte(`\u2029`)...)
-		default:
-			if r < ' ' {
-				w.Buf = append(w.Buf, []byte{'\\', 'u', '0', '0', hex[(r>>4)&0x0f], hex[r&0x0f]}...)
-			} else if r < 0x80 {
-				w.Buf = append(w.Buf, byte(r))
-			} else {
-				if len(w.Utf) < utf8.UTFMax {
-					w.Utf = make([]byte, utf8.UTFMax)
-				} else {
-					w.Utf = w.Utf[:cap(w.Utf)]
-				}
-				n := utf8.EncodeRune(w.Utf, r)
-				w.Buf = append(w.Buf, w.Utf[:n]...)
-			}
-		}
-	}
-	w.Buf = append(w.Buf, '"')
-}
-
-func (w *writer) buildTimeNode(v time.Time) (n *node) {
-	w.Buf = w.Buf[:0]
-	w.BuildTime(v)
-	n = &node{size: len(w.Buf), kind: bytesNode}
-	n.buf = make([]byte, len(w.Buf))
-	copy(n.buf, w.Buf)
-	if w.Color {
-		// TBD could be more detailed or better, have a separate time color
-		n.buf = append(append([]byte(w.StringColor), n.buf...), w.NoColor...)
-	}
-	return
-}
-
-func (w *writer) buildArrayNode(v []interface{}) (n *node) {
-	n = &node{
-		members: make([]*node, 0, len(v)),
-		size:    2, // []
-		kind:    arrayNode,
-	}
-	for i, m := range v {
-		mn := w.build(m)
-		n.members = append(n.members, mn)
-		if 0 < i {
-			n.size++ // space
-			if !w.lazy {
-				n.size++ // comma
-			}
-		}
-		n.size += mn.size
-		if n.depth < mn.depth+1 {
-			n.depth = mn.depth + 1
-		}
-	}
-	return
-}
-
-func (w *writer) buildGenArrayNode(v gen.Array) (n *node) {
-	n = &node{
-		members: make([]*node, 0, len(v)),
-		size:    2, // []
-		kind:    arrayNode,
-	}
-	for i, m := range v {
-		mn := w.build(m)
-		n.members = append(n.members, mn)
-		if 0 < i {
-			n.size++ // space
-			if !w.lazy {
-				n.size++ // comma
-			}
-		}
-		n.size += mn.size
-		if n.depth < mn.depth+1 {
-			n.depth = mn.depth + 1
-		}
-	}
-	return
-}
-
-func (w *writer) buildMapNode(v map[string]interface{}) (n *node) {
-	n = &node{
-		members: make([]*node, 0, len(v)),
-		size:    2, // {}
-		kind:    mapNode,
-	}
-	keys := make([]string, 0, len(v))
-	for k := range v {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		mn := w.build(v[k])
-		n.members = append(n.members, mn)
-		// build key
-		w.Buf = w.Buf[:0]
-		if w.lazy {
-			w.BuildString(k)
-		} else {
-			w.BuildQuotedString(k)
-		}
-		mn.key = make([]byte, len(w.Buf))
-		copy(mn.key, w.Buf)
-		if 2 < n.size {
-			n.size++ // space
-			if !w.lazy {
-				n.size++ // comma
-			}
-		}
-		n.size += len(mn.key) + 2 + mn.size // key, colon, space, value
-		if n.depth < mn.depth+1 {
-			n.depth = mn.depth + 1
-		}
-		if w.Color {
-			mn.key = append(append([]byte(w.KeyColor), mn.key...), w.NoColor...)
-		}
-	}
-	return
-}
-
-func (w *writer) buildGenMapNode(v gen.Object) (n *node) {
-	n = &node{
-		members: make([]*node, 0, len(v)),
-		size:    2, // {}
-		kind:    mapNode,
-	}
-	keys := make([]string, 0, len(v))
-	for k := range v {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	for _, k := range keys {
-		mn := w.build(v[k])
-		n.members = append(n.members, mn)
-		// build key
-		w.Buf = w.Buf[:0]
-		if w.lazy {
-			w.BuildString(k)
-		} else {
-			w.BuildQuotedString(k)
-		}
-		mn.key = make([]byte, len(w.Buf))
-		copy(mn.key, w.Buf)
-		if 2 < n.size {
-			n.size++ // space
-			if !w.lazy {
-				n.size++ // comma
-			}
-		}
-		n.size += len(mn.key) + 2 + mn.size // key, colon, space, value
-		if n.depth < mn.depth+1 {
-			n.depth = mn.depth + 1
-		}
-		if w.Color {
-			mn.key = append(append([]byte(w.KeyColor), mn.key...), w.NoColor...)
-		}
-	}
-	return
-}
-
-func (w *writer) fill(n *node, depth int, flat bool) {
+func (w *Writer) fill(n *node, depth int, flat bool) {
 	start := depth * w.Indent
 	switch n.kind {
-	case bytesNode:
+	case strNode, numNode:
 		w.Buf = append(w.Buf, n.buf...)
 	case arrayNode:
 		var comma []byte
 		if w.Color {
-			if !w.lazy {
+			if !w.SEN {
 				comma = append(comma, w.SyntaxColor...)
 				comma = append(comma, ',')
 				comma = append(comma, w.NoColor...)
@@ -522,18 +227,20 @@ func (w *writer) fill(n *node, depth int, flat bool) {
 			w.Buf = append(w.Buf, '[')
 			w.Buf = append(w.Buf, w.NoColor...)
 		} else {
-			if !w.lazy {
+			if !w.SEN {
 				comma = append(comma, ',')
 			}
 			w.Buf = append(w.Buf, '[')
+		}
+		if !flat && start+n.size < w.Width && n.depth < w.MaxDepth {
+			flat = true
 		}
 		d2 := depth + 1
 		var cs []byte
 		var is []byte
 
-		if flat || (start+n.size < w.edge && n.depth < w.maxDepth) {
+		if flat {
 			cs = []byte{' '}
-			flat = true
 		} else {
 			x := d2*w.Indent + 1
 			if len(spaces) < x {
@@ -544,14 +251,16 @@ func (w *writer) fill(n *node, depth int, flat bool) {
 				is = []byte(spaces[0:x])
 			}
 		}
-		for i, m := range n.members {
-			if 0 < i {
-				w.Buf = append(w.Buf, comma...)
-				w.Buf = append(w.Buf, []byte(cs)...)
-			} else if !flat {
-				w.Buf = append(w.Buf, []byte(cs)...)
+		if !w.Align || w.MaxDepth < n.depth || len(n.members) < 2 || w.checkAlign(n, start, comma, cs) {
+			for i, m := range n.members {
+				if 0 < i {
+					w.Buf = append(w.Buf, comma...)
+					w.Buf = append(w.Buf, []byte(cs)...)
+				} else if !flat {
+					w.Buf = append(w.Buf, []byte(cs)...)
+				}
+				w.fill(m, d2, flat)
 			}
-			w.fill(m, d2, flat)
 		}
 		w.Buf = append(w.Buf, []byte(is)...)
 		if w.Color {
@@ -564,7 +273,7 @@ func (w *writer) fill(n *node, depth int, flat bool) {
 	case mapNode:
 		var comma []byte
 		if w.Color {
-			if !w.lazy {
+			if !w.SEN {
 				comma = append(comma, w.SyntaxColor...)
 				comma = append(comma, ',')
 				comma = append(comma, w.NoColor...)
@@ -573,7 +282,7 @@ func (w *writer) fill(n *node, depth int, flat bool) {
 			w.Buf = append(w.Buf, '{')
 			w.Buf = append(w.Buf, w.NoColor...)
 		} else {
-			if !w.lazy {
+			if !w.SEN {
 				comma = append(comma, ',')
 			}
 			w.Buf = append(w.Buf, '{')
@@ -581,9 +290,12 @@ func (w *writer) fill(n *node, depth int, flat bool) {
 		d2 := depth + 1
 		var cs []byte
 		var is []byte
-		if flat || (start+n.size < w.edge && n.depth < w.maxDepth) {
-			cs = []byte{' '}
+
+		if !flat && start+n.size < w.Width && n.depth < w.MaxDepth {
 			flat = true
+		}
+		if flat {
+			cs = []byte{' '}
 		} else {
 			x := d2*w.Indent + 1
 			if len(spaces) < x {
@@ -626,5 +338,136 @@ func (w *writer) fill(n *node, depth int, flat bool) {
 			panic(err)
 		}
 		w.Buf = w.Buf[:0]
+	}
+}
+
+// Return true if not filled.
+func (w *Writer) checkAlign(n *node, start int, comma, cs []byte) bool {
+	c := n.genTables(w.SEN)
+	if c == nil || w.Width < start+c.size {
+		return true
+	}
+	for i, m := range n.members {
+		if 0 < i {
+			w.Buf = append(w.Buf, comma...)
+		}
+		w.Buf = append(w.Buf, []byte(cs)...)
+		switch m.kind {
+		case arrayNode:
+			w.alignArray(m, c, comma, cs)
+		case mapNode:
+			w.alignMap(m, c, comma, cs)
+		}
+	}
+	return false
+}
+
+func (w *Writer) alignArray(n *node, t *table, comma, cs []byte) {
+	if w.Color {
+		w.Buf = append(w.Buf, w.SyntaxColor...)
+		w.Buf = append(w.Buf, '[')
+		w.Buf = append(w.Buf, w.NoColor...)
+	} else {
+		w.Buf = append(w.Buf, '[')
+	}
+	for k, col := range t.columns {
+		if len(n.members) <= k {
+			break
+		}
+		if 0 < k {
+			w.Buf = append(w.Buf, comma...)
+			w.Buf = append(w.Buf, ' ')
+		}
+		m := n.members[k]
+		cw := col.size
+		switch m.kind {
+		case strNode:
+			w.Buf = append(w.Buf, m.buf...)
+			if m.size < cw {
+				w.Buf = append(w.Buf, spaces[1:cw-m.size+1]...)
+			}
+		case numNode:
+			if m.size < cw {
+				w.Buf = append(w.Buf, spaces[1:cw-m.size+1]...)
+			}
+			w.Buf = append(w.Buf, m.buf...)
+		case arrayNode:
+			w.alignArray(m, col, comma, []byte{' '})
+		case mapNode:
+			w.alignMap(m, col, comma, []byte{' '})
+		}
+	}
+	if w.Color {
+		w.Buf = append(w.Buf, w.SyntaxColor...)
+		w.Buf = append(w.Buf, ']')
+		w.Buf = append(w.Buf, w.NoColor...)
+	} else {
+		w.Buf = append(w.Buf, ']')
+	}
+}
+
+func (w *Writer) alignMap(n *node, t *table, comma, cs []byte) {
+	if w.Color {
+		w.Buf = append(w.Buf, w.SyntaxColor...)
+		w.Buf = append(w.Buf, '{')
+		w.Buf = append(w.Buf, w.NoColor...)
+	} else {
+		w.Buf = append(w.Buf, '{')
+	}
+	prevExist := false
+	for i, col := range t.columns {
+		k, _ := col.key.(string)
+		var m *node
+		for _, mm := range n.members {
+			if string(mm.key) == k {
+				m = mm
+				break
+			}
+		}
+		if prevExist {
+			w.Buf = append(w.Buf, comma...)
+			w.Buf = append(w.Buf, ' ')
+		}
+		if m == nil {
+			prevExist = false
+			pad := len(k) + 2 + col.size
+			if i < len(t.columns)-1 {
+				if w.SEN {
+					pad += 1
+				} else {
+					pad += 2
+				}
+			}
+			w.Buf = append(w.Buf, spaces[1:pad+1]...)
+		} else {
+			prevExist = true
+			w.Buf = append(w.Buf, k...)
+			w.Buf = append(w.Buf, ':')
+			w.Buf = append(w.Buf, ' ')
+			cw := col.size
+			switch m.kind {
+			case strNode:
+				w.Buf = append(w.Buf, m.buf...)
+				if m.size < cw {
+					w.Buf = append(w.Buf, spaces[1:cw-m.size+1]...)
+				}
+			case numNode:
+				if m.size < cw {
+					w.Buf = append(w.Buf, spaces[1:cw-m.size+1]...)
+				}
+				w.Buf = append(w.Buf, m.buf...)
+			case arrayNode:
+				w.alignArray(m, col, comma, []byte{' '})
+			case mapNode:
+				w.alignMap(m, col, comma, []byte{' '})
+			}
+		}
+	}
+	if w.Color {
+		w.Buf = append(w.Buf, w.SyntaxColor...)
+		w.Buf = append(w.Buf, '}')
+		w.Buf = append(w.Buf, w.NoColor...)
+	} else {
+		w.Buf = append(w.Buf, '}')
 	}
 }

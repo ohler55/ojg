@@ -180,7 +180,7 @@ func TestJSONOjOptions(t *testing.T) {
 	val, err := sen.Parse([]byte(sample))
 	tt.Nil(t, err)
 	opt := oj.DefaultOptions
-	s := pretty.JSON(val, &opt)
+	s := pretty.JSON(val, &opt, 80.2)
 	tt.Equal(t, `[
   true,
   false,
@@ -197,7 +197,7 @@ func TestJSONOjOptions(t *testing.T) {
 func TestInit(t *testing.T) {
 	val, err := sen.Parse([]byte(sample))
 	tt.Nil(t, err)
-	s := pretty.JSON(val, &sen.Options{})
+	s := pretty.JSON(val, &sen.Options{}, 80.2)
 	tt.Equal(t, `[
   true,
   false,
@@ -237,7 +237,7 @@ func TestIntTypes(t *testing.T) {
 		[]interface{}{int8(-8), int16(-16), int32(-32), int64(-64), int(-1)},
 		[]interface{}{uint8(8), uint16(16), uint32(32), uint64(64), uint(1)},
 	}
-	s := pretty.JSON(val)
+	s := pretty.JSON(val, 80.2)
 	tt.Equal(t, `[
   [-8, -16, -32, -64, -1],
   [8, 16, 32, 64, 1]
@@ -280,7 +280,7 @@ func TestSEN(t *testing.T) {
 	a = append(a, when)
 	tt.Nil(t, err)
 	opt := testColor
-	s := pretty.SEN(a, &opt)
+	s := pretty.SEN(a, &opt, 80.2)
 
 	tt.Equal(t, `s[x
   btruex
@@ -350,7 +350,7 @@ func TestWriteJSON(t *testing.T) {
 	opt := sen.DefaultOptions
 	opt.WriteLimit = 20
 	var b strings.Builder
-	err = pretty.WriteJSON(&b, val, &opt)
+	err = pretty.WriteJSON(&b, val, &opt, 80.2)
 	tt.Nil(t, err)
 	tt.Equal(t, `[
   true,
@@ -371,7 +371,7 @@ func TestWriteSEN(t *testing.T) {
 	opt := sen.DefaultOptions
 	opt.WriteLimit = 20
 	var b strings.Builder
-	err = pretty.WriteSEN(&b, val, &opt)
+	err = pretty.WriteSEN(&b, val, &opt, 80.2)
 	tt.Nil(t, err)
 	tt.Equal(t, `[
   true
@@ -416,4 +416,24 @@ func TestCreateKey(t *testing.T) {
 func TestAsString(t *testing.T) {
 	s := pretty.JSON(&Dummy{Val: 3})
 	tt.Equal(t, `"{val: 3}"`, s)
+}
+
+func TestJSONMaxWidth(t *testing.T) {
+	var b strings.Builder
+	w := pretty.Writer{Width: 200, MaxDepth: 3}
+	err := w.Write(&b, []interface{}{1, 2, 3})
+	tt.Nil(t, err)
+	tt.Equal(t, `[1, 2, 3]`, b.String())
+	tt.Equal(t, 128, w.Width)
+}
+
+func TestAlignArg(t *testing.T) {
+	out := pretty.SEN([]interface{}{
+		[]interface{}{1, 2, 3},
+		[]interface{}{100, 200, 300},
+	}, true, 20.3)
+	tt.Equal(t, `[
+  [  1   2   3]
+  [100 200 300]
+]`, out)
 }
