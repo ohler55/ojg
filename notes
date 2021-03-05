@@ -1,7 +1,16 @@
 
 ----------------
 
+- alt.Convert or alt.Normalize()
+ - update Alter and Decompose to make use of converter if present
+
+
 - options to create time from one of the time output formats in alt
+ - wrap with specified key
+ - string pattern
+ - float range? has preceision loss so maybe not
+ - int range for nano
+ - add to alt decompose and alter
 
 - option to detect duplicate keys or make part of validator
  - change stack to include array and map or maybe just map and nil means array

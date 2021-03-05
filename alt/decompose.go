@@ -26,55 +26,53 @@ func Decompose(v interface{}, options ...*Options) interface{} {
 	if 0 < len(options) {
 		opt = options[0]
 	}
-	if v != nil {
-		switch tv := v.(type) {
-		case bool, int64, float64, string, time.Time:
-		case int:
-			v = int64(tv)
-		case int8:
-			v = int64(tv)
-		case int16:
-			v = int64(tv)
-		case int32:
-			v = int64(tv)
-		case uint:
-			v = int64(tv)
-		case uint8:
-			v = int64(tv)
-		case uint16:
-			v = int64(tv)
-		case uint32:
-			v = int64(tv)
-		case uint64:
-			v = int64(tv)
-		case float32:
-			// This small rounding makes the conversion from 32 bit to 64 bit
-			// display nicer.
-			f, i := math.Frexp(float64(tv))
-			f = float64(int64(f*fracMax)) / fracMax
-			v = math.Ldexp(f, i)
-		case []interface{}:
-			a := make([]interface{}, len(tv))
-			for i, m := range tv {
-				a[i] = Decompose(m)
-			}
-			v = a
-		case map[string]interface{}:
-			o := map[string]interface{}{}
-			for k, m := range tv {
-				if mv := Decompose(m); mv != nil || !opt.OmitNil {
-					if mv != nil || !opt.OmitNil {
-						o[k] = mv
-					}
+	switch tv := v.(type) {
+	case nil, bool, int64, float64, string, time.Time:
+	case int:
+		v = int64(tv)
+	case int8:
+		v = int64(tv)
+	case int16:
+		v = int64(tv)
+	case int32:
+		v = int64(tv)
+	case uint:
+		v = int64(tv)
+	case uint8:
+		v = int64(tv)
+	case uint16:
+		v = int64(tv)
+	case uint32:
+		v = int64(tv)
+	case uint64:
+		v = int64(tv)
+	case float32:
+		// This small rounding makes the conversion from 32 bit to 64 bit
+		// display nicer.
+		f, i := math.Frexp(float64(tv))
+		f = float64(int64(f*fracMax)) / fracMax
+		v = math.Ldexp(f, i)
+	case []interface{}:
+		a := make([]interface{}, len(tv))
+		for i, m := range tv {
+			a[i] = Decompose(m)
+		}
+		v = a
+	case map[string]interface{}:
+		o := map[string]interface{}{}
+		for k, m := range tv {
+			if mv := Decompose(m); mv != nil || !opt.OmitNil {
+				if mv != nil || !opt.OmitNil {
+					o[k] = mv
 				}
 			}
-			v = o
-		default:
-			if simp, _ := v.(Simplifier); simp != nil {
-				return Decompose(simp.Simplify())
-			}
-			return Decompose(reflectData(v, opt))
 		}
+		v = o
+	default:
+		if simp, _ := v.(Simplifier); simp != nil {
+			return Decompose(simp.Simplify())
+		}
+		return Decompose(reflectData(v, opt))
 	}
 	return v
 }
@@ -88,51 +86,49 @@ func Alter(v interface{}, options ...*Options) interface{} {
 	if 0 < len(options) {
 		opt = options[0]
 	}
-	if v != nil {
-		switch tv := v.(type) {
-		case bool, nil, int64, float64, string, time.Time:
-		case int:
-			v = int64(tv)
-		case int8:
-			v = int64(tv)
-		case int16:
-			v = int64(tv)
-		case int32:
-			v = int64(tv)
-		case uint:
-			v = int64(tv)
-		case uint8:
-			v = int64(tv)
-		case uint16:
-			v = int64(tv)
-		case uint32:
-			v = int64(tv)
-		case uint64:
-			v = int64(tv)
-		case float32:
-			// This small rounding makes the conversion from 32 bit to 64 bit
-			// display nicer.
-			f, i := math.Frexp(float64(tv))
-			f = float64(int64(f*fracMax)) / fracMax
-			v = math.Ldexp(f, i)
-		case []interface{}:
-			for i, m := range tv {
-				tv[i] = Alter(m)
-			}
-		case map[string]interface{}:
-			for k, m := range tv {
-				if mv := Alter(m); mv != nil || !opt.OmitNil {
-					if mv != nil || !opt.OmitNil {
-						tv[k] = mv
-					}
+	switch tv := v.(type) {
+	case bool, nil, int64, float64, string, time.Time:
+	case int:
+		v = int64(tv)
+	case int8:
+		v = int64(tv)
+	case int16:
+		v = int64(tv)
+	case int32:
+		v = int64(tv)
+	case uint:
+		v = int64(tv)
+	case uint8:
+		v = int64(tv)
+	case uint16:
+		v = int64(tv)
+	case uint32:
+		v = int64(tv)
+	case uint64:
+		v = int64(tv)
+	case float32:
+		// This small rounding makes the conversion from 32 bit to 64 bit
+		// display nicer.
+		f, i := math.Frexp(float64(tv))
+		f = float64(int64(f*fracMax)) / fracMax
+		v = math.Ldexp(f, i)
+	case []interface{}:
+		for i, m := range tv {
+			tv[i] = Alter(m)
+		}
+	case map[string]interface{}:
+		for k, m := range tv {
+			if mv := Alter(m); mv != nil || !opt.OmitNil {
+				if mv != nil || !opt.OmitNil {
+					tv[k] = mv
 				}
 			}
-		default:
-			if simp, _ := v.(Simplifier); simp != nil {
-				return Alter(simp.Simplify())
-			}
-			return Alter(reflectData(v, opt), opt)
 		}
+	default:
+		if simp, _ := v.(Simplifier); simp != nil {
+			return Alter(simp.Simplify())
+		}
+		return Alter(reflectData(v, opt), opt)
 	}
 	return v
 }
