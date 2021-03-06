@@ -8,15 +8,103 @@ import (
 	"time"
 )
 
+// Converter types are used to convert data element to alternate
+// values. Common uses are to match a pattern such as strings representing
+// dates to time.Time.
 type Converter struct {
-	Int    []func(val int64) (interface{}, bool)
-	Float  []func(val float64) (interface{}, bool)
+	// Int are a slice of functions to match and convert Ints.
+	Int []func(val int64) (interface{}, bool)
+
+	// Float are a slice of functions to match and convert Floats.
+	Float []func(val float64) (interface{}, bool)
+
+	// String are a slice of functions to match and convert Strings.
 	String []func(val string) (interface{}, bool)
-	Map    []func(val map[string]interface{}) (interface{}, bool)
-	Array  []func(val []interface{}) (interface{}, bool)
+
+	// Map are a slice of functions to match and convert Maps.
+	Map []func(val map[string]interface{}) (interface{}, bool)
+
+	// Array are a slice of functions to match and convert Arrays.
+	Array []func(val []interface{}) (interface{}, bool)
 }
 
-// if map or slice then orig is not changed
+var (
+	// TimeRFC3339Converter converts strings matching time.RFC3339Nano,
+	// time.RFC3339, or 2006-01-02 to time.Time.
+	TimeRFC3339Converter = Converter{
+		String: []func(val string) (interface{}, bool){
+			func(val string) (interface{}, bool) {
+				if 20 <= len(val) && len(val) <= 35 {
+					for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
+						if t, err := time.ParseInLocation(layout, val, time.UTC); err == nil {
+							return t, true
+						}
+					}
+				} else if len(val) == 10 {
+					if t, err := time.ParseInLocation("2006-01-02", val, time.UTC); err == nil {
+						return t, true
+					}
+				}
+				return val, false
+			},
+		},
+	}
+
+	// TimeNanoConverter converts large integers, 946684800000000000
+	// (2000-01-01) and above to time.Time.
+	TimeNanoConverter = Converter{
+		Int: []func(val int64) (interface{}, bool){
+			func(val int64) (interface{}, bool) {
+				if 946684800000000000 <= val { // 2000-01-01
+					return time.Unix(0, val), true
+				}
+				return val, false
+			},
+		},
+	}
+
+	// MongoConverter convert maps with one member when the member key is
+	// $numberLong, $date, $numberDecimal, or $oid and the value and the
+	// member value is a string. These patterns are found in mongodb JSON
+	// exports.
+	MongoConverter = Converter{
+		Map: []func(val map[string]interface{}) (interface{}, bool){
+			func(val map[string]interface{}) (interface{}, bool) {
+				if len(val) != 1 {
+					return val, false
+				}
+				for k, v := range val {
+					s, ok := v.(string)
+					if !ok {
+						break
+					}
+					switch k {
+					case "$numberLong":
+						if i, err := strconv.ParseInt(s, 10, 64); err == nil {
+							return i, true
+						}
+					case "$date":
+						if t, err := time.ParseInLocation("2006-01-02T15:04:05.999Z07:00", s, time.UTC); err == nil {
+							return t, true
+						}
+					case "$numberDecimal":
+						if f, err := strconv.ParseFloat(s, 64); err == nil {
+							return f, true
+						}
+					case "$oid":
+						return s, true
+					}
+				}
+				return val, false
+			},
+		},
+	}
+)
+
+// Convert a value according to the conversion functions of the converter. If
+// the value is a map or slice and not converted itself the provided value
+// will remain the same but will be modified if any of it's members are
+// converted.
 func (c *Converter) Convert(v interface{}) interface{} {
 	v, _ = c.convert(v)
 	return v
@@ -93,6 +181,9 @@ func (c *Converter) convert(v interface{}) (interface{}, bool) {
 	return v, false
 }
 
+// Convert a value according to the conversion functions provided. If the
+// value is a map or slice and not converted itself the provided value will
+// remain the same but will be modified if any of it's members are converted.
 func Convert(v interface{}, funcs ...interface{}) interface{} {
 	c := Converter{}
 	for _, fun := range funcs {
@@ -113,64 +204,3 @@ func Convert(v interface{}, funcs ...interface{}) interface{} {
 
 	return v
 }
-
-var (
-	TimeRFC3339Converter = Converter{
-		String: []func(val string) (interface{}, bool){
-			func(val string) (interface{}, bool) {
-				if 20 <= len(val) && len(val) <= 37 {
-					for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
-						if t, err := time.ParseInLocation(layout, val, time.UTC); err == nil {
-							return t, true
-						}
-					}
-				}
-				return val, false
-			},
-		},
-	}
-
-	TimeNanoConverter = Converter{
-		Int: []func(val int64) (interface{}, bool){
-			func(val int64) (interface{}, bool) {
-				if 946684800000000000 <= val { // 2000-01-01
-					return time.Unix(0, val), true
-				}
-				return val, false
-			},
-		},
-	}
-
-	MongoConverter = Converter{
-		Map: []func(val map[string]interface{}) (interface{}, bool){
-			func(val map[string]interface{}) (interface{}, bool) {
-				if len(val) != 1 {
-					return val, false
-				}
-				for k, v := range val {
-					s, ok := v.(string)
-					if !ok {
-						break
-					}
-					switch k {
-					case "$numberLong":
-						if i, err := strconv.ParseInt(s, 10, 64); err == nil {
-							return i, true
-						}
-					case "$date":
-						if t, err := time.ParseInLocation("2006-01-02T15:04:05.999Z07:00", s, time.UTC); err == nil {
-							return t, true
-						}
-					case "$numberDecimal":
-						if f, err := strconv.ParseFloat(s, 64); err == nil {
-							return f, true
-						}
-					case "$oid":
-						return s, true
-					}
-				}
-				return val, false
-			},
-		},
-	}
-)

@@ -25,6 +25,7 @@ var testColor = sen.Options{
 	BoolColor:   "b",
 	NumberColor: "0",
 	StringColor: "q",
+	TimeColor:   "t",
 	NoColor:     "x",
 	TimeFormat:  time.RFC3339Nano,
 }
@@ -221,7 +222,7 @@ func TestTypes(t *testing.T) {
 
 	opt = testColor
 	s = pretty.JSON(val, &opt)
-	tt.Equal(t, `s[xnnullxs,x 01.25xs,x 01.5xs,x q"abc"xs,x q"2021-02-09T10:11:12.000000111Z"xs,x s{xs}xs]x`, s)
+	tt.Equal(t, `s[xnnullxs,x 01.25xs,x 01.5xs,x q"abc"xs,x t"2021-02-09T10:11:12.000000111Z"xs,x s{xs}xs]x`, s)
 }
 
 func TestQuotedString(t *testing.T) {
@@ -287,7 +288,7 @@ func TestSEN(t *testing.T) {
   s{xkabcxs:x 0123x kdefxs:x nnullxs}x
   01.25x
   qxyzx
-  q"2021-02-09T10:11:12.000000111Z"x
+  t"2021-02-09T10:11:12.000000111Z"x
 s]x`, s)
 }
 

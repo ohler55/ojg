@@ -150,3 +150,25 @@ func TestAlterSimplifier(t *testing.T) {
 	v := alt.Alter(&s)
 	tt.Equal(t, map[string]interface{}{"type": "silly", "val": 3}, v)
 }
+
+func TestDecomposeConverter(t *testing.T) {
+	c := alt.Converter{
+		Int: []func(val int64) (interface{}, bool){
+			func(val int64) (interface{}, bool) { return val + 1, true },
+		},
+	}
+	val := []interface{}{1, true}
+	v := alt.Decompose(val, &alt.Options{Converter: &c})
+	tt.Equal(t, []interface{}{2, true}, v)
+}
+
+func TestAlterConverter(t *testing.T) {
+	c := alt.Converter{
+		Int: []func(val int64) (interface{}, bool){
+			func(val int64) (interface{}, bool) { return val + 1, true },
+		},
+	}
+	val := []interface{}{1, true}
+	v := alt.Alter(val, &alt.Options{Converter: &c})
+	tt.Equal(t, []interface{}{2, true}, v)
+}

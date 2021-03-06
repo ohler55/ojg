@@ -16,6 +16,7 @@ func TestConverterRFC3339(t *testing.T) {
 		"2021-03-05T10:11:12Z",
 		"2021-03-05T10:11:12.123Z",
 		"2021-03-05T10:11:12.123456789-05:00",
+		"2021-03-05",
 		"2021-03-05T10:11:12",                  // too short
 		"2021-03-05T10:11:12.1234567890-05:00", // too long
 		"2021-03-05 10:11:12.123Z",             // wrong format
@@ -24,7 +25,7 @@ func TestConverterRFC3339(t *testing.T) {
 	for i := 0; i < len(val); i++ {
 		tt.Equal(t, val[i], v2[i]) // verify they are the same
 		var ok bool
-		if 3 <= i { // should not be converted
+		if 4 <= i { // should not be converted
 			_, ok = val[i].(string)
 		} else {
 			_, ok = val[i].(time.Time)

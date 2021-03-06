@@ -74,6 +74,9 @@ func Decompose(v interface{}, options ...*Options) interface{} {
 		}
 		return Decompose(reflectData(v, opt))
 	}
+	if opt.Converter != nil {
+		v, _ = opt.Converter.convert(v)
+	}
 	return v
 }
 
@@ -129,6 +132,9 @@ func Alter(v interface{}, options ...*Options) interface{} {
 			return Alter(simp.Simplify())
 		}
 		return Alter(reflectData(v, opt), opt)
+	}
+	if opt.Converter != nil {
+		v, _ = opt.Converter.convert(v)
 	}
 	return v
 }
