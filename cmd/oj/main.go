@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/asm"
@@ -49,7 +50,12 @@ var (
 	prettyOn    = false
 	align       = false
 	html        = false
+	convName    = ""
 	confFile    = ""
+
+	conv   *alt.Converter
+	ojOpt  *oj.Options
+	senOpt *sen.Options
 )
 
 func init() {
@@ -69,10 +75,17 @@ func init() {
 	flag.StringVar(&prettyOpt, "p", prettyOpt, `pretty print with the width, depth, and align as <width>.<max-depth>.<align>`)
 	flag.BoolVar(&html, "html", html, "output colored output as HTML")
 	flag.BoolVar(&safe, "safe", safe, "escape &, <, and > for HTML inclusion")
-	flag.StringVar(&confFile, "f", confFile, "configuration file (see -help-config)")
+	flag.StringVar(&confFile, "f", confFile, "configuration file (see -help-config), - indicates no file")
 	flag.BoolVar(&showFnDocs, "fn", showFnDocs, "describe assembly plan functions")
 	flag.BoolVar(&showFnDocs, "help-fn", showFnDocs, "describe assembly plan functions")
 	flag.BoolVar(&showConf, "help-config", showConf, "describe .oj-config.sen format")
+	flag.StringVar(&convName, "conv", convName, `apply converter before writing. Supported values are:
+  nano - converts integers over 946684800000000000 (2000-01-01) to time
+  rcf3339 - converts string in RFC3339 or RFC3339Nano to time
+  mongo - converts mongo wrapped values e.g.,  {$numberLong: "123"} => 123
+  <with-numbers> - if digits are included then time layout is assumed
+  <other> - any other is taken to be a key in a map with a string or nano time
+`)
 }
 
 func main() {
@@ -177,6 +190,51 @@ func run() (err error) {
 			files = append(files, arg)
 		}
 	}
+	if 0 < len(convName) {
+		switch strings.ToLower(convName) {
+		case "nano":
+			conv = &alt.TimeNanoConverter
+		case "rfc3339":
+			conv = &alt.TimeRFC3339Converter
+		case "mongo":
+			conv = &alt.MongoConverter
+		default:
+			if strings.ContainsAny(convName, "0123456789") {
+				conv = &alt.Converter{
+					String: []func(val string) (interface{}, bool){
+						func(val string) (interface{}, bool) {
+							if len(val) == len(convName) {
+								if t, err := time.ParseInLocation(convName, val, time.UTC); err == nil {
+									return t, true
+								}
+							}
+							return val, false
+						},
+					},
+				}
+			} else {
+				conv = &alt.Converter{
+					Map: []func(val map[string]interface{}) (interface{}, bool){
+						func(val map[string]interface{}) (interface{}, bool) {
+							if len(val) == 1 {
+								switch tv := val[convName].(type) {
+								case string:
+									for _, layout := range []string{time.RFC3339Nano, time.RFC3339, "2006-01-02"} {
+										if t, err := time.ParseInLocation(layout, tv, time.UTC); err == nil {
+											return t, true
+										}
+									}
+								case int64:
+									return time.Unix(0, tv), true
+								}
+							}
+							return val, false
+						},
+					},
+				}
+			}
+		}
+	}
 	var p oj.SimpleParser
 	if lazy {
 		p = &sen.Parser{}
@@ -199,12 +257,10 @@ func run() (err error) {
 		}
 		plist, _ := pd.([]interface{})
 		if len(plist) == 0 {
-			panic(fmt.Errorf("assemble plan not an array"))
+			panic(fmt.Errorf("assembly plan not an array"))
 		}
 		plan = asm.NewPlan(plist)
 	}
-	// TBD define writer of correct type and use for write
-	//   take advantage of buffer reuse
 	if 0 < len(files) {
 		var f *os.File
 		for _, file := range files {
@@ -237,6 +293,9 @@ func run() (err error) {
 }
 
 func write(v interface{}) bool {
+	if conv != nil {
+		v = conv.Convert(v)
+	}
 	if 0 < len(matches) {
 		match := false
 		for _, m := range matches {
@@ -289,73 +348,76 @@ func write(v interface{}) bool {
 }
 
 func writeJSON(v interface{}) {
-	var o oj.Options
-	if bright {
-		o = oj.BrightOptions
-		o.Color = true
-		o.Sort = sortKeys
-		o.Tab = tab
-	} else if color || sortKeys || tab {
-		o = oj.DefaultOptions
-		o.Color = color
-		o.Sort = sortKeys
-		o.Tab = tab
-	}
-	o.Indent = indent
-	o.HTMLUnsafe = !safe
-	if html {
-		o.HTMLUnsafe = false
-		if color {
-			o.SyntaxColor = sen.HTMLOptions.SyntaxColor
-			o.KeyColor = sen.HTMLOptions.KeyColor
-			o.NullColor = sen.HTMLOptions.NullColor
-			o.BoolColor = sen.HTMLOptions.BoolColor
-			o.NumberColor = sen.HTMLOptions.NumberColor
-			o.StringColor = sen.HTMLOptions.StringColor
-			o.NoColor = sen.HTMLOptions.NoColor
+	if ojOpt == nil {
+		o := oj.Options{}
+		if bright {
+			o = oj.BrightOptions
+			o.Color = true
+			o.Sort = sortKeys
+		} else if color || sortKeys || tab {
+			o = oj.DefaultOptions
+			o.Color = color
 		}
+		o.Indent = indent
+		o.Tab = tab
+		o.HTMLUnsafe = !safe
+		o.TimeFormat = time.RFC3339Nano
+		o.Sort = sortKeys
+		if html {
+			o.HTMLUnsafe = false
+			if color {
+				o.SyntaxColor = sen.HTMLOptions.SyntaxColor
+				o.KeyColor = sen.HTMLOptions.KeyColor
+				o.NullColor = sen.HTMLOptions.NullColor
+				o.BoolColor = sen.HTMLOptions.BoolColor
+				o.NumberColor = sen.HTMLOptions.NumberColor
+				o.StringColor = sen.HTMLOptions.StringColor
+				o.TimeColor = sen.HTMLOptions.TimeColor
+				o.NoColor = sen.HTMLOptions.NoColor
+			}
+		}
+		ojOpt = &o
 	}
 	if 0 < len(prettyOpt) {
 		parsePrettyOpt()
 	}
 	if prettyOn {
-		_ = pretty.WriteJSON(os.Stdout, v, &o, float64(width)+float64(maxDepth)/10.0, align)
+		_ = pretty.WriteJSON(os.Stdout, v, ojOpt, float64(width)+float64(maxDepth)/10.0, align)
 	} else {
-		_ = oj.Write(os.Stdout, v, &o)
+		_ = oj.Write(os.Stdout, v, ojOpt)
 	}
 	os.Stdout.Write([]byte{'\n'})
 }
 
 func writeSEN(v interface{}) {
-	var o sen.Options
-	switch {
-	case html:
-		o = sen.HTMLOptions
-		o.Color = true
-		o.Sort = sortKeys
+	if senOpt == nil {
+		o := sen.Options{}
+		switch {
+		case html:
+			o = sen.HTMLOptions
+			o.Color = true
+			o.HTMLSafe = true
+		case bright:
+			o = sen.BrightOptions
+			o.Color = true
+		case color || sortKeys || tab:
+			o = sen.DefaultOptions
+			o.Color = color
+		}
+		o.Indent = indent
 		o.Tab = tab
-		o.HTMLSafe = true
-	case bright:
-		o = sen.BrightOptions
-		o.Color = true
+		o.HTMLSafe = safe
+		o.TimeFormat = time.RFC3339Nano
 		o.Sort = sortKeys
-		o.Tab = tab
-	case color || sortKeys || tab:
-		o = sen.DefaultOptions
-		o.Color = color
-		o.Sort = sortKeys
-		o.Tab = tab
+		senOpt = &o
 	}
-	o.Indent = indent
-	o.HTMLSafe = safe
-
 	if 0 < len(prettyOpt) {
 		parsePrettyOpt()
 	}
 	if prettyOn {
-		_ = pretty.WriteSEN(os.Stdout, v, &o, float64(width)+float64(maxDepth)/10.0, align)
+		_ = pretty.WriteSEN(os.Stdout, v, senOpt, float64(width)+float64(maxDepth)/10.0, align)
 	} else {
-		_ = sen.Write(os.Stdout, v, &o)
+		_ = sen.Write(os.Stdout, v, senOpt)
 	}
 	os.Stdout.Write([]byte{'\n'})
 }
@@ -422,6 +484,9 @@ func (mv matchValue) Set(s string) error {
 func loadConfig() {
 	var conf interface{}
 	if 0 < len(confFile) {
+		if confFile == "-" { // special case
+			return
+		}
 		f, err := os.Open(confFile)
 		if err != nil {
 			panic(err)
@@ -476,6 +541,7 @@ func applyConf(conf interface{}) {
 	safe, _ = jp.C("html-safe").First(conf).(bool)
 	lazy, _ = jp.C("lazy").First(conf).(bool)
 	senOut, _ = jp.C("sen").First(conf).(bool)
+	convName, _ = jp.C("conv").First(conf).(string)
 
 	setOptionsColor(conf, "bool", setBoolColor)
 	setOptionsColor(conf, "key", setKeyColor)
@@ -698,6 +764,7 @@ The file format (SEN with comments) is:
   html-safe: false
   lazy: true // -z option, lazy read for SEN format
   sen: true
+  conv: rfc3339
 }
 `)
 }

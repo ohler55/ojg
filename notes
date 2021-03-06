@@ -1,8 +1,6 @@
 
 ----------------
 
-- options to create time from one of the time output formats in alt
-
 - option to detect duplicate keys or make part of validator
  - change stack to include array and map or maybe just map and nil means array
   - check performance hit

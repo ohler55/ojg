@@ -25,6 +25,9 @@ type Options struct {
 	// field. If false the key style most often seen in JSON files where the
 	// first character of the object keys is lowercase.
 	KeyExact bool
+
+	// Converter to use when decomposing or altering if non nil.
+	Converter *Converter
 }
 
 // DefaultOptions are the default options for decompsing.
@@ -33,4 +36,5 @@ var DefaultOptions = Options{
 	FullTypePath: false,
 	OmitNil:      true,
 	UseTags:      false,
+	Converter:    nil,
 }

@@ -220,8 +220,7 @@ func (w *Writer) buildTimeNode(v time.Time) (n *node) {
 	n.buf = make([]byte, len(w.Buf))
 	copy(n.buf, w.Buf)
 	if w.Color {
-		// TBD could be more detailed or better, have a separate time color
-		n.buf = append(append([]byte(w.StringColor), n.buf...), w.NoColor...)
+		n.buf = append(append([]byte(w.TimeColor), n.buf...), w.NoColor...)
 	}
 	return
 }
