@@ -9,12 +9,23 @@ import (
 
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
+	"github.com/ohler55/ojg/pretty"
 	"github.com/ohler55/ojg/tt"
 )
 
 type WithList struct {
 	List []int
 	Fun  func() bool
+}
+
+type Parent struct {
+	Num      int
+	Name     string
+	Children []*Child
+}
+
+type Child struct {
+	Name string
 }
 
 type Setter struct {
@@ -226,4 +237,61 @@ func TestRecomposeListBadTarget(t *testing.T) {
 	tt.Nil(t, err, "NewRecomposer")
 	_, err = r.Recompose("[]", 7)
 	tt.NotNil(t, err, "Recompose")
+}
+
+func TestRecomposeNested(t *testing.T) {
+	src := Parent{
+		Num:  3,
+		Name: "Pat",
+		Children: []*Child{
+			{Name: "Andy"},
+			{Name: "Robin"},
+		},
+	}
+	simple := alt.Decompose(&src, &alt.Options{})
+	fmt.Printf("*** src: %s\n", pretty.SEN(simple))
+
+	r, err := alt.NewRecomposer("", map[interface{}]alt.RecomposeFunc{&Parent{}: nil})
+	tt.Nil(t, err, "NewRecomposer")
+	var v interface{}
+	v, err = r.Recompose2(simple, &Parent{})
+	tt.Nil(t, err, "Recompose")
+	p, _ := v.(*Parent)
+	tt.NotNil(t, p, "check type - %"+"T", v)
+
+	fmt.Printf("*** %v\n", pretty.SEN(alt.Decompose(p)))
+}
+
+func TestRecomposeSlice(t *testing.T) {
+	src := []Child{
+		{Name: "Andy"},
+		{Name: "Robin"},
+	}
+	simple := alt.Decompose(&src, &alt.Options{})
+	fmt.Printf("*** src: %s\n", pretty.SEN(simple))
+	r, err := alt.NewRecomposer("", map[interface{}]alt.RecomposeFunc{&Parent{}: nil})
+	tt.Nil(t, err, "NewRecomposer")
+	var slice []Child
+	var v interface{}
+	v, err = r.Recompose2(simple, &slice)
+	tt.Nil(t, err, "Recompose")
+
+	fmt.Printf("*** %v\n", pretty.SEN(alt.Decompose(v, &alt.Options{})))
+}
+
+func TestRecomposePtrSlice(t *testing.T) {
+	src := []*Child{
+		{Name: "Andy"},
+		{Name: "Robin"},
+	}
+	simple := alt.Decompose(&src, &alt.Options{})
+	fmt.Printf("*** src: %s\n", pretty.SEN(simple))
+	r, err := alt.NewRecomposer("", map[interface{}]alt.RecomposeFunc{&Parent{}: nil})
+	tt.Nil(t, err, "NewRecomposer")
+	var slice []*Child
+	var v interface{}
+	v, err = r.Recompose2(simple, &slice)
+	tt.Nil(t, err, "Recompose")
+
+	fmt.Printf("*** %v\n", pretty.SEN(alt.Decompose(v, &alt.Options{})))
 }
