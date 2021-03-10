@@ -372,6 +372,6 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 			}
 		}
 	default:
-		panic(fmt.Errorf("can not convert (%T)%v to a %s for field %s", v, v, rv.Type()))
+		panic(fmt.Errorf("can not convert (%T)%v to a %s", v, v, rv.Type()))
 	}
 }
