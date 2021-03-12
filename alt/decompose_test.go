@@ -15,6 +15,11 @@ type Dummy struct {
 	hidden int
 }
 
+type Bummy struct {
+	Dummy
+	Num int
+}
+
 type Anno struct {
 	Val int `json:"v"`
 }
@@ -51,6 +56,15 @@ func TestDecomposeStruct(t *testing.T) {
 	a := Anno{Val: 3}
 	v = alt.Decompose(&a, &alt.Options{UseTags: true})
 	tt.Equal(t, map[string]interface{}{"v": 3}, v)
+}
+
+func TestDecomposeEmbeddedStruct(t *testing.T) {
+	d := Bummy{Dummy: Dummy{Val: 3}, Num: 5}
+	v := alt.Decompose(&d, &alt.Options{NestEmbed: false})
+	tt.Equal(t, map[string]interface{}{"val": 3, "num": 5}, v)
+
+	v = alt.Decompose(&d, &alt.Options{NestEmbed: true})
+	tt.Equal(t, map[string]interface{}{"dummy": map[string]interface{}{"val": 3}, "num": 5}, v)
 }
 
 func TestDecomposeComplex(t *testing.T) {

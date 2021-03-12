@@ -172,27 +172,38 @@ func reflectStruct(rv reflect.Value, opt *Options) interface{} {
 			obj[opt.CreateKey] = t.Name()
 		}
 	}
-	for i := rv.NumField() - 1; 0 <= i; i-- {
-		f := t.Field(i)
-		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
-			// not a public field
-			continue
+	if opt.NestEmbed {
+		for i := rv.NumField() - 1; 0 <= i; i-- {
+			reflectStructMap(obj, rv.Field(i), t.Field(i), opt)
 		}
-		if !opt.KeyExact {
-			name[0] = name[0] | 0x20
-		}
-		if opt.UseTags {
-			if tag, ok := t.Field(i).Tag.Lookup("json"); ok && 0 < len(tag) {
-				name = []byte(tag)
-			}
-		}
-		g := Decompose(rv.Field(i).Interface(), opt)
-		if g != nil || !opt.OmitNil {
-			obj[string(name)] = g
+	} else {
+		im := indexType(t)
+		for _, sf := range im {
+			fv := rv.FieldByIndex(sf.Index)
+			reflectStructMap(obj, fv, sf, opt)
 		}
 	}
 	return obj
+}
+
+func reflectStructMap(obj map[string]interface{}, rv reflect.Value, f reflect.StructField, opt *Options) {
+	name := []byte(f.Name)
+	if len(name) == 0 || 'a' <= name[0] {
+		// not a public field
+		return
+	}
+	if !opt.KeyExact {
+		name[0] = name[0] | 0x20
+	}
+	if opt.UseTags {
+		if tag, ok := f.Tag.Lookup("json"); ok && 0 < len(tag) {
+			name = []byte(tag)
+		}
+	}
+	g := Decompose(rv.Interface(), opt)
+	if g != nil || !opt.OmitNil {
+		obj[string(name)] = g
+	}
 }
 
 func reflectComplex(rv reflect.Value, opt *Options) interface{} {

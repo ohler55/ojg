@@ -2,14 +2,10 @@
 ----------------
 
 - recomposer
- - drive by value type provided initially or by type key
- - recompose with recursion instead of converting after the fact
+ - test coverage
 
-- recomposer
- - handle children of provided types
-  - use direct mapping, nil if not in map provided
-  - add optional arg which is pointer to object of expected type
 - Unmarshal for oj and sen
+ - initial, parse then call recomposer
  - take second arg for target then option for map and type key
  - call recoposer for each map or array completion
   - need to keep track of expected types
