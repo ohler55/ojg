@@ -76,6 +76,18 @@ func senParseReaderReuse(b *testing.B) {
 	}
 }
 
+func senUnmarshal(b *testing.B) {
+	sample, _ := ioutil.ReadFile(filename)
+	p := sen.Parser{Reuse: true}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		var out Patient
+		if err := p.Unmarshal(sample, &out); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
 func senParseChan(b *testing.B) {
 	j, _ := ioutil.ReadFile(filename)
 	var sample []byte

@@ -9,12 +9,29 @@ import (
 
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
+	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/tt"
 )
 
 type WithList struct {
 	List []int
 	Fun  func() bool
+}
+
+type Parent struct {
+	Child
+	Num      int
+	Children []*Child
+	Friends  []fmt.Stringer
+	Spouse   *Parent
+}
+
+type Child struct {
+	Name string
+}
+
+func (c *Child) String() string {
+	return c.Name
 }
 
 type Setter struct {
@@ -30,7 +47,7 @@ func (s *Setter) String() string {
 func (s *Setter) SetAttr(attr string, val interface{}) error {
 	switch attr {
 	case "a":
-		s.a, _ = val.(int64)
+		s.a = alt.Int(val)
 	case "b":
 		s.b, _ = val.(string)
 	default:
@@ -41,7 +58,7 @@ func (s *Setter) SetAttr(attr string, val interface{}) error {
 
 func sillyRecompose(data map[string]interface{}) (interface{}, error) {
 	s := silly{}
-	i, _ := data["val"].(int64)
+	i, _ := data["val"].(int)
 	s.val = int(i)
 	return &s, nil
 }
@@ -226,4 +243,260 @@ func TestRecomposeListBadTarget(t *testing.T) {
 	tt.Nil(t, err, "NewRecomposer")
 	_, err = r.Recompose("[]", 7)
 	tt.NotNil(t, err, "Recompose")
+}
+
+func TestRecomposeNested(t *testing.T) {
+	src := Parent{
+		Child: Child{Name: "Pat"},
+		Num:   3,
+		Children: []*Child{
+			{Name: "Andy"},
+			{Name: "Robin"},
+		},
+		Friends: []fmt.Stringer{
+			&Child{Name: "Ash"},
+			&Child{Name: "Riley"},
+		},
+		Spouse: &Parent{Child: Child{Name: "Bobby"}},
+	}
+	simple := alt.Decompose(&src, &alt.Options{})
+	jp.C("child").Del(simple)
+	jp.C("name").Set(simple, "Pat")
+
+	// Since friends is a slice of interfaces a hint is needed to determine
+	// the type. Use ^ as an example.
+	jp.C("friends").W().C("^").Set(simple, "Child")
+	// Make sure the recomposer knows about the Child type so the hint has
+	// something to refer to.
+	r, err := alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Parent{}: nil})
+	tt.Nil(t, err, "NewRecomposer")
+
+	var v interface{}
+	v, err = r.Recompose(simple, &Parent{})
+	tt.Nil(t, err, "Recompose")
+	p, _ := v.(*Parent)
+	tt.NotNil(t, p, "check type - %"+"T", v)
+
+	diff := alt.Compare(&src, p)
+	tt.Equal(t, 0, len(diff), "compare diff - ", diff)
+}
+
+func TestRecomposeSlice(t *testing.T) {
+	src := []Child{
+		{Name: "Andy"},
+		{Name: "Robin"},
+	}
+	simple := alt.Decompose(&src, &alt.Options{})
+
+	r, err := alt.NewRecomposer("", nil)
+	tt.Nil(t, err, "NewRecomposer")
+	var slice []Child
+	var v interface{}
+	v, err = r.Recompose(simple, &slice)
+	tt.Nil(t, err, "Recompose")
+
+	diff := alt.Compare(src, v)
+	tt.Equal(t, 0, len(diff), "compare to source: diff - ", diff)
+
+	diff = alt.Compare(slice, v)
+	tt.Equal(t, 0, len(diff), "compare target and return: diff - ", diff)
+}
+
+func TestRecomposePtrSlice(t *testing.T) {
+	src := []*Child{
+		{Name: "Andy"},
+		{Name: "Robin"},
+	}
+	simple := alt.Decompose(&src, &alt.Options{})
+	r, err := alt.NewRecomposer("", nil)
+	tt.Nil(t, err, "NewRecomposer")
+
+	var slice []*Child
+	var v interface{}
+	v, err = r.Recompose(simple, &slice)
+	tt.Nil(t, err, "Recompose")
+
+	diff := alt.Compare(src, v)
+	tt.Equal(t, 0, len(diff), "compare to source: diff - ", diff)
+
+	diff = alt.Compare(slice, v)
+	tt.Equal(t, 0, len(diff), "compare target and return: diff - ", diff)
+}
+
+func TestRecomposePtrMap(t *testing.T) {
+	src := map[string]*Child{
+		"a": {Name: "Andy"},
+		"r": {Name: "Robin"},
+	}
+	simple := alt.Decompose(src, &alt.Options{})
+	r, err := alt.NewRecomposer("", nil)
+	tt.Nil(t, err, "NewRecomposer")
+
+	var out map[string]*Child
+	var v interface{}
+	v, err = r.Recompose(simple, &out)
+	tt.Nil(t, err, "Recompose")
+
+	diff := alt.Compare(src, v)
+	tt.Equal(t, 0, len(diff), "compare to source: diff - ", diff)
+
+	diff = alt.Compare(out, v)
+	tt.Equal(t, 0, len(diff), "compare target and return: diff - ", diff)
+
+	// Try with allocated map.
+	out = map[string]*Child{}
+	v, err = r.Recompose(simple, &out)
+	tt.Nil(t, err, "Recompose")
+
+	diff = alt.Compare(src, v)
+	tt.Equal(t, 0, len(diff), "compare to source: diff - ", diff)
+
+	diff = alt.Compare(out, v)
+	tt.Equal(t, 0, len(diff), "compare target and return: diff - ", diff)
+}
+
+func TestRecomposeNotSettable(t *testing.T) {
+	type NotSet struct {
+		X chan bool
+	}
+	src := map[string]interface{}{"x": 3}
+	var out NotSet
+	_, err := alt.Recompose(src, &out)
+	tt.NotNil(t, err, "Recompose")
+}
+
+func TestRecomposeMap(t *testing.T) {
+	src := map[string]interface{}{"x": 3}
+	var out map[string]interface{}
+	var v interface{}
+	v, err := alt.Recompose(src, &out)
+	tt.Nil(t, err, "Recompose")
+
+	diff := alt.Compare(src, v)
+	tt.Equal(t, 0, len(diff), "compare to source: diff - ", diff)
+
+	diff = alt.Compare(out, v)
+	tt.Equal(t, 0, len(diff), "compare target and return: diff - ", diff)
+
+	out = map[string]interface{}{}
+	v, err = alt.Recompose(src, out)
+	tt.Nil(t, err, "Recompose")
+
+	diff = alt.Compare(src, v)
+	tt.Equal(t, 0, len(diff), "compare to source: diff - ", diff)
+
+	diff = alt.Compare(out, v)
+	tt.Equal(t, 0, len(diff), "compare target and return: diff - ", diff)
+
+	v, err = alt.Recompose(src)
+	tt.Nil(t, err, "Recompose")
+
+	diff = alt.Compare(src, v)
+	tt.Equal(t, 0, len(diff), "compare to source: diff - ", diff)
+}
+
+func TestRecomposeBadComposerFunc(t *testing.T) {
+	src := map[string]interface{}{"^": "Dummy", "x": 3}
+	r, err := alt.NewRecomposer("^",
+		map[interface{}]alt.RecomposeFunc{&Dummy{}: func(_ map[string]interface{}) (interface{}, error) {
+			return nil, fmt.Errorf("failed")
+		}})
+	tt.Nil(t, err, "NewRecomposer")
+	_, err = r.Recompose(src)
+	tt.NotNil(t, err, "Recompose")
+}
+
+func TestRecomposeGenComposerFunc(t *testing.T) {
+	src := gen.Object{"^": gen.String("Dummy"), "val": gen.Int(3)}
+	r, err := alt.NewRecomposer("^",
+		map[interface{}]alt.RecomposeFunc{&Dummy{}: func(_ map[string]interface{}) (interface{}, error) {
+			return nil, fmt.Errorf("failed")
+		}})
+	tt.Nil(t, err, "NewRecomposer")
+	_, err = r.Recompose(src)
+	tt.NotNil(t, err, "Recompose")
+
+	r, err = alt.NewRecomposer("^",
+		map[interface{}]alt.RecomposeFunc{&Dummy{}: func(data map[string]interface{}) (interface{}, error) {
+			return &Dummy{Val: int(alt.Int(jp.C("val").First(data)))}, nil
+		}})
+	tt.Nil(t, err, "NewRecomposer")
+	var v interface{}
+	v, err = r.Recompose(src)
+	tt.Nil(t, err, "Recompose")
+	d, _ := v.(*Dummy)
+	tt.NotNil(t, d)
+	tt.Equal(t, 3, d.Val)
+}
+
+func TestRecomposeNotSlice(t *testing.T) {
+	src := map[string]interface{}{"x": 3}
+	var out []interface{}
+	_, err := alt.Recompose(src, &out)
+	tt.NotNil(t, err, "Recompose")
+}
+
+func TestRecomposeNotMap(t *testing.T) {
+	src := []interface{}{3}
+	var out map[string]interface{}
+	_, err := alt.Recompose(src, &out)
+	tt.NotNil(t, err, "Recompose")
+}
+
+func TestRecomposeOtherMap(t *testing.T) {
+	src := map[string]int{"x": 3}
+	var out map[string]interface{}
+	v, err := alt.Recompose(src, &out)
+	tt.Nil(t, err, "Recompose")
+	vo, _ := v.(map[string]interface{})
+	tt.NotNil(t, vo)
+	tt.Equal(t, 3, vo["x"].(int64))
+}
+
+func TestRecomposeSimpleMap(t *testing.T) {
+	src := map[string]interface{}{"x": map[string]interface{}{"val": 3}}
+	var out map[string]Dummy
+	v, err := alt.Recompose(src, &out)
+	tt.Nil(t, err, "Recompose")
+	vo, _ := v.(map[string]Dummy)
+	tt.NotNil(t, vo)
+	tt.Equal(t, 3, vo["x"].Val)
+}
+
+func TestRecomposeAlternateKeys(t *testing.T) {
+	src := map[string]interface{}{"Val": 3}
+	var out Anno
+	v, err := alt.Recompose(src, &out)
+	tt.Nil(t, err, "Recompose")
+	a, _ := v.(*Anno)
+	tt.NotNil(t, a)
+	tt.Equal(t, 3, a.Val)
+
+	src = map[string]interface{}{"val": 3}
+	v, err = alt.Recompose(src, &out)
+	tt.Nil(t, err, "Recompose")
+	a, _ = v.(*Anno)
+	tt.NotNil(t, a)
+	tt.Equal(t, 3, a.Val)
+
+	src = map[string]interface{}{"v": 3}
+	v, err = alt.Recompose(src, &out)
+	tt.Nil(t, err, "Recompose")
+	a, _ = v.(*Anno)
+	tt.NotNil(t, a)
+	tt.Equal(t, 3, a.Val)
+}
+
+func TestRecomposeInterface(t *testing.T) {
+	src := map[string]interface{}{"^": "Child", "name": "Pat"}
+
+	r, err := alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Child{}: nil})
+	tt.Nil(t, err, "NewRecomposer")
+
+	var out fmt.Stringer
+	v, err := r.Recompose(src, &out)
+	tt.Nil(t, err, "Recompose")
+	s, _ := v.(fmt.Stringer)
+	tt.NotNil(t, s)
+	tt.Equal(t, "Pat", s.String())
 }

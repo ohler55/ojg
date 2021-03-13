@@ -37,6 +37,10 @@ func diff(v0, v1 interface{}, one bool, ignores ...Path) (diffs []Path) {
 		if v1 != nil {
 			diffs = append(diffs, Path{nil})
 		}
+	case bool:
+		if t1, ok := v1.(bool); !ok || t0 != t1 {
+			diffs = append(diffs, Path{nil})
+		}
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 		i0, _ := asInt(v0)
 		if i1, ok := asInt(v1); !ok || i0 != i1 {
@@ -45,6 +49,10 @@ func diff(v0, v1 interface{}, one bool, ignores ...Path) (diffs []Path) {
 	case float32, float64:
 		f0, _ := asFloat(v0)
 		if f1, ok := asFloat(v1); !ok || f0 != f1 {
+			diffs = append(diffs, Path{nil})
+		}
+	case string:
+		if t1, ok := v1.(string); !ok || t0 != t1 {
 			diffs = append(diffs, Path{nil})
 		}
 	case time.Time:
@@ -130,24 +138,23 @@ func diff(v0, v1 interface{}, one bool, ignores ...Path) (diffs []Path) {
 			}
 		}
 	default:
-		if v0 != v1 { // bool, string, and any other type
+		r0 := reflect.ValueOf(v0)
+		r1 := reflect.ValueOf(v1)
+		if r0.Type().String() == r1.Type().String() {
 			if s0, _ := v0.(Simplifier); s0 != nil {
 				if s1, _ := v1.(Simplifier); s1 != nil {
 					return diff(s0.Simplify(), s1.Simplify(), one, ignores...)
 				}
 			}
-			r0 := reflect.ValueOf(v0)
-			r1 := reflect.ValueOf(v1)
-			if r0.Type().Name() == r1.Type().Name() {
-				opt := &Options{}
-				v0 = reflectValue(r0, opt)
-				v1 = reflectValue(r1, opt)
-				if v0 != nil && v1 != nil {
-					return diff(v0, v1, one, ignores...)
-				}
+			opt := &Options{}
+			v0 = reflectValue(r0, opt)
+			v1 = reflectValue(r1, opt)
+			if v0 != nil && v1 != nil {
+				return diff(v0, v1, one, ignores...)
 			}
-			diffs = append(diffs, Path{nil})
 		}
+		diffs = append(diffs, Path{nil})
+		return
 	}
 	return
 }

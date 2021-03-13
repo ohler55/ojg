@@ -26,6 +26,10 @@ type Options struct {
 	// first character of the object keys is lowercase.
 	KeyExact bool
 
+	// NestEmbed if true will generate an element for each anonymous embedded
+	// field.
+	NestEmbed bool
+
 	// Converter to use when decomposing or altering if non nil.
 	Converter *Converter
 }

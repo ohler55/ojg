@@ -23,6 +23,17 @@ func goParse(b *testing.B) {
 	}
 }
 
+func goUnmarshal(b *testing.B) {
+	sample, _ := ioutil.ReadFile(filename)
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		var out Patient
+		if err := json.Unmarshal(sample, &out); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
 func goDecodeReader(b *testing.B) {
 	f, err := os.Open(filename)
 	if err != nil {

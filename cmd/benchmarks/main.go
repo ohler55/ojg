@@ -72,6 +72,11 @@ func main() {
 		{pkg: "sen", name: "Parse", fun: senParse},
 		{pkg: "sen-reuse", name: "Parse", fun: senParseReuse},
 	})
+	benchSuite("Unmarshal []byte to type", []*bench{
+		{pkg: "json", name: "Unmarshal", fun: goUnmarshal},
+		{pkg: "oj", name: "Unmarshal", fun: ojUnmarshal},
+		{pkg: "sen", name: "Unmarshal", fun: senUnmarshal},
+	})
 	benchSuite("Parse io.Reader", []*bench{
 		{pkg: "json", name: "Decode", fun: goDecodeReader},
 		{pkg: "oj", name: "ParseReader", fun: ojParseReader},
