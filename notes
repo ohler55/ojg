@@ -1,18 +1,6 @@
 
 ----------------
 
-- recomposer
- - test coverage
-
-- Unmarshal for oj and sen
- - initial, parse then call recomposer
- - take second arg for target then option for map and type key
- - call recoposer for each map or array completion
-  - need to keep track of expected types
-   - prebuild a type tree?
-   - track types in a separate stack with reflect.Types? **
-    - look at key and lookup in relection
-
 - option to detect duplicate keys or make part of validator
  - change stack to include array and map or maybe just map and nil means array
   - check performance hit

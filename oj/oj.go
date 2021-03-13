@@ -4,6 +4,8 @@ package oj
 
 import (
 	"io"
+
+	"github.com/ohler55/ojg/alt"
 )
 
 // Parse JSON into a gen.Node. Arguments are optional and can be a bool
@@ -50,4 +52,15 @@ func ValidateString(s string) error {
 func ValidateReader(r io.Reader) error {
 	v := Validator{}
 	return v.ValidateReader(r)
+}
+
+// Unmarshal parses the provided JSON and stores the result in the value
+// pointed to by vp.
+func Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomposer) (err error) {
+	p := Parser{}
+	var v interface{}
+	if v, err = p.Parse(data); err == nil {
+		_, err = alt.Recompose(v, vp)
+	}
+	return
 }

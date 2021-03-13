@@ -11,6 +11,13 @@ import (
 	"github.com/ohler55/ojg/gen"
 )
 
+// DefaultRecomposer provides a shared Recomposer. Note that this should not
+// be shared across go routines unless all types that will be used are
+// registered first. That can be done explicitly or with a warm up run.
+var DefaultRecomposer = Recomposer{
+	composers: map[string]*composer{},
+}
+
 // RecomposeFunc should build an object from data in a map returning the
 // recomposed object or an error.
 type RecomposeFunc func(map[string]interface{}) (interface{}, error)
@@ -24,6 +31,11 @@ type Recomposer struct {
 	composers map[string]*composer
 }
 
+// Recompose simple data into more complex go types.
+func Recompose(v interface{}, tv ...interface{}) (out interface{}, err error) {
+	return DefaultRecomposer.Recompose(v, tv...)
+}
+
 // NewRecomposer creates a new instance. The composers are a map of objects
 // expected and functions to recompose them. If no function is provided then
 // reflection is used instead.
@@ -34,21 +46,21 @@ func NewRecomposer(createKey string, composers map[interface{}]RecomposeFunc) (*
 	}
 	for v, fun := range composers {
 		rt := reflect.TypeOf(v)
-		if err := r.registerComposer(rt, fun); err != nil {
+		if _, err := r.registerComposer(rt, fun); err != nil {
 			return nil, err
 		}
 	}
 	return &r, nil
 }
 
-func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) error {
+func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*composer, error) {
 	if rt.Kind() == reflect.Ptr {
 		rt = rt.Elem()
 	}
 	full := rt.PkgPath() + "/" + rt.Name()
 	// TBD could loosen this up and allow any type as long as a function is provided.
 	if rt.Kind() != reflect.Struct {
-		return fmt.Errorf("only structs can be recomposed. %s is not a struct type", rt)
+		return nil, fmt.Errorf("only structs can be recomposed. %s is not a struct type", rt)
 	}
 	c := composer{
 		fun:   fun,
@@ -67,9 +79,12 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) error 
 		case reflect.Array, reflect.Slice, reflect.Map, reflect.Ptr:
 			ft = ft.Elem()
 		}
-		_ = r.registerComposer(ft, nil)
+		if _, has := r.composers[ft.Name()]; has {
+			continue
+		}
+		_, _ = r.registerComposer(ft, nil)
 	}
-	return nil
+	return &c, nil
 }
 
 // Recompose simple data into more complex go types.
@@ -94,6 +109,10 @@ func (r *Recomposer) Recompose(v interface{}, tv ...interface{}) (out interface{
 			r.recomp(v, rv)
 		case reflect.Ptr:
 			r.recomp(v, rv)
+			switch rv.Elem().Kind() {
+			case reflect.Slice, reflect.Array, reflect.Map, reflect.Interface:
+				out = rv.Elem().Interface()
+			}
 		default:
 			return nil, fmt.Errorf("only a slice, map, or pointer is allowed as an optional argument")
 		}
@@ -256,7 +275,7 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 			}
 		}
 		if rv.IsNil() {
-			rv.Set(reflect.MakeMap(rv.Type()))
+			rv.Set(reflect.MakeMapWithSize(rv.Type(), len(vm)))
 		}
 		if et.Kind() == reflect.Interface {
 			for k, m := range vm {
@@ -273,7 +292,7 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 			for k, m := range vm {
 				ev := reflect.New(et)
 				r.recomp(m, ev)
-				rv.SetMapIndex(reflect.ValueOf(k), ev)
+				rv.SetMapIndex(reflect.ValueOf(k), ev.Elem())
 			}
 		}
 	case reflect.Struct:
@@ -305,7 +324,8 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 		if c := r.composers[rv.Type().Name()]; c != nil {
 			im = c.indexes
 		} else {
-			im = indexType(rv.Type())
+			c, _ = r.registerComposer(rv.Type(), nil)
+			im = c.indexes
 		}
 		for k, sf := range im {
 			f := rv.FieldByIndex(sf.Index)
@@ -330,9 +350,6 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 }
 
 func (r *Recomposer) setValue(v interface{}, rv reflect.Value) {
-	if !rv.IsValid() || !rv.CanSet() {
-		return
-	}
 	switch rv.Kind() {
 	case reflect.Bool, reflect.String,
 		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
@@ -343,6 +360,10 @@ func (r *Recomposer) setValue(v interface{}, rv reflect.Value) {
 	case reflect.Interface:
 		v = r.recompAny(v)
 		rv.Set(reflect.ValueOf(v))
+	case reflect.Ptr:
+		ev := reflect.New(rv.Type().Elem())
+		r.recomp(v, ev)
+		rv.Set(ev)
 	default:
 		r.recomp(v, rv)
 	}

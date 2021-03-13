@@ -56,6 +56,9 @@ func TestDiffPrimitive(t *testing.T) {
 		{v0: 3.0, v1: gen.Float(3.0), expect: true},
 		{v0: 3.0, v1: gen.Int(3), expect: true},
 		{v0: 3.0, v1: true, expect: false},
+
+		{v0: "abc", v1: "abc", expect: true},
+		{v0: "abc", v1: "abx", expect: false},
 	} {
 		diffs := alt.Diff(p.v0, p.v1)
 		tt.Equal(t, p.expect, len(diffs) == 0, "Diff(", p.v0, p.v1, ")")
@@ -177,6 +180,14 @@ func TestDiffSimplifier(t *testing.T) {
 		&silly{val: 3},
 	)
 	tt.Equal(t, 0, len(diffs))
+}
+
+func TestDiffTypes(t *testing.T) {
+	diffs := alt.Diff(
+		&silly{val: 3},
+		&Dummy{Val: 3},
+	)
+	tt.Equal(t, 1, len(diffs))
 }
 
 func TestDiffReflect(t *testing.T) {

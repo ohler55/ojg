@@ -8,6 +8,7 @@ import (
 	"math"
 	"unicode/utf8"
 
+	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
 )
 
@@ -40,6 +41,16 @@ type Parser struct {
 	// Reuse maps. Previously returned maps will no longer be valid or rather
 	// could be modified during parsing.
 	Reuse bool
+}
+
+// Unmarshal parses the provided JSON and stores the result in the value
+// pointed to by vp.
+func (p *Parser) Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomposer) (err error) {
+	var v interface{}
+	if v, err = p.Parse(data); err == nil {
+		_, err = alt.Recompose(v, vp)
+	}
+	return
 }
 
 // Parse a JSON string in to simple types. An error is returned if not valid JSON.

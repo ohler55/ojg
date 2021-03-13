@@ -4,13 +4,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.9.0] - unreleased
+## [1.9.0] - 2021-03-13
 ### Added
 - The Recomposer is now more flexibly in regard to input types. It now
   allows json.Unmarshal() targets as well as the type create key
   approach.
 - Added flag to alt.Options to determine whether embedded anonymous
   types whould be output as nested elements or flattened.
+- Added oj.Unmarshal and sen.Unmarshal.
 
 ## [1.8.0] - 2021-03-05
 ### Added
