@@ -73,6 +73,7 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*comp
 	r.composers[c.full] = &c
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
+		// Private fields should be skipped.
 		if len(f.Name) == 0 || ([]byte(f.Name)[0]&0x20) != 0 {
 			continue
 		}
@@ -326,7 +327,11 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 		if c := r.composers[rv.Type().Name()]; c != nil {
 			if c.fun != nil {
 				if val, err := c.fun(vm); err == nil {
-					rv.Set(reflect.ValueOf(val))
+					vv := reflect.ValueOf(val)
+					if vv.Type().Kind() == reflect.Ptr {
+						vv = vv.Elem()
+					}
+					rv.Set(vv)
 				} else {
 					panic(err)
 				}

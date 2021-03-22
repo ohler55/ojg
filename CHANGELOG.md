@@ -4,6 +4,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.9.1] - 2021-03-21
+### Fixed
+- oj.Unmarshal now supports the optional alt.Recomposer as documented.
+- Recomposer handles time.Time recomposing like any other struct.
+- Write writes time.Time to conform to other struct encoding.
+
 ## [1.9.0] - 2021-03-13
 ### Added
 - The Recomposer is now more flexibly in regard to input types. It now

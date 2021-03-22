@@ -21,7 +21,7 @@ import (
 	"github.com/ohler55/ojg/sen"
 )
 
-const version = "1.9.0"
+const version = "1.9.1"
 
 var (
 	indent     = 2

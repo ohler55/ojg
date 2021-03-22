@@ -268,7 +268,17 @@ func (o *Options) BuildString(s string) {
 
 // BuildTime appends a time string to the buffer.
 func (o *Options) BuildTime(t time.Time) {
-	if 0 < len(o.TimeWrap) {
+	if o.TimeMap {
+		o.Buf = append(o.Buf, []byte(`{"`)...)
+		o.Buf = append(o.Buf, o.CreateKey...)
+		o.Buf = append(o.Buf, []byte(`":`)...)
+		if o.FullTypePath {
+			o.Buf = append(o.Buf, []byte(`"time/Time"`)...)
+		} else {
+			o.Buf = append(o.Buf, []byte("Time")...)
+		}
+		o.Buf = append(o.Buf, []byte(` value:`)...)
+	} else if 0 < len(o.TimeWrap) {
 		o.Buf = append(o.Buf, []byte(`{"`)...)
 		o.Buf = append(o.Buf, []byte(o.TimeWrap)...)
 		o.Buf = append(o.Buf, []byte(`":`)...)
@@ -291,7 +301,7 @@ func (o *Options) BuildTime(t time.Time) {
 		o.Buf = append(o.Buf, []byte(t.Format(o.TimeFormat))...)
 		o.Buf = append(o.Buf, '"')
 	}
-	if 0 < len(o.TimeWrap) {
+	if 0 < len(o.TimeWrap) || o.TimeMap {
 		o.Buf = append(o.Buf, '}')
 	}
 }
