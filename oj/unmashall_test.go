@@ -5,6 +5,7 @@ package oj_test
 import (
 	"testing"
 
+	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
 )
@@ -19,6 +20,11 @@ func TestUnmarshal(t *testing.T) {
 	obj = nil
 	p := oj.Parser{}
 	err = p.Unmarshal([]byte(src), &obj)
+	tt.Nil(t, err)
+	tt.Equal(t, src, oj.JSON(obj))
+
+	obj = nil
+	err = oj.Unmarshal([]byte(src), &obj, &alt.Recomposer{})
 	tt.Nil(t, err)
 	tt.Equal(t, src, oj.JSON(obj))
 }

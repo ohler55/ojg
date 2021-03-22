@@ -56,11 +56,15 @@ func ValidateReader(r io.Reader) error {
 
 // Unmarshal parses the provided JSON and stores the result in the value
 // pointed to by vp.
-func Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomposer) (err error) {
+func Unmarshal(data []byte, vp interface{}, recomposer ...*alt.Recomposer) (err error) {
 	p := Parser{}
 	var v interface{}
 	if v, err = p.Parse(data); err == nil {
-		_, err = alt.Recompose(v, vp)
+		if 0 < len(recomposer) {
+			recomposer[0].Recompose(v, vp)
+		} else {
+			_, err = alt.Recompose(v, vp)
+		}
 	}
 	return
 }

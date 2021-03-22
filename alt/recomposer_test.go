@@ -57,10 +57,11 @@ func (s *Setter) SetAttr(attr string, val interface{}) error {
 }
 
 func sillyRecompose(data map[string]interface{}) (interface{}, error) {
-	s := silly{}
-	i, _ := data["val"].(int)
-	s.val = int(i)
-	return &s, nil
+	i, ok := data["val"].(int)
+	if !ok {
+		return nil, fmt.Errorf("val is not an int")
+	}
+	return &silly{val: int(i)}, nil
 }
 
 func TestRecomposeBasic(t *testing.T) {
@@ -104,15 +105,32 @@ func TestRecomposeNode(t *testing.T) {
 }
 
 func TestRecomposeFunc(t *testing.T) {
-	src := map[string]interface{}{"type": "silly", "val": 3}
+	type SillyWrap struct {
+		Silly *silly
+	}
+	src := map[string]interface{}{
+		"silly": map[string]interface{}{"type": "silly", "val": 3},
+	}
 	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&silly{}: sillyRecompose})
 	tt.Nil(t, err, "NewRecomposer")
 	var v interface{}
+	var wrap SillyWrap
+	v, err = r.Recompose(src, &wrap)
+	tt.Nil(t, err, "Recompose")
+	w, _ := v.(*SillyWrap)
+	tt.NotNil(t, w, "silly wrap")
+	tt.Equal(t, 3, w.Silly.val)
+
 	v, err = r.Recompose(src)
 	tt.Nil(t, err, "Recompose")
-	s, _ := v.(*silly)
-	tt.NotNil(t, s, "silly")
-	tt.Equal(t, 3, s.val)
+	m, _ := v.(map[string]interface{})
+	tt.NotNil(t, m["silly"])
+
+	src = map[string]interface{}{
+		"silly": map[string]interface{}{"type": "silly", "val": true},
+	}
+	_, err = r.Recompose(src, &wrap)
+	tt.NotNil(t, err, "Recompose should return and error")
 }
 
 func TestRecomposeReflect(t *testing.T) {
