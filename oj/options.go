@@ -58,6 +58,10 @@ type Options struct {
 	// time will look like '{"@":"2020-04-12T16:34:04.123456789Z"}'
 	TimeWrap string
 
+	// TimeMap if true will encode time as a map with a create key and a
+	// 'value' member formatted according to the TimeFormat options.
+	TimeMap bool
+
 	// CreateKey if set is the key to use when encoding objects that can later
 	// be reconstituted with an Unmarshall call. This is only use when writing
 	// simple types where one of the object in an array or map is not a

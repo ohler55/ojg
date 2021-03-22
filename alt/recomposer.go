@@ -71,9 +71,11 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*comp
 	c.indexes = indexType(c.rtype)
 	r.composers[c.short] = &c
 	r.composers[c.full] = &c
-
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
+		if len(f.Name) == 0 || ([]byte(f.Name)[0]&0x20) != 0 {
+			continue
+		}
 		ft := f.Type
 		switch ft.Kind() {
 		case reflect.Array, reflect.Slice, reflect.Map, reflect.Ptr:
@@ -322,6 +324,14 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 		}
 		var im map[string]reflect.StructField
 		if c := r.composers[rv.Type().Name()]; c != nil {
+			if c.fun != nil {
+				if val, err := c.fun(vm); err == nil {
+					rv.Set(reflect.ValueOf(val))
+				} else {
+					panic(err)
+				}
+				break
+			}
 			im = c.indexes
 		} else {
 			c, _ = r.registerComposer(rv.Type(), nil)
