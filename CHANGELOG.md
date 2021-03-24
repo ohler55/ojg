@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.9.2] - 2021-03-24
+### Fixed
+- When parsing SEN format `\r` is now allowed in strings to support
+  Windows line termination as it works in Linux and macOS.
+
 ## [1.9.1] - 2021-03-21
 ### Fixed
 - oj.Unmarshal now supports the optional alt.Recomposer as documented.

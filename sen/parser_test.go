@@ -75,6 +75,7 @@ func TestParserParseString(t *testing.T) {
 		{src: "[[true]]", value: []interface{}{[]interface{}{true}}},
 		{src: `"x\t\n\"\b\f\r\u0041\\\/y"`, value: "x\t\n\"\b\f\r\u0041\\/y"},
 		{src: `"x\u004a\u004Ay"`, value: "xJJy"},
+		{src: `"x\ry"`, value: "x\ry"},
 
 		{src: "{}", value: map[string]interface{}{}},
 		{src: `{"a\tbc":true}`, value: map[string]interface{}{"a\tbc": true}},
@@ -132,7 +133,7 @@ func TestParserParseString(t *testing.T) {
 		{src: `1.2e2]`, expect: "unexpected array close at 1:6"},
 		{src: `1.2e2}`, expect: "unexpected object close at 1:6"},
 		{src: `1.2e2x`, expect: "invalid number at 1:6"},
-		{src: "\"x\ry\"", expect: "invalid JSON character 0x0d at 1:3"},
+		{src: "\"x\fy\"", expect: "invalid JSON character 0x0c at 1:3"},
 		{src: `"x\zy"`, expect: "invalid JSON escape character '\\z' at 1:4"},
 		{src: `"x\u004z"`, expect: "invalid JSON unicode character 'z' at 1:8"},
 		{src: "\xef\xbb[]", expect: "expected BOM at 1:3"},
