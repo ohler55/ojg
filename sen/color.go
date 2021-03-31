@@ -3,7 +3,6 @@
 package sen
 
 import (
-	"fmt"
 	"sort"
 	"strconv"
 	"time"
@@ -116,8 +115,7 @@ func (o *Options) cbuildJSON(data interface{}, depth int) {
 			o.cbuildJSON(alt.Decompose(data, &ao), depth)
 			return
 		} else {
-			o.Buf = append(o.Buf, o.StringColor...)
-			o.BuildString(fmt.Sprintf("%v", td))
+			o.cbuildJSON(alt.Decompose(data, &alt.Options{OmitNil: o.OmitNil}), depth)
 		}
 	}
 	o.Buf = append(o.Buf, o.NoColor...)

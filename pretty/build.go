@@ -3,7 +3,6 @@
 package pretty
 
 import (
-	"fmt"
 	"sort"
 	"strconv"
 	"time"
@@ -76,7 +75,7 @@ func (w *Writer) build(data interface{}) (n *node) {
 			ao := alt.Options{CreateKey: w.CreateKey, OmitNil: w.OmitNil, FullTypePath: w.FullTypePath}
 			return w.build(alt.Decompose(data, &ao))
 		} else {
-			n = w.buildStringNode(fmt.Sprintf("%v", td))
+			return w.build(alt.Decompose(data, &alt.Options{OmitNil: w.OmitNil}))
 		}
 	}
 	return

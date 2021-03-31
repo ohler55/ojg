@@ -146,7 +146,7 @@ func TestString(t *testing.T) {
 
 		{value: &simon{x: 3}, expect: `{type:simon x:3}`, options: &sen.Options{Sort: true}},
 		{value: &genny{val: 3}, expect: `{type:genny val:3}`, options: &sen.Options{Sort: true}},
-		{value: &Dummy{Val: 3}, expect: `"{val: 3}"`, options: &sen.Options{Sort: true}},
+		{value: &Dummy{Val: 3}, expect: `{val:3}`, options: &sen.Options{Sort: true}},
 		{value: &Dummy{Val: 3}, expect: `{^:Dummy val:3}`, options: &sen.Options{Sort: true, CreateKey: "^"}},
 	} {
 		if testing.Verbose() {

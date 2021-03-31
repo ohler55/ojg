@@ -187,7 +187,8 @@ func (o *Options) buildSen(data interface{}, depth int) {
 			o.buildSen(alt.Decompose(data, &ao), depth)
 			return
 		} else {
-			o.BuildString(fmt.Sprintf("%v", td))
+			o.buildSen(alt.Decompose(data, &alt.Options{OmitNil: o.OmitNil}), depth)
+			return
 		}
 	}
 	if o.W != nil && o.WriteLimit < len(o.Buf) {

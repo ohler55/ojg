@@ -65,7 +65,7 @@ func TestColor(t *testing.T) {
 		{value: &simon{x: 3}, expect: `s{xktypexs:xqsimonx kxxs:x03xs}x`, options: &sen.Options{Sort: true}},
 		{value: &genny{val: 3}, expect: `s{xktypexs:xqgennyx kvalxs:x03xs}x`, options: &sen.Options{Sort: true}},
 		{value: &Dummy{Val: 3}, expect: `s{xk^xs:xqDummyx kvalxs:x03xs}x`, options: &sen.Options{Sort: true, CreateKey: "^"}},
-		{value: &Dummy{Val: 3}, expect: `q"{val: 3}"x`, options: &sen.Options{CreateKey: ""}},
+		{value: &Dummy{Val: 3}, expect: `s{xkvalxs:x03xs}xx`, options: &sen.Options{CreateKey: ""}},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %v\n", i, d.value)

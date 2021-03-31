@@ -47,9 +47,12 @@ func (f *Fn) Simplify() interface{} {
 	simple := make([]interface{}, 0, len(f.Args)+1)
 	simple = append(simple, f.Name)
 	for _, a := range f.Args {
-		if sa, _ := a.(alt.Simplifier); sa != nil {
-			simple = append(simple, sa.Simplify())
-		} else {
+		switch ta := a.(type) {
+		case alt.Simplifier:
+			simple = append(simple, ta.Simplify())
+		case fmt.Stringer:
+			simple = append(simple, ta.String())
+		default:
 			simple = append(simple, a)
 		}
 	}

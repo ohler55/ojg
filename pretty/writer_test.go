@@ -416,7 +416,7 @@ func TestCreateKey(t *testing.T) {
 
 func TestAsString(t *testing.T) {
 	s := pretty.JSON(&Dummy{Val: 3})
-	tt.Equal(t, `"{val: 3}"`, s)
+	tt.Equal(t, `{"val": 3}`, s)
 }
 
 func TestJSONMaxWidth(t *testing.T) {
