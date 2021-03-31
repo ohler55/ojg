@@ -61,7 +61,7 @@ func Unmarshal(data []byte, vp interface{}, recomposer ...*alt.Recomposer) (err 
 	var v interface{}
 	if v, err = p.Parse(data); err == nil {
 		if 0 < len(recomposer) {
-			recomposer[0].Recompose(v, vp)
+			_, err = recomposer[0].Recompose(v, vp)
 		} else {
 			_, err = alt.Recompose(v, vp)
 		}

@@ -278,12 +278,12 @@ func TestRecomposeNested(t *testing.T) {
 		Spouse: &Parent{Child: Child{Name: "Bobby"}},
 	}
 	simple := alt.Decompose(&src, &alt.Options{})
-	jp.C("child").Del(simple)
-	jp.C("name").Set(simple, "Pat")
+	_ = jp.C("child").Del(simple)
+	_ = jp.C("name").Set(simple, "Pat")
 
 	// Since friends is a slice of interfaces a hint is needed to determine
 	// the type. Use ^ as an example.
-	jp.C("friends").W().C("^").Set(simple, "Child")
+	_ = jp.C("friends").W().C("^").Set(simple, "Child")
 	// Make sure the recomposer knows about the Child type so the hint has
 	// something to refer to.
 	r, err := alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Parent{}: nil})
