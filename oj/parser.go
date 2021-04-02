@@ -461,6 +461,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			}
 			off += i
 		case expSign:
+			// TBD allow all digits
 			p.mode = expZeroMap
 			if b == '-' {
 				p.num.NegExp = true

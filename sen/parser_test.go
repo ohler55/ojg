@@ -48,6 +48,8 @@ func TestParserParseString(t *testing.T) {
 		{src: "-12.3e-5", value: -12.3e-5},
 		{src: "12.3e+5 ", value: 12.3e+5},
 		{src: "12.3e+5\n ", value: 12.3e+5},
+		{src: "12.3e+05\n ", value: 12.3e+5},
+		{src: "12.3e-05\n ", value: 12.3e-5},
 		{src: `12345678901234567890`, value: "12345678901234567890"},
 		{src: `9223372036854775807`, value: 9223372036854775807},     // max int
 		{src: `9223372036854775808`, value: "9223372036854775808"},   // max int + 1

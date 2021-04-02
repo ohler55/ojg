@@ -32,7 +32,10 @@ func TestParserParseString(t *testing.T) {
 		{src: "-12.3 ", value: -12.3},
 		{src: "-12.3\n", value: -12.3},
 		{src: "-12.3e-5", value: -12.3e-5},
-		{src: "12.3e+5 ", value: 12.3e+5},
+		{src: "12.3e+5", value: 12.3e+5},
+		{src: "12.3e5", value: 12.3e+5},
+		{src: "12.3e05", value: 12.3e+5},
+		{src: "12.3e-05", value: 12.3e-5},
 		{src: "12.3e+5\n", value: 12.3e+5},
 		{src: `12345678901234567890`, value: "12345678901234567890"},
 		{src: `9223372036854775807`, value: 9223372036854775807},     // max int
@@ -46,6 +49,7 @@ func TestParserParseString(t *testing.T) {
 		{src: `12345678901234567890.321e66`, value: "12345678901234567890.321e66"},
 		{src: `321.12345678901234567890e66`, value: "321.12345678901234567890e66"},
 		{src: `321.123e2345`, value: "321.123e2345"},
+		{src: "8.26e-05", value: 8.26e-5},
 
 		{src: "\xef\xbb\xbf\"xyz\"", value: "xyz"},
 		{src: `"Bénédicte"`, value: "Bénédicte"},
