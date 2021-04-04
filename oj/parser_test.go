@@ -29,6 +29,7 @@ func TestParserParseString(t *testing.T) {
 		{src: "12.3", value: 12.3},
 		{src: "0 ", value: 0},
 		{src: "0\n", value: 0},
+		{src: "2e-7 ", value: 2e-7},
 		{src: "-12.3 ", value: -12.3},
 		{src: "-12.3\n", value: -12.3},
 		{src: "-12.3e-5", value: -12.3e-5},
@@ -307,4 +308,10 @@ func TestParserParseBadQuotes(t *testing.T) {
 	p := oj.Parser{}
 	_, err := p.Parse([]byte(`{"""":0}`))
 	tt.NotNil(t, err)
+}
+
+func TestParserParseFoo(t *testing.T) {
+	p := oj.Parser{}
+	_, err := p.Parse([]byte(`2e-7`))
+	tt.Nil(t, err)
 }

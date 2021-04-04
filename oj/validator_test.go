@@ -26,6 +26,7 @@ func TestValidatorValidateString(t *testing.T) {
 		{src: "[]"},
 		{src: "0\n"},
 		{src: "-12.3 "},
+		{src: "2e-7"},
 		{src: "-12.3\n"},
 		{src: "-12.3e-5"},
 		{src: "12.3e+5 "},

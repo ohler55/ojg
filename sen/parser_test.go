@@ -40,6 +40,7 @@ func TestParserParseString(t *testing.T) {
 		{src: "[one two]", value: []interface{}{"one", "two"}},
 		{src: "123", value: 123},
 		{src: "-12.3", value: -12.3},
+		{src: "2e-7", value: 2e-7},
 		{src: "-12.5e-2", value: -0.125},
 		{src: "0", value: 0},
 		{src: "0\n ", value: 0},

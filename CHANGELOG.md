@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.9.4] - 2021-04-04
+### Fixed
+- Number parsing in the form of 2e-7 has been fixed.
+
 ## [1.9.3] - 2021-03-30
 ### Fixed
 - Writer functions now decompose structs if possible instead of resorting to %v too quickly.
