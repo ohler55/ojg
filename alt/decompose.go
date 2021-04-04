@@ -163,7 +163,6 @@ func reflectValue(rv reflect.Value, opt *Options) (v interface{}) {
 
 func reflectStruct(rv reflect.Value, opt *Options) interface{} {
 	obj := map[string]interface{}{}
-
 	t := rv.Type()
 	if 0 < len(opt.CreateKey) {
 		if opt.FullTypePath {
@@ -200,7 +199,10 @@ func reflectStructMap(obj map[string]interface{}, rv reflect.Value, f reflect.St
 			name = []byte(tag)
 		}
 	}
-	g := Decompose(rv.Interface(), opt)
+	var g interface{}
+	if !isNil(rv) {
+		g = Decompose(rv.Interface(), opt)
+	}
 	if g != nil || !opt.OmitNil {
 		obj[string(name)] = g
 	}
@@ -223,7 +225,11 @@ func reflectMap(rv reflect.Value, opt *Options) interface{} {
 	it := rv.MapRange()
 	for it.Next() {
 		k := it.Key().Interface()
-		g := Decompose(it.Value().Interface(), opt)
+		var g interface{}
+		vv := it.Value()
+		if !isNil(vv) {
+			g = Decompose(vv.Interface(), opt)
+		}
 		if g != nil || !opt.OmitNil {
 			if ks, ok := k.(string); ok {
 				obj[ks] = g
@@ -242,4 +248,12 @@ func reflectArray(rv reflect.Value, opt *Options) interface{} {
 		a[i] = Decompose(rv.Index(i).Interface(), opt)
 	}
 	return a
+}
+
+func isNil(rv reflect.Value) bool {
+	switch rv.Kind() {
+	case reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
+		return rv.IsNil()
+	}
+	return false
 }
