@@ -77,6 +77,11 @@ func main() {
 		{pkg: "oj", name: "Unmarshal", fun: ojUnmarshal},
 		{pkg: "sen", name: "Unmarshal", fun: senUnmarshal},
 	})
+	benchSuite("Tokenize", []*bench{
+		{pkg: "json", name: "Decode", fun: goDecode},
+		{pkg: "oj", name: "Tokenize", fun: ojTokenize},
+		// TBD SEN and GEN
+	})
 	benchSuite("Parse io.Reader", []*bench{
 		{pkg: "json", name: "Decode", fun: goDecodeReader},
 		{pkg: "oj", name: "ParseReader", fun: ojParseReader},
@@ -85,6 +90,7 @@ func main() {
 		{pkg: "gen-reuse", name: "ParseReder", fun: genParseReaderReuse},
 		{pkg: "sen", name: "ParseReader", fun: senParseReader},
 		{pkg: "sen-reuse", name: "ParseReader", fun: senParseReaderReuse},
+		{pkg: "oj", name: "TokenizeLoad", fun: ojTokenizerLoad},
 	})
 	benchSuite("Parse chan interface{}", []*bench{
 		{pkg: "json", name: "Parse-chan", fun: goParseChan},

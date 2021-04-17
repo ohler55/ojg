@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -191,17 +192,41 @@ func reflectStructMap(obj map[string]interface{}, rv reflect.Value, f reflect.St
 		// not a public field
 		return
 	}
+	var g interface{}
+	if !isNil(rv) {
+		g = Decompose(rv.Interface(), opt)
+	}
+
 	if !opt.KeyExact {
 		name[0] = name[0] | 0x20
 	}
 	if opt.UseTags {
 		if tag, ok := f.Tag.Lookup("json"); ok && 0 < len(tag) {
-			name = []byte(tag)
+			parts := strings.Split(tag, ",")
+			switch parts[0] {
+			case "":
+				name = []byte(f.Name)
+			case "-":
+				if 1 < len(parts) {
+					name = []byte{'-'}
+				} else {
+					// skip
+					return
+				}
+			default:
+				name = []byte(parts[0])
+			}
+			for _, p := range parts[1:] {
+				switch p {
+				case "omitempty":
+					if g == nil || reflect.ValueOf(g).IsZero() {
+						return
+					}
+				case "string":
+					g = fmt.Sprintf("%v", g)
+				}
+			}
 		}
-	}
-	var g interface{}
-	if !isNil(rv) {
-		g = Decompose(rv.Interface(), opt)
 	}
 	if g != nil || !opt.OmitNil {
 		obj[string(name)] = g

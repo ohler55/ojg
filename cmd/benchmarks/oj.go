@@ -64,6 +64,34 @@ func ojParseReaderReuse(b *testing.B) {
 	}
 }
 
+func ojTokenize(b *testing.B) {
+	sample, _ := ioutil.ReadFile(filename)
+	b.ResetTimer()
+	h := oj.ZeroHandler{}
+	t := oj.Tokenizer{}
+	for n := 0; n < b.N; n++ {
+		if err := t.Parse(sample, &h); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func ojTokenizeLoad(b *testing.B) {
+	t := oj.Tokenizer{}
+	h := oj.ZeroHandler{}
+	f, err := os.Open(filename)
+	if err != nil {
+		log.Fatalf("Failed to read %s. %s\n", filename, err)
+	}
+	defer func() { _ = f.Close() }()
+	for n := 0; n < b.N; n++ {
+		_, _ = f.Seek(0, 0)
+		if err := t.Load(f, &h); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
 func ojUnmarshal(b *testing.B) {
 	sample, _ := ioutil.ReadFile(filename)
 	p := oj.Parser{Reuse: true}

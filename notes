@@ -1,4 +1,12 @@
 
+- alt.Decompose
+ - fix handking of json tags in structs
+- alt.Recompose tests
+ - use Anno again
+  - add a camelcase like oneTwo
+
+- test tokenizer
+
 ----------------
 
 - option to detect duplicate keys or make part of validator

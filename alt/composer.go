@@ -30,6 +30,7 @@ func indexType(rt reflect.Type) (im map[string]reflect.StructField) {
 				}
 			} else {
 				k, _ := f.Tag.Lookup("json")
+				k = strings.Split(k, ",")[0]
 				if len(k) == 0 {
 					k = strings.ToLower(f.Name)
 				}
