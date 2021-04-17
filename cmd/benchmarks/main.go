@@ -80,7 +80,7 @@ func main() {
 	benchSuite("Tokenize", []*bench{
 		{pkg: "json", name: "Decode", fun: goDecode},
 		{pkg: "oj", name: "Tokenize", fun: ojTokenize},
-		// TBD SEN and GEN
+		// TBD SEN
 	})
 	benchSuite("Parse io.Reader", []*bench{
 		{pkg: "json", name: "Decode", fun: goDecodeReader},

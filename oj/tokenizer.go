@@ -13,9 +13,7 @@ import (
 
 const (
 	objectStart = '{'
-	objectEnd   = '}'
 	arrayStart  = '['
-	arrayEnd    = ']'
 )
 
 // Tokenizer is used to tokenize a JSON document.

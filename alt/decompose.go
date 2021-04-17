@@ -177,13 +177,29 @@ func reflectStruct(rv reflect.Value, opt *Options) interface{} {
 			reflectStructMap(obj, rv.Field(i), t.Field(i), opt)
 		}
 	} else {
-		im := indexType(t)
+		im := allFields(t)
 		for _, sf := range im {
 			fv := rv.FieldByIndex(sf.Index)
 			reflectStructMap(obj, fv, sf, opt)
 		}
 	}
 	return obj
+}
+
+func allFields(rt reflect.Type) (im []reflect.StructField) {
+	for i := rt.NumField() - 1; 0 <= i; i-- {
+		f := rt.Field(i)
+		if f.Anonymous {
+			// prepend index and add to im
+			for _, ff := range allFields(f.Type) {
+				ff.Index = append([]int{i}, ff.Index...)
+				im = append(im, ff)
+			}
+		} else {
+			im = append(im, f)
+		}
+	}
+	return
 }
 
 func reflectStructMap(obj map[string]interface{}, rv reflect.Value, f reflect.StructField, opt *Options) {
