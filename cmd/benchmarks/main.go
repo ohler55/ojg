@@ -90,7 +90,7 @@ func main() {
 		{pkg: "gen-reuse", name: "ParseReder", fun: genParseReaderReuse},
 		{pkg: "sen", name: "ParseReader", fun: senParseReader},
 		{pkg: "sen-reuse", name: "ParseReader", fun: senParseReaderReuse},
-		{pkg: "oj", name: "TokenizeLoad", fun: ojTokenizerLoad},
+		{pkg: "oj", name: "TokenizeLoad", fun: ojTokenizeLoad},
 	})
 	benchSuite("Parse chan interface{}", []*bench{
 		{pkg: "json", name: "Parse-chan", fun: goParseChan},
