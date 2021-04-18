@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ohler55/ojg/gen"
@@ -258,7 +260,7 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 			}
 		} else {
 			for i := 0; i < size; i++ {
-				r.setValue(va[i], av.Index(i))
+				r.setValue(va[i], av.Index(i), nil)
 			}
 		}
 		rv.Set(av)
@@ -344,16 +346,17 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 		}
 		for k, sf := range im {
 			f := rv.FieldByIndex(sf.Index)
-			if m, has := vm[k]; has {
-				r.setValue(m, f)
-			} else if m, has = vm[sf.Name]; has {
-				r.setValue(m, f)
-			} else {
-				name := []byte(sf.Name)
-				name[0] = name[0] | 0x20
-				if m, has = vm[string(name)]; has {
-					r.setValue(m, f)
+			var m interface{}
+			var has bool
+			if m, has = vm[k]; !has {
+				if m, has = vm[sf.Name]; !has {
+					name := []byte(sf.Name)
+					name[0] = name[0] | 0x20
+					m, has = vm[string(name)]
 				}
+			}
+			if has {
+				r.setValue(m, f, &sf)
 			}
 		}
 	case reflect.Interface:
@@ -364,13 +367,40 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 	}
 }
 
-func (r *Recomposer) setValue(v interface{}, rv reflect.Value) {
+func (r *Recomposer) setValue(v interface{}, rv reflect.Value, sf *reflect.StructField) {
 	switch rv.Kind() {
-	case reflect.Bool, reflect.String,
-		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-		reflect.Float32, reflect.Float64:
-
+	case reflect.Bool:
+		if s, ok := v.(string); ok && sf != nil && strings.Contains(sf.Tag.Get("json"), ",string") {
+			if b, err := strconv.ParseBool(s); err == nil {
+				rv.Set(reflect.ValueOf(b))
+			} else {
+				panic(err)
+			}
+		} else {
+			rv.Set(reflect.ValueOf(v))
+		}
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		if s, ok := v.(string); ok && sf != nil && strings.Contains(sf.Tag.Get("json"), ",string") {
+			if i, err := strconv.Atoi(s); err == nil {
+				rv.Set(reflect.ValueOf(i).Convert(rv.Type()))
+			} else {
+				panic(err)
+			}
+		} else {
+			rv.Set(reflect.ValueOf(v).Convert(rv.Type()))
+		}
+	case reflect.Float32, reflect.Float64:
+		if s, ok := v.(string); ok && sf != nil && strings.Contains(sf.Tag.Get("json"), ",string") {
+			if f, err := strconv.ParseFloat(s, 64); err == nil {
+				rv.Set(reflect.ValueOf(f).Convert(rv.Type()))
+			} else {
+				panic(err)
+			}
+		} else {
+			rv.Set(reflect.ValueOf(v).Convert(rv.Type()))
+		}
+	case reflect.String:
 		rv.Set(reflect.ValueOf(v).Convert(rv.Type()))
 	case reflect.Interface:
 		v = r.recompAny(v)

@@ -4,9 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.10.0] - unreleased
+## [1.10.0] - 2021-04-22
 ### Fixed
-- Multiple part json tags are now parsed correctly.
+- Multiple part json tags are now parsed correctly and the string
+  options is supported in both decompose and compose.
 ### Added
 - Tokenize callback parser added.
 
