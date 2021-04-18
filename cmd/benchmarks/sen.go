@@ -58,6 +58,22 @@ func senTokenize(b *testing.B) {
 	}
 }
 
+func senTokenizeLoad(b *testing.B) {
+	t := sen.Tokenizer{}
+	h := oj.ZeroHandler{}
+	f, err := os.Open(filename)
+	if err != nil {
+		log.Fatalf("Failed to read %s. %s\n", filename, err)
+	}
+	defer func() { _ = f.Close() }()
+	for n := 0; n < b.N; n++ {
+		_, _ = f.Seek(0, 0)
+		if err := t.Load(f, &h); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
 func senParseReader(b *testing.B) {
 	var p sen.Parser
 	f, err := os.Open(filename)
