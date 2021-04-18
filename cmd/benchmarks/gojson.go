@@ -60,10 +60,11 @@ func goDecode(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		dec := json.NewDecoder(bytes.NewReader(sample))
 		for {
-			var data interface{}
-			if err := dec.Decode(&data); err == io.EOF {
+			_, err := dec.Token()
+			if err == io.EOF {
 				break
-			} else if err != nil {
+			}
+			if err != nil {
 				log.Fatal(err)
 			}
 		}
