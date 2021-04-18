@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -176,7 +177,7 @@ func reflectStruct(rv reflect.Value, opt *Options) interface{} {
 			reflectStructMap(obj, rv.Field(i), t.Field(i), opt)
 		}
 	} else {
-		im := indexType(t)
+		im := allFields(t)
 		for _, sf := range im {
 			fv := rv.FieldByIndex(sf.Index)
 			reflectStructMap(obj, fv, sf, opt)
@@ -185,23 +186,63 @@ func reflectStruct(rv reflect.Value, opt *Options) interface{} {
 	return obj
 }
 
+func allFields(rt reflect.Type) (im []reflect.StructField) {
+	for i := rt.NumField() - 1; 0 <= i; i-- {
+		f := rt.Field(i)
+		if f.Anonymous {
+			// prepend index and add to im
+			for _, ff := range allFields(f.Type) {
+				ff.Index = append([]int{i}, ff.Index...)
+				im = append(im, ff)
+			}
+		} else {
+			im = append(im, f)
+		}
+	}
+	return
+}
+
 func reflectStructMap(obj map[string]interface{}, rv reflect.Value, f reflect.StructField, opt *Options) {
 	name := []byte(f.Name)
 	if len(name) == 0 || 'a' <= name[0] {
 		// not a public field
 		return
 	}
+	var g interface{}
+	if !isNil(rv) {
+		g = Decompose(rv.Interface(), opt)
+	}
+
 	if !opt.KeyExact {
 		name[0] = name[0] | 0x20
 	}
 	if opt.UseTags {
 		if tag, ok := f.Tag.Lookup("json"); ok && 0 < len(tag) {
-			name = []byte(tag)
+			parts := strings.Split(tag, ",")
+			switch parts[0] {
+			case "":
+				name = []byte(f.Name)
+			case "-":
+				if 1 < len(parts) {
+					name = []byte{'-'}
+				} else {
+					// skip
+					return
+				}
+			default:
+				name = []byte(parts[0])
+			}
+			for _, p := range parts[1:] {
+				switch p {
+				case "omitempty":
+					if g == nil || reflect.ValueOf(g).IsZero() {
+						return
+					}
+				case "string":
+					g = fmt.Sprintf("%v", g)
+				}
+			}
 		}
-	}
-	var g interface{}
-	if !isNil(rv) {
-		g = Decompose(rv.Interface(), opt)
 	}
 	if g != nil || !opt.OmitNil {
 		obj[string(name)] = g

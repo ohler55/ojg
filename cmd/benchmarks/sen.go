@@ -46,6 +46,34 @@ func senParseReuse(b *testing.B) {
 	}
 }
 
+func senTokenize(b *testing.B) {
+	sample, _ := ioutil.ReadFile(filename)
+	b.ResetTimer()
+	h := oj.ZeroHandler{}
+	t := sen.Tokenizer{}
+	for n := 0; n < b.N; n++ {
+		if err := t.Parse(sample, &h); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func senTokenizeLoad(b *testing.B) {
+	t := sen.Tokenizer{}
+	h := oj.ZeroHandler{}
+	f, err := os.Open(filename)
+	if err != nil {
+		log.Fatalf("Failed to read %s. %s\n", filename, err)
+	}
+	defer func() { _ = f.Close() }()
+	for n := 0; n < b.N; n++ {
+		_, _ = f.Seek(0, 0)
+		if err := t.Load(f, &h); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
 func senParseReader(b *testing.B) {
 	var p sen.Parser
 	f, err := os.Open(filename)

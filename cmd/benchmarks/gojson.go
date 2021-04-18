@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -48,6 +49,22 @@ func goDecodeReader(b *testing.B) {
 			if err := dec.Decode(&data); err == io.EOF {
 				break
 			} else if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+}
+
+func goDecode(b *testing.B) {
+	sample, _ := ioutil.ReadFile(filename)
+	for n := 0; n < b.N; n++ {
+		dec := json.NewDecoder(bytes.NewReader(sample))
+		for {
+			_, err := dec.Token()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
 				log.Fatal(err)
 			}
 		}

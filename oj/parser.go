@@ -106,7 +106,8 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 	return p.result, err
 }
 
-// ParseReader a JSON io.Reader. An error is returned if not valid JSON.
+// ParseReader reads JSON from an io.Reader. An error is returned if not valid
+// JSON.
 func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}, err error) {
 	for _, a := range args {
 		switch ta := a.(type) {
@@ -461,7 +462,6 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			}
 			off += i
 		case expSign:
-			// TBD allow all digits
 			p.mode = expZeroMap
 			if b == '-' {
 				p.num.NegExp = true

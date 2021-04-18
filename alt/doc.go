@@ -57,7 +57,9 @@ Recompose
 
 Recompose simple data into more complex go types using either the Recompose()
 function or the Recomposer struct that adds some efficiency by reusing
-buffers.
+buffers. The package takes a best effort approach to recomposing matching
+against not only json tags but also against member names and member names
+starting with a lower case character.
 
 	type Sample struct {
 		Int int

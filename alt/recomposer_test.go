@@ -518,3 +518,43 @@ func TestRecomposeInterface(t *testing.T) {
 	tt.NotNil(t, s)
 	tt.Equal(t, "Pat", s.String())
 }
+
+type BooFlu struct {
+	Boo bool    `json:",string"`
+	Flu float64 `json:",string"`
+}
+
+func TestRecomposeTags(t *testing.T) {
+	src := map[string]interface{}{"v": 3, "Title": 2, "skip": 7, "-": 4, "str": "1"}
+	var out Anno
+	v, err := alt.Recompose(src, &out)
+	tt.Nil(t, err, "Recompose")
+	a, _ := v.(*Anno)
+	tt.NotNil(t, a)
+	tt.Equal(t, 3, a.Val)
+	tt.Equal(t, 2, a.Title)
+	tt.Equal(t, 0, a.Skip)
+	tt.Equal(t, 1, a.Str)
+	tt.Equal(t, 4, a.Dash)
+
+	src = map[string]interface{}{"str": "1x"}
+	_, err = alt.Recompose(src, &out)
+	tt.NotNil(t, err, "Recompose tag str invalid")
+
+	var bf BooFlu
+	src = map[string]interface{}{"boo": "true", "flu": "1.23"}
+	_, err = alt.Recompose(src, &bf)
+	tt.Nil(t, err, "Recompose tag string ok")
+
+	src = map[string]interface{}{"boo": true, "flu": 1.23}
+	_, err = alt.Recompose(src, &bf)
+	tt.Nil(t, err, "Recompose tag not string")
+
+	src = map[string]interface{}{"boo": "yes"}
+	_, err = alt.Recompose(src, &bf)
+	tt.NotNil(t, err, "Recompose tag invalid string")
+
+	src = map[string]interface{}{"boo": "true", "flu": "1x2"}
+	_, err = alt.Recompose(src, &bf)
+	tt.NotNil(t, err, "Recompose tag invalid string")
+}

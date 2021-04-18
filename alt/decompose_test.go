@@ -21,7 +21,11 @@ type Bummy struct {
 }
 
 type Anno struct {
-	Val int `json:"v"`
+	Val   int `json:"v,omitempty"`
+	Str   int `json:"str,omitempty,string"`
+	Title int `json:",omitempty"`
+	Skip  int `json:"-"`
+	Dash  int `json:"-,omitempty"`
 }
 
 type silly struct {
@@ -56,6 +60,18 @@ func TestDecomposeStruct(t *testing.T) {
 	a := Anno{Val: 3}
 	v = alt.Decompose(&a, &alt.Options{UseTags: true})
 	tt.Equal(t, map[string]interface{}{"v": 3}, v)
+
+	a = Anno{Val: 0, Str: 1}
+	v = alt.Decompose(&a, &alt.Options{UseTags: true})
+	tt.Equal(t, map[string]interface{}{"str": "1"}, v)
+
+	a = Anno{Val: 0, Str: 0}
+	v = alt.Decompose(&a, &alt.Options{UseTags: true})
+	tt.Equal(t, map[string]interface{}{}, v)
+
+	a = Anno{Dash: 1, Skip: 2, Title: 3}
+	v = alt.Decompose(&a, &alt.Options{UseTags: true})
+	tt.Equal(t, map[string]interface{}{"-": 1, "Title": 3}, v)
 }
 
 func TestDecomposeEmbeddedStruct(t *testing.T) {
