@@ -33,21 +33,21 @@ type Tokenizer struct {
 
 // TokenizeString the provided JSON and call the handler functions for each
 // token in the JSON.
-func TokenizeString(data string, handler TokenHandler) (err error) {
+func TokenizeString(data string, handler TokenHandler) error {
 	t := Tokenizer{}
 	return t.Parse([]byte(data), handler)
 }
 
 // Tokenize the provided JSON and call the TokenHandler functions for each
 // token in the JSON.
-func Tokenize(data []byte, handler TokenHandler) (err error) {
+func Tokenize(data []byte, handler TokenHandler) error {
 	t := Tokenizer{}
 	return t.Parse(data, handler)
 }
 
 // TokenizeLoad JSON from a io.Reader and call the TokenHandler functions for
 // each token in the JSON.
-func TokenizeLoad(r io.Reader, handler TokenHandler) (err error) {
+func TokenizeLoad(r io.Reader, handler TokenHandler) error {
 	t := Tokenizer{}
 	return t.Load(r, handler)
 }
@@ -57,7 +57,7 @@ func (t *Tokenizer) Parse(buf []byte, handler TokenHandler) (err error) {
 	t.handler = handler
 	if t.starts == nil {
 		t.tmp = make([]byte, 0, tmpInitSize)
-		t.starts = make([]byte, 0, 32)
+		t.starts = make([]byte, 0, 16)
 	} else {
 		t.tmp = t.tmp[:0]
 		t.starts = t.starts[:0]
@@ -76,7 +76,7 @@ func (t *Tokenizer) Parse(buf []byte, handler TokenHandler) (err error) {
 	} else {
 		err = t.tokenizeBuffer(buf, true)
 	}
-	return err
+	return
 }
 
 // Load aand parse the JSON and call the handler functions for each token in
