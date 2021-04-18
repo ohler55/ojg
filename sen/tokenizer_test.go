@@ -127,6 +127,30 @@ func TestTokenizerLoadEOF(t *testing.T) {
 	tt.NotNil(t, err)
 }
 
+func TestTokenizerLoadMany(t *testing.T) {
+	h := oj.ZeroHandler{}
+	for i, s := range []string{
+		// The read buffer is 4096 so force a buffer read in the middle of
+		// reading a token.
+		strings.Repeat(" ", 4094) + "null ",
+		strings.Repeat(" ", 4094) + "true ",
+		strings.Repeat(" ", 4094) + "false ",
+		strings.Repeat(" ", 4094) + `{x:1}`,
+		strings.Repeat(" ", 4095) + `"x"`,
+		strings.Repeat(" ", 4095) + "xyz",
+		strings.Repeat(" ", 4094) + "[xyz]",
+		strings.Repeat(" ", 4094) + "[xyz[]]",
+		strings.Repeat(" ", 4094) + "[xyz{}]",
+		strings.Repeat(" ", 4092) + "{x:abc}",
+		strings.Repeat(" ", 4094) + "abc// comment\n",
+		strings.Repeat(" ", 4094) + "[abc\n  def]",
+	} {
+		toker := sen.Tokenizer{}
+		err := toker.Load(strings.NewReader(s), &h)
+		tt.Nil(t, err, i)
+	}
+}
+
 func TestTokenizerMany(t *testing.T) {
 	for i, d := range []tokeTest{
 		{src: "null", expect: "null"},
