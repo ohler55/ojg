@@ -459,41 +459,33 @@ func (t *Tokenizer) tokenizeBuffer(buf []byte, last bool) {
 func (t *Tokenizer) addToken(s string) {
 	t.mode = valueMap
 	if t.exkey {
-		t.handler.String(s)
-		if 0 < len(t.starts) && t.starts[len(t.starts)-1] == objectStart {
-			t.mode = colonMap
-			t.exkey = false
-		}
+		t.handler.Key(s)
+		t.mode = colonMap
+		t.exkey = false
 	} else {
 		switch s {
 		case "null":
 			t.handler.Null()
-			t.exkey = 0 < len(t.starts) && t.starts[len(t.starts)-1] == objectStart
 		case "true":
 			t.handler.Bool(true)
-			t.exkey = 0 < len(t.starts) && t.starts[len(t.starts)-1] == objectStart
 		case "false":
 			t.handler.Bool(false)
-			t.exkey = 0 < len(t.starts) && t.starts[len(t.starts)-1] == objectStart
 		default:
 			t.handler.String(s)
-			if 0 < len(t.starts) && t.starts[len(t.starts)-1] == objectStart {
-				t.exkey = true
-			}
 		}
+		t.exkey = 0 < len(t.starts) && t.starts[len(t.starts)-1] == objectStart
 	}
 }
 
 func (t *Tokenizer) addString(s string) {
 	t.mode = valueMap
-	t.handler.String(s)
-	if 0 < len(t.starts) && t.starts[len(t.starts)-1] == objectStart {
-		if t.exkey {
-			t.mode = colonMap
-			t.exkey = false
-		} else {
-			t.exkey = true
-		}
+	if t.exkey {
+		t.handler.Key(s)
+		t.mode = colonMap
+		t.exkey = false
+	} else {
+		t.handler.String(s)
+		t.exkey = 0 < len(t.starts) && t.starts[len(t.starts)-1] == objectStart
 	}
 }
 

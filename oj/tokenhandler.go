@@ -35,6 +35,9 @@ type TokenHandler interface {
 	// ObjectEnd is called when a JSON object end '}' is encountered.
 	ObjectEnd()
 
+	// Key is called when a JSON object key is encountered.
+	Key(string)
+
 	// ArrayStart is called when a JSON array start '[' is encountered.
 	ArrayStart()
 

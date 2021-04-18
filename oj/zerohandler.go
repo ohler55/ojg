@@ -46,6 +46,10 @@ func (z *ZeroHandler) ObjectStart() {
 func (z *ZeroHandler) ObjectEnd() {
 }
 
+// Key is called when a JSON object key is encountered.
+func (z *ZeroHandler) Key(string) {
+}
+
 // ArrayStart is called when a JSON array start '[' is encountered.
 func (z *ZeroHandler) ArrayStart() {
 }

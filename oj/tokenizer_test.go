@@ -51,6 +51,10 @@ func (h *testHandler) ObjectEnd() {
 	h.buf = append(h.buf, ' ')
 }
 
+func (h *testHandler) Key(v string) {
+	h.buf = append(h.buf, fmt.Sprintf("%s: ", v)...)
+}
+
 func (h *testHandler) ArrayStart() {
 	h.buf = append(h.buf, '[')
 	h.buf = append(h.buf, ' ')
@@ -67,12 +71,12 @@ func TestTokenizerParseBasic(t *testing.T) {
 	src := `[true,null,123,12.3]{"x":12345678901234567890}`
 	err := toker.Parse([]byte(src), &h)
 	tt.Nil(t, err)
-	tt.Equal(t, "[ true null 123 12.3 ] { x 12345678901234567890 } ", string(h.buf))
+	tt.Equal(t, "[ true null 123 12.3 ] { x: 12345678901234567890 } ", string(h.buf))
 
 	h.buf = h.buf[:0]
 	err = toker.Parse([]byte(src), &h)
 	tt.Nil(t, err)
-	tt.Equal(t, "[ true null 123 12.3 ] { x 12345678901234567890 } ", string(h.buf))
+	tt.Equal(t, "[ true null 123 12.3 ] { x: 12345678901234567890 } ", string(h.buf))
 
 	h.buf = h.buf[:0]
 	toker.OnlyOne = true
@@ -86,7 +90,7 @@ func TestTokenizerLoad(t *testing.T) {
 	h := testHandler{}
 	err := toker.Load(strings.NewReader("\xef\xbb\xbf"+`[true,null,123,12.3]{"x":3}`), &h)
 	tt.Nil(t, err)
-	tt.Equal(t, "[ true null 123 12.3 ] { x 3 } ", string(h.buf))
+	tt.Equal(t, "[ true null 123 12.3 ] { x: 3 } ", string(h.buf))
 }
 
 func TestZeroHandler(t *testing.T) {
@@ -204,18 +208,18 @@ func TestTokenizerMany(t *testing.T) {
 		{src: `"x\t\n\"\b\f\r\u0041\\\/y"`, expect: "x\t\n\"\b\f\r\u0041\\/y"},
 		{src: `"x\u004a\u004Ay"`, expect: "xJJy"},
 		{src: `[1,"a\tb"]`, expect: "[ 1 a\tb ]"},
-		{src: `{"a\tb":1}`, expect: "{ a\tb 1 }"},
-		{src: `{"x":1,"a\tb":2}`, expect: "{ x 1 a\tb 2 }"},
+		{src: `{"a\tb":1}`, expect: "{ a\tb: 1 }"},
+		{src: `{"x":1,"a\tb":2}`, expect: "{ x: 1 a\tb: 2 }"},
 		{src: "[0\n,3\n,5.0e2\n]", expect: "[ 0 3 500 ]"},
 
 		{src: "{}", expect: "{ }"},
-		{src: `{"abc":true}`, expect: "{ abc true }"},
-		{src: "{\"z\":0,\n\"z2\":0}", expect: "{ z 0 z2 0 }"},
-		{src: `{"z":1.2,"z2":0}`, expect: "{ z 1.2 z2 0 }"},
-		{src: `{"abc":{"def":3}}`, expect: "{ abc { def 3 } }"},
-		{src: `{"x":1.2e3,"y":true}`, expect: "{ x 1200 y true }"},
+		{src: `{"abc":true}`, expect: "{ abc: true }"},
+		{src: "{\"z\":0,\n\"z2\":0}", expect: "{ z: 0 z2: 0 }"},
+		{src: `{"z":1.2,"z2":0}`, expect: "{ z: 1.2 z2: 0 }"},
+		{src: `{"abc":{"def":3}}`, expect: "{ abc: { def: 3 } }"},
+		{src: `{"x":1.2e3,"y":true}`, expect: "{ x: 1200 y: true }"},
 		{src: `{"abc": [{"x": {"y": [{"b": true}]},"z": 7}]}`,
-			expect: "{ abc [ { x { y [ { b true } ] } z 7 } ] }"},
+			expect: "{ abc: [ { x: { y: [ { b: true } ] } z: 7 } ] }"},
 
 		{src: "{}}", err: "unexpected object close at 1:3"},
 		{src: "{}\n }", err: "unexpected object close at 2:2"},

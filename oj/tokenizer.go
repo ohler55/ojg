@@ -177,7 +177,7 @@ func (t *Tokenizer) tokenizeBuffer(buf []byte, last bool) error {
 			off += i
 			if b == '"' {
 				off++
-				t.handler.String(string(buf[start:off]))
+				t.handler.Key(string(buf[start:off]))
 				t.mode = colonMap
 			} else {
 				t.tmp = t.tmp[:0]
@@ -359,7 +359,11 @@ func (t *Tokenizer) tokenizeBuffer(buf []byte, last bool) error {
 			continue
 		case strQuote:
 			t.mode = t.nextMode
-			t.handler.String(string(t.tmp))
+			if t.nextMode == colonMap {
+				t.handler.Key(string(t.tmp))
+			} else {
+				t.handler.String(string(t.tmp))
+			}
 		case numZero:
 			t.mode = zeroMap
 		case numDigit:

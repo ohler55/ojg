@@ -52,6 +52,10 @@ func (h *testHandler) ObjectEnd() {
 	h.buf = append(h.buf, ' ')
 }
 
+func (h *testHandler) Key(v string) {
+	h.buf = append(h.buf, fmt.Sprintf("%s: ", v)...)
+}
+
 func (h *testHandler) ArrayStart() {
 	h.buf = append(h.buf, '[')
 	h.buf = append(h.buf, ' ')
@@ -74,12 +78,12 @@ func TestTokenizerParseBasic(t *testing.T) {
 	src := `[true,null,123,12.3]{x:12345678901234567890}`
 	err := toker.Parse([]byte(src), &h)
 	tt.Nil(t, err)
-	tt.Equal(t, "[ true null 123 12.3 ] { x 12345678901234567890 } ", string(h.buf))
+	tt.Equal(t, "[ true null 123 12.3 ] { x: 12345678901234567890 } ", string(h.buf))
 
 	h.buf = h.buf[:0]
 	err = sen.Tokenize([]byte(src), &h)
 	tt.Nil(t, err)
-	tt.Equal(t, "[ true null 123 12.3 ] { x 12345678901234567890 } ", string(h.buf))
+	tt.Equal(t, "[ true null 123 12.3 ] { x: 12345678901234567890 } ", string(h.buf))
 
 	h.buf = h.buf[:0]
 	toker.OnlyOne = true
@@ -96,7 +100,7 @@ func TestTokenizerLoad(t *testing.T) {
 	h := testHandler{}
 	err := toker.Load(strings.NewReader("\xef\xbb\xbf"+`[true,null,123,12.3]{x:3}`), &h)
 	tt.Nil(t, err)
-	tt.Equal(t, "[ true null 123 12.3 ] { x 3 } ", string(h.buf))
+	tt.Equal(t, "[ true null 123 12.3 ] { x: 3 } ", string(h.buf))
 }
 
 func TestTokenizerLoadErrRead(t *testing.T) {
@@ -204,15 +208,15 @@ func TestTokenizerMany(t *testing.T) {
 		{src: `"x\ry"`, expect: "x\ry"},
 
 		{src: "{}", expect: "{ }"},
-		{src: `{"a\tbc":true}`, expect: "{ a\tbc true }"},
-		{src: `{x:null}`, expect: "{ x null }"},
-		{src: `{x:true}`, expect: "{ x true }"},
-		{src: `{x:false}`, expect: "{ x false }"},
-		{src: "{\"z\":0,\n\"z2\":0}", expect: "{ z 0 z2 0 }"},
-		{src: `{"z":1.2,"z2":0}`, expect: "{ z 1.2 z2 0 }"},
-		{src: `{"abc":{"def" :3}}`, expect: "{ abc { def 3 } }"},
-		{src: `{"x":1.2e3,"y":true}`, expect: "{ x 1200 y true }"},
-		{src: `{"abc": [{"x": {"y": [{"b": true}]},"z": 7}]}`, expect: "{ abc [ { x { y [ { b true } ] } z 7 } ] }"},
+		{src: `{"a\tbc":true}`, expect: "{ a\tbc: true }"},
+		{src: `{x:null}`, expect: "{ x: null }"},
+		{src: `{x:true}`, expect: "{ x: true }"},
+		{src: `{x:false}`, expect: "{ x: false }"},
+		{src: "{\"z\":0,\n\"z2\":0}", expect: "{ z: 0 z2: 0 }"},
+		{src: `{"z":1.2,"z2":0}`, expect: "{ z: 1.2 z2: 0 }"},
+		{src: `{"abc":{"def" :3}}`, expect: "{ abc: { def: 3 } }"},
+		{src: `{"x":1.2e3,"y":true}`, expect: "{ x: 1200 y: true }"},
+		{src: `{"abc": [{"x": {"y": [{"b": true}]},"z": 7}]}`, expect: "{ abc: [ { x: { y: [ { b: true } ] } z: 7 } ] }"},
 
 		{src: "{}}", err: "unexpected object close at 1:3"},
 		{src: "{ \n", err: "not closed at 2:1"},
@@ -267,18 +271,18 @@ func TestTokenizerMany(t *testing.T) {
 		{src: "[0 1,2]", expect: "[ 0 1 2 ]"},
 		{src: "[0[1[2]]]", expect: "[ 0 [ 1 [ 2 ] ] ]"},
 
-		{src: `{aaa:0 "bbb":"one" , c:2}`, expect: "{ aaa 0 bbb one c 2 }"},
-		{src: "{aaa\n:one b:\ntwo}", expect: "{ aaa one b two }"},
+		{src: `{aaa:0 "bbb":"one" , c:2}`, expect: "{ aaa: 0 bbb: one c: 2 }"},
+		{src: "{aaa\n:one b:\ntwo}", expect: "{ aaa: one b: two }"},
 		{src: "[abc[x]]", expect: "[ abc [ x ] ]"},
-		{src: "[abc{x:1}]", expect: "[ abc { x 1 } ]"},
-		{src: `{aaa:"bbb" "bbb":"one" , c:2}`, expect: "{ aaa bbb bbb one c 2 }"},
-		{src: `{aaa:"b\tb" x:2}`, expect: "{ aaa b\tb x 2 }"},
+		{src: "[abc{x:1}]", expect: "[ abc { x: 1 } ]"},
+		{src: `{aaa:"bbb" "bbb":"one" , c:2}`, expect: "{ aaa: bbb bbb: one c: 2 }"},
+		{src: `{aaa:"b\tb" x:2}`, expect: "{ aaa: b\tb x: 2 }"},
 
-		{src: "[0{x:1}]", expect: "[ 0 { x 1 } ]"},
-		{src: "[1{x:1}]", expect: "[ 1 { x 1 } ]"},
-		{src: "[1.5{x:1}]", expect: "[ 1.5 { x 1 } ]"},
+		{src: "[0{x:1}]", expect: "[ 0 { x: 1 } ]"},
+		{src: "[1{x:1}]", expect: "[ 1 { x: 1 } ]"},
+		{src: "[1.5{x:1}]", expect: "[ 1.5 { x: 1 } ]"},
 		{src: "[1.5[1]]", expect: "[ 1.5 [ 1 ] ]"},
-		{src: "[1.5e2{x:1}]", expect: "[ 150 { x 1 } ]"},
+		{src: "[1.5e2{x:1}]", expect: "[ 150 { x: 1 } ]"},
 		{src: "[1.5e2[1]]", expect: "[ 150 [ 1 ] ]"},
 
 		{src: "[abc// a comment\n]", expect: "[ abc ]"},
