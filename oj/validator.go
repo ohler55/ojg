@@ -17,7 +17,7 @@ type Validator struct {
 
 	// This and the Parser use the same basic code but without the
 	// building. It is a copy since adding the conditionals needed to avoid
-	// builing results add 15 to 20% overhead. An additional improvement could
+	// building results add 15 to 20% overhead. An additional improvement could
 	// be made by not tracking line and column but that would make it
 	// validation much less useful.
 	stack    []byte // { or [
