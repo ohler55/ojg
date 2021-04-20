@@ -271,7 +271,7 @@ func reflectStructMap(obj map[string]interface{}, rv reflect.Value, f reflect.St
 			for _, p := range parts[1:] {
 				switch p {
 				case "omitempty":
-					if g == nil || reflect.ValueOf(g).IsZero() {
+					if g == nil || (rv.Kind() != reflect.Ptr && reflect.ValueOf(g).IsZero()) {
 						return
 					}
 				case "string":
