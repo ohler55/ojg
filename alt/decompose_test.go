@@ -246,3 +246,17 @@ func TestAlterConverter(t *testing.T) {
 	v := alt.Alter(val, &alt.Options{Converter: &c})
 	tt.Equal(t, []interface{}{2, true}, v)
 }
+
+func BenchmarkDecompose(b *testing.B) {
+	a := Anno{
+		Val:   1,
+		Str:   2,
+		Title: 3,
+		Skip:  4,
+		Dash:  5,
+		Buf:   []byte("abcd"),
+	}
+	for i := 0; i < b.N; i++ {
+		_ = alt.Decompose(&a, &alt.Options{UseTags: true})
+	}
+}

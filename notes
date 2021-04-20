@@ -9,8 +9,9 @@
  - reflect but save map of reflect types?
   - save im list
    - cache field info and json tag infor
- - add benchmark
+ - add benchmark for decompose
   - prof
+  - use same type info for marshal
 
 ----------------
 
