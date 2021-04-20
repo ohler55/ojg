@@ -246,6 +246,7 @@ func (o *Options) buildJSON(data interface{}, depth int) {
 				UseTags:      o.UseTags,
 				KeyExact:     o.KeyExact,
 			}
+			// TBD direct buildReflect
 			if dec := alt.Decompose(data, &ao); dec != nil {
 				o.buildJSON(dec, depth)
 				return

@@ -7,6 +7,8 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.10.1] - unreleased
 ### Fixed
 - Struct with pointers to base types such as *float64 are fixed.
+### Added
+- Added `[]byte` converation option for decompose.
 
 ## [1.10.0] - 2021-04-22
 ### Fixed

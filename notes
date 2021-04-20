@@ -1,9 +1,16 @@
 
-- alt.Decompose
-- encode option for []byte to be base64 encoded or string (go json base64 encodes)
-
 - more examples
-- additional examples in readme?
+- readme
+ - add marshal and unmarshal example
+
+- UseTags in sen.Options
+
+- Marshal for non-simple
+ - reflect but save map of reflect types?
+  - save im list
+   - cache field info and json tag infor
+ - add benchmark
+  - prof
 
 ----------------
 

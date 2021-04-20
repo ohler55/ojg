@@ -3,7 +3,8 @@
 [![Build Status](https://img.shields.io/travis/ohler55/ojg/master.svg?logo=travis)](http://travis-ci.org/ohler55/ojg?branch=master)[![Coverage Status](https://coveralls.io/repos/github/ohler55/ojg/badge.svg?branch=master)](https://coveralls.io/github/ohler55/ojg?branch=master)
 
 Optimized JSON for Go is a high performance parser with a variety of
-additional JSON tools.
+additional JSON tools. OjG is optimized to processing huge data sets
+where data does not necessarily conform to a fixed structure.
 
 ## Features
 
@@ -38,7 +39,7 @@ Using JSONPath expressions:
     // returns [4]
 ```
 
-The **oj** command (cmd/oj) which uses JSON path for filtering and
+The **oj** command (cmd/oj) uses JSON path for filtering and
 extracting JSON elements. It also includes sorting, reformatting, and
 colorizing options.
 
