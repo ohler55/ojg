@@ -233,10 +233,16 @@ func (r *Recomposer) recompAny(v interface{}) interface{} {
 func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 	as, _ := rv.Interface().(AttrSetter)
 	if rv.Kind() == reflect.Ptr {
+		if v == nil {
+			return
+		}
 		rv = rv.Elem()
 	}
 	switch rv.Kind() {
 	case reflect.Array, reflect.Slice:
+		if v == nil {
+			return
+		}
 		va, ok := (v).([]interface{})
 		if !ok {
 			vv := reflect.ValueOf(v)
@@ -265,6 +271,9 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 		}
 		rv.Set(av)
 	case reflect.Map:
+		if v == nil {
+			return
+		}
 		et := rv.Type().Elem()
 		vm, ok := (v).(map[string]interface{})
 		if !ok {

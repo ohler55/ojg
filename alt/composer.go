@@ -28,8 +28,7 @@ func indexType(rt reflect.Type) (im map[string]reflect.StructField) {
 					ff.Index = append([]int{i}, ff.Index...)
 					im[k] = ff
 				}
-			} else {
-				k, _ := f.Tag.Lookup("json")
+			} else if k, _ := f.Tag.Lookup("json"); 0 < len(k) {
 				parts := strings.Split(k, ",")
 				switch parts[0] {
 				case "":
@@ -44,6 +43,8 @@ func indexType(rt reflect.Type) (im map[string]reflect.StructField) {
 					k = parts[0]
 				}
 				im[k] = f
+			} else {
+				im[f.Name] = f
 			}
 		}
 	}

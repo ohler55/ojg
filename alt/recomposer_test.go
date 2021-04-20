@@ -277,9 +277,7 @@ func TestRecomposeNested(t *testing.T) {
 		},
 		Spouse: &Parent{Child: Child{Name: "Bobby"}},
 	}
-	simple := alt.Decompose(&src, &alt.Options{})
-	_ = jp.C("child").Del(simple)
-	_ = jp.C("name").Set(simple, "Pat")
+	simple := alt.Decompose(&src, &alt.Options{OmitNil: true})
 
 	// Since friends is a slice of interfaces a hint is needed to determine
 	// the type. Use ^ as an example.
@@ -557,4 +555,32 @@ func TestRecomposeTags(t *testing.T) {
 	src = map[string]interface{}{"boo": "true", "flu": "1x2"}
 	_, err = alt.Recompose(src, &bf)
 	tt.NotNil(t, err, "Recompose tag invalid string")
+}
+
+func TestRecomposeNil(t *testing.T) {
+	r, err := alt.NewRecomposer("", nil)
+	tt.Nil(t, err, "NewRecomposer")
+	var v interface{}
+	var a []interface{}
+	v, err = r.Recompose(nil, &a)
+	tt.Nil(t, err, "Recompose")
+	tt.Equal(t, []interface{}{}, v)
+
+	var list WithList
+	v, err = r.Recompose(map[string]interface{}{"list": nil}, &list)
+	tt.Nil(t, err, "Recompose")
+	l2, _ := v.(*WithList)
+	tt.NotNil(t, l2)
+
+	m := map[string]interface{}{}
+	v, err = r.Recompose(nil, m)
+	tt.Nil(t, err, "Recompose")
+	tt.Equal(t, map[string]interface{}{}, v)
+
+	var d Dummy
+	v, err = r.Recompose(nil, &d)
+	tt.Nil(t, err, "Recompose")
+	d2, _ := v.(*Dummy)
+	tt.NotNil(t, d2)
+
 }

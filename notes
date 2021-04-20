@@ -1,11 +1,11 @@
 
 - alt.Decompose
- - fix handking of json tags in structs
-- alt.Recompose tests
- - use Anno again
-  - add a camelcase like oneTwo
+- encode option for []byte to be base64 encoded or string (go json base64 encodes)
 
-- test tokenizer
+- can StructField be pointers in im
+
+- more examples
+- additional examples in readme?
 
 ----------------
 

@@ -21,11 +21,17 @@ type Bummy struct {
 }
 
 type Anno struct {
-	Val   int `json:"v,omitempty"`
-	Str   int `json:"str,omitempty,string"`
-	Title int `json:",omitempty"`
-	Skip  int `json:"-"`
-	Dash  int `json:"-,omitempty"`
+	Val   int    `json:"v,omitempty"`
+	Str   int    `json:"str,omitempty,string"`
+	Title int    `json:",omitempty"`
+	Skip  int    `json:"-"`
+	Dash  int    `json:"-,omitempty"`
+	Buf   []byte `json:"buf,omitempty"`
+}
+
+type Pointy struct {
+	X   *int   `json:"x,omitempty"`
+	Buf []byte `json:"buf,omitempty"`
 }
 
 type silly struct {
@@ -47,7 +53,7 @@ func TestDecomposeStruct(t *testing.T) {
 	v := alt.Decompose(&d)
 	tt.Equal(t, map[string]interface{}{"type": "Dummy", "val": 3, "nest": map[string]interface{}{"type": "Dummy", "val": 2}}, v)
 
-	v = alt.Decompose(&d, &alt.Options{CreateKey: "^", FullTypePath: true})
+	v = alt.Decompose(&d, &alt.Options{CreateKey: "^", FullTypePath: true, OmitNil: true})
 	tt.Equal(t, map[string]interface{}{
 		"^":   "github.com/ohler55/ojg/alt_test/Dummy",
 		"val": 3,
@@ -72,14 +78,43 @@ func TestDecomposeStruct(t *testing.T) {
 	a = Anno{Dash: 1, Skip: 2, Title: 3}
 	v = alt.Decompose(&a, &alt.Options{UseTags: true})
 	tt.Equal(t, map[string]interface{}{"-": 1, "Title": 3}, v)
+
+	a = Anno{Buf: []byte{}, Val: 3}
+	v = alt.Decompose(&a, &alt.Options{UseTags: true})
+	tt.Equal(t, map[string]interface{}{"v": 3}, v)
+
+	a = Anno{Buf: []byte{'a', 'b'}, Val: 3}
+	v = alt.Decompose(&a, &alt.Options{UseTags: true})
+	tt.Equal(t, map[string]interface{}{"v": 3, "buf": "ab"}, v)
+
+	v = alt.Decompose(&a, &alt.Options{UseTags: true, BytesAs: alt.BytesAsArray})
+	tt.Equal(t, map[string]interface{}{"v": 3, "buf": []interface{}{97, 98}}, v)
+
+	v = alt.Decompose(&a, &alt.Options{UseTags: true, BytesAs: alt.BytesAsBase64})
+	tt.Equal(t, map[string]interface{}{"v": 3, "buf": "YWI="}, v)
+}
+
+func TestDecomposeStructWithPointers(t *testing.T) {
+	x := 3
+	p := Pointy{X: &x, Buf: []byte("byte me")}
+	v := alt.Decompose(&p)
+	tt.Equal(t, map[string]interface{}{"type": "Pointy", "x": 3, "buf": "byte me"}, v)
+
+	v = alt.Decompose(&p, &alt.Options{CreateKey: "", UseTags: true, BytesAs: alt.BytesAsBase64})
+	tt.Equal(t, map[string]interface{}{"x": 3, "buf": "Ynl0ZSBtZQ=="}, v)
+
+	v = alt.Decompose(&p, &alt.Options{CreateKey: "", UseTags: true, BytesAs: alt.BytesAsArray})
+	tt.Equal(t, map[string]interface{}{"x": 3, "buf": []interface{}{98, 121, 116, 101, 32, 109, 101}}, v)
+
+	// TBD try empty for each
 }
 
 func TestDecomposeEmbeddedStruct(t *testing.T) {
 	d := Bummy{Dummy: Dummy{Val: 3}, Num: 5}
-	v := alt.Decompose(&d, &alt.Options{NestEmbed: false})
+	v := alt.Decompose(&d, &alt.Options{NestEmbed: false, OmitNil: true})
 	tt.Equal(t, map[string]interface{}{"val": 3, "num": 5}, v)
 
-	v = alt.Decompose(&d, &alt.Options{NestEmbed: true})
+	v = alt.Decompose(&d, &alt.Options{NestEmbed: true, OmitNil: true})
 	tt.Equal(t, map[string]interface{}{"dummy": map[string]interface{}{"val": 3}, "num": 5}, v)
 }
 
@@ -119,6 +154,15 @@ func TestDecomposeSimplifier(t *testing.T) {
 	s := silly{val: 3}
 	v := alt.Decompose(&s)
 	tt.Equal(t, map[string]interface{}{"type": "silly", "val": 3}, v)
+
+	v = alt.Alter([]interface{}{[]byte("abc")}, &alt.Options{UseTags: true})
+	tt.Equal(t, []interface{}{"abc"}, v)
+
+	v = alt.Alter([]interface{}{[]byte("abc")}, &alt.Options{UseTags: true, BytesAs: alt.BytesAsArray})
+	tt.Equal(t, []interface{}{[]interface{}{97, 98, 99}}, v)
+
+	v = alt.Alter([]interface{}{[]byte("abc")}, &alt.Options{UseTags: true, BytesAs: alt.BytesAsBase64})
+	tt.Equal(t, []interface{}{"YWJj"}, v)
 }
 
 func TestAlterNumbers(t *testing.T) {
@@ -132,7 +176,7 @@ func TestAlterStruct(t *testing.T) {
 	v := alt.Alter(&d)
 	tt.Equal(t, map[string]interface{}{"type": "Dummy", "val": 3, "nest": map[string]interface{}{"type": "Dummy", "val": 2}}, v)
 
-	v = alt.Alter(&d, &alt.Options{CreateKey: "^", FullTypePath: true})
+	v = alt.Alter(&d, &alt.Options{CreateKey: "^", FullTypePath: true, OmitNil: true})
 	tt.Equal(t, map[string]interface{}{
 		"^":   "github.com/ohler55/ojg/alt_test/Dummy",
 		"val": 3,

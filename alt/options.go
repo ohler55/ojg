@@ -2,6 +2,12 @@
 
 package alt
 
+const (
+	BytesAsString = iota
+	BytesAsBase64
+	BytesAsArray
+)
+
 // Options are the options available to Decompose() function.
 type Options struct {
 
@@ -32,6 +38,11 @@ type Options struct {
 
 	// Converter to use when decomposing or altering if non nil.
 	Converter *Converter
+
+	// BytesAs indicates how []byte fields should be encoded. Choices are
+	// BytesAsString, BytesAsBase64 (the go json package default), or
+	// BytesAsArray.
+	BytesAs int
 }
 
 // DefaultOptions are the default options for decompsing.
@@ -41,4 +52,17 @@ var DefaultOptions = Options{
 	OmitNil:      true,
 	UseTags:      false,
 	Converter:    nil,
+}
+
+// GoOptions are the options closest to the go json package if it were
+// decomposing.
+var GoOptions = Options{
+	CreateKey:    "",
+	FullTypePath: false,
+	OmitNil:      false,
+	UseTags:      true,
+	KeyExact:     true,
+	NestEmbed:    false,
+	Converter:    nil,
+	BytesAs:      BytesAsBase64,
 }

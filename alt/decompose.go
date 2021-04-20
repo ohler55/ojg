@@ -3,6 +3,7 @@
 package alt
 
 import (
+	"encoding/base64"
 	"fmt"
 	"math"
 	"reflect"
@@ -27,6 +28,13 @@ func Decompose(v interface{}, options ...*Options) interface{} {
 	if 0 < len(options) {
 		opt = options[0]
 	}
+	if opt.Converter != nil {
+		v, _ = opt.Converter.convert(v)
+	}
+	return decompose(v, opt)
+}
+
+func decompose(v interface{}, opt *Options) interface{} {
 	switch tv := v.(type) {
 	case nil, bool, int64, float64, string, time.Time:
 	case int:
@@ -56,27 +64,37 @@ func Decompose(v interface{}, options ...*Options) interface{} {
 	case []interface{}:
 		a := make([]interface{}, len(tv))
 		for i, m := range tv {
-			a[i] = Decompose(m)
+			a[i] = decompose(m, opt)
 		}
 		v = a
 	case map[string]interface{}:
 		o := map[string]interface{}{}
 		for k, m := range tv {
-			if mv := Decompose(m); mv != nil || !opt.OmitNil {
+			if mv := decompose(m, opt); mv != nil || !opt.OmitNil {
 				if mv != nil || !opt.OmitNil {
 					o[k] = mv
 				}
 			}
 		}
 		v = o
+	case []byte:
+		switch opt.BytesAs {
+		case BytesAsBase64:
+			v = base64.StdEncoding.EncodeToString(tv)
+		case BytesAsArray:
+			a := make([]interface{}, len(tv))
+			for i, m := range tv {
+				a[i] = decompose(m, opt)
+			}
+			v = a
+		default:
+			v = string(tv)
+		}
 	default:
 		if simp, _ := v.(Simplifier); simp != nil {
-			return Decompose(simp.Simplify())
+			return decompose(simp.Simplify(), opt)
 		}
-		return Decompose(reflectData(v, opt))
-	}
-	if opt.Converter != nil {
-		v, _ = opt.Converter.convert(v)
+		return reflectData(v, opt)
 	}
 	return v
 }
@@ -90,6 +108,13 @@ func Alter(v interface{}, options ...*Options) interface{} {
 	if 0 < len(options) {
 		opt = options[0]
 	}
+	if opt.Converter != nil {
+		v, _ = opt.Converter.convert(v)
+	}
+	return alter(v, opt)
+}
+
+func alter(v interface{}, opt *Options) interface{} {
 	switch tv := v.(type) {
 	case bool, nil, int64, float64, string, time.Time:
 	case int:
@@ -118,24 +143,34 @@ func Alter(v interface{}, options ...*Options) interface{} {
 		v = math.Ldexp(f, i)
 	case []interface{}:
 		for i, m := range tv {
-			tv[i] = Alter(m)
+			tv[i] = alter(m, opt)
 		}
 	case map[string]interface{}:
 		for k, m := range tv {
-			if mv := Alter(m); mv != nil || !opt.OmitNil {
+			if mv := alter(m, opt); mv != nil || !opt.OmitNil {
 				if mv != nil || !opt.OmitNil {
 					tv[k] = mv
 				}
 			}
 		}
+	case []byte:
+		switch opt.BytesAs {
+		case BytesAsBase64:
+			v = base64.StdEncoding.EncodeToString(tv)
+		case BytesAsArray:
+			a := make([]interface{}, len(tv))
+			for i, m := range tv {
+				a[i] = decompose(m, opt)
+			}
+			v = a
+		default:
+			v = string(tv)
+		}
 	default:
 		if simp, _ := v.(Simplifier); simp != nil {
-			return Alter(simp.Simplify())
+			return alter(simp.Simplify(), opt)
 		}
-		return Alter(reflectData(v, opt), opt)
-	}
-	if opt.Converter != nil {
-		v, _ = opt.Converter.convert(v)
+		return reflectData(v, opt)
 	}
 	return v
 }
@@ -158,6 +193,8 @@ func reflectValue(rv reflect.Value, opt *Options) (v interface{}) {
 		v = reflectArray(rv, opt)
 	case reflect.Struct:
 		v = reflectStruct(rv, opt)
+	default:
+		v = rv.Interface()
 	}
 	return
 }
@@ -210,9 +247,8 @@ func reflectStructMap(obj map[string]interface{}, rv reflect.Value, f reflect.St
 	}
 	var g interface{}
 	if !isNil(rv) {
-		g = Decompose(rv.Interface(), opt)
+		g = decompose(rv.Interface(), opt)
 	}
-
 	if !opt.KeyExact {
 		name[0] = name[0] | 0x20
 	}
@@ -269,7 +305,7 @@ func reflectMap(rv reflect.Value, opt *Options) interface{} {
 		var g interface{}
 		vv := it.Value()
 		if !isNil(vv) {
-			g = Decompose(vv.Interface(), opt)
+			g = decompose(vv.Interface(), opt)
 		}
 		if g != nil || !opt.OmitNil {
 			if ks, ok := k.(string); ok {
@@ -286,7 +322,7 @@ func reflectArray(rv reflect.Value, opt *Options) interface{} {
 	size := rv.Len()
 	a := make([]interface{}, size)
 	for i := size - 1; 0 <= i; i-- {
-		a[i] = Decompose(rv.Index(i).Interface(), opt)
+		a[i] = decompose(rv.Index(i).Interface(), opt)
 	}
 	return a
 }
