@@ -2,8 +2,6 @@
 - alt.Decompose
 - encode option for []byte to be base64 encoded or string (go json base64 encodes)
 
-- can StructField be pointers in im
-
 - more examples
 - additional examples in readme?
 
