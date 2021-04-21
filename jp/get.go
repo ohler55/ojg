@@ -16,6 +16,10 @@ const (
 	descentChildFlag = 0x00020000
 )
 
+// EnableUndefined allows Get to return a "null" string for child elements with 
+// an undefined key in relation to the expression.
+var EnableUndefined bool
+
 type fragIndex int
 
 // The easy way to implement the Get is to have each fragment handle the
@@ -59,16 +63,13 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			switch tv := prev.(type) {
 			case nil:
 			case map[string]interface{}:
-				v = tv[string(tf)]
-
-				// always enable to allow for undefined data elements
-				has = true
+				v, has = tv[string(tf)]
 			case gen.Object:
 				v, has = tv[string(tf)]
 			default:
 				v, has = x.reflectGetChild(tv, string(tf))
 			}
-			if has {
+			if has || EnableUndefined {
 				if int(fi) == len(x)-1 { // last one
 					results = append(results, v)
 				} else {

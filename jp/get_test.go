@@ -437,6 +437,28 @@ func buildNodeTree(size, depth, iv int) gen.Node {
 	return obj
 }
 
+func TestExprGetUndefined(t *testing.T) {
+	jp.EnableUndefined = true
+
+	obj, err := oj.ParseString(`{
+	"a":[
+		{"x":1,"y":2,"z":3},
+		{"x":2,"y":4},
+		{}
+	]
+}`)
+	tt.Nil(t, err)
+	x, _ := jp.ParseString("$.a[:].z")
+	ys := x.Get(obj)
+	tt.Equal(t, "[3,null,null]", oj.JSON(ys))
+
+	x, _ = jp.ParseString("$.a[:].x")
+	ys = x.Get(obj)
+	tt.Equal(t, "[1,2,null]", oj.JSON(ys))
+
+	jp.EnableUndefined = false
+}
+
 func TestExprGetWildArray(t *testing.T) {
 	obj, err := oj.ParseString(`{
   "a":[
