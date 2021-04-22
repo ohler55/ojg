@@ -5,13 +5,27 @@
 
 - UseTags in sen.Options
 
-- Marshal for non-simple
- - reflect but save map of reflect types?
-  - save im list
-   - cache field info and json tag infor
+- decomposer
+ - separate lists
+ - prune fiels from fiel info
+
+- Marshal for reflects
+ - need a buildReflectJSON that take a reflect.Value instead of interface{}
+  - stay with buildJSON for simple and reflect for structs
  - add benchmark for decompose
-  - prof
-  - use same type info for marshal
+ - make alt.FieldInfo public along with fields
+  - so it can be used in oj and sen for writing
+ - public FieldInfo and Decomposer but not members except Nested and Fields
+ - add method to get field value from a struct
+ - add field type decomposer if not an interface
+ - Key()
+ - how to reduce the number of allocs?
+  - reuse reflect.Value?
+   - .SetPointer()
+    - maybe need to have a vlaue of the correct type to start with
+    (*[2]uintptr)(unsafe.Pointer(&v))[0] type ? *rtype (maybe a reflect.Type)
+      var uint8Type = TypeOf(uint8(0)).(*rtype)
+    (*[2]uintptr)(unsafe.Pointer(&v))[1] value
 
 ----------------
 

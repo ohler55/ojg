@@ -5,6 +5,7 @@ package oj
 import (
 	"fmt"
 	"io"
+	"reflect"
 	"sort"
 	"strconv"
 	"time"
@@ -166,34 +167,34 @@ func (o *Options) buildJSON(data interface{}, depth int) {
 		}
 
 	case int:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.buf = strconv.AppendInt(o.buf, int64(td), 10)
 	case int8:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.buf = strconv.AppendInt(o.buf, int64(td), 10)
 	case int16:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.buf = strconv.AppendInt(o.buf, int64(td), 10)
 	case int32:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.buf = strconv.AppendInt(o.buf, int64(td), 10)
 	case int64:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(td, 10))...)
+		o.buf = strconv.AppendInt(o.buf, td, 10)
 	case uint:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.buf = strconv.AppendUint(o.buf, uint64(td), 10)
 	case uint8:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.buf = strconv.AppendUint(o.buf, uint64(td), 10)
 	case uint16:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.buf = strconv.AppendUint(o.buf, uint64(td), 10)
 	case uint32:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.buf = strconv.AppendUint(o.buf, uint64(td), 10)
 	case uint64:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.buf = strconv.AppendUint(o.buf, td, 10)
 	case gen.Int:
-		o.buf = append(o.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		o.buf = strconv.AppendInt(o.buf, int64(td), 10)
 
 	case float32:
-		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 32))...)
+		o.buf = strconv.AppendFloat(o.buf, float64(td), 'g', -1, 32)
 	case float64:
-		o.buf = append(o.buf, []byte(strconv.FormatFloat(td, 'g', -1, 64))...)
+		o.buf = strconv.AppendFloat(o.buf, float64(td), 'g', -1, 64)
 	case gen.Float:
-		o.buf = append(o.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 64))...)
+		o.buf = strconv.AppendFloat(o.buf, float64(td), 'g', -1, 64)
 
 	case string:
 		o.buildString(td)
@@ -239,6 +240,12 @@ func (o *Options) buildJSON(data interface{}, depth int) {
 			return
 		}
 		if !o.NoReflect {
+			rv := reflect.ValueOf(data)
+			kind := rv.Kind()
+			if kind == reflect.Ptr {
+				rv = rv.Elem()
+				kind = rv.Kind()
+			}
 			ao := alt.Options{
 				CreateKey:    o.CreateKey,
 				OmitNil:      o.OmitNil,
@@ -246,13 +253,20 @@ func (o *Options) buildJSON(data interface{}, depth int) {
 				UseTags:      o.UseTags,
 				KeyExact:     o.KeyExact,
 			}
-			// TBD direct buildReflect
-			if dec := alt.Decompose(data, &ao); dec != nil {
-				o.buildJSON(dec, depth)
-				return
+			switch kind {
+			case reflect.Struct:
+				o.buildStruct(rv, &ao, depth)
+			case reflect.Slice, reflect.Array:
+				o.buildSlice(rv, &ao, depth)
+			default:
+				// Not much should get here except Map, Complex and un-decomposable
+				// values.
+				if dec := alt.Decompose(data, &ao); dec != nil {
+					o.buildJSON(dec, depth)
+					return
+				}
 			}
-		}
-		if o.strict {
+		} else if o.strict {
 			panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
 		} else {
 			o.buildString(fmt.Sprintf("%v", td))
@@ -666,4 +680,154 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 		}
 	}
 	o.buf = append(o.buf, '}')
+}
+
+func (o *Options) buildStruct(rv reflect.Value, opt *alt.Options, depth int) {
+	dc := alt.LookupDecomposer(rv.Type())
+	var fields []*alt.Field
+	if opt.NestEmbed {
+		if opt.UseTags {
+			fields = dc.OutTag
+		} else if opt.KeyExact {
+			fields = dc.OutName
+		} else {
+			fields = dc.OutLow
+		}
+	} else {
+		if opt.UseTags {
+			fields = dc.ByTag
+		} else if opt.KeyExact {
+			fields = dc.ByName
+		} else {
+			fields = dc.ByLow
+		}
+	}
+	o.buf = append(o.buf, '{')
+	first := true
+	if o.Tab || 0 < o.Indent {
+		var is string
+		var cs string
+		d2 := depth + 1
+		if o.Tab {
+			x := depth + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			is = tabs[0:x]
+			x = d2 + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			cs = tabs[0:x]
+		} else {
+			x := depth*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			is = spaces[0:x]
+			x = d2*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			cs = spaces[0:x]
+		}
+		for _, fi := range fields {
+			v, omit := fi.Value(rv, opt)
+			if omit {
+				continue
+			}
+			if first {
+				first = false
+			} else {
+				o.buf = append(o.buf, ',')
+			}
+			o.buf = append(o.buf, []byte(cs)...)
+			o.buildString(fi.Key)
+			o.buf = append(o.buf, ':')
+			o.buf = append(o.buf, ' ')
+			o.buildJSON(v, d2)
+		}
+		o.buf = append(o.buf, []byte(is)...)
+	} else {
+		for _, fi := range fields {
+			v, omit := fi.Value(rv, opt)
+			if omit {
+				continue
+			}
+			if first {
+				first = false
+			} else {
+				o.buf = append(o.buf, ',')
+			}
+			o.buildString(fi.Key)
+			o.buf = append(o.buf, ':')
+			o.buildJSON(v, 0)
+		}
+	}
+	o.buf = append(o.buf, '}')
+}
+
+func (o *Options) buildSlice(rv reflect.Value, opt *alt.Options, depth int) {
+	d2 := depth + 1
+	end := rv.Len()
+	o.buf = append(o.buf, '[')
+	if o.Tab || 0 < o.Indent {
+		var is string
+		var cs string
+		if o.Tab {
+			x := depth + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			is = tabs[0:x]
+			x = d2 + 1
+			if len(tabs) < x {
+				x = len(tabs)
+			}
+			cs = tabs[0:x]
+		} else {
+			x := depth*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			is = spaces[0:x]
+			x = d2*o.Indent + 1
+			if len(spaces) < x {
+				x = len(spaces)
+			}
+			cs = spaces[0:x]
+		}
+		for j := 0; j < end; j++ {
+			if 0 < j {
+				o.buf = append(o.buf, ',')
+			}
+			o.buf = append(o.buf, []byte(cs)...)
+			rm := rv.Index(j)
+			switch rm.Kind() {
+			case reflect.Struct:
+				o.buildStruct(rm, opt, d2)
+			case reflect.Slice, reflect.Array:
+				o.buildSlice(rm, opt, d2)
+			default:
+				o.buildJSON(rm.Interface(), d2)
+			}
+		}
+		o.buf = append(o.buf, []byte(is)...)
+	} else {
+		for j := 0; j < end; j++ {
+			if 0 < j {
+				o.buf = append(o.buf, ',')
+			}
+			rm := rv.Index(j)
+			switch rm.Kind() {
+			case reflect.Struct:
+				o.buildStruct(rm, opt, d2)
+			case reflect.Slice, reflect.Array:
+				o.buildSlice(rm, opt, d2)
+			default:
+				o.buildJSON(rm.Interface(), d2)
+			}
+		}
+	}
+	o.buf = append(o.buf, ']')
 }

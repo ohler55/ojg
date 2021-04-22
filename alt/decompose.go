@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math"
 	"reflect"
-	"strings"
 	"time"
 )
 
@@ -94,7 +93,7 @@ func decompose(v interface{}, opt *Options) interface{} {
 		if simp, _ := v.(Simplifier); simp != nil {
 			return decompose(simp.Simplify(), opt)
 		}
-		return reflectData(v, opt)
+		return reflectValue(reflect.ValueOf(v), opt)
 	}
 	return v
 }
@@ -170,13 +169,9 @@ func alter(v interface{}, opt *Options) interface{} {
 		if simp, _ := v.(Simplifier); simp != nil {
 			return alter(simp.Simplify(), opt)
 		}
-		return reflectData(v, opt)
+		return reflectValue(reflect.ValueOf(v), opt)
 	}
 	return v
-}
-
-func reflectData(data interface{}, opt *Options) interface{} {
-	return reflectValue(reflect.ValueOf(data), opt)
 }
 
 func reflectValue(rv reflect.Value, opt *Options) (v interface{}) {
@@ -209,80 +204,41 @@ func reflectStruct(rv reflect.Value, opt *Options) interface{} {
 			obj[opt.CreateKey] = t.Name()
 		}
 	}
+	dc := LookupDecomposer(t)
+	var fields []*Field
 	if opt.NestEmbed {
-		for i := rv.NumField() - 1; 0 <= i; i-- {
-			reflectStructMap(obj, rv.Field(i), t.Field(i), opt)
+		if opt.UseTags {
+			fields = dc.OutTag
+		} else if opt.KeyExact {
+			fields = dc.OutName
+		} else {
+			fields = dc.OutLow
 		}
 	} else {
-		im := allFields(t)
-		for _, sf := range im {
-			fv := rv.FieldByIndex(sf.Index)
-			reflectStructMap(obj, fv, sf, opt)
+		if opt.UseTags {
+			fields = dc.ByTag
+		} else if opt.KeyExact {
+			fields = dc.ByName
+		} else {
+			fields = dc.ByLow
+		}
+	}
+	for _, fi := range fields {
+		// TBD change to return a reflect.Value
+		//  use reflectValue instead of decompose
+		//  switch on fv.Kind
+		if v, omit := fi.Value(rv, opt); !omit {
+			switch v.(type) {
+			case bool, nil, string, time.Time:
+			case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+			case float32, float64:
+			default:
+				v = decompose(v, opt)
+			}
+			obj[fi.Key] = v
 		}
 	}
 	return obj
-}
-
-func allFields(rt reflect.Type) (im []reflect.StructField) {
-	for i := rt.NumField() - 1; 0 <= i; i-- {
-		f := rt.Field(i)
-		if f.Anonymous {
-			// prepend index and add to im
-			for _, ff := range allFields(f.Type) {
-				ff.Index = append([]int{i}, ff.Index...)
-				im = append(im, ff)
-			}
-		} else {
-			im = append(im, f)
-		}
-	}
-	return
-}
-
-func reflectStructMap(obj map[string]interface{}, rv reflect.Value, f reflect.StructField, opt *Options) {
-	name := []byte(f.Name)
-	if len(name) == 0 || 'a' <= name[0] {
-		// not a public field
-		return
-	}
-	var g interface{}
-	if !isNil(rv) {
-		g = decompose(rv.Interface(), opt)
-	}
-	if !opt.KeyExact {
-		name[0] = name[0] | 0x20
-	}
-	if opt.UseTags {
-		if tag, ok := f.Tag.Lookup("json"); ok && 0 < len(tag) {
-			parts := strings.Split(tag, ",")
-			switch parts[0] {
-			case "":
-				name = []byte(f.Name)
-			case "-":
-				if 1 < len(parts) {
-					name = []byte{'-'}
-				} else {
-					// skip
-					return
-				}
-			default:
-				name = []byte(parts[0])
-			}
-			for _, p := range parts[1:] {
-				switch p {
-				case "omitempty":
-					if g == nil || (rv.Kind() != reflect.Ptr && reflect.ValueOf(g).IsZero()) {
-						return
-					}
-				case "string":
-					g = fmt.Sprintf("%v", g)
-				}
-			}
-		}
-	}
-	if g != nil || !opt.OmitNil {
-		obj[string(name)] = g
-	}
 }
 
 func reflectComplex(rv reflect.Value, opt *Options) interface{} {
