@@ -30,10 +30,10 @@ func Decompose(v interface{}, options ...*Options) interface{} {
 	if opt.Converter != nil {
 		v, _ = opt.Converter.convert(v)
 	}
-	return decompose(v, opt)
+	return decompose(v, opt, false)
 }
 
-func decompose(v interface{}, opt *Options) interface{} {
+func decompose(v interface{}, opt *Options, embedded bool) interface{} {
 	switch tv := v.(type) {
 	case nil, bool, int64, float64, string, time.Time:
 	case int:
@@ -63,13 +63,13 @@ func decompose(v interface{}, opt *Options) interface{} {
 	case []interface{}:
 		a := make([]interface{}, len(tv))
 		for i, m := range tv {
-			a[i] = decompose(m, opt)
+			a[i] = decompose(m, opt, false)
 		}
 		v = a
 	case map[string]interface{}:
 		o := map[string]interface{}{}
 		for k, m := range tv {
-			if mv := decompose(m, opt); mv != nil || !opt.OmitNil {
+			if mv := decompose(m, opt, false); mv != nil || !opt.OmitNil {
 				if mv != nil || !opt.OmitNil {
 					o[k] = mv
 				}
@@ -83,7 +83,7 @@ func decompose(v interface{}, opt *Options) interface{} {
 		case BytesAsArray:
 			a := make([]interface{}, len(tv))
 			for i, m := range tv {
-				a[i] = decompose(m, opt)
+				a[i] = decompose(m, opt, false)
 			}
 			v = a
 		default:
@@ -91,9 +91,9 @@ func decompose(v interface{}, opt *Options) interface{} {
 		}
 	default:
 		if simp, _ := v.(Simplifier); simp != nil {
-			return decompose(simp.Simplify(), opt)
+			return decompose(simp.Simplify(), opt, false)
 		}
-		return reflectValue(reflect.ValueOf(v), opt)
+		return reflectValue(reflect.ValueOf(v), v, opt, embedded)
 	}
 	return v
 }
@@ -110,10 +110,10 @@ func Alter(v interface{}, options ...*Options) interface{} {
 	if opt.Converter != nil {
 		v, _ = opt.Converter.convert(v)
 	}
-	return alter(v, opt)
+	return alter(v, opt, false)
 }
 
-func alter(v interface{}, opt *Options) interface{} {
+func alter(v interface{}, opt *Options, embedded bool) interface{} {
 	switch tv := v.(type) {
 	case bool, nil, int64, float64, string, time.Time:
 	case int:
@@ -142,11 +142,11 @@ func alter(v interface{}, opt *Options) interface{} {
 		v = math.Ldexp(f, i)
 	case []interface{}:
 		for i, m := range tv {
-			tv[i] = alter(m, opt)
+			tv[i] = alter(m, opt, false)
 		}
 	case map[string]interface{}:
 		for k, m := range tv {
-			if mv := alter(m, opt); mv != nil || !opt.OmitNil {
+			if mv := alter(m, opt, false); mv != nil || !opt.OmitNil {
 				if mv != nil || !opt.OmitNil {
 					tv[k] = mv
 				}
@@ -159,7 +159,7 @@ func alter(v interface{}, opt *Options) interface{} {
 		case BytesAsArray:
 			a := make([]interface{}, len(tv))
 			for i, m := range tv {
-				a[i] = decompose(m, opt)
+				a[i] = decompose(m, opt, false)
 			}
 			v = a
 		default:
@@ -167,14 +167,14 @@ func alter(v interface{}, opt *Options) interface{} {
 		}
 	default:
 		if simp, _ := v.(Simplifier); simp != nil {
-			return alter(simp.Simplify(), opt)
+			return alter(simp.Simplify(), opt, false)
 		}
-		return reflectValue(reflect.ValueOf(v), opt)
+		return reflectValue(reflect.ValueOf(v), v, opt, embedded)
 	}
 	return v
 }
 
-func reflectValue(rv reflect.Value, opt *Options) (v interface{}) {
+func reflectValue(rv reflect.Value, val interface{}, opt *Options, embedded bool) (v interface{}) {
 	switch rv.Kind() {
 	case reflect.Invalid, reflect.Uintptr, reflect.UnsafePointer, reflect.Chan, reflect.Func, reflect.Interface:
 		v = nil
@@ -183,20 +183,26 @@ func reflectValue(rv reflect.Value, opt *Options) (v interface{}) {
 	case reflect.Map:
 		v = reflectMap(rv, opt)
 	case reflect.Ptr:
-		v = reflectValue(rv.Elem(), opt)
+		elem := rv.Elem()
+		if elem.IsValid() && elem.CanInterface() {
+			v = reflectValue(elem, elem.Interface(), opt, false)
+		} else {
+			v = nil
+		}
 	case reflect.Slice, reflect.Array:
 		v = reflectArray(rv, opt)
 	case reflect.Struct:
-		v = reflectStruct(rv, opt)
+		v = reflectStruct(rv, val, opt, embedded)
 	default:
-		v = rv.Interface()
+		v = val
 	}
 	return
 }
 
-func reflectStruct(rv reflect.Value, opt *Options) interface{} {
+func reflectStruct(rv reflect.Value, val interface{}, opt *Options, embedded bool) interface{} {
 	obj := map[string]interface{}{}
-	t := rv.Type()
+	dc := LookupDecomposer(val)
+	t := dc.Type
 	if 0 < len(opt.CreateKey) {
 		if opt.FullTypePath {
 			obj[opt.CreateKey] = t.PkgPath() + "/" + t.Name()
@@ -204,7 +210,6 @@ func reflectStruct(rv reflect.Value, opt *Options) interface{} {
 			obj[opt.CreateKey] = t.Name()
 		}
 	}
-	dc := LookupDecomposer(t)
 	var fields []*Field
 	if opt.NestEmbed {
 		if opt.UseTags {
@@ -224,18 +229,40 @@ func reflectStruct(rv reflect.Value, opt *Options) interface{} {
 		}
 	}
 	for _, fi := range fields {
-		// TBD change to return a reflect.Value
-		//  use reflectValue instead of decompose
-		//  switch on fv.Kind
-		if v, omit := fi.Value(rv, opt); !omit {
-			switch v.(type) {
-			case bool, nil, string, time.Time:
-			case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-			case float32, float64:
-			default:
-				v = decompose(v, opt)
+		/*
+			if fv, omit := fi.RValue(rv, opt); !omit {
+				switch fi.Kind {
+				case reflect.Chan, reflect.Func:
+				case reflect.Complex64,
+					reflect.Complex128,
+					reflect.Array,
+					reflect.Interface,
+					reflect.Map,
+					reflect.Ptr,
+					reflect.Slice,
+					reflect.Struct:
+					obj[fi.Key] = reflectValue(fv, opt)
+				default:
+					obj[fi.Key] = fv.Interface()
+				}
 			}
-			obj[fi.Key] = v
+		*/
+		if v, omit := fi.Value(rv, opt.OmitNil, embedded); !omit {
+			switch v.(type) {
+			case nil:
+				if !opt.OmitNil {
+					obj[fi.Key] = v
+				}
+			case bool, string, time.Time,
+				int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64,
+				float32, float64:
+				obj[fi.Key] = v
+			default:
+				v = decompose(v, opt, true)
+				if !opt.OmitNil || v != nil {
+					obj[fi.Key] = v
+				}
+			}
 		}
 	}
 	return obj
@@ -261,7 +288,7 @@ func reflectMap(rv reflect.Value, opt *Options) interface{} {
 		var g interface{}
 		vv := it.Value()
 		if !isNil(vv) {
-			g = decompose(vv.Interface(), opt)
+			g = decompose(vv.Interface(), opt, false)
 		}
 		if g != nil || !opt.OmitNil {
 			if ks, ok := k.(string); ok {
@@ -278,7 +305,7 @@ func reflectArray(rv reflect.Value, opt *Options) interface{} {
 	size := rv.Len()
 	a := make([]interface{}, size)
 	for i := size - 1; 0 <= i; i-- {
-		a[i] = decompose(rv.Index(i).Interface(), opt)
+		a[i] = decompose(rv.Index(i).Interface(), opt, false)
 	}
 	return a
 }

@@ -51,7 +51,7 @@ func JSON(data interface{}, args ...interface{}) string {
 			o.buf = o.buf[:0]
 		}
 	}()
-	o.buildJSON(data, 0)
+	o.buildJSON(data, 0, false)
 
 	return string(o.buf)
 }
@@ -94,7 +94,7 @@ func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
 			}
 		}
 	}()
-	o.buildJSON(data, 0)
+	o.buildJSON(data, 0, false)
 	out = o.buf
 
 	return
@@ -138,9 +138,9 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 		}
 	}()
 	if o.Color {
-		o.cbuildJSON(data, 0)
+		o.cbuildJSON(data, 0) // TBD embedded
 	} else {
-		o.buildJSON(data, 0)
+		o.buildJSON(data, 0, false)
 	}
 	if err == nil && w != nil && 0 < len(o.buf) {
 		_, err = o.w.Write(o.buf)
@@ -148,7 +148,7 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	return
 }
 
-func (o *Options) buildJSON(data interface{}, depth int) {
+func (o *Options) buildJSON(data interface{}, depth int, embedded bool) {
 	switch td := data.(type) {
 	case nil:
 		o.buf = append(o.buf, []byte("null")...)
@@ -220,12 +220,12 @@ func (o *Options) buildJSON(data interface{}, depth int) {
 
 	default:
 		if g, _ := data.(alt.Genericer); g != nil {
-			o.buildJSON(g.Generic(), depth)
+			o.buildJSON(g.Generic(), depth, false)
 			return
 		}
 		if simp, _ := data.(alt.Simplifier); simp != nil {
 			data = simp.Simplify()
-			o.buildJSON(data, depth)
+			o.buildJSON(data, depth, false)
 			return
 		}
 		if 0 < len(o.CreateKey) {
@@ -236,7 +236,7 @@ func (o *Options) buildJSON(data interface{}, depth int) {
 				UseTags:      o.UseTags,
 				KeyExact:     o.KeyExact,
 			}
-			o.buildJSON(alt.Decompose(data, &ao), depth)
+			o.buildJSON(alt.Decompose(data, &ao), depth, embedded)
 			return
 		}
 		if !o.NoReflect {
@@ -255,14 +255,14 @@ func (o *Options) buildJSON(data interface{}, depth int) {
 			}
 			switch kind {
 			case reflect.Struct:
-				o.buildStruct(rv, &ao, depth)
+				o.buildStruct(rv, &ao, depth, embedded)
 			case reflect.Slice, reflect.Array:
 				o.buildSlice(rv, &ao, depth)
 			default:
 				// Not much should get here except Map, Complex and un-decomposable
 				// values.
 				if dec := alt.Decompose(data, &ao); dec != nil {
-					o.buildJSON(dec, depth)
+					o.buildJSON(dec, depth, false)
 					return
 				}
 			}
@@ -400,7 +400,7 @@ func (o *Options) buildArray(n gen.Array, depth int) {
 				o.buf = append(o.buf, ',')
 			}
 			o.buf = append(o.buf, []byte(cs)...)
-			o.buildJSON(m, d2)
+			o.buildJSON(m, d2, false)
 		}
 		o.buf = append(o.buf, []byte(is)...)
 	} else {
@@ -408,7 +408,7 @@ func (o *Options) buildArray(n gen.Array, depth int) {
 			if 0 < j {
 				o.buf = append(o.buf, ',')
 			}
-			o.buildJSON(m, depth)
+			o.buildJSON(m, depth, false)
 		}
 	}
 	o.buf = append(o.buf, ']')
@@ -448,7 +448,7 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) {
 				o.buf = append(o.buf, ',')
 			}
 			o.buf = append(o.buf, []byte(cs)...)
-			o.buildJSON(m, d2)
+			o.buildJSON(m, d2, false)
 		}
 		o.buf = append(o.buf, []byte(is)...)
 	} else {
@@ -456,7 +456,7 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) {
 			if 0 < j {
 				o.buf = append(o.buf, ',')
 			}
-			o.buildJSON(m, depth)
+			o.buildJSON(m, depth, false)
 		}
 	}
 	o.buf = append(o.buf, ']')
@@ -465,10 +465,10 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) {
 func (o *Options) buildObject(n gen.Object, depth int) {
 	o.buf = append(o.buf, '{')
 	first := true
+	d2 := depth + 1
 	if o.Tab || 0 < o.Indent {
 		var is string
 		var cs string
-		d2 := depth + 1
 		if o.Tab {
 			x := depth + 1
 			if len(tabs) < x {
@@ -512,7 +512,7 @@ func (o *Options) buildObject(n gen.Object, depth int) {
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
 				o.buf = append(o.buf, ' ')
-				o.buildJSON(m, d2)
+				o.buildJSON(m, d2, false)
 			}
 		} else {
 			for k, m := range n {
@@ -528,7 +528,7 @@ func (o *Options) buildObject(n gen.Object, depth int) {
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
 				o.buf = append(o.buf, ' ')
-				o.buildJSON(m, d2)
+				o.buildJSON(m, d2, false)
 			}
 		}
 		o.buf = append(o.buf, []byte(is)...)
@@ -551,7 +551,7 @@ func (o *Options) buildObject(n gen.Object, depth int) {
 				}
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
-				o.buildJSON(m, 0)
+				o.buildJSON(m, d2, false)
 			}
 		} else {
 			for k, m := range n {
@@ -565,7 +565,7 @@ func (o *Options) buildObject(n gen.Object, depth int) {
 				}
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
-				o.buildJSON(m, 0)
+				o.buildJSON(m, d2, false)
 			}
 		}
 	}
@@ -575,10 +575,10 @@ func (o *Options) buildObject(n gen.Object, depth int) {
 func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 	o.buf = append(o.buf, '{')
 	first := true
+	d2 := depth + 1
 	if o.Tab || 0 < o.Indent {
 		var is string
 		var cs string
-		d2 := depth + 1
 		if o.Tab {
 			x := depth + 1
 			if len(tabs) < x {
@@ -622,7 +622,7 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
 				o.buf = append(o.buf, ' ')
-				o.buildJSON(m, d2)
+				o.buildJSON(m, d2, false)
 			}
 		} else {
 			for k, m := range n {
@@ -638,7 +638,7 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
 				o.buf = append(o.buf, ' ')
-				o.buildJSON(m, d2)
+				o.buildJSON(m, d2, false)
 			}
 		}
 		o.buf = append(o.buf, []byte(is)...)
@@ -661,7 +661,7 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 				}
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
-				o.buildJSON(m, 0)
+				o.buildJSON(m, d2, false)
 			}
 		} else {
 			for k, m := range n {
@@ -675,16 +675,17 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 				}
 				o.buildString(k)
 				o.buf = append(o.buf, ':')
-				o.buildJSON(m, 0)
+				o.buildJSON(m, d2, false)
 			}
 		}
 	}
 	o.buf = append(o.buf, '}')
 }
 
-func (o *Options) buildStruct(rv reflect.Value, opt *alt.Options, depth int) {
-	dc := alt.LookupDecomposer(rv.Type())
+func (o *Options) buildStruct(rv reflect.Value, opt *alt.Options, depth int, embedded bool) {
+	dc := alt.LookupDecomposer(rv.Interface())
 	var fields []*alt.Field
+	d2 := depth + 1
 	if opt.NestEmbed {
 		if opt.UseTags {
 			fields = dc.OutTag
@@ -707,7 +708,6 @@ func (o *Options) buildStruct(rv reflect.Value, opt *alt.Options, depth int) {
 	if o.Tab || 0 < o.Indent {
 		var is string
 		var cs string
-		d2 := depth + 1
 		if o.Tab {
 			x := depth + 1
 			if len(tabs) < x {
@@ -732,8 +732,8 @@ func (o *Options) buildStruct(rv reflect.Value, opt *alt.Options, depth int) {
 			cs = spaces[0:x]
 		}
 		for _, fi := range fields {
-			v, omit := fi.Value(rv, opt)
-			if omit {
+			v, omit := fi.Value(rv, opt.OmitNil, embedded)
+			if omit || (opt.OmitNil && v == nil) {
 				continue
 			}
 			if first {
@@ -745,13 +745,13 @@ func (o *Options) buildStruct(rv reflect.Value, opt *alt.Options, depth int) {
 			o.buildString(fi.Key)
 			o.buf = append(o.buf, ':')
 			o.buf = append(o.buf, ' ')
-			o.buildJSON(v, d2)
+			o.buildJSON(v, d2, true)
 		}
 		o.buf = append(o.buf, []byte(is)...)
 	} else {
 		for _, fi := range fields {
-			v, omit := fi.Value(rv, opt)
-			if omit {
+			v, omit := fi.Value(rv, opt.OmitNil, embedded)
+			if omit || (opt.OmitNil && v == nil) {
 				continue
 			}
 			if first {
@@ -761,7 +761,7 @@ func (o *Options) buildStruct(rv reflect.Value, opt *alt.Options, depth int) {
 			}
 			o.buildString(fi.Key)
 			o.buf = append(o.buf, ':')
-			o.buildJSON(v, 0)
+			o.buildJSON(v, d2, true)
 		}
 	}
 	o.buf = append(o.buf, '}')
@@ -805,11 +805,11 @@ func (o *Options) buildSlice(rv reflect.Value, opt *alt.Options, depth int) {
 			rm := rv.Index(j)
 			switch rm.Kind() {
 			case reflect.Struct:
-				o.buildStruct(rm, opt, d2)
+				o.buildStruct(rm, opt, d2, false)
 			case reflect.Slice, reflect.Array:
 				o.buildSlice(rm, opt, d2)
 			default:
-				o.buildJSON(rm.Interface(), d2)
+				o.buildJSON(rm.Interface(), d2, false)
 			}
 		}
 		o.buf = append(o.buf, []byte(is)...)
@@ -821,11 +821,11 @@ func (o *Options) buildSlice(rv reflect.Value, opt *alt.Options, depth int) {
 			rm := rv.Index(j)
 			switch rm.Kind() {
 			case reflect.Struct:
-				o.buildStruct(rm, opt, d2)
+				o.buildStruct(rm, opt, d2, false)
 			case reflect.Slice, reflect.Array:
 				o.buildSlice(rm, opt, d2)
 			default:
-				o.buildJSON(rm.Interface(), d2)
+				o.buildJSON(rm.Interface(), d2, false)
 			}
 		}
 	}

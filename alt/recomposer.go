@@ -364,7 +364,7 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 					m, has = vm[string(name)]
 				}
 			}
-			if has {
+			if has && m != nil {
 				r.setValue(m, f, &sf)
 			}
 		}

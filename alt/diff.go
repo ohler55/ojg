@@ -5,6 +5,7 @@ package alt
 import (
 	"reflect"
 	"time"
+	"unsafe"
 
 	"github.com/ohler55/ojg/gen"
 )
@@ -138,17 +139,18 @@ func diff(v0, v1 interface{}, one bool, ignores ...Path) (diffs []Path) {
 			}
 		}
 	default:
-		r0 := reflect.ValueOf(v0)
-		r1 := reflect.ValueOf(v1)
-		if r0.Type().String() == r1.Type().String() {
+		vt0 := (*[2]uintptr)(unsafe.Pointer(&v0))[0]
+		vt1 := (*[2]uintptr)(unsafe.Pointer(&v1))[0]
+		if vt0 == vt1 {
 			if s0, _ := v0.(Simplifier); s0 != nil {
 				if s1, _ := v1.(Simplifier); s1 != nil {
 					return diff(s0.Simplify(), s1.Simplify(), one, ignores...)
 				}
 			}
 			opt := &Options{}
-			v0 = reflectValue(r0, opt)
-			v1 = reflectValue(r1, opt)
+			// TBD optimize by a more direct compare of fields
+			v0 = reflectValue(reflect.ValueOf(v0), v0, opt, false)
+			v1 = reflectValue(reflect.ValueOf(v1), v1, opt, false)
 			if v0 != nil && v1 != nil {
 				return diff(v0, v1, one, ignores...)
 			}

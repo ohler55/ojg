@@ -3,29 +3,21 @@
 - readme
  - add marshal and unmarshal example
 
+- benchmarks needs a better mix and not just strings
+
 - UseTags in sen.Options
 
 - decomposer
- - separate lists
- - prune fiels from fiel info
+ - how about funcs to serialize values?
+
+- writers
+ - color
+ - oj and sen
 
 - Marshal for reflects
  - need a buildReflectJSON that take a reflect.Value instead of interface{}
   - stay with buildJSON for simple and reflect for structs
- - add benchmark for decompose
- - make alt.FieldInfo public along with fields
-  - so it can be used in oj and sen for writing
- - public FieldInfo and Decomposer but not members except Nested and Fields
- - add method to get field value from a struct
- - add field type decomposer if not an interface
- - Key()
  - how to reduce the number of allocs?
-  - reuse reflect.Value?
-   - .SetPointer()
-    - maybe need to have a vlaue of the correct type to start with
-    (*[2]uintptr)(unsafe.Pointer(&v))[0] type ? *rtype (maybe a reflect.Type)
-      var uint8Type = TypeOf(uint8(0)).(*rtype)
-    (*[2]uintptr)(unsafe.Pointer(&v))[1] value
 
 ----------------
 
@@ -52,3 +44,5 @@
 
 - Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)]
 - Exists syntax? [?(@.x exists)]
+QQ79661BQ
+C7090F4B-D872-497A-93C4-5BCE84024103
