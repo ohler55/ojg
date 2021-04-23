@@ -4,6 +4,8 @@ package oj
 
 import (
 	"io"
+
+	"github.com/ohler55/ojg/alt"
 )
 
 const (
@@ -121,12 +123,22 @@ type Options struct {
 	// HTMLUnsafe if true turns off escaping of &, <, and >.
 	HTMLUnsafe bool
 
+	// NestEmbed if true will generate an element for each anonymous embedded
+	// field.
+	NestEmbed bool
+
+	// BytesAs indicates how []byte fields should be encoded. Choices are
+	// BytesAsString, BytesAsBase64 (the go json package default), or
+	// BytesAsArray.
+	BytesAs int
+
 	buf    []byte
 	utf    []byte
 	w      io.Writer
 	strict bool
 }
 
+// DefaultOptions default options that can be set as desired.
 var DefaultOptions = Options{
 	InitSize:    256,
 	SyntaxColor: Normal,
@@ -139,6 +151,7 @@ var DefaultOptions = Options{
 	buf:         make([]byte, 0, 256),
 }
 
+// BrightOptions encoding options for color encoding.
 var BrightOptions = Options{
 	InitSize:    256,
 	SyntaxColor: Normal,
@@ -149,4 +162,24 @@ var BrightOptions = Options{
 	StringColor: BrightGreen,
 	TimeColor:   BrightMagenta,
 	buf:         make([]byte, 0, 256),
+}
+
+// GoOptions are the options closest to the go json package.
+var GoOptions = Options{
+	InitSize:     256,
+	SyntaxColor:  Normal,
+	KeyColor:     Blue,
+	NullColor:    Red,
+	BoolColor:    Yellow,
+	NumberColor:  Cyan,
+	StringColor:  Green,
+	TimeColor:    Magenta,
+	CreateKey:    "",
+	FullTypePath: false,
+	OmitNil:      false,
+	UseTags:      true,
+	KeyExact:     true,
+	NestEmbed:    false,
+	BytesAs:      alt.BytesAsBase64,
+	buf:          make([]byte, 0, 256),
 }

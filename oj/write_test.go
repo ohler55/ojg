@@ -302,8 +302,9 @@ func TestMarshal(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Equal(t, "[true,false]", string(b))
 
-	_, err = oj.Marshal([]interface{}{true, TestMarshal})
-	tt.NotNil(t, err)
+	b, err = oj.Marshal([]interface{}{true, TestMarshal})
+	tt.Nil(t, err)
+	tt.Equal(t, "[true,null]", string(b))
 
 	_, err = oj.Marshal([]interface{}{true, &Panik{}})
 	tt.NotNil(t, err)
@@ -312,7 +313,7 @@ func TestMarshal(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Equal(t, `[true,{"Val":3}]`, string(b))
 
-	b, err = oj.Marshal([]interface{}{true, &Dummy{Val: 3}}, &oj.Options{UseTags: true})
+	b, err = oj.Marshal([]interface{}{true, &Dummy{Val: 3}}, &oj.Options{UseTags: false})
 	tt.Nil(t, err)
 	tt.Equal(t, `[true,{"val":3}]`, string(b))
 
@@ -324,7 +325,8 @@ func TestWriteBad(t *testing.T) {
 	var b strings.Builder
 
 	err := oj.Write(&b, []interface{}{true, TestWriteBad})
-	tt.NotNil(t, err)
+	tt.Nil(t, err)
+	tt.Equal(t, `[true,null]`, b.String())
 
 	err = oj.Write(&b, []interface{}{true, &Panik{}})
 	tt.NotNil(t, err)

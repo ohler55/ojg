@@ -63,7 +63,7 @@ func JSON(data interface{}, args ...interface{}) string {
 // flag is true and a value is encountered that can not be encoded other than
 // by using the %v format of the fmt package.
 func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
-	o := &DefaultOptions
+	o := &GoOptions
 	o.KeyExact = true
 	o.UseTags = true
 
@@ -235,6 +235,8 @@ func (o *Options) buildJSON(data interface{}, depth int, embedded bool) {
 				FullTypePath: o.FullTypePath,
 				UseTags:      o.UseTags,
 				KeyExact:     o.KeyExact,
+				NestEmbed:    o.NestEmbed,
+				BytesAs:      o.BytesAs,
 			}
 			o.buildJSON(alt.Decompose(data, &ao), depth, embedded)
 			return
@@ -252,6 +254,8 @@ func (o *Options) buildJSON(data interface{}, depth int, embedded bool) {
 				FullTypePath: o.FullTypePath,
 				UseTags:      o.UseTags,
 				KeyExact:     o.KeyExact,
+				NestEmbed:    o.NestEmbed,
+				BytesAs:      o.BytesAs,
 			}
 			switch kind {
 			case reflect.Struct:
@@ -261,10 +265,9 @@ func (o *Options) buildJSON(data interface{}, depth int, embedded bool) {
 			default:
 				// Not much should get here except Map, Complex and un-decomposable
 				// values.
-				if dec := alt.Decompose(data, &ao); dec != nil {
-					o.buildJSON(dec, depth, false)
-					return
-				}
+				dec := alt.Decompose(data, &ao)
+				o.buildJSON(dec, depth, false)
+				return
 			}
 		} else if o.strict {
 			panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
