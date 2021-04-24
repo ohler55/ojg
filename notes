@@ -10,6 +10,19 @@
 - separate package for field stuff?
 - need string encoders (json and sen) in alt
 
+- separate package
+ - internal (in), info, private (priv), reflect cache (rc), util, useful (use), low level (low), local
+  - internal.Field
+  - in.Struct
+  - what about append json string?
+   -
+ -
+- pass args as pointer to struct instead of several bools (EncodeOptions)
+ - need htmlsafe
+ - need space after tag (0 < indent)
+ - BytesAs
+
+
 - decomposer
  - how about funcs to serialize values?
   - precalc key as byte array (with quotes?)

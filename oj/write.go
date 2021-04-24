@@ -710,36 +710,22 @@ func (o *Options) buildStruct(rv reflect.Value, opt *alt.Options, depth int, emb
 		var v interface{}
 		var has bool
 		var wrote bool
+		empty := true
 		for _, fi := range fields {
 			o.buf, v, wrote, has = fi.Append(o.buf, rv, opt.OmitNil, embedded)
-			if wrote {
-				first = false
-				continue
-			}
 			if !has {
+				if wrote {
+					empty = false
+				}
 				continue
 			}
 			o.buildJSON(v, d2, true)
 			o.buf = append(o.buf, ',')
-			first = false
-
-			/*
-				v, omit := fi.Value(rv, opt.OmitNil, embedded)
-				if omit || (opt.OmitNil && v == nil) {
-					continue
-				}
-				o.buildString(fi.Key)
-				o.buf = append(o.buf, ':')
-				o.buildJSON(v, d2, true)
-				first = false
-				o.buf = append(o.buf, ',')
-			*/
+			empty = false
 		}
-		if !first {
+		if !empty {
 			o.buf = o.buf[:len(o.buf)-1]
 		}
-		// TBD always add comma after but at end, if last byte is a comma, shorten buf
-
 	}
 	o.buf = append(o.buf, '}')
 }

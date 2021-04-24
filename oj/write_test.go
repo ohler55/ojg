@@ -353,7 +353,7 @@ func BenchmarkMarshal(b *testing.B) {
 		Title: 3,
 		Skip:  4,
 		Dash:  5,
-		Buf:   []byte("abcd"),
+		//Buf:   []byte("abcd"),
 	}
 	for i := 0; i < b.N; i++ {
 		if _, err := oj.Marshal(&a); err != nil {
