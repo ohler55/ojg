@@ -7,8 +7,17 @@
 
 - UseTags in sen.Options
 
+- separate package for field stuff?
+- need string encoders (json and sen) in alt
+
 - decomposer
  - how about funcs to serialize values?
+  - precalc key as byte array (with quotes?)
+  - check omit and then write both key and value
+   - flag for need for space after :
+   - sen flag?
+  - if no write func then return indicator and value
+  -
 
 - writers
  - color

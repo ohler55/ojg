@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"unsafe"
@@ -16,8 +17,10 @@ type Field struct {
 	Type     reflect.Type
 	Key      string
 	Kind     reflect.Kind
+	jkey     []byte
 	index    []int
 	empty    func(rv reflect.Value) bool
+	fill     func(buf []byte, v interface{}) []byte
 	fv       func(ptr uintptr) interface{}
 	offset   uintptr
 	asString bool
@@ -95,64 +98,76 @@ func (fi *Field) RValue(rv reflect.Value, opt *Options) (fv reflect.Value, omit 
 	return
 }
 
-func boolEmpty(rv reflect.Value) bool {
-	return !*(*bool)(unsafe.Pointer(rv.UnsafeAddr()))
-}
-
-func intEmpty(rv reflect.Value) bool {
-	return *(*int)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func int8Empty(rv reflect.Value) bool {
-	return *(*int8)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func int16Empty(rv reflect.Value) bool {
-	return *(*int16)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func int32Empty(rv reflect.Value) bool {
-	return *(*int32)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func int64Empty(rv reflect.Value) bool {
-	return *(*int64)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func uintEmpty(rv reflect.Value) bool {
-	return *(*uint)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func uint8Empty(rv reflect.Value) bool {
-	return *(*uint8)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func uint16Empty(rv reflect.Value) bool {
-	return *(*uint16)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func uint32Empty(rv reflect.Value) bool {
-	return *(*uint32)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func uint64Empty(rv reflect.Value) bool {
-	return *(*uint64)(unsafe.Pointer(rv.UnsafeAddr())) == 0.0
-}
-
-func float32Empty(rv reflect.Value) bool {
-	return *(*float32)(unsafe.Pointer(rv.UnsafeAddr())) == 0.0
-}
-
-func float64Empty(rv reflect.Value) bool {
-	return *(*float64)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func ptrEmpty(rv reflect.Value) bool {
-	return rv.IsNil()
-}
-
-func lenEmpty(rv reflect.Value) bool {
-	return rv.Len() == 0
+func (fi *Field) Append(buf []byte, rv reflect.Value, omitNil bool, embedded bool) ([]byte, interface{}, bool, bool) {
+	var v interface{}
+	fv := rv.FieldByIndex(fi.index)
+	if fi.fv != nil && !embedded {
+		v = fi.fv(uintptr(unsafe.Pointer(rv.UnsafeAddr())) + fi.offset)
+	} else {
+		v = fv.Interface()
+	}
+	if (fi.empty != nil && fi.empty(fv)) || (omitNil && v == nil) {
+		return buf, nil, false, false
+	}
+	buf = append(buf, fi.jkey...)
+	if fi.fill == nil {
+		return buf, v, false, true
+	}
+	/*
+		quote := fi.asString && fi.Kind != reflect.String
+		// TBD would a switch be better?
+		if quote {
+			buf = append(buf, '"')
+		}
+		switch tv := v.(type) {
+		case bool:
+			if tv {
+				buf = append(buf, "true"...)
+			} else {
+				buf = append(buf, "false"...)
+			}
+		case int:
+			buf = strconv.AppendInt(buf, int64(tv), 10)
+		case int8:
+			buf = strconv.AppendInt(buf, int64(tv), 10)
+		case int16:
+			buf = strconv.AppendInt(buf, int64(tv), 10)
+		case int32:
+			buf = strconv.AppendInt(buf, int64(tv), 10)
+		case int64:
+			buf = strconv.AppendInt(buf, tv, 10)
+		case uint:
+			buf = strconv.AppendUint(buf, uint64(tv), 10)
+		case uint8:
+			buf = strconv.AppendUint(buf, uint64(tv), 10)
+		case uint16:
+			buf = strconv.AppendUint(buf, uint64(tv), 10)
+		case uint32:
+			buf = strconv.AppendUint(buf, uint64(tv), 10)
+		case uint64:
+			buf = strconv.AppendUint(buf, tv, 10)
+		case float32:
+			buf = strconv.AppendFloat(buf, float64(tv), 'g', -1, 32)
+		case float64:
+			buf = strconv.AppendFloat(buf, tv, 'g', -1, 64)
+		case string:
+			buf = AppendJSONString(buf, tv, false) // TBD html safe flag needed
+		default:
+			buf = fi.fill(buf, v)
+		}
+		if quote {
+			buf = append(buf, '"')
+		}
+	*/
+	if fi.asString && fi.Kind != reflect.String {
+		buf = append(buf, '"')
+		buf = fi.fill(buf, v)
+		buf = append(buf, '"')
+	} else {
+		buf = fi.fill(buf, v)
+	}
+	buf = append(buf, ',')
+	return buf, nil, true, false
 }
 
 func boolVal(ptr uintptr) interface{} {
@@ -239,6 +254,66 @@ func (fi *Field) setValueFunc() {
 	}
 }
 
+func boolEmpty(rv reflect.Value) bool {
+	return !*(*bool)(unsafe.Pointer(rv.UnsafeAddr()))
+}
+
+func intEmpty(rv reflect.Value) bool {
+	return *(*int)(unsafe.Pointer(rv.UnsafeAddr())) == 0
+}
+
+func int8Empty(rv reflect.Value) bool {
+	return *(*int8)(unsafe.Pointer(rv.UnsafeAddr())) == 0
+}
+
+func int16Empty(rv reflect.Value) bool {
+	return *(*int16)(unsafe.Pointer(rv.UnsafeAddr())) == 0
+}
+
+func int32Empty(rv reflect.Value) bool {
+	return *(*int32)(unsafe.Pointer(rv.UnsafeAddr())) == 0
+}
+
+func int64Empty(rv reflect.Value) bool {
+	return *(*int64)(unsafe.Pointer(rv.UnsafeAddr())) == 0
+}
+
+func uintEmpty(rv reflect.Value) bool {
+	return *(*uint)(unsafe.Pointer(rv.UnsafeAddr())) == 0
+}
+
+func uint8Empty(rv reflect.Value) bool {
+	return *(*uint8)(unsafe.Pointer(rv.UnsafeAddr())) == 0
+}
+
+func uint16Empty(rv reflect.Value) bool {
+	return *(*uint16)(unsafe.Pointer(rv.UnsafeAddr())) == 0
+}
+
+func uint32Empty(rv reflect.Value) bool {
+	return *(*uint32)(unsafe.Pointer(rv.UnsafeAddr())) == 0
+}
+
+func uint64Empty(rv reflect.Value) bool {
+	return *(*uint64)(unsafe.Pointer(rv.UnsafeAddr())) == 0.0
+}
+
+func float32Empty(rv reflect.Value) bool {
+	return *(*float32)(unsafe.Pointer(rv.UnsafeAddr())) == 0.0
+}
+
+func float64Empty(rv reflect.Value) bool {
+	return *(*float64)(unsafe.Pointer(rv.UnsafeAddr())) == 0
+}
+
+func ptrEmpty(rv reflect.Value) bool {
+	return rv.IsNil()
+}
+
+func lenEmpty(rv reflect.Value) bool {
+	return rv.Len() == 0
+}
+
 func (fi *Field) setOmitEmpty() {
 	switch fi.Kind {
 	case reflect.Bool:
@@ -274,6 +349,105 @@ func (fi *Field) setOmitEmpty() {
 	}
 }
 
+func boolFill(buf []byte, v interface{}) []byte {
+	if v.(bool) {
+		return append(buf, "true"...)
+	}
+	return append(buf, "false"...)
+}
+
+func intFill(buf []byte, v interface{}) []byte {
+	return strconv.AppendInt(buf, int64(v.(int)), 10)
+}
+
+func int8Fill(buf []byte, v interface{}) []byte {
+	return strconv.AppendInt(buf, int64(v.(int8)), 10)
+}
+
+func int16Fill(buf []byte, v interface{}) []byte {
+	return strconv.AppendInt(buf, int64(v.(int16)), 10)
+}
+
+func int32Fill(buf []byte, v interface{}) []byte {
+	return strconv.AppendInt(buf, int64(v.(int32)), 10)
+}
+
+func int64Fill(buf []byte, v interface{}) []byte {
+	return strconv.AppendInt(buf, v.(int64), 10)
+}
+
+func uintFill(buf []byte, v interface{}) []byte {
+	return strconv.AppendUint(buf, uint64(v.(uint)), 10)
+}
+
+func uint8Fill(buf []byte, v interface{}) []byte {
+	return strconv.AppendUint(buf, uint64(v.(uint8)), 10)
+}
+
+func uint16Fill(buf []byte, v interface{}) []byte {
+	return strconv.AppendUint(buf, uint64(v.(uint16)), 10)
+}
+
+func uint32Fill(buf []byte, v interface{}) []byte {
+	return strconv.AppendUint(buf, uint64(v.(uint32)), 10)
+}
+
+func uint64Fill(buf []byte, v interface{}) []byte {
+	return strconv.AppendUint(buf, v.(uint64), 10)
+}
+
+func float32Fill(buf []byte, v interface{}) []byte {
+	return strconv.AppendFloat(buf, float64(v.(float32)), 'g', -1, 32)
+}
+
+func float64Fill(buf []byte, v interface{}) []byte {
+	return strconv.AppendFloat(buf, float64(v.(float64)), 'g', -1, 64)
+}
+
+func stringFill(buf []byte, v interface{}) []byte {
+	return AppendJSONString(buf, v.(string), false) // TBD html safe flag needed
+}
+
+func (fi *Field) setFillFunc() {
+	switch fi.Kind {
+	case reflect.Bool:
+		fi.fill = boolFill
+	case reflect.Int:
+		fi.fill = intFill
+	case reflect.Int8:
+		fi.fill = int8Fill
+	case reflect.Int16:
+		fi.fill = int16Fill
+	case reflect.Int32:
+		fi.fill = int32Fill
+	case reflect.Int64:
+		fi.fill = int64Fill
+	case reflect.Uint:
+		fi.fill = uintFill
+	case reflect.Uint8:
+		fi.fill = uint8Fill
+	case reflect.Uint16:
+		fi.fill = uint16Fill
+	case reflect.Uint32:
+		fi.fill = uint32Fill
+	case reflect.Uint64:
+		fi.fill = uint64Fill
+	case reflect.Float32:
+		fi.fill = float32Fill
+	case reflect.Float64:
+		fi.fill = float64Fill
+	case reflect.String:
+		fi.fill = stringFill
+	}
+}
+
+func (fi *Field) setup() {
+	fi.setValueFunc()
+	fi.setFillFunc()
+	fi.jkey = AppendJSONString(fi.jkey, fi.Key, false)
+	fi.jkey = append(fi.jkey, ':')
+}
+
 func buildTagFields(rt reflect.Type) (fa []*Field) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
@@ -295,7 +469,6 @@ func buildTagFields(rt reflect.Type) (fa []*Field) {
 				index:  f.Index,
 				offset: f.Offset,
 			}
-			fi.setValueFunc()
 			if tag, ok := f.Tag.Lookup("json"); ok && 0 < len(tag) {
 				parts := strings.Split(tag, ",")
 				switch parts[0] {
@@ -319,6 +492,7 @@ func buildTagFields(rt reflect.Type) (fa []*Field) {
 					}
 				}
 			}
+			fi.setup()
 			fa = append(fa, &fi)
 		}
 	}
@@ -346,7 +520,7 @@ func buildNameFields(rt reflect.Type) (fa []*Field) {
 				index:  f.Index,
 				offset: f.Offset,
 			}
-			fi.setValueFunc()
+			fi.setup()
 			fa = append(fa, &fi)
 		}
 	}
@@ -375,7 +549,7 @@ func buildLowFields(rt reflect.Type) (fa []*Field) {
 				index:  f.Index,
 				offset: f.Offset,
 			}
-			fi.setValueFunc()
+			fi.setup()
 			fa = append(fa, &fi)
 		}
 	}
@@ -396,7 +570,6 @@ func buildOutTagFields(rt reflect.Type) (fa []*Field) {
 			index:  f.Index,
 			offset: f.Offset,
 		}
-		fi.setValueFunc()
 		if tag, ok := f.Tag.Lookup("json"); ok && 0 < len(tag) {
 			parts := strings.Split(tag, ",")
 			switch parts[0] {
@@ -420,6 +593,7 @@ func buildOutTagFields(rt reflect.Type) (fa []*Field) {
 				}
 			}
 		}
+		fi.setup()
 		fa = append(fa, &fi)
 	}
 	sort.Slice(fa, func(i, j int) bool { return 0 < strings.Compare(fa[i].Key, fa[j].Key) })
@@ -440,7 +614,7 @@ func buildOutNameFields(rt reflect.Type) (fa []*Field) {
 			index:  f.Index,
 			offset: f.Offset,
 		}
-		fi.setValueFunc()
+		fi.setup()
 		fa = append(fa, &fi)
 	}
 	sort.Slice(fa, func(i, j int) bool { return 0 < strings.Compare(fa[i].Key, fa[j].Key) })
@@ -462,7 +636,7 @@ func buildOutLowFields(rt reflect.Type) (fa []*Field) {
 			index:  f.Index,
 			offset: f.Offset,
 		}
-		fi.setValueFunc()
+		fi.setup()
 		fa = append(fa, &fi)
 	}
 	sort.Slice(fa, func(i, j int) bool { return 0 < strings.Compare(fa[i].Key, fa[j].Key) })

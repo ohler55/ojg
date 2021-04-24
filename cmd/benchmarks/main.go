@@ -28,7 +28,8 @@ const (
 	//lightBlock  = "░"
 )
 
-var filename = "test/patient.json"
+// var filename = "test/patient.json"
+var filename = "test/citm_catalog.json"
 
 type specs struct {
 	os        string

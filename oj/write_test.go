@@ -33,6 +33,15 @@ func (g *genny) Generic() gen.Node {
 	return gen.Object{"type": gen.String("genny"), "val": gen.Int(g.val)}
 }
 
+type Anno struct {
+	Val   int    `json:"v,omitempty"`
+	Str   int    `json:"str,omitempty,string"`
+	Title int    `json:",omitempty"`
+	Skip  int    `json:"-"`
+	Dash  int    `json:"-,omitempty"`
+	Buf   []byte `json:"buf,omitempty"`
+}
+
 type Dummy struct {
 	Val int
 }
@@ -335,4 +344,20 @@ func TestWriteBad(t *testing.T) {
 func TestJSONBad(t *testing.T) {
 	out := oj.JSON([]interface{}{true, &Panik{}})
 	tt.Equal(t, 0, len(out))
+}
+
+func BenchmarkMarshal(b *testing.B) {
+	a := Anno{
+		Val:   1,
+		Str:   2,
+		Title: 3,
+		Skip:  4,
+		Dash:  5,
+		Buf:   []byte("abcd"),
+	}
+	for i := 0; i < b.N; i++ {
+		if _, err := oj.Marshal(&a); err != nil {
+			b.Fatal(err)
+		}
+	}
 }

@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strconv"
 	"time"
-	"unicode/utf8"
 
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
@@ -284,50 +283,7 @@ func (o *Options) buildJSON(data interface{}, depth int, embedded bool) {
 }
 
 func (o *Options) buildString(s string) {
-	o.buf = append(o.buf, '"')
-	for _, r := range s {
-		switch r {
-		case '\\':
-			o.buf = append(o.buf, []byte{'\\', '\\'}...)
-		case '"':
-			o.buf = append(o.buf, []byte{'\\', '"'}...)
-		case '\b':
-			o.buf = append(o.buf, []byte{'\\', 'b'}...)
-		case '\f':
-			o.buf = append(o.buf, []byte{'\\', 'f'}...)
-		case '\n':
-			o.buf = append(o.buf, []byte{'\\', 'n'}...)
-		case '\r':
-			o.buf = append(o.buf, []byte{'\\', 'r'}...)
-		case '\t':
-			o.buf = append(o.buf, []byte{'\\', 't'}...)
-		case '&', '<', '>': // prefectly okay for JSON but commonly escaped
-			if o.HTMLUnsafe {
-				o.buf = append(o.buf, byte(r))
-			} else {
-				o.buf = append(o.buf, []byte{'\\', 'u', '0', '0', hex[r>>4], hex[r&0x0f]}...)
-			}
-		case '\u2028':
-			o.buf = append(o.buf, []byte(`\u2028`)...)
-		case '\u2029':
-			o.buf = append(o.buf, []byte(`\u2029`)...)
-		default:
-			if r < ' ' {
-				o.buf = append(o.buf, []byte{'\\', 'u', '0', '0', hex[(r>>4)&0x0f], hex[r&0x0f]}...)
-			} else if r < 0x80 {
-				o.buf = append(o.buf, byte(r))
-			} else {
-				if len(o.utf) < utf8.UTFMax {
-					o.utf = make([]byte, utf8.UTFMax)
-				} else {
-					o.utf = o.utf[:cap(o.utf)]
-				}
-				n := utf8.EncodeRune(o.utf, r)
-				o.buf = append(o.buf, o.utf[:n]...)
-			}
-		}
-	}
-	o.buf = append(o.buf, '"')
+	o.buf = alt.AppendJSONString(o.buf, s, !o.HTMLUnsafe)
 }
 
 func (o *Options) buildTime(t time.Time) {
@@ -746,26 +702,44 @@ func (o *Options) buildStruct(rv reflect.Value, opt *alt.Options, depth int, emb
 			}
 			o.buf = append(o.buf, []byte(cs)...)
 			o.buildString(fi.Key)
-			o.buf = append(o.buf, ':')
-			o.buf = append(o.buf, ' ')
+			o.buf = append(o.buf, []byte{':', ' '}...)
 			o.buildJSON(v, d2, true)
 		}
 		o.buf = append(o.buf, []byte(is)...)
 	} else {
+		var v interface{}
+		var has bool
+		var wrote bool
 		for _, fi := range fields {
-			v, omit := fi.Value(rv, opt.OmitNil, embedded)
-			if omit || (opt.OmitNil && v == nil) {
+			o.buf, v, wrote, has = fi.Append(o.buf, rv, opt.OmitNil, embedded)
+			if wrote {
+				first = false
 				continue
 			}
-			if first {
-				first = false
-			} else {
-				o.buf = append(o.buf, ',')
+			if !has {
+				continue
 			}
-			o.buildString(fi.Key)
-			o.buf = append(o.buf, ':')
 			o.buildJSON(v, d2, true)
+			o.buf = append(o.buf, ',')
+			first = false
+
+			/*
+				v, omit := fi.Value(rv, opt.OmitNil, embedded)
+				if omit || (opt.OmitNil && v == nil) {
+					continue
+				}
+				o.buildString(fi.Key)
+				o.buf = append(o.buf, ':')
+				o.buildJSON(v, d2, true)
+				first = false
+				o.buf = append(o.buf, ',')
+			*/
 		}
+		if !first {
+			o.buf = o.buf[:len(o.buf)-1]
+		}
+		// TBD always add comma after but at end, if last byte is a comma, shorten buf
+
 	}
 	o.buf = append(o.buf, '}')
 }

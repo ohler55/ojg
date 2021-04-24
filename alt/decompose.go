@@ -229,24 +229,6 @@ func reflectStruct(rv reflect.Value, val interface{}, opt *Options, embedded boo
 		}
 	}
 	for _, fi := range fields {
-		/*
-			if fv, omit := fi.RValue(rv, opt); !omit {
-				switch fi.Kind {
-				case reflect.Chan, reflect.Func:
-				case reflect.Complex64,
-					reflect.Complex128,
-					reflect.Array,
-					reflect.Interface,
-					reflect.Map,
-					reflect.Ptr,
-					reflect.Slice,
-					reflect.Struct:
-					obj[fi.Key] = reflectValue(fv, opt)
-				default:
-					obj[fi.Key] = fv.Interface()
-				}
-			}
-		*/
 		if v, omit := fi.Value(rv, opt.OmitNil, embedded); !omit {
 			switch v.(type) {
 			case nil:

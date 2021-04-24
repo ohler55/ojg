@@ -110,3 +110,57 @@ type Communication struct {
 	Language  CC
 	Preferred bool
 }
+
+// Types for the citm_catalog.json file.
+type Catalog struct {
+	AreaNames                map[string]string
+	AudienceSubCategoryNames map[string]string
+	BlockNames               map[string]string
+	Events                   map[string]*Event
+	Performances             []*Performance
+	SeatCategoryNames        map[string]string
+	SubTopicNames            map[string]string
+	SubjectNames             map[string]string
+	TopicNames               map[string]string
+	TopicSubTopics           map[string][]int
+	VenueNames               map[string]string
+}
+
+type Event struct {
+	Description *string
+	ID          int `json:"id"`
+	Logo        *string
+	Name        string
+	SubTopicIds []int
+	SubjectCode *string
+	Subtitle    *string
+	TopicIds    []int
+}
+
+type Performance struct {
+	EventID        int `json:"eventId"`
+	ID             int `json:"id"`
+	Logo           *string
+	Name           *string
+	Prices         []*Price
+	SeatCategories []*SeatCategory
+	SeatMapImage   *string
+	Start          int64
+	VenueCode      string
+}
+
+type Price struct {
+	Amount                int
+	AudienceSubCategoryId int
+	SeatCategoryID        int
+}
+
+type SeatCategory struct {
+	SeatCategoryId int
+	Areas          []*Area
+}
+
+type Area struct {
+	AreaID   int
+	BlockIDs []int
+}
