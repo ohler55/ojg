@@ -16,25 +16,6 @@ import (
 // 10 so that numbers look correct when displayed in base 10.
 const fracMax = 10000000.0
 
-// Dup is an alias for Decompose.
-func Dup(v interface{}, options ...*Options) interface{} {
-	return Decompose(v, options...)
-}
-
-// Decompose creates a simple type converting non simple to simple types using
-// either the Simplify() interface or reflection. Unlike Alter() a deep copy
-// is returned leaving the original data unchanged.
-func Decompose(v interface{}, options ...*Options) interface{} {
-	opt := &DefaultOptions
-	if 0 < len(options) {
-		opt = options[0]
-	}
-	if opt.Converter != nil {
-		v, _ = opt.Converter.convert(v)
-	}
-	return decompose(v, opt, false)
-}
-
 func decompose(v interface{}, opt *Options, embedded bool) interface{} {
 	switch tv := v.(type) {
 	case nil, bool, int64, float64, string, time.Time:
@@ -98,21 +79,6 @@ func decompose(v interface{}, opt *Options, embedded bool) interface{} {
 		return reflectValue(reflect.ValueOf(v), v, opt, embedded)
 	}
 	return v
-}
-
-// Alter the data into all simple types converting non simple to simple types
-// using either the Simplify() interface or reflection. Unlike Decompose() map and
-// slices members are modified if necessary to assure all elements are simple
-// types.
-func Alter(v interface{}, options ...*Options) interface{} {
-	opt := &DefaultOptions
-	if 0 < len(options) {
-		opt = options[0]
-	}
-	if opt.Converter != nil {
-		v, _ = opt.Converter.convert(v)
-	}
-	return alter(v, opt, false)
 }
 
 func alter(v interface{}, opt *Options, embedded bool) interface{} {

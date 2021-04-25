@@ -160,7 +160,7 @@ func ojJSON(b *testing.B) {
 	wr := oj.Writer{Options: ojg.Options{OmitNil: true}}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		wr.JSONp(data)
+		wr.MustJSON(data)
 	}
 }
 
@@ -169,7 +169,7 @@ func ojJSONIndent(b *testing.B) {
 	wr := oj.Writer{Options: ojg.Options{OmitNil: true, Indent: 2}}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		wr.JSONp(data)
+		wr.MustJSON(data)
 	}
 }
 
@@ -179,7 +179,7 @@ func ojJSONSort(b *testing.B) {
 	wr := oj.Writer{Options: ojg.Options{OmitNil: true, Indent: 2, Sort: true}}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		wr.JSONp(data)
+		wr.MustJSON(data)
 	}
 }
 
@@ -189,6 +189,6 @@ func ojWriteIndent(b *testing.B) {
 	wr := oj.Writer{Options: ojg.Options{OmitNil: true, Indent: 2}}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		wr.Writep(w, data)
+		wr.MustWrite(w, data)
 	}
 }

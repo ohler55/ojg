@@ -1,12 +1,16 @@
 // Copyright (c) 2021, Peter Ohler, All rights reserved.
 
-package alt
+package ojg
 
 import (
 	"math"
 	"strconv"
 	"time"
 )
+
+// 23 for fraction in IEEE 754 which amounts to 7 significant digits. Use base
+// 10 so that numbers look correct when displayed in base 10.
+const fracMax = 10000000.0
 
 // Converter types are used to convert data element to alternate
 // values. Common uses are to match a pattern such as strings representing

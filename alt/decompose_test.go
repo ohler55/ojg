@@ -227,7 +227,7 @@ func TestAlterSimplifier(t *testing.T) {
 }
 
 func TestDecomposeConverter(t *testing.T) {
-	c := alt.Converter{
+	c := ojg.Converter{
 		Int: []func(val int64) (interface{}, bool){
 			func(val int64) (interface{}, bool) { return val + 1, true },
 		},

@@ -1,13 +1,13 @@
 // Copyright (c) 2021, Peter Ohler, All rights reserved.
 
-package alt_test
+package ojg_test
 
 import (
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/ohler55/ojg/alt"
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -21,7 +21,7 @@ func TestConverterRFC3339(t *testing.T) {
 		"2021-03-05T10:11:12.1234567890-05:00", // too long
 		"2021-03-05 10:11:12.123Z",             // wrong format
 	}
-	v2, _ := alt.TimeRFC3339Converter.Convert(val).([]interface{})
+	v2, _ := ojg.TimeRFC3339Converter.Convert(val).([]interface{})
 	for i := 0; i < len(val); i++ {
 		tt.Equal(t, val[i], v2[i]) // verify they are the same
 		var ok bool
@@ -52,7 +52,7 @@ func TestConverterNanoTime(t *testing.T) {
 		uint8(123),
 		nil,
 	}
-	v2, _ := alt.TimeNanoConverter.Convert(val).([]interface{})
+	v2, _ := ojg.TimeNanoConverter.Convert(val).([]interface{})
 	for i := 0; i < len(val); i++ {
 		tt.Equal(t, val[i], v2[i]) // verify they are the same
 		_, ok := val[i].(time.Time)
@@ -63,7 +63,7 @@ func TestConverterNanoTime(t *testing.T) {
 		}
 	}
 	vm := map[string]interface{}{"x": int(946684800000000001)}
-	_ = alt.TimeNanoConverter.Convert(vm)
+	_ = ojg.TimeNanoConverter.Convert(vm)
 	_, ok := vm["x"].(time.Time)
 	tt.Equal(t, true, ok)
 }
@@ -81,7 +81,7 @@ func TestConverterFloat(t *testing.T) {
 		float32(1609804800.0),
 		123456789.123,
 	}
-	v2, _ := alt.Convert(val, fun).([]interface{})
+	v2, _ := ojg.Convert(val, fun).([]interface{})
 	for i := 0; i < len(val); i++ {
 		tt.Equal(t, val[i], v2[i]) // verify they are the same
 		var ok bool
@@ -108,7 +108,7 @@ func TestConverterArray(t *testing.T) {
 		[]interface{}{1, 2},
 		[]interface{}{"x", 2, 3},
 	}
-	v2, _ := alt.Convert(val, fun).([]interface{})
+	v2, _ := ojg.Convert(val, fun).([]interface{})
 	for i := 0; i < len(val); i++ {
 		tt.Equal(t, val[i], v2[i]) // verify they are the same
 		var ok bool
@@ -123,7 +123,7 @@ func TestConverterArray(t *testing.T) {
 
 func TestConverterMixed(t *testing.T) {
 	val := []interface{}{1, true, "ab"}
-	v2, _ := alt.Convert(val,
+	v2, _ := ojg.Convert(val,
 		func(val int64) (interface{}, bool) { return val + 1, true },
 		func(val string) (interface{}, bool) { return val + "c", true },
 		func(val map[string]interface{}) (interface{}, bool) { return true, true },
@@ -140,7 +140,7 @@ func TestConverterMongo(t *testing.T) {
 		map[string]interface{}{"$numberDecimal": "123.456", "x": 3},
 		map[string]interface{}{"$numberDecimal": 3},
 	}
-	v2, _ := alt.MongoConverter.Convert(val).([]interface{})
+	v2, _ := ojg.MongoConverter.Convert(val).([]interface{})
 	tt.Equal(t, 6, len(v2))
 	tt.Equal(t, "507f191e810c19729de860ea", v2[0])
 	tt.Equal(t, "time.Time 2021-03-05 11:22:33.123 +0000 UTC", fmt.Sprintf("%T %s", v2[1], v2[1]))

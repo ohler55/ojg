@@ -195,6 +195,9 @@ type Options struct {
 	// BytesAsString, BytesAsBase64 (the go json package default), or
 	// BytesAsArray.
 	BytesAs int
+
+	// Converter to use when decomposing or altering if non nil.
+	Converter *Converter
 }
 
 // BuildTime appends a time string to the buffer.

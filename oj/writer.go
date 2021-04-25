@@ -35,10 +35,10 @@ func (wr *Writer) JSON(data interface{}) string {
 			wr.buf = wr.buf[:0]
 		}
 	}()
-	return wr.JSONp(data)
+	return wr.MustJSON(data)
 }
 
-func (wr *Writer) JSONp(data interface{}) string {
+func (wr *Writer) MustJSON(data interface{}) string {
 	if wr.InitSize <= 0 {
 		wr.InitSize = 256
 	}
@@ -62,13 +62,13 @@ func (wr *Writer) Write(w io.Writer, data interface{}) (err error) {
 			}
 		}
 	}()
-	wr.Writep(w, data)
+	wr.MustWrite(w, data)
 	return
 }
 
 // Writep a JSON string for the data provided. If an error occurs panic is
 // called with the error.
-func (wr *Writer) Writep(w io.Writer, data interface{}) {
+func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
 	wr.w = w
 	if wr.InitSize <= 0 {
 		wr.InitSize = 256

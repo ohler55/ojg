@@ -33,28 +33,6 @@ type Recomposer struct {
 	composers map[string]*composer
 }
 
-// Recompose simple data into more complex go types.
-func Recompose(v interface{}, tv ...interface{}) (out interface{}, err error) {
-	return DefaultRecomposer.Recompose(v, tv...)
-}
-
-// NewRecomposer creates a new instance. The composers are a map of objects
-// expected and functions to recompose them. If no function is provided then
-// reflection is used instead.
-func NewRecomposer(createKey string, composers map[interface{}]RecomposeFunc) (*Recomposer, error) {
-	r := Recomposer{
-		CreateKey: createKey,
-		composers: map[string]*composer{},
-	}
-	for v, fun := range composers {
-		rt := reflect.TypeOf(v)
-		if _, err := r.registerComposer(rt, fun); err != nil {
-			return nil, err
-		}
-	}
-	return &r, nil
-}
-
 func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*composer, error) {
 	if rt.Kind() == reflect.Ptr {
 		rt = rt.Elem()

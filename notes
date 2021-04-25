@@ -1,18 +1,15 @@
 
 - Add functions to sen to match oj
 - docs for funcs and ojg package
-- use ojg.Options in alt
-- optimize marshal for structs
 
-- more examples
-- readme
- - add marshal and unmarshal example
+- optimize marshal for structs
+ - Marshal for reflects
+  - need a buildReflectJSON that take a reflect.Value instead of interface{}
+   - stay with buildJSON for simple and reflect for structs
+  - how to reduce the number of allocs?
 
 - benchmarks needs a better mix and not just strings
  - validate issue?
-
-- separate package for field stuff?
-- need string encoders (json and sen) in alt
 
 - pass args as pointer to struct instead of several bools (EncodeOptions)
  - need htmlsafe
@@ -25,10 +22,9 @@
 
 - add utf []byte to writer and then pass to string writters
 
-- Marshal for reflects
- - need a buildReflectJSON that take a reflect.Value instead of interface{}
-  - stay with buildJSON for simple and reflect for structs
- - how to reduce the number of allocs?
+- more examples
+- readme
+ - add marshal and unmarshal example
 
 ----------------
 
