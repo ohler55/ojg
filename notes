@@ -1,7 +1,4 @@
 
-- Add functions to sen to match oj
-- docs for funcs and ojg package
-
 - optimize marshal for structs
  - Marshal for reflects
   - need a buildReflectJSON that take a reflect.Value instead of interface{}
@@ -25,7 +22,13 @@
 - more examples
 - readme
  - add marshal and unmarshal example
+ - examples
+  - asm
+  - decompose and alter
+  - parse (oj, sen)
+  - write (oj, sen, and pretty)
 
+- unit tests for cmd/oj
 ----------------
 
 - option to detect duplicate keys or make part of validator

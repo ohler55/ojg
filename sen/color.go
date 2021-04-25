@@ -12,7 +12,7 @@ import (
 	"github.com/ohler55/ojg/gen"
 )
 
-func (wr *Writer) cbuildJSON(data interface{}, depth int) {
+func (wr *Writer) cbuildSen(data interface{}, depth int) {
 	switch td := data.(type) {
 	case nil:
 		wr.buf = append(wr.buf, wr.NullColor...)
@@ -103,20 +103,20 @@ func (wr *Writer) cbuildJSON(data interface{}, depth int) {
 
 	default:
 		if g, _ := data.(alt.Genericer); g != nil {
-			wr.cbuildJSON(g.Generic(), depth)
+			wr.cbuildSen(g.Generic(), depth)
 			return
 		}
 		if simp, _ := data.(alt.Simplifier); simp != nil {
 			data = simp.Simplify()
-			wr.cbuildJSON(data, depth)
+			wr.cbuildSen(data, depth)
 			return
 		}
 		if 0 < len(wr.CreateKey) {
 			ao := alt.Options{CreateKey: wr.CreateKey, OmitNil: wr.OmitNil, FullTypePath: wr.FullTypePath}
-			wr.cbuildJSON(alt.Decompose(data, &ao), depth)
+			wr.cbuildSen(alt.Decompose(data, &ao), depth)
 			return
 		} else {
-			wr.cbuildJSON(alt.Decompose(data, &alt.Options{OmitNil: wr.OmitNil}), depth)
+			wr.cbuildSen(alt.Decompose(data, &alt.Options{OmitNil: wr.OmitNil}), depth)
 		}
 	}
 	wr.buf = append(wr.buf, wr.NoColor...)
@@ -165,7 +165,7 @@ func (wr *Writer) cbuildArray(n gen.Array, depth int) {
 			wr.buf = append(wr.buf, ' ')
 		}
 		wr.buf = append(wr.buf, []byte(cs)...)
-		wr.cbuildJSON(m, d2)
+		wr.cbuildSen(m, d2)
 	}
 	wr.buf = append(wr.buf, []byte(is)...)
 	wr.buf = append(wr.buf, wr.SyntaxColor...)
@@ -208,7 +208,7 @@ func (wr *Writer) cbuildSimpleArray(n []interface{}, depth int) {
 			wr.buf = append(wr.buf, ' ')
 		}
 		wr.buf = append(wr.buf, []byte(cs)...)
-		wr.cbuildJSON(m, d2)
+		wr.cbuildSen(m, d2)
 	}
 	wr.buf = append(wr.buf, []byte(is)...)
 	wr.buf = append(wr.buf, wr.SyntaxColor...)
@@ -273,7 +273,7 @@ func (wr *Writer) cbuildObject(n gen.Object, depth int) {
 			if 0 < wr.Indent {
 				wr.buf = append(wr.buf, ' ')
 			}
-			wr.cbuildJSON(m, d2)
+			wr.cbuildSen(m, d2)
 		}
 	} else {
 		for k, m := range n {
@@ -295,7 +295,7 @@ func (wr *Writer) cbuildObject(n gen.Object, depth int) {
 			if 0 < wr.Indent {
 				wr.buf = append(wr.buf, ' ')
 			}
-			wr.cbuildJSON(m, d2)
+			wr.cbuildSen(m, d2)
 		}
 	}
 	wr.buf = append(wr.buf, []byte(is)...)
@@ -361,7 +361,7 @@ func (wr *Writer) cbuildSimpleObject(n map[string]interface{}, depth int) {
 			if 0 < wr.Indent {
 				wr.buf = append(wr.buf, ' ')
 			}
-			wr.cbuildJSON(m, d2)
+			wr.cbuildSen(m, d2)
 		}
 	} else {
 		for k, m := range n {
@@ -383,7 +383,7 @@ func (wr *Writer) cbuildSimpleObject(n map[string]interface{}, depth int) {
 			if 0 < wr.Indent {
 				wr.buf = append(wr.buf, ' ')
 			}
-			wr.cbuildJSON(m, d2)
+			wr.cbuildSen(m, d2)
 		}
 	}
 	wr.buf = append(wr.buf, []byte(is)...)

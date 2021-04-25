@@ -6,12 +6,12 @@ func init() {
 	Define(&Fn{
 		Name: "neq",
 		Eval: neq,
-		Desc: `Returns true if any the argument are not equal. An alias is !==`,
+		Desc: `Returns true if any the argument are not equal. An alias is !==.`,
 	})
 	Define(&Fn{
 		Name: "!=",
 		Eval: neq,
-		Desc: `Returns true if any the argument are not equal. An alias is !==`,
+		Desc: `Returns true if any the argument are not equal. An alias is !==.`,
 	})
 }
 

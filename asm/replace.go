@@ -11,7 +11,7 @@ func init() {
 	Define(&Fn{
 		Name: "replace",
 		Eval: replace,
-		Desc: `Replace a occurances the second argument with the third
+		Desc: `Replace an occurances the second argument with the third
 argument. All three arguments must be strings.`,
 	})
 }

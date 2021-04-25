@@ -29,6 +29,7 @@ type Writer struct {
 	strict bool
 }
 
+// JSON writes data, JSON encoded. On error, an empty string is returned.
 func (wr *Writer) JSON(data interface{}) string {
 	defer func() {
 		if r := recover(); r != nil {
@@ -38,6 +39,7 @@ func (wr *Writer) JSON(data interface{}) string {
 	return wr.MustJSON(data)
 }
 
+// MustJSON writes data, JSON encoded. On error a panic is called with the error.
 func (wr *Writer) MustJSON(data interface{}) string {
 	if wr.InitSize <= 0 {
 		wr.InitSize = 256
@@ -66,7 +68,7 @@ func (wr *Writer) Write(w io.Writer, data interface{}) (err error) {
 	return
 }
 
-// Writep a JSON string for the data provided. If an error occurs panic is
+// MustWrite a JSON string for the data provided. If an error occurs panic is
 // called with the error.
 func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
 	wr.w = w

@@ -56,22 +56,7 @@ func String(data interface{}, args ...interface{}) string {
 			wr.Options = *ta
 		}
 	}
-	if wr.InitSize == 0 {
-		wr.InitSize = 256
-	}
-	if cap(wr.buf) < wr.InitSize {
-		wr.buf = make([]byte, 0, wr.InitSize)
-	} else {
-		wr.buf = wr.buf[:0]
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			wr.buf = wr.buf[:0]
-		}
-	}()
-	wr.buildSen(data, 0)
-
-	return string(wr.buf)
+	return wr.SEN(data)
 }
 
 // Write a JSON string for the data provided. The data can be a simple type of
@@ -111,9 +96,9 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 		}
 	}()
 	if wr.Color {
-		wr.cbuildJSON(data, 0)
+		wr.cbuildSen(data, 0)
 	} else {
-		wr.buildSen(data, 0)
+		wr.buildSen(data, 0, false)
 	}
 	if w != nil && 0 < len(wr.buf) {
 		_, err = wr.w.Write(wr.buf)

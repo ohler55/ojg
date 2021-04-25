@@ -9,13 +9,13 @@ func init() {
 		Name: "lt",
 		Eval: lt,
 		Desc: `Returns true if each argument is less than any subsequent
-argument. An alias is <`,
+argument. An alias is <.`,
 	})
 	Define(&Fn{
 		Name: "<",
 		Eval: lt,
 		Desc: `Returns true if each argument is less than any subsequent
-argument. An alias is lt`,
+argument. An alias is lt.`,
 	})
 }
 

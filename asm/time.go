@@ -17,7 +17,7 @@ otherwise false is returned.`,
 	Define(&Fn{
 		Name: "time",
 		Eval: timeConv,
-		Desc: `Converts the first argumement to a time is possible otherwise
+		Desc: `Converts the first argument to a time if possible otherwise
 an error is raised. The first argument can be a integer, float,
 or string and are coverted as follows:
   integer < 10^10:  time in seconds since 1970-01-01 UTC

@@ -667,8 +667,8 @@ should be in $.asm.
 An example of a plan in SEN format is (the first asm is optional):
 
   [ asm
-    [set $.asm {good: bye}]
-    [set $.asm.hello world]
+    [set $.asm {good: bye}]  // set output to {good: bad}
+    [set $.asm.hello world]  // output is now {good: bad, hello: world}
   ]
 
 The functions available are:

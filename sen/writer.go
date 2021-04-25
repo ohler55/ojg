@@ -19,13 +19,81 @@ const (
 	tabs   = "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
 )
 
+// Writer is a SEN writer that includes a reused buffer for reduced
+// allocations for repeated encoding calls.
 type Writer struct {
 	ojg.Options
 	buf []byte
 	w   io.Writer
 }
 
-func (wr *Writer) buildSen(data interface{}, depth int) {
+// SEN writes data, SEN encoded. On error, an empty string is returned.
+func (wr *Writer) SEN(data interface{}) string {
+	defer func() {
+		if r := recover(); r != nil {
+			wr.buf = wr.buf[:0]
+		}
+	}()
+	return wr.MustSEN(data)
+}
+
+// MustSEN writes data, SEN encoded. On error a panic is called with the error.
+func (wr *Writer) MustSEN(data interface{}) string {
+	if wr.InitSize <= 0 {
+		wr.InitSize = 256
+	}
+	if cap(wr.buf) < wr.InitSize {
+		wr.buf = make([]byte, 0, wr.InitSize)
+	} else {
+		wr.buf = wr.buf[:0]
+	}
+	wr.buildSen(data, 0, false)
+
+	return string(wr.buf)
+}
+
+// Write a SEN string for the data provided.
+func (wr *Writer) Write(w io.Writer, data interface{}) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			wr.buf = wr.buf[:0]
+			if err, _ = r.(error); err == nil {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
+	wr.MustWrite(w, data)
+	return
+}
+
+// MustWrite a SEN string for the data provided. If an error occurs panic is
+// called with the error.
+func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
+	wr.w = w
+	if wr.InitSize <= 0 {
+		wr.InitSize = 256
+	}
+	if wr.WriteLimit <= 0 {
+		wr.WriteLimit = 1024
+	}
+	if cap(wr.buf) < wr.InitSize {
+		wr.buf = make([]byte, 0, wr.InitSize)
+	} else {
+		wr.buf = wr.buf[:0]
+	}
+	if wr.Color {
+		wr.cbuildSen(data, 0) // TBD embedded
+	} else {
+		wr.buildSen(data, 0, false)
+	}
+	if 0 < len(wr.buf) {
+		if _, err := wr.w.Write(wr.buf); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (wr *Writer) buildSen(data interface{}, depth int, embedded bool) {
 	switch td := data.(type) {
 	case nil:
 		wr.buf = append(wr.buf, []byte("null")...)
@@ -95,20 +163,20 @@ func (wr *Writer) buildSen(data interface{}, depth int) {
 
 	default:
 		if g, _ := data.(alt.Genericer); g != nil {
-			wr.buildSen(g.Generic(), depth)
+			wr.buildSen(g.Generic(), depth, false)
 			return
 		}
 		if simp, _ := data.(alt.Simplifier); simp != nil {
 			data = simp.Simplify()
-			wr.buildSen(data, depth)
+			wr.buildSen(data, depth, false)
 			return
 		}
 		if 0 < len(wr.CreateKey) {
 			ao := alt.Options{CreateKey: wr.CreateKey, OmitNil: wr.OmitNil, FullTypePath: wr.FullTypePath}
-			wr.buildSen(alt.Decompose(data, &ao), depth)
+			wr.buildSen(alt.Decompose(data, &ao), depth, false)
 			return
 		} else {
-			wr.buildSen(alt.Decompose(data, &alt.Options{OmitNil: wr.OmitNil}), depth)
+			wr.buildSen(alt.Decompose(data, &alt.Options{OmitNil: wr.OmitNil}), depth, false)
 			return
 		}
 	}
@@ -192,7 +260,7 @@ func (wr *Writer) buildArray(n gen.Array, depth int) {
 		}
 		for _, m := range n {
 			wr.buf = append(wr.buf, []byte(cs)...)
-			wr.buildSen(m, d2)
+			wr.buildSen(m, d2, false)
 		}
 		wr.buf = append(wr.buf, []byte(is)...)
 	} else {
@@ -206,7 +274,7 @@ func (wr *Writer) buildArray(n gen.Array, depth int) {
 				}
 			}
 			prev = m
-			wr.buildSen(m, depth)
+			wr.buildSen(m, depth, false)
 		}
 	}
 	wr.buf = append(wr.buf, ']')
@@ -244,7 +312,7 @@ func (wr *Writer) buildSimpleArray(n []interface{}, depth int) {
 		}
 		for _, m := range n {
 			wr.buf = append(wr.buf, []byte(cs)...)
-			wr.buildSen(m, d2)
+			wr.buildSen(m, d2, false)
 		}
 		wr.buf = append(wr.buf, []byte(is)...)
 	} else {
@@ -258,7 +326,7 @@ func (wr *Writer) buildSimpleArray(n []interface{}, depth int) {
 				}
 			}
 			prev = m
-			wr.buildSen(m, depth)
+			wr.buildSen(m, depth, false)
 		}
 	}
 	wr.buf = append(wr.buf, ']')
@@ -309,7 +377,7 @@ func (wr *Writer) buildObject(n gen.Object, depth int) {
 				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buf = append(wr.buf, ' ')
-				wr.buildSen(m, d2)
+				wr.buildSen(m, d2, false)
 			}
 		} else {
 			for k, m := range n {
@@ -320,7 +388,7 @@ func (wr *Writer) buildObject(n gen.Object, depth int) {
 				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buf = append(wr.buf, ' ')
-				wr.buildSen(m, d2)
+				wr.buildSen(m, d2, false)
 			}
 		}
 		wr.buf = append(wr.buf, []byte(is)...)
@@ -344,7 +412,7 @@ func (wr *Writer) buildObject(n gen.Object, depth int) {
 				}
 				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
-				wr.buildSen(m, 0)
+				wr.buildSen(m, 0, false)
 			}
 		} else {
 			for k, m := range n {
@@ -358,7 +426,7 @@ func (wr *Writer) buildObject(n gen.Object, depth int) {
 				}
 				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
-				wr.buildSen(m, 0)
+				wr.buildSen(m, 0, false)
 			}
 		}
 	}
@@ -410,7 +478,7 @@ func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
 				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buf = append(wr.buf, ' ')
-				wr.buildSen(m, d2)
+				wr.buildSen(m, d2, false)
 			}
 		} else {
 			for k, m := range n {
@@ -421,7 +489,7 @@ func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
 				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buf = append(wr.buf, ' ')
-				wr.buildSen(m, d2)
+				wr.buildSen(m, d2, false)
 			}
 		}
 		wr.buf = append(wr.buf, []byte(is)...)
@@ -445,7 +513,7 @@ func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
 				}
 				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
-				wr.buildSen(m, 0)
+				wr.buildSen(m, 0, false)
 			}
 		} else {
 			for k, m := range n {
@@ -459,7 +527,7 @@ func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
 				}
 				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
-				wr.buildSen(m, 0)
+				wr.buildSen(m, 0, false)
 			}
 		}
 	}

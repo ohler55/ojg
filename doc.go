@@ -2,7 +2,19 @@
 
 /*
 
-Package ojg is a collection of JSON tools including a validator and parser.
+Package ojg is a collection of JSON tools including a validators, parsers, a
+full JSONPath implementation, data conversion utilities, and a simple type
+assembler. Most of the tools are designed for simple types although used in
+complex ways. Simple types in this context are data objects composed of these
+types.
+
+  bool
+  int64
+  float64
+  string
+  time.Time
+  []interface{}
+  map[string]interface{}
 
 Oj
 
@@ -56,6 +68,11 @@ The alt package contains functions and types for altering values. It includes fu
   Alter() is the same as decompose except it alters the value in place.
 
   Generify() converts a simple value into a gen.Node.
+
+Asm
+
+The asm package provides a means of building JSON or the corresponding simple
+types bases on a JSON script represented by the Plan type.
 
 Cmd oj
 

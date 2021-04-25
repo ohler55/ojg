@@ -9,13 +9,13 @@ func init() {
 		Name: "lte",
 		Eval: lte,
 		Desc: `Returns true if each argument is less than or equal to any
-subsequent argument. An alias is <=`,
+subsequent argument. An alias is <=.`,
 	})
 	Define(&Fn{
 		Name: "<=",
 		Eval: lte,
 		Desc: `Returns true if each argument is less than or equal to any
-subsequent argument. An alias is lte`,
+subsequent argument. An alias is lte.`,
 	})
 }
 
