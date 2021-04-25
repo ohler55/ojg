@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strconv"
 	"time"
-	"unicode/utf8"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
 )
@@ -150,74 +150,27 @@ func (w *Writer) buildFloat64(v float64) (n *node) {
 }
 
 func (w *Writer) buildStringNode(v string) (n *node) {
-	w.Buf = w.Buf[:0]
+	w.buf = w.buf[:0]
 	if w.SEN {
-		w.BuildString(v)
+		w.buf = ojg.AppendSENString(w.buf, v)
 	} else {
-		w.BuildQuotedString(v)
+		w.buf = ojg.AppendJSONString(w.buf, v, !w.HTMLUnsafe)
 	}
-	n = &node{size: len(w.Buf), kind: strNode}
-	n.buf = make([]byte, len(w.Buf))
-	copy(n.buf, w.Buf)
+	n = &node{size: len(w.buf), kind: strNode}
+	n.buf = make([]byte, len(w.buf))
+	copy(n.buf, w.buf)
 	if w.Color {
 		n.buf = append(append([]byte(w.StringColor), n.buf...), w.NoColor...)
 	}
 	return
 }
 
-func (w *Writer) BuildQuotedString(s string) {
-	w.Buf = append(w.Buf, '"')
-	for _, r := range s {
-		switch r {
-		case '\\':
-			w.Buf = append(w.Buf, []byte{'\\', '\\'}...)
-		case '"':
-			w.Buf = append(w.Buf, []byte{'\\', '"'}...)
-		case '\b':
-			w.Buf = append(w.Buf, []byte{'\\', 'b'}...)
-		case '\f':
-			w.Buf = append(w.Buf, []byte{'\\', 'f'}...)
-		case '\n':
-			w.Buf = append(w.Buf, []byte{'\\', 'n'}...)
-		case '\r':
-			w.Buf = append(w.Buf, []byte{'\\', 'r'}...)
-		case '\t':
-			w.Buf = append(w.Buf, []byte{'\\', 't'}...)
-		case '&', '<', '>': // prefectly okay for JSON but commonly escaped
-			if w.HTMLSafe {
-				w.Buf = append(w.Buf, []byte{'\\', 'u', '0', '0', hex[r>>4], hex[r&0x0f]}...)
-			} else {
-				w.Buf = append(w.Buf, byte(r))
-			}
-		case '\u2028':
-			w.Buf = append(w.Buf, []byte(`\u2028`)...)
-		case '\u2029':
-			w.Buf = append(w.Buf, []byte(`\u2029`)...)
-		default:
-			if r < ' ' {
-				w.Buf = append(w.Buf, []byte{'\\', 'u', '0', '0', hex[(r>>4)&0x0f], hex[r&0x0f]}...)
-			} else if r < 0x80 {
-				w.Buf = append(w.Buf, byte(r))
-			} else {
-				if len(w.Utf) < utf8.UTFMax {
-					w.Utf = make([]byte, utf8.UTFMax)
-				} else {
-					w.Utf = w.Utf[:cap(w.Utf)]
-				}
-				n := utf8.EncodeRune(w.Utf, r)
-				w.Buf = append(w.Buf, w.Utf[:n]...)
-			}
-		}
-	}
-	w.Buf = append(w.Buf, '"')
-}
-
 func (w *Writer) buildTimeNode(v time.Time) (n *node) {
-	w.Buf = w.Buf[:0]
-	w.BuildTime(v)
-	n = &node{size: len(w.Buf), kind: strNode}
-	n.buf = make([]byte, len(w.Buf))
-	copy(n.buf, w.Buf)
+	w.buf = w.buf[:0]
+	w.buf = w.BuildTime(w.buf, v)
+	n = &node{size: len(w.buf), kind: strNode}
+	n.buf = make([]byte, len(w.buf))
+	copy(n.buf, w.buf)
 	if w.Color {
 		n.buf = append(append([]byte(w.TimeColor), n.buf...), w.NoColor...)
 	}
@@ -285,14 +238,14 @@ func (w *Writer) buildMapNode(v map[string]interface{}) (n *node) {
 		mn := w.build(v[k])
 		n.members = append(n.members, mn)
 		// build key
-		w.Buf = w.Buf[:0]
+		w.buf = w.buf[:0]
 		if w.SEN {
-			w.BuildString(k)
+			w.buf = ojg.AppendSENString(w.buf, k)
 		} else {
-			w.BuildQuotedString(k)
+			w.buf = ojg.AppendJSONString(w.buf, k, !w.HTMLUnsafe)
 		}
-		mn.key = make([]byte, len(w.Buf))
-		copy(mn.key, w.Buf)
+		mn.key = make([]byte, len(w.buf))
+		copy(mn.key, w.buf)
 		if 2 < n.size {
 			n.size++ // space
 			if !w.SEN {
@@ -325,14 +278,14 @@ func (w *Writer) buildGenMapNode(v gen.Object) (n *node) {
 		mn := w.build(v[k])
 		n.members = append(n.members, mn)
 		// build key
-		w.Buf = w.Buf[:0]
+		w.buf = w.buf[:0]
 		if w.SEN {
-			w.BuildString(k)
+			w.buf = ojg.AppendSENString(w.buf, k)
 		} else {
-			w.BuildQuotedString(k)
+			w.buf = ojg.AppendJSONString(w.buf, k, !w.HTMLUnsafe)
 		}
-		mn.key = make([]byte, len(w.Buf))
-		copy(mn.key, w.Buf)
+		mn.key = make([]byte, len(w.buf))
+		copy(mn.key, w.buf)
 		if 2 < n.size {
 			n.size++ // space
 			if !w.SEN {

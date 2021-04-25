@@ -2,6 +2,12 @@
 
 package ojg
 
+import (
+	"fmt"
+	"strconv"
+	"time"
+)
+
 const (
 	Normal        = "\x1b[m"
 	Black         = "\x1b[30m"
@@ -24,6 +30,51 @@ const (
 	BytesAsString = iota
 	BytesAsBase64
 	BytesAsArray
+)
+
+var (
+	// DefaultOptions default options that can be set as desired.
+	DefaultOptions = Options{
+		InitSize:    256,
+		SyntaxColor: Normal,
+		KeyColor:    Blue,
+		NullColor:   Red,
+		BoolColor:   Yellow,
+		NumberColor: Cyan,
+		StringColor: Green,
+		TimeColor:   Magenta,
+	}
+
+	// BrightOptions encoding options for color encoding.
+	BrightOptions = Options{
+		InitSize:    256,
+		SyntaxColor: Normal,
+		KeyColor:    BrightBlue,
+		NullColor:   BrightRed,
+		BoolColor:   BrightYellow,
+		NumberColor: BrightCyan,
+		StringColor: BrightGreen,
+		TimeColor:   BrightMagenta,
+	}
+
+	// GoOptions are the options closest to the go json package.
+	GoOptions = Options{
+		InitSize:     256,
+		SyntaxColor:  Normal,
+		KeyColor:     Blue,
+		NullColor:    Red,
+		BoolColor:    Yellow,
+		NumberColor:  Cyan,
+		StringColor:  Green,
+		TimeColor:    Magenta,
+		CreateKey:    "",
+		FullTypePath: false,
+		OmitNil:      false,
+		UseTags:      true,
+		KeyExact:     true,
+		NestEmbed:    false,
+		BytesAs:      BytesAsBase64,
+	}
 )
 
 // Options for writing data to JSON.
@@ -131,45 +182,43 @@ type Options struct {
 	BytesAs int
 }
 
-// DefaultOptions default options that can be set as desired.
-var DefaultOptions = Options{
-	InitSize:    256,
-	SyntaxColor: Normal,
-	KeyColor:    Blue,
-	NullColor:   Red,
-	BoolColor:   Yellow,
-	NumberColor: Cyan,
-	StringColor: Green,
-	TimeColor:   Magenta,
-}
-
-// BrightOptions encoding options for color encoding.
-var BrightOptions = Options{
-	InitSize:    256,
-	SyntaxColor: Normal,
-	KeyColor:    BrightBlue,
-	NullColor:   BrightRed,
-	BoolColor:   BrightYellow,
-	NumberColor: BrightCyan,
-	StringColor: BrightGreen,
-	TimeColor:   BrightMagenta,
-}
-
-// GoOptions are the options closest to the go json package.
-var GoOptions = Options{
-	InitSize:     256,
-	SyntaxColor:  Normal,
-	KeyColor:     Blue,
-	NullColor:    Red,
-	BoolColor:    Yellow,
-	NumberColor:  Cyan,
-	StringColor:  Green,
-	TimeColor:    Magenta,
-	CreateKey:    "",
-	FullTypePath: false,
-	OmitNil:      false,
-	UseTags:      true,
-	KeyExact:     true,
-	NestEmbed:    false,
-	BytesAs:      BytesAsBase64,
+// BuildTime appends a time string to the buffer.
+func (o *Options) BuildTime(buf []byte, t time.Time) []byte {
+	if o.TimeMap {
+		buf = append(buf, []byte(`{"`)...)
+		buf = append(buf, o.CreateKey...)
+		buf = append(buf, []byte(`":`)...)
+		if o.FullTypePath {
+			buf = append(buf, []byte(`"time/Time"`)...)
+		} else {
+			buf = append(buf, []byte("Time")...)
+		}
+		buf = append(buf, []byte(` value:`)...)
+	} else if 0 < len(o.TimeWrap) {
+		buf = append(buf, []byte(`{"`)...)
+		buf = append(buf, []byte(o.TimeWrap)...)
+		buf = append(buf, []byte(`":`)...)
+	}
+	switch o.TimeFormat {
+	case "", "nano":
+		buf = append(buf, []byte(strconv.FormatInt(t.UnixNano(), 10))...)
+	case "second":
+		// Decimal format but float is not accurate enough so build the output
+		// in two parts.
+		nano := t.UnixNano()
+		secs := nano / int64(time.Second)
+		if 0 < nano {
+			buf = append(buf, []byte(fmt.Sprintf("%d.%09d", secs, nano-(secs*int64(time.Second))))...)
+		} else {
+			buf = append(buf, []byte(fmt.Sprintf("%d.%09d", secs, -(nano-(secs*int64(time.Second)))))...)
+		}
+	default:
+		buf = append(buf, '"')
+		buf = append(buf, []byte(t.Format(o.TimeFormat))...)
+		buf = append(buf, '"')
+	}
+	if 0 < len(o.TimeWrap) || o.TimeMap {
+		buf = append(buf, '}')
+	}
+	return buf
 }

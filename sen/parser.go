@@ -55,27 +55,6 @@ type Parser struct {
 	OnlyOne bool
 }
 
-// Parse a JSON string in to simple types. An error is returned if not valid JSON.
-func Parse(buf []byte, args ...interface{}) (interface{}, error) {
-	return DefaultParser.Parse(buf, args...)
-}
-
-// ParseReader a JSON io.Reader. An error is returned if not valid JSON.
-func ParseReader(r io.Reader, args ...interface{}) (data interface{}, err error) {
-	return DefaultParser.ParseReader(r, args...)
-}
-
-// Unmarshal parses the provided JSON and stores the result in the value
-// pointed to by vp.
-func Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomposer) (err error) {
-	p := Parser{}
-	var v interface{}
-	if v, err = p.Parse(data); err == nil {
-		_, err = alt.Recompose(v, vp)
-	}
-	return
-}
-
 // Unmarshal parses the provided JSON and stores the result in the value
 // pointed to by vp.
 func (p *Parser) Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomposer) (err error) {

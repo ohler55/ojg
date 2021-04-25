@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strconv"
 	"time"
-	"unicode/utf8"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
 )
@@ -21,300 +21,155 @@ const (
 	maxTokenLen = 64
 )
 
-// String returns a SEN string for the data provided. The data can be a simple
-// type of nil, bool, int, floats, time.Time, []interface{}, or
-// map[string]interface{} or a Node type, The args, if supplied can be an int
-// as an indent or a *Options.
-func String(data interface{}, args ...interface{}) string {
-	o := &DefaultOptions
-
-	if 0 < len(args) {
-		switch ta := args[0].(type) {
-		case int:
-			oi := *o
-			oi.Indent = ta
-			o = &oi
-		case *Options:
-			o = ta
-		}
-	}
-	if o.InitSize == 0 {
-		o.InitSize = 256
-	}
-	if cap(o.Buf) < o.InitSize {
-		o.Buf = make([]byte, 0, o.InitSize)
-	} else {
-		o.Buf = o.Buf[:0]
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			o.Buf = o.Buf[:0]
-		}
-	}()
-	o.buildSen(data, 0)
-
-	return string(o.Buf)
+type Writer struct {
+	ojg.Options
+	buf []byte
+	w   io.Writer
 }
 
-// Write a JSON string for the data provided. The data can be a simple type of
-// nil, bool, int, floats, time.Time, []interface{}, or map[string]interface{}
-// or a Node type, The args, if supplied can be an int as an indent or a
-// *Options.
-func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
-	o := &DefaultOptions
-
-	if 0 < len(args) {
-		switch ta := args[0].(type) {
-		case int:
-			oi := *o
-			oi.Indent = ta
-			o = &oi
-		case *Options:
-			o = ta
-		}
-	}
-	o.W = w
-	if o.InitSize == 0 {
-		o.InitSize = 256
-	}
-	if o.WriteLimit == 0 {
-		o.WriteLimit = 1024
-	}
-	if cap(o.Buf) < o.InitSize {
-		o.Buf = make([]byte, 0, o.InitSize)
-	} else {
-		o.Buf = o.Buf[:0]
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			o.Buf = o.Buf[:0]
-			if err, _ = r.(error); err == nil {
-				err = fmt.Errorf("%v", r)
-			}
-		}
-	}()
-	if o.Color {
-		o.cbuildJSON(data, 0)
-	} else {
-		o.buildSen(data, 0)
-	}
-	if w != nil && 0 < len(o.Buf) {
-		_, err = o.W.Write(o.Buf)
-	}
-	return
-}
-
-func (o *Options) buildSen(data interface{}, depth int) {
+func (wr *Writer) buildSen(data interface{}, depth int) {
 	switch td := data.(type) {
 	case nil:
-		o.Buf = append(o.Buf, []byte("null")...)
+		wr.buf = append(wr.buf, []byte("null")...)
 
 	case bool:
 		if td {
-			o.Buf = append(o.Buf, []byte("true")...)
+			wr.buf = append(wr.buf, []byte("true")...)
 		} else {
-			o.Buf = append(o.Buf, []byte("false")...)
+			wr.buf = append(wr.buf, []byte("false")...)
 		}
 	case gen.Bool:
 		if td {
-			o.Buf = append(o.Buf, []byte("true")...)
+			wr.buf = append(wr.buf, []byte("true")...)
 		} else {
-			o.Buf = append(o.Buf, []byte("false")...)
+			wr.buf = append(wr.buf, []byte("false")...)
 		}
 
 	case int:
-		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case int8:
-		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case int16:
-		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case int32:
-		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case int64:
-		o.Buf = append(o.Buf, []byte(strconv.FormatInt(td, 10))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatInt(td, 10))...)
 	case uint:
-		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint8:
-		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint16:
-		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint32:
-		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case uint64:
-		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 	case gen.Int:
-		o.Buf = append(o.Buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 
 	case float32:
-		o.Buf = append(o.Buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 32))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 32))...)
 	case float64:
-		o.Buf = append(o.Buf, []byte(strconv.FormatFloat(td, 'g', -1, 64))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatFloat(td, 'g', -1, 64))...)
 	case gen.Float:
-		o.Buf = append(o.Buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 64))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 64))...)
 
 	case string:
-		o.BuildString(td)
+		wr.buf = ojg.AppendSENString(wr.buf, td)
 	case gen.String:
-		o.BuildString(string(td))
+		wr.buf = ojg.AppendSENString(wr.buf, string(td))
 
 	case time.Time:
-		o.BuildTime(td)
+		wr.BuildTime(td)
 	case gen.Time:
-		o.BuildTime(time.Time(td))
+		wr.BuildTime(time.Time(td))
 
 	case []interface{}:
-		o.buildSimpleArray(td, depth)
+		wr.buildSimpleArray(td, depth)
 	case gen.Array:
-		o.buildArray(td, depth)
+		wr.buildArray(td, depth)
 
 	case map[string]interface{}:
-		o.buildSimpleObject(td, depth)
+		wr.buildSimpleObject(td, depth)
 	case gen.Object:
-		o.buildObject(td, depth)
+		wr.buildObject(td, depth)
 
 	default:
 		if g, _ := data.(alt.Genericer); g != nil {
-			o.buildSen(g.Generic(), depth)
+			wr.buildSen(g.Generic(), depth)
 			return
 		}
 		if simp, _ := data.(alt.Simplifier); simp != nil {
 			data = simp.Simplify()
-			o.buildSen(data, depth)
+			wr.buildSen(data, depth)
 			return
 		}
-		if 0 < len(o.CreateKey) {
-			ao := alt.Options{CreateKey: o.CreateKey, OmitNil: o.OmitNil, FullTypePath: o.FullTypePath}
-			o.buildSen(alt.Decompose(data, &ao), depth)
+		if 0 < len(wr.CreateKey) {
+			ao := alt.Options{CreateKey: wr.CreateKey, OmitNil: wr.OmitNil, FullTypePath: wr.FullTypePath}
+			wr.buildSen(alt.Decompose(data, &ao), depth)
 			return
 		} else {
-			o.buildSen(alt.Decompose(data, &alt.Options{OmitNil: o.OmitNil}), depth)
+			wr.buildSen(alt.Decompose(data, &alt.Options{OmitNil: wr.OmitNil}), depth)
 			return
 		}
 	}
-	if o.W != nil && o.WriteLimit < len(o.Buf) {
-		if _, err := o.W.Write(o.Buf); err != nil {
+	if wr.w != nil && wr.WriteLimit < len(wr.buf) {
+		if _, err := wr.w.Write(wr.buf); err != nil {
 			panic(err)
 		}
-		o.Buf = o.Buf[:0]
-	}
-}
-
-func (o *Options) BuildString(s string) {
-	tokOk := false
-	if 0 < len(s) {
-		vm := valueMap
-		tm := tokenMap
-		if o.HTMLSafe {
-			vm = htmlValueMap
-			tm = htmlTokenMap
-		}
-		if vm[s[0]] == tokenStart &&
-			len(s) < maxTokenLen { // arbitrary length, longer strings look better in quotes
-			tokOk = true
-			for _, b := range []byte(s) {
-				if tm[b] != tokenOk {
-					tokOk = false
-					break
-				}
-			}
-		}
-	}
-	if !tokOk {
-		o.Buf = append(o.Buf, '"')
-	}
-	for _, r := range s {
-		switch r {
-		case '\\':
-			o.Buf = append(o.Buf, []byte{'\\', '\\'}...)
-		case '"':
-			o.Buf = append(o.Buf, []byte{'\\', '"'}...)
-		case '\b':
-			o.Buf = append(o.Buf, []byte{'\\', 'b'}...)
-		case '\f':
-			o.Buf = append(o.Buf, []byte{'\\', 'f'}...)
-		case '\n':
-			o.Buf = append(o.Buf, []byte{'\n'}...)
-		case '\r':
-			o.Buf = append(o.Buf, []byte{'\\', 'r'}...)
-		case '\t':
-			o.Buf = append(o.Buf, []byte{'\t'}...)
-		case '&', '<', '>': // prefectly okay for JSON but commonly escaped
-			if o.HTMLSafe {
-				o.Buf = append(o.Buf, []byte{'\\', 'u', '0', '0', hex[r>>4], hex[r&0x0f]}...)
-			} else {
-				o.Buf = append(o.Buf, byte(r))
-			}
-		case '\u2028':
-			o.Buf = append(o.Buf, []byte(`\u2028`)...)
-		case '\u2029':
-			o.Buf = append(o.Buf, []byte(`\u2029`)...)
-		default:
-			if r < ' ' {
-				o.Buf = append(o.Buf, []byte{'\\', 'u', '0', '0', hex[(r>>4)&0x0f], hex[r&0x0f]}...)
-			} else if r < 0x80 {
-				o.Buf = append(o.Buf, byte(r))
-			} else {
-				if len(o.Utf) < utf8.UTFMax {
-					o.Utf = make([]byte, utf8.UTFMax)
-				}
-				n := utf8.EncodeRune(o.Utf, r)
-				o.Buf = append(o.Buf, o.Utf[:n]...)
-			}
-		}
-	}
-	if !tokOk {
-		o.Buf = append(o.Buf, '"')
+		wr.buf = wr.buf[:0]
 	}
 }
 
 // BuildTime appends a time string to the buffer.
-func (o *Options) BuildTime(t time.Time) {
-	if o.TimeMap {
-		o.Buf = append(o.Buf, []byte(`{"`)...)
-		o.Buf = append(o.Buf, o.CreateKey...)
-		o.Buf = append(o.Buf, []byte(`":`)...)
-		if o.FullTypePath {
-			o.Buf = append(o.Buf, []byte(`"time/Time"`)...)
+func (wr *Writer) BuildTime(t time.Time) {
+	if wr.TimeMap {
+		wr.buf = append(wr.buf, []byte(`{"`)...)
+		wr.buf = append(wr.buf, wr.CreateKey...)
+		wr.buf = append(wr.buf, []byte(`":`)...)
+		if wr.FullTypePath {
+			wr.buf = append(wr.buf, []byte(`"time/Time"`)...)
 		} else {
-			o.Buf = append(o.Buf, []byte("Time")...)
+			wr.buf = append(wr.buf, []byte("Time")...)
 		}
-		o.Buf = append(o.Buf, []byte(` value:`)...)
-	} else if 0 < len(o.TimeWrap) {
-		o.Buf = append(o.Buf, []byte(`{"`)...)
-		o.Buf = append(o.Buf, []byte(o.TimeWrap)...)
-		o.Buf = append(o.Buf, []byte(`":`)...)
+		wr.buf = append(wr.buf, []byte(` value:`)...)
+	} else if 0 < len(wr.TimeWrap) {
+		wr.buf = append(wr.buf, []byte(`{"`)...)
+		wr.buf = append(wr.buf, []byte(wr.TimeWrap)...)
+		wr.buf = append(wr.buf, []byte(`":`)...)
 	}
-	switch o.TimeFormat {
+	switch wr.TimeFormat {
 	case "", "nano":
-		o.Buf = append(o.Buf, []byte(strconv.FormatInt(t.UnixNano(), 10))...)
+		wr.buf = append(wr.buf, []byte(strconv.FormatInt(t.UnixNano(), 10))...)
 	case "second":
 		// Decimal format but float is not accurate enough so build the output
 		// in two parts.
 		nano := t.UnixNano()
 		secs := nano / int64(time.Second)
 		if 0 < nano {
-			o.Buf = append(o.Buf, []byte(fmt.Sprintf("%d.%09d", secs, nano-(secs*int64(time.Second))))...)
+			wr.buf = append(wr.buf, []byte(fmt.Sprintf("%d.%09d", secs, nano-(secs*int64(time.Second))))...)
 		} else {
-			o.Buf = append(o.Buf, []byte(fmt.Sprintf("%d.%09d", secs, -(nano-(secs*int64(time.Second)))))...)
+			wr.buf = append(wr.buf, []byte(fmt.Sprintf("%d.%09d", secs, -(nano-(secs*int64(time.Second)))))...)
 		}
 	default:
-		o.Buf = append(o.Buf, '"')
-		o.Buf = append(o.Buf, []byte(t.Format(o.TimeFormat))...)
-		o.Buf = append(o.Buf, '"')
+		wr.buf = append(wr.buf, '"')
+		wr.buf = append(wr.buf, []byte(t.Format(wr.TimeFormat))...)
+		wr.buf = append(wr.buf, '"')
 	}
-	if 0 < len(o.TimeWrap) || o.TimeMap {
-		o.Buf = append(o.Buf, '}')
+	if 0 < len(wr.TimeWrap) || wr.TimeMap {
+		wr.buf = append(wr.buf, '}')
 	}
 }
 
-func (o *Options) buildArray(n gen.Array, depth int) {
-	o.Buf = append(o.Buf, '[')
+func (wr *Writer) buildArray(n gen.Array, depth int) {
+	wr.buf = append(wr.buf, '[')
 	d2 := depth + 1
 	var is string
 	var cs string
 
-	if o.Tab || 0 < o.Indent {
-		if o.Tab {
+	if wr.Tab || 0 < wr.Indent {
+		if wr.Tab {
 			x := depth + 1
 			if len(tabs) < x {
 				x = len(tabs)
@@ -326,22 +181,22 @@ func (o *Options) buildArray(n gen.Array, depth int) {
 			}
 			cs = tabs[0:x]
 		} else {
-			x := depth*o.Indent + 1
+			x := depth*wr.Indent + 1
 			if len(spaces) < x {
 				x = len(spaces)
 			}
 			is = spaces[0:x]
-			x = d2*o.Indent + 1
+			x = d2*wr.Indent + 1
 			if len(spaces) < x {
 				x = len(spaces)
 			}
 			cs = spaces[0:x]
 		}
 		for _, m := range n {
-			o.Buf = append(o.Buf, []byte(cs)...)
-			o.buildSen(m, d2)
+			wr.buf = append(wr.buf, []byte(cs)...)
+			wr.buildSen(m, d2)
 		}
-		o.Buf = append(o.Buf, []byte(is)...)
+		wr.buf = append(wr.buf, []byte(is)...)
 	} else {
 		var prev interface{}
 		for j, m := range n {
@@ -349,24 +204,24 @@ func (o *Options) buildArray(n gen.Array, depth int) {
 				switch prev.(type) {
 				case []interface{}, map[string]interface{}:
 				default:
-					o.Buf = append(o.Buf, ' ')
+					wr.buf = append(wr.buf, ' ')
 				}
 			}
 			prev = m
-			o.buildSen(m, depth)
+			wr.buildSen(m, depth)
 		}
 	}
-	o.Buf = append(o.Buf, ']')
+	wr.buf = append(wr.buf, ']')
 }
 
-func (o *Options) buildSimpleArray(n []interface{}, depth int) {
-	o.Buf = append(o.Buf, '[')
+func (wr *Writer) buildSimpleArray(n []interface{}, depth int) {
+	wr.buf = append(wr.buf, '[')
 	d2 := depth + 1
 	var is string
 	var cs string
 
-	if o.Tab || 0 < o.Indent {
-		if o.Tab {
+	if wr.Tab || 0 < wr.Indent {
+		if wr.Tab {
 			x := depth + 1
 			if len(tabs) < x {
 				x = len(tabs)
@@ -378,22 +233,22 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) {
 			}
 			cs = tabs[0:x]
 		} else {
-			x := depth*o.Indent + 1
+			x := depth*wr.Indent + 1
 			if len(spaces) < x {
 				x = len(spaces)
 			}
 			is = spaces[0:x]
-			x = d2*o.Indent + 1
+			x = d2*wr.Indent + 1
 			if len(spaces) < x {
 				x = len(spaces)
 			}
 			cs = spaces[0:x]
 		}
 		for _, m := range n {
-			o.Buf = append(o.Buf, []byte(cs)...)
-			o.buildSen(m, d2)
+			wr.buf = append(wr.buf, []byte(cs)...)
+			wr.buildSen(m, d2)
 		}
-		o.Buf = append(o.Buf, []byte(is)...)
+		wr.buf = append(wr.buf, []byte(is)...)
 	} else {
 		var prev interface{}
 		for j, m := range n {
@@ -401,24 +256,24 @@ func (o *Options) buildSimpleArray(n []interface{}, depth int) {
 				switch prev.(type) {
 				case []interface{}, map[string]interface{}:
 				default:
-					o.Buf = append(o.Buf, ' ')
+					wr.buf = append(wr.buf, ' ')
 				}
 			}
 			prev = m
-			o.buildSen(m, depth)
+			wr.buildSen(m, depth)
 		}
 	}
-	o.Buf = append(o.Buf, ']')
+	wr.buf = append(wr.buf, ']')
 }
 
-func (o *Options) buildObject(n gen.Object, depth int) {
-	o.Buf = append(o.Buf, '{')
+func (wr *Writer) buildObject(n gen.Object, depth int) {
+	wr.buf = append(wr.buf, '{')
 	d2 := depth + 1
 	var is string
 	var cs string
 
-	if o.Tab || 0 < o.Indent {
-		if o.Tab {
+	if wr.Tab || 0 < wr.Indent {
+		if wr.Tab {
 			x := depth + 1
 			if len(tabs) < x {
 				x = len(tabs)
@@ -430,18 +285,18 @@ func (o *Options) buildObject(n gen.Object, depth int) {
 			}
 			cs = tabs[0:x]
 		} else {
-			x := depth*o.Indent + 1
+			x := depth*wr.Indent + 1
 			if len(spaces) < x {
 				x = len(spaces)
 			}
 			is = spaces[0:x]
-			x = d2*o.Indent + 1
+			x = d2*wr.Indent + 1
 			if len(spaces) < x {
 				x = len(spaces)
 			}
 			cs = spaces[0:x]
 		}
-		if o.Sort {
+		if wr.Sort {
 			keys := make([]string, 0, len(n))
 			for k := range n {
 				keys = append(keys, k)
@@ -449,31 +304,31 @@ func (o *Options) buildObject(n gen.Object, depth int) {
 			sort.Strings(keys)
 			for _, k := range keys {
 				m := n[k]
-				if m == nil && o.OmitNil {
+				if m == nil && wr.OmitNil {
 					continue
 				}
-				o.Buf = append(o.Buf, []byte(cs)...)
-				o.BuildString(k)
-				o.Buf = append(o.Buf, ':')
-				o.Buf = append(o.Buf, ' ')
-				o.buildSen(m, d2)
+				wr.buf = append(wr.buf, []byte(cs)...)
+				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = append(wr.buf, ':')
+				wr.buf = append(wr.buf, ' ')
+				wr.buildSen(m, d2)
 			}
 		} else {
 			for k, m := range n {
-				if m == nil && o.OmitNil {
+				if m == nil && wr.OmitNil {
 					continue
 				}
-				o.Buf = append(o.Buf, []byte(cs)...)
-				o.BuildString(k)
-				o.Buf = append(o.Buf, ':')
-				o.Buf = append(o.Buf, ' ')
-				o.buildSen(m, d2)
+				wr.buf = append(wr.buf, []byte(cs)...)
+				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = append(wr.buf, ':')
+				wr.buf = append(wr.buf, ' ')
+				wr.buildSen(m, d2)
 			}
 		}
-		o.Buf = append(o.Buf, []byte(is)...)
+		wr.buf = append(wr.buf, []byte(is)...)
 	} else {
 		first := true
-		if o.Sort {
+		if wr.Sort {
 			keys := make([]string, 0, len(n))
 			for k := range n {
 				keys = append(keys, k)
@@ -481,45 +336,45 @@ func (o *Options) buildObject(n gen.Object, depth int) {
 			sort.Strings(keys)
 			for _, k := range keys {
 				m := n[k]
-				if m == nil && o.OmitNil {
+				if m == nil && wr.OmitNil {
 					continue
 				}
 				if first {
 					first = false
 				} else {
-					o.Buf = append(o.Buf, ' ')
+					wr.buf = append(wr.buf, ' ')
 				}
-				o.BuildString(k)
-				o.Buf = append(o.Buf, ':')
-				o.buildSen(m, 0)
+				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = append(wr.buf, ':')
+				wr.buildSen(m, 0)
 			}
 		} else {
 			for k, m := range n {
-				if m == nil && o.OmitNil {
+				if m == nil && wr.OmitNil {
 					continue
 				}
 				if first {
 					first = false
 				} else {
-					o.Buf = append(o.Buf, ' ')
+					wr.buf = append(wr.buf, ' ')
 				}
-				o.BuildString(k)
-				o.Buf = append(o.Buf, ':')
-				o.buildSen(m, 0)
+				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = append(wr.buf, ':')
+				wr.buildSen(m, 0)
 			}
 		}
 	}
-	o.Buf = append(o.Buf, '}')
+	wr.buf = append(wr.buf, '}')
 }
 
-func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
-	o.Buf = append(o.Buf, '{')
+func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
+	wr.buf = append(wr.buf, '{')
 	d2 := depth + 1
 	var is string
 	var cs string
 
-	if o.Tab || 0 < o.Indent {
-		if o.Tab {
+	if wr.Tab || 0 < wr.Indent {
+		if wr.Tab {
 			x := depth + 1
 			if len(tabs) < x {
 				x = len(tabs)
@@ -531,18 +386,18 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 			}
 			cs = tabs[0:x]
 		} else {
-			x := depth*o.Indent + 1
+			x := depth*wr.Indent + 1
 			if len(spaces) < x {
 				x = len(spaces)
 			}
 			is = spaces[0:x]
-			x = d2*o.Indent + 1
+			x = d2*wr.Indent + 1
 			if len(spaces) < x {
 				x = len(spaces)
 			}
 			cs = spaces[0:x]
 		}
-		if o.Sort {
+		if wr.Sort {
 			keys := make([]string, 0, len(n))
 			for k := range n {
 				keys = append(keys, k)
@@ -550,31 +405,31 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 			sort.Strings(keys)
 			for _, k := range keys {
 				m := n[k]
-				if m == nil && o.OmitNil {
+				if m == nil && wr.OmitNil {
 					continue
 				}
-				o.Buf = append(o.Buf, []byte(cs)...)
-				o.BuildString(k)
-				o.Buf = append(o.Buf, ':')
-				o.Buf = append(o.Buf, ' ')
-				o.buildSen(m, d2)
+				wr.buf = append(wr.buf, []byte(cs)...)
+				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = append(wr.buf, ':')
+				wr.buf = append(wr.buf, ' ')
+				wr.buildSen(m, d2)
 			}
 		} else {
 			for k, m := range n {
-				if m == nil && o.OmitNil {
+				if m == nil && wr.OmitNil {
 					continue
 				}
-				o.Buf = append(o.Buf, []byte(cs)...)
-				o.BuildString(k)
-				o.Buf = append(o.Buf, ':')
-				o.Buf = append(o.Buf, ' ')
-				o.buildSen(m, d2)
+				wr.buf = append(wr.buf, []byte(cs)...)
+				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = append(wr.buf, ':')
+				wr.buf = append(wr.buf, ' ')
+				wr.buildSen(m, d2)
 			}
 		}
-		o.Buf = append(o.Buf, []byte(is)...)
+		wr.buf = append(wr.buf, []byte(is)...)
 	} else {
 		first := true
-		if o.Sort {
+		if wr.Sort {
 			keys := make([]string, 0, len(n))
 			for k := range n {
 				keys = append(keys, k)
@@ -582,33 +437,33 @@ func (o *Options) buildSimpleObject(n map[string]interface{}, depth int) {
 			sort.Strings(keys)
 			for _, k := range keys {
 				m := n[k]
-				if m == nil && o.OmitNil {
+				if m == nil && wr.OmitNil {
 					continue
 				}
 				if first {
 					first = false
 				} else {
-					o.Buf = append(o.Buf, ' ')
+					wr.buf = append(wr.buf, ' ')
 				}
-				o.BuildString(k)
-				o.Buf = append(o.Buf, ':')
-				o.buildSen(m, 0)
+				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = append(wr.buf, ':')
+				wr.buildSen(m, 0)
 			}
 		} else {
 			for k, m := range n {
-				if m == nil && o.OmitNil {
+				if m == nil && wr.OmitNil {
 					continue
 				}
 				if first {
 					first = false
 				} else {
-					o.Buf = append(o.Buf, ' ')
+					wr.buf = append(wr.buf, ' ')
 				}
-				o.BuildString(k)
-				o.Buf = append(o.Buf, ':')
-				o.buildSen(m, 0)
+				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = append(wr.buf, ':')
+				wr.buildSen(m, 0)
 			}
 		}
 	}
-	o.Buf = append(o.Buf, '}')
+	wr.buf = append(wr.buf, '}')
 }

@@ -7,8 +7,7 @@ import (
 	"io"
 	"math"
 
-	"github.com/ohler55/ojg/oj"
-	"github.com/ohler55/ojg/sen"
+	"github.com/ohler55/ojg"
 )
 
 const (
@@ -23,7 +22,7 @@ const (
 // Writer writes data in either JSON or SEN format using setting to determine
 // the output.
 type Writer struct {
-	sen.Options
+	ojg.Options
 
 	// Width is the suggested maximum width. In some cases it may not be
 	// possible to stay withing the specified width.
@@ -37,12 +36,15 @@ type Writer struct {
 
 	// SEN format if true otherwise JSON encoding.
 	SEN bool
+
+	buf []byte
+	w   io.Writer
 }
 
 // JSON encoded output.
 func JSON(data interface{}, args ...interface{}) string {
 	w := Writer{
-		Options:  sen.DefaultOptions,
+		Options:  ojg.DefaultOptions,
 		Width:    80,
 		MaxDepth: 3,
 		SEN:      false,
@@ -56,7 +58,7 @@ func JSON(data interface{}, args ...interface{}) string {
 // SEN encoded output.
 func SEN(data interface{}, args ...interface{}) string {
 	w := Writer{
-		Options:  sen.DefaultOptions,
+		Options:  ojg.DefaultOptions,
 		Width:    80,
 		MaxDepth: 3,
 		SEN:      true,
@@ -70,12 +72,12 @@ func SEN(data interface{}, args ...interface{}) string {
 // JSON encoded output written to the provided io.Writer.
 func WriteJSON(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	pw := Writer{
-		Options:  sen.DefaultOptions,
+		Options:  ojg.DefaultOptions,
 		Width:    80,
 		MaxDepth: 3,
 		SEN:      false,
 	}
-	pw.W = w
+	pw.w = w
 	pw.config(args)
 	_, err = pw.encode(data)
 
@@ -85,12 +87,12 @@ func WriteJSON(w io.Writer, data interface{}, args ...interface{}) (err error) {
 // SEN encoded output written to the provided io.Writer.
 func WriteSEN(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	pw := Writer{
-		Options:  sen.DefaultOptions,
+		Options:  ojg.DefaultOptions,
 		Width:    80,
 		MaxDepth: 3,
 		SEN:      true,
 	}
-	pw.W = w
+	pw.w = w
 	pw.config(args)
 	_, err = pw.encode(data)
 
@@ -113,7 +115,7 @@ func (w *Writer) Marshal(data interface{}) ([]byte, error) {
 
 // Write encoded data to the op.Writer.
 func (w *Writer) Write(wr io.Writer, data interface{}) (err error) {
-	w.W = wr
+	w.w = wr
 	_, err = w.encode(data)
 
 	return
@@ -138,32 +140,10 @@ func (w *Writer) config(args []interface{}) {
 			}
 		case bool:
 			w.Align = ta
-		case *sen.Options:
-			sw := w.W
+		case *ojg.Options:
+			sw := w.w
 			w.Options = *ta
-			w.W = sw
-		case *oj.Options:
-			sw := w.W
-			w.Options.Indent = ta.Indent
-			w.Options.Tab = ta.Tab
-			w.Options.Sort = ta.Sort
-			w.Options.OmitNil = ta.OmitNil
-			w.Options.InitSize = ta.InitSize
-			w.Options.WriteLimit = ta.WriteLimit
-			w.Options.TimeFormat = ta.TimeFormat
-			w.Options.TimeWrap = ta.TimeWrap
-			w.Options.CreateKey = ta.CreateKey
-			w.Options.FullTypePath = ta.FullTypePath
-			w.Options.Color = ta.Color
-			w.Options.SyntaxColor = ta.SyntaxColor
-			w.Options.KeyColor = ta.KeyColor
-			w.Options.NullColor = ta.NullColor
-			w.Options.BoolColor = ta.BoolColor
-			w.Options.NumberColor = ta.NumberColor
-			w.Options.StringColor = ta.StringColor
-			w.Options.NoColor = ta.NoColor
-			w.Options.HTMLSafe = !ta.HTMLUnsafe
-			w.W = sw
+			w.w = sw
 		}
 	}
 }
@@ -178,34 +158,34 @@ func (w *Writer) encode(data interface{}) (out []byte, err error) {
 	if w.WriteLimit == 0 {
 		w.WriteLimit = 1024
 	}
-	if cap(w.Buf) < w.InitSize {
-		w.Buf = make([]byte, 0, w.InitSize)
+	if cap(w.buf) < w.InitSize {
+		w.buf = make([]byte, 0, w.InitSize)
 	} else {
-		w.Buf = w.Buf[:0]
+		w.buf = w.buf[:0]
 	}
 	defer func() {
 		if r := recover(); r != nil {
 			if err, _ = r.(error); err == nil {
 				err = fmt.Errorf("%v", r)
 				out = []byte{}
-				if w.Color && w.W != nil {
-					_, err = w.W.Write([]byte(w.NoColor))
+				if w.Color && w.w != nil {
+					_, err = w.w.Write([]byte(w.NoColor))
 				}
 			}
 		}
 	}()
 	tree := w.build(data)
-	w.Buf = w.Buf[:0]
+	w.buf = w.buf[:0]
 	w.Indent = 2
 	if w.Width*3/8 < tree.depth {
 		w.Indent = 1
 	}
 	w.fill(tree, 0, false)
-	if w.W != nil && 0 < len(w.Buf) {
-		_, err = w.W.Write(w.Buf)
-		w.Buf = w.Buf[:0]
+	if w.w != nil && 0 < len(w.buf) {
+		_, err = w.w.Write(w.buf)
+		w.buf = w.buf[:0]
 	}
-	out = w.Buf
+	out = w.buf
 
 	return
 }
@@ -214,7 +194,7 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 	start := depth * w.Indent
 	switch n.kind {
 	case strNode, numNode:
-		w.Buf = append(w.Buf, n.buf...)
+		w.buf = append(w.buf, n.buf...)
 	case arrayNode:
 		var comma []byte
 		if w.Color {
@@ -223,14 +203,14 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 				comma = append(comma, ',')
 				comma = append(comma, w.NoColor...)
 			}
-			w.Buf = append(w.Buf, w.SyntaxColor...)
-			w.Buf = append(w.Buf, '[')
-			w.Buf = append(w.Buf, w.NoColor...)
+			w.buf = append(w.buf, w.SyntaxColor...)
+			w.buf = append(w.buf, '[')
+			w.buf = append(w.buf, w.NoColor...)
 		} else {
 			if !w.SEN {
 				comma = append(comma, ',')
 			}
-			w.Buf = append(w.Buf, '[')
+			w.buf = append(w.buf, '[')
 		}
 		if !flat && start+n.size < w.Width && n.depth < w.MaxDepth {
 			flat = true
@@ -254,21 +234,21 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 		if !w.Align || w.MaxDepth < n.depth || len(n.members) < 2 || w.checkAlign(n, start, comma, cs) {
 			for i, m := range n.members {
 				if 0 < i {
-					w.Buf = append(w.Buf, comma...)
-					w.Buf = append(w.Buf, []byte(cs)...)
+					w.buf = append(w.buf, comma...)
+					w.buf = append(w.buf, []byte(cs)...)
 				} else if !flat {
-					w.Buf = append(w.Buf, []byte(cs)...)
+					w.buf = append(w.buf, []byte(cs)...)
 				}
 				w.fill(m, d2, flat)
 			}
 		}
-		w.Buf = append(w.Buf, []byte(is)...)
+		w.buf = append(w.buf, []byte(is)...)
 		if w.Color {
-			w.Buf = append(w.Buf, w.SyntaxColor...)
-			w.Buf = append(w.Buf, ']')
-			w.Buf = append(w.Buf, w.NoColor...)
+			w.buf = append(w.buf, w.SyntaxColor...)
+			w.buf = append(w.buf, ']')
+			w.buf = append(w.buf, w.NoColor...)
 		} else {
-			w.Buf = append(w.Buf, ']')
+			w.buf = append(w.buf, ']')
 		}
 	case mapNode:
 		var comma []byte
@@ -278,14 +258,14 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 				comma = append(comma, ',')
 				comma = append(comma, w.NoColor...)
 			}
-			w.Buf = append(w.Buf, w.SyntaxColor...)
-			w.Buf = append(w.Buf, '{')
-			w.Buf = append(w.Buf, w.NoColor...)
+			w.buf = append(w.buf, w.SyntaxColor...)
+			w.buf = append(w.buf, '{')
+			w.buf = append(w.buf, w.NoColor...)
 		} else {
 			if !w.SEN {
 				comma = append(comma, ',')
 			}
-			w.Buf = append(w.Buf, '{')
+			w.buf = append(w.buf, '{')
 		}
 		d2 := depth + 1
 		var cs []byte
@@ -308,36 +288,36 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 		}
 		for i, m := range n.members {
 			if 0 < i {
-				w.Buf = append(w.Buf, comma...)
-				w.Buf = append(w.Buf, []byte(cs)...)
+				w.buf = append(w.buf, comma...)
+				w.buf = append(w.buf, []byte(cs)...)
 			} else if !flat {
-				w.Buf = append(w.Buf, []byte(cs)...)
+				w.buf = append(w.buf, []byte(cs)...)
 			}
-			w.Buf = append(w.Buf, m.key...)
+			w.buf = append(w.buf, m.key...)
 			if w.Color {
-				w.Buf = append(w.Buf, w.SyntaxColor...)
-				w.Buf = append(w.Buf, ':')
-				w.Buf = append(w.Buf, w.NoColor...)
-				w.Buf = append(w.Buf, ' ')
+				w.buf = append(w.buf, w.SyntaxColor...)
+				w.buf = append(w.buf, ':')
+				w.buf = append(w.buf, w.NoColor...)
+				w.buf = append(w.buf, ' ')
 			} else {
-				w.Buf = append(w.Buf, ": "...)
+				w.buf = append(w.buf, ": "...)
 			}
 			w.fill(m, d2, flat)
 		}
-		w.Buf = append(w.Buf, []byte(is)...)
+		w.buf = append(w.buf, []byte(is)...)
 		if w.Color {
-			w.Buf = append(w.Buf, w.SyntaxColor...)
-			w.Buf = append(w.Buf, '}')
-			w.Buf = append(w.Buf, w.NoColor...)
+			w.buf = append(w.buf, w.SyntaxColor...)
+			w.buf = append(w.buf, '}')
+			w.buf = append(w.buf, w.NoColor...)
 		} else {
-			w.Buf = append(w.Buf, '}')
+			w.buf = append(w.buf, '}')
 		}
 	}
-	if w.W != nil && w.WriteLimit < len(w.Buf) {
-		if _, err := w.W.Write(w.Buf); err != nil {
+	if w.w != nil && w.WriteLimit < len(w.buf) {
+		if _, err := w.w.Write(w.buf); err != nil {
 			panic(err)
 		}
-		w.Buf = w.Buf[:0]
+		w.buf = w.buf[:0]
 	}
 }
 
@@ -349,9 +329,9 @@ func (w *Writer) checkAlign(n *node, start int, comma, cs []byte) bool {
 	}
 	for i, m := range n.members {
 		if 0 < i {
-			w.Buf = append(w.Buf, comma...)
+			w.buf = append(w.buf, comma...)
 		}
-		w.Buf = append(w.Buf, []byte(cs)...)
+		w.buf = append(w.buf, []byte(cs)...)
 		switch m.kind {
 		case arrayNode:
 			w.alignArray(m, c, comma, cs)
@@ -364,33 +344,33 @@ func (w *Writer) checkAlign(n *node, start int, comma, cs []byte) bool {
 
 func (w *Writer) alignArray(n *node, t *table, comma, cs []byte) {
 	if w.Color {
-		w.Buf = append(w.Buf, w.SyntaxColor...)
-		w.Buf = append(w.Buf, '[')
-		w.Buf = append(w.Buf, w.NoColor...)
+		w.buf = append(w.buf, w.SyntaxColor...)
+		w.buf = append(w.buf, '[')
+		w.buf = append(w.buf, w.NoColor...)
 	} else {
-		w.Buf = append(w.Buf, '[')
+		w.buf = append(w.buf, '[')
 	}
 	for k, col := range t.columns {
 		if len(n.members) <= k {
 			break
 		}
 		if 0 < k {
-			w.Buf = append(w.Buf, comma...)
-			w.Buf = append(w.Buf, ' ')
+			w.buf = append(w.buf, comma...)
+			w.buf = append(w.buf, ' ')
 		}
 		m := n.members[k]
 		cw := col.size
 		switch m.kind {
 		case strNode:
-			w.Buf = append(w.Buf, m.buf...)
+			w.buf = append(w.buf, m.buf...)
 			if m.size < cw {
-				w.Buf = append(w.Buf, spaces[1:cw-m.size+1]...)
+				w.buf = append(w.buf, spaces[1:cw-m.size+1]...)
 			}
 		case numNode:
 			if m.size < cw {
-				w.Buf = append(w.Buf, spaces[1:cw-m.size+1]...)
+				w.buf = append(w.buf, spaces[1:cw-m.size+1]...)
 			}
-			w.Buf = append(w.Buf, m.buf...)
+			w.buf = append(w.buf, m.buf...)
 		case arrayNode:
 			w.alignArray(m, col, comma, []byte{' '})
 		case mapNode:
@@ -398,21 +378,21 @@ func (w *Writer) alignArray(n *node, t *table, comma, cs []byte) {
 		}
 	}
 	if w.Color {
-		w.Buf = append(w.Buf, w.SyntaxColor...)
-		w.Buf = append(w.Buf, ']')
-		w.Buf = append(w.Buf, w.NoColor...)
+		w.buf = append(w.buf, w.SyntaxColor...)
+		w.buf = append(w.buf, ']')
+		w.buf = append(w.buf, w.NoColor...)
 	} else {
-		w.Buf = append(w.Buf, ']')
+		w.buf = append(w.buf, ']')
 	}
 }
 
 func (w *Writer) alignMap(n *node, t *table, comma, cs []byte) {
 	if w.Color {
-		w.Buf = append(w.Buf, w.SyntaxColor...)
-		w.Buf = append(w.Buf, '{')
-		w.Buf = append(w.Buf, w.NoColor...)
+		w.buf = append(w.buf, w.SyntaxColor...)
+		w.buf = append(w.buf, '{')
+		w.buf = append(w.buf, w.NoColor...)
 	} else {
-		w.Buf = append(w.Buf, '{')
+		w.buf = append(w.buf, '{')
 	}
 	prevExist := false
 	for i, col := range t.columns {
@@ -425,8 +405,8 @@ func (w *Writer) alignMap(n *node, t *table, comma, cs []byte) {
 			}
 		}
 		if prevExist {
-			w.Buf = append(w.Buf, comma...)
-			w.Buf = append(w.Buf, ' ')
+			w.buf = append(w.buf, comma...)
+			w.buf = append(w.buf, ' ')
 		}
 		if m == nil {
 			prevExist = false
@@ -438,24 +418,24 @@ func (w *Writer) alignMap(n *node, t *table, comma, cs []byte) {
 					pad += 2
 				}
 			}
-			w.Buf = append(w.Buf, spaces[1:pad+1]...)
+			w.buf = append(w.buf, spaces[1:pad+1]...)
 		} else {
 			prevExist = true
-			w.Buf = append(w.Buf, k...)
-			w.Buf = append(w.Buf, ':')
-			w.Buf = append(w.Buf, ' ')
+			w.buf = append(w.buf, k...)
+			w.buf = append(w.buf, ':')
+			w.buf = append(w.buf, ' ')
 			cw := col.size
 			switch m.kind {
 			case strNode:
-				w.Buf = append(w.Buf, m.buf...)
+				w.buf = append(w.buf, m.buf...)
 				if m.size < cw {
-					w.Buf = append(w.Buf, spaces[1:cw-m.size+1]...)
+					w.buf = append(w.buf, spaces[1:cw-m.size+1]...)
 				}
 			case numNode:
 				if m.size < cw {
-					w.Buf = append(w.Buf, spaces[1:cw-m.size+1]...)
+					w.buf = append(w.buf, spaces[1:cw-m.size+1]...)
 				}
-				w.Buf = append(w.Buf, m.buf...)
+				w.buf = append(w.buf, m.buf...)
 			case arrayNode:
 				w.alignArray(m, col, comma, []byte{' '})
 			case mapNode:
@@ -464,10 +444,10 @@ func (w *Writer) alignMap(n *node, t *table, comma, cs []byte) {
 		}
 	}
 	if w.Color {
-		w.Buf = append(w.Buf, w.SyntaxColor...)
-		w.Buf = append(w.Buf, '}')
-		w.Buf = append(w.Buf, w.NoColor...)
+		w.buf = append(w.buf, w.SyntaxColor...)
+		w.buf = append(w.buf, '}')
+		w.buf = append(w.buf, w.NoColor...)
 	} else {
-		w.Buf = append(w.Buf, '}')
+		w.buf = append(w.buf, '}')
 	}
 }

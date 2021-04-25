@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/pretty"
@@ -17,7 +18,7 @@ import (
 
 const sample = `[true false [3 2 1] {a:1 b:2 c:3 d:[x y z []]}]`
 
-var testColor = sen.Options{
+var testColor = ojg.Options{
 	Color:       true,
 	SyntaxColor: "s",
 	KeyColor:    "k",
@@ -215,7 +216,7 @@ func TestInit(t *testing.T) {
 func TestTypes(t *testing.T) {
 	when := time.Date(2021, 2, 9, 10, 11, 12, 111, time.UTC)
 	val := []interface{}{nil, 1.25, float32(1.5), "abc", when, map[string]interface{}{}}
-	opt := sen.DefaultOptions
+	opt := ojg.DefaultOptions
 	opt.TimeFormat = time.RFC3339Nano
 	s := pretty.JSON(val, &opt)
 	tt.Equal(t, `[null, 1.25, 1.5, "abc", "2021-02-09T10:11:12.000000111Z", {}]`, s)
@@ -227,9 +228,9 @@ func TestTypes(t *testing.T) {
 
 func TestQuotedString(t *testing.T) {
 	val := []interface{}{"\\\t\n\r\b\f\"&<>\u2028\u2029\x07\U0001D122 ぴーたー"}
-	s := pretty.JSON(val, &sen.Options{HTMLSafe: true})
+	s := pretty.JSON(val, &ojg.Options{HTMLUnsafe: false})
 	tt.Equal(t, `["\\\t\n\r\b\f\"\u0026\u003c\u003e\u2028\u2029\u0007𝄢 ぴーたー"]`, s)
-	s = pretty.JSON(val, &sen.Options{HTMLSafe: false})
+	s = pretty.JSON(val, &ojg.Options{HTMLUnsafe: true})
 	tt.Equal(t, `["\\\t\n\r\b\f\"&<>\u2028\u2029\u0007𝄢 ぴーたー"]`, s)
 }
 
@@ -255,7 +256,7 @@ func TestGen(t *testing.T) {
 		gen.Object{"x": nil, "y": gen.False},
 		gen.Time(when),
 	}
-	opt := sen.DefaultOptions
+	opt := ojg.DefaultOptions
 	opt.TimeFormat = time.RFC3339Nano
 	s := pretty.JSON(val, &opt, 80.3)
 	tt.Equal(t, `[
@@ -269,7 +270,7 @@ func TestGen(t *testing.T) {
 }
 
 func TestPanic(t *testing.T) {
-	s := pretty.JSON(Pan(1), &sen.Options{})
+	s := pretty.JSON(Pan(1), &ojg.Options{})
 	tt.Equal(t, "", s)
 }
 
@@ -304,7 +305,7 @@ func TestDeep(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		val = []interface{}{val}
 	}
-	opt := sen.DefaultOptions
+	opt := ojg.DefaultOptions
 	s := pretty.SEN(val, &opt, 10.1)
 	tt.Equal(t, `[
  [
@@ -348,7 +349,7 @@ func TestDeep(t *testing.T) {
 func TestWriteJSON(t *testing.T) {
 	val, err := sen.Parse([]byte(sample))
 	tt.Nil(t, err)
-	opt := sen.DefaultOptions
+	opt := ojg.DefaultOptions
 	opt.WriteLimit = 20
 	var b strings.Builder
 	err = pretty.WriteJSON(&b, val, &opt, 80.2)
@@ -369,7 +370,7 @@ func TestWriteJSON(t *testing.T) {
 func TestWriteSEN(t *testing.T) {
 	val, err := sen.Parse([]byte(sample))
 	tt.Nil(t, err)
-	opt := sen.DefaultOptions
+	opt := ojg.DefaultOptions
 	opt.WriteLimit = 20
 	var b strings.Builder
 	err = pretty.WriteSEN(&b, val, &opt, 80.2)
@@ -396,7 +397,7 @@ func TestWritePanic(t *testing.T) {
 }
 
 func TestWriteShort(t *testing.T) {
-	opt := sen.DefaultOptions
+	opt := ojg.DefaultOptions
 	opt.WriteLimit = 2
 	err := pretty.WriteJSON(&shortWriter{max: 3}, []interface{}{"abcdef"}, &opt)
 	tt.NotNil(t, err)
@@ -408,7 +409,7 @@ func TestGenericer(t *testing.T) {
 }
 
 func TestCreateKey(t *testing.T) {
-	opt := sen.DefaultOptions
+	opt := ojg.DefaultOptions
 	opt.CreateKey = "^"
 	s := pretty.JSON(&Dummy{Val: 3}, &opt)
 	tt.Equal(t, `{"^": "Dummy", "val": 3}`, s)
