@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/oj"
 )
 
@@ -156,40 +157,38 @@ func ojValidateReader(b *testing.B) {
 
 func ojJSON(b *testing.B) {
 	data := loadSample()
-	opt := oj.Options{OmitNil: true}
+	wr := oj.Writer{Options: ojg.Options{OmitNil: true}}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = oj.JSON(data, &opt)
+		wr.JSONp(data)
 	}
 }
 
 func ojJSONIndent(b *testing.B) {
 	data := loadSample()
-	opt := oj.Options{OmitNil: true, Indent: 2}
+	wr := oj.Writer{Options: ojg.Options{OmitNil: true, Indent: 2}}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = oj.JSON(data, &opt)
+		wr.JSONp(data)
 	}
 }
 
 // JSON indented and sorted
 func ojJSONSort(b *testing.B) {
 	data := loadSample()
-	opt := oj.Options{OmitNil: true, Indent: 2, Sort: true}
+	wr := oj.Writer{Options: ojg.Options{OmitNil: true, Indent: 2, Sort: true}}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = oj.JSON(data, &opt)
+		wr.JSONp(data)
 	}
 }
 
 func ojWriteIndent(b *testing.B) {
 	data := loadSample()
 	var w noWriter
+	wr := oj.Writer{Options: ojg.Options{OmitNil: true, Indent: 2}}
 	b.ResetTimer()
-	opt := oj.Options{OmitNil: true, Indent: 2}
 	for n := 0; n < b.N; n++ {
-		if err := oj.Write(w, data, &opt); err != nil {
-			log.Fatal(err)
-		}
+		wr.Writep(w, data)
 	}
 }

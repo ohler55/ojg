@@ -8,6 +8,8 @@ import (
 	"math"
 	"reflect"
 	"time"
+
+	"github.com/ohler55/ojg"
 )
 
 // 23 for fraction in IEEE 754 which amounts to 7 significant digits. Use base
@@ -78,9 +80,9 @@ func decompose(v interface{}, opt *Options, embedded bool) interface{} {
 		v = o
 	case []byte:
 		switch opt.BytesAs {
-		case BytesAsBase64:
+		case ojg.BytesAsBase64:
 			v = base64.StdEncoding.EncodeToString(tv)
-		case BytesAsArray:
+		case ojg.BytesAsArray:
 			a := make([]interface{}, len(tv))
 			for i, m := range tv {
 				a[i] = decompose(m, opt, false)
@@ -154,9 +156,9 @@ func alter(v interface{}, opt *Options, embedded bool) interface{} {
 		}
 	case []byte:
 		switch opt.BytesAs {
-		case BytesAsBase64:
+		case ojg.BytesAsBase64:
 			v = base64.StdEncoding.EncodeToString(tv)
-		case BytesAsArray:
+		case ojg.BytesAsArray:
 			a := make([]interface{}, len(tv))
 			for i, m := range tv {
 				a[i] = decompose(m, opt, false)
@@ -201,8 +203,8 @@ func reflectValue(rv reflect.Value, val interface{}, opt *Options, embedded bool
 
 func reflectStruct(rv reflect.Value, val interface{}, opt *Options, embedded bool) interface{} {
 	obj := map[string]interface{}{}
-	dc := LookupDecomposer(val)
-	t := dc.Type
+	st := ojg.GetStruct(val)
+	t := st.Type
 	if 0 < len(opt.CreateKey) {
 		if opt.FullTypePath {
 			obj[opt.CreateKey] = t.PkgPath() + "/" + t.Name()
@@ -210,22 +212,22 @@ func reflectStruct(rv reflect.Value, val interface{}, opt *Options, embedded boo
 			obj[opt.CreateKey] = t.Name()
 		}
 	}
-	var fields []*Field
+	var fields []*ojg.Field
 	if opt.NestEmbed {
 		if opt.UseTags {
-			fields = dc.OutTag
+			fields = st.OutTag
 		} else if opt.KeyExact {
-			fields = dc.OutName
+			fields = st.OutName
 		} else {
-			fields = dc.OutLow
+			fields = st.OutLow
 		}
 	} else {
 		if opt.UseTags {
-			fields = dc.ByTag
+			fields = st.ByTag
 		} else if opt.KeyExact {
-			fields = dc.ByName
+			fields = st.ByName
 		} else {
-			fields = dc.ByLow
+			fields = st.ByLow
 		}
 	}
 	for _, fi := range fields {

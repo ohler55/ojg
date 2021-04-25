@@ -1,14 +1,11 @@
 // Copyright (c) 2021, Peter Ohler, All rights reserved.
 
-package alt
+package ojg
 
 import (
 	"fmt"
 	"reflect"
-	"sort"
 	"strconv"
-	"strings"
-	"sync"
 	"unsafe"
 )
 
@@ -26,47 +23,6 @@ type Field struct {
 	asString bool
 }
 
-// Decomposer holds reflect information about a struct.
-type Decomposer struct {
-	Type    reflect.Type
-	ByTag   []*Field
-	ByName  []*Field
-	ByLow   []*Field
-	OutTag  []*Field
-	OutName []*Field
-	OutLow  []*Field
-}
-
-var (
-	decompMut sync.Mutex
-	decompMap = map[uintptr]*Decomposer{}
-)
-
-func LookupDecomposer(v interface{}) (dc *Decomposer) {
-	x := (*[2]uintptr)(unsafe.Pointer(&v))[0]
-	decompMut.Lock()
-	defer decompMut.Unlock()
-	if dc = decompMap[x]; dc != nil {
-		return
-	}
-	rt := reflect.TypeOf(v)
-	dc = &Decomposer{Type: rt}
-	dc.ByTag = buildTagFields(dc.Type)
-	sort.Slice(dc.ByTag, func(i, j int) bool { return 0 < strings.Compare(dc.ByTag[i].Key, dc.ByTag[j].Key) })
-	dc.ByName = buildNameFields(dc.Type)
-	sort.Slice(dc.ByName, func(i, j int) bool { return 0 < strings.Compare(dc.ByName[i].Key, dc.ByName[j].Key) })
-	dc.ByLow = buildLowFields(dc.Type)
-	sort.Slice(dc.ByLow, func(i, j int) bool { return 0 < strings.Compare(dc.ByLow[i].Key, dc.ByLow[j].Key) })
-
-	dc.OutTag = buildOutTagFields(dc.Type)
-	dc.OutName = buildOutNameFields(dc.Type)
-	dc.OutLow = buildOutLowFields(dc.Type)
-
-	decompMap[x] = dc
-
-	return
-}
-
 func (fi *Field) Value(rv reflect.Value, omitNil bool, embedded bool) (v interface{}, omit bool) {
 	fv := rv.FieldByIndex(fi.index)
 	if fi.fv != nil && !embedded {
@@ -77,23 +33,6 @@ func (fi *Field) Value(rv reflect.Value, omitNil bool, embedded bool) (v interfa
 	omit = fi.empty != nil && fi.empty(fv)
 	if fi.asString && !omit {
 		v = fmt.Sprintf("%v", v)
-	}
-	return
-}
-
-func (fi *Field) RValue(rv reflect.Value, opt *Options) (fv reflect.Value, omit bool) {
-	fv = rv.FieldByIndex(fi.index)
-	omit = fi.empty != nil && fi.empty(fv)
-	if opt.OmitNil {
-		switch fi.Kind {
-		case reflect.Ptr, reflect.Interface:
-			omit = fv.IsNil()
-		case reflect.Map, reflect.Slice, reflect.Array:
-			omit = fv.Len() == 0
-		}
-	}
-	if fi.asString && !omit {
-		fv = reflect.ValueOf(fmt.Sprintf("%v", fv.Interface()))
 	}
 	return
 }
@@ -400,199 +339,4 @@ func (fi *Field) setup() {
 	fi.setFillFunc()
 	fi.jkey = AppendJSONString(fi.jkey, fi.Key, false)
 	fi.jkey = append(fi.jkey, ':')
-}
-
-func buildTagFields(rt reflect.Type) (fa []*Field) {
-	for i := rt.NumField() - 1; 0 <= i; i-- {
-		f := rt.Field(i)
-		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
-			continue
-		}
-		if f.Anonymous {
-			for _, fi := range buildTagFields(f.Type) {
-				fi.index = append([]int{i}, fi.index...)
-				fi.fv = nil
-				fa = append(fa, fi)
-			}
-		} else {
-			fi := Field{
-				Type:   f.Type,
-				Key:    f.Name,
-				Kind:   f.Type.Kind(),
-				index:  f.Index,
-				offset: f.Offset,
-			}
-			if tag, ok := f.Tag.Lookup("json"); ok && 0 < len(tag) {
-				parts := strings.Split(tag, ",")
-				switch parts[0] {
-				case "":
-					fi.Key = f.Name
-				case "-":
-					if 1 < len(parts) {
-						fi.Key = "-"
-					} else {
-						continue
-					}
-				default:
-					fi.Key = parts[0]
-				}
-				for _, p := range parts[1:] {
-					switch p {
-					case "omitempty":
-						fi.setOmitEmpty()
-					case "string":
-						fi.asString = true
-					}
-				}
-			}
-			fi.setup()
-			fa = append(fa, &fi)
-		}
-	}
-	return
-}
-
-func buildNameFields(rt reflect.Type) (fa []*Field) {
-	for i := rt.NumField() - 1; 0 <= i; i-- {
-		f := rt.Field(i)
-		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
-			continue
-		}
-		if f.Anonymous {
-			for _, fi := range buildNameFields(f.Type) {
-				fi.index = append([]int{i}, fi.index...)
-				fi.fv = nil
-				fa = append(fa, fi)
-			}
-		} else {
-			fi := Field{
-				Type:   f.Type,
-				Key:    f.Name,
-				Kind:   f.Type.Kind(),
-				index:  f.Index,
-				offset: f.Offset,
-			}
-			fi.setup()
-			fa = append(fa, &fi)
-		}
-	}
-	return
-}
-
-func buildLowFields(rt reflect.Type) (fa []*Field) {
-	for i := rt.NumField() - 1; 0 <= i; i-- {
-		f := rt.Field(i)
-		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
-			continue
-		}
-		if f.Anonymous {
-			for _, fi := range buildLowFields(f.Type) {
-				fi.index = append([]int{i}, fi.index...)
-				fi.fv = nil
-				fa = append(fa, fi)
-			}
-		} else {
-			name[0] = name[0] | 0x20
-			fi := Field{
-				Type:   f.Type,
-				Key:    string(name),
-				Kind:   f.Type.Kind(),
-				index:  f.Index,
-				offset: f.Offset,
-			}
-			fi.setup()
-			fa = append(fa, &fi)
-		}
-	}
-	return
-}
-
-func buildOutTagFields(rt reflect.Type) (fa []*Field) {
-	for i := rt.NumField() - 1; 0 <= i; i-- {
-		f := rt.Field(i)
-		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
-			continue
-		}
-		fi := Field{
-			Type:   f.Type,
-			Key:    f.Name,
-			Kind:   f.Type.Kind(),
-			index:  f.Index,
-			offset: f.Offset,
-		}
-		if tag, ok := f.Tag.Lookup("json"); ok && 0 < len(tag) {
-			parts := strings.Split(tag, ",")
-			switch parts[0] {
-			case "":
-				// ok as is
-			case "-":
-				if 1 < len(parts) {
-					fi.Key = "-"
-				} else {
-					continue
-				}
-			default:
-				fi.Key = parts[0]
-			}
-			for _, p := range parts[1:] {
-				switch p {
-				case "omitempty":
-					fi.setOmitEmpty()
-				case "string":
-					fi.asString = true
-				}
-			}
-		}
-		fi.setup()
-		fa = append(fa, &fi)
-	}
-	sort.Slice(fa, func(i, j int) bool { return 0 < strings.Compare(fa[i].Key, fa[j].Key) })
-	return
-}
-
-func buildOutNameFields(rt reflect.Type) (fa []*Field) {
-	for i := rt.NumField() - 1; 0 <= i; i-- {
-		f := rt.Field(i)
-		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
-			continue
-		}
-		fi := Field{
-			Type:   f.Type,
-			Key:    f.Name,
-			Kind:   f.Type.Kind(),
-			index:  f.Index,
-			offset: f.Offset,
-		}
-		fi.setup()
-		fa = append(fa, &fi)
-	}
-	sort.Slice(fa, func(i, j int) bool { return 0 < strings.Compare(fa[i].Key, fa[j].Key) })
-	return
-}
-
-func buildOutLowFields(rt reflect.Type) (fa []*Field) {
-	for i := rt.NumField() - 1; 0 <= i; i-- {
-		f := rt.Field(i)
-		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
-			continue
-		}
-		name[0] = name[0] | 0x20
-		fi := Field{
-			Type:   f.Type,
-			Key:    string(name),
-			Kind:   f.Type.Kind(),
-			index:  f.Index,
-			offset: f.Offset,
-		}
-		fi.setup()
-		fa = append(fa, &fi)
-	}
-	sort.Slice(fa, func(i, j int) bool { return 0 < strings.Compare(fa[i].Key, fa[j].Key) })
-	return
 }

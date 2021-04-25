@@ -1,12 +1,6 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package oj
-
-import (
-	"io"
-
-	"github.com/ohler55/ojg/alt"
-)
+package ojg
 
 const (
 	Normal        = "\x1b[m"
@@ -26,6 +20,10 @@ const (
 	BrightMagenta = "\x1b[95m"
 	BrightCyan    = "\x1b[96m"
 	BrightWhite   = "\x1b[97m"
+
+	BytesAsString = iota
+	BytesAsBase64
+	BytesAsArray
 )
 
 // Options for writing data to JSON.
@@ -131,11 +129,6 @@ type Options struct {
 	// BytesAsString, BytesAsBase64 (the go json package default), or
 	// BytesAsArray.
 	BytesAs int
-
-	buf    []byte
-	utf    []byte
-	w      io.Writer
-	strict bool
 }
 
 // DefaultOptions default options that can be set as desired.
@@ -148,7 +141,6 @@ var DefaultOptions = Options{
 	NumberColor: Cyan,
 	StringColor: Green,
 	TimeColor:   Magenta,
-	buf:         make([]byte, 0, 256),
 }
 
 // BrightOptions encoding options for color encoding.
@@ -161,7 +153,6 @@ var BrightOptions = Options{
 	NumberColor: BrightCyan,
 	StringColor: BrightGreen,
 	TimeColor:   BrightMagenta,
-	buf:         make([]byte, 0, 256),
 }
 
 // GoOptions are the options closest to the go json package.
@@ -180,6 +171,5 @@ var GoOptions = Options{
 	UseTags:      true,
 	KeyExact:     true,
 	NestEmbed:    false,
-	BytesAs:      alt.BytesAsBase64,
-	buf:          make([]byte, 0, 256),
+	BytesAs:      BytesAsBase64,
 }

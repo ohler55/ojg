@@ -5,6 +5,7 @@ package alt_test
 import (
 	"testing"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/tt"
 )
@@ -87,10 +88,10 @@ func TestDecomposeStruct(t *testing.T) {
 	v = alt.Decompose(&a, &alt.Options{UseTags: true})
 	tt.Equal(t, map[string]interface{}{"v": 3, "buf": "ab"}, v)
 
-	v = alt.Decompose(&a, &alt.Options{UseTags: true, BytesAs: alt.BytesAsArray})
+	v = alt.Decompose(&a, &alt.Options{UseTags: true, BytesAs: ojg.BytesAsArray})
 	tt.Equal(t, map[string]interface{}{"v": 3, "buf": []interface{}{97, 98}}, v)
 
-	v = alt.Decompose(&a, &alt.Options{UseTags: true, BytesAs: alt.BytesAsBase64})
+	v = alt.Decompose(&a, &alt.Options{UseTags: true, BytesAs: ojg.BytesAsBase64})
 	tt.Equal(t, map[string]interface{}{"v": 3, "buf": "YWI="}, v)
 }
 
@@ -100,10 +101,10 @@ func TestDecomposeStructWithPointers(t *testing.T) {
 	v := alt.Decompose(&p)
 	tt.Equal(t, map[string]interface{}{"type": "Pointy", "x": 3, "buf": "byte me"}, v)
 
-	v = alt.Decompose(&p, &alt.Options{CreateKey: "", UseTags: true, BytesAs: alt.BytesAsBase64})
+	v = alt.Decompose(&p, &alt.Options{CreateKey: "", UseTags: true, BytesAs: ojg.BytesAsBase64})
 	tt.Equal(t, map[string]interface{}{"x": 3, "buf": "Ynl0ZSBtZQ=="}, v)
 
-	v = alt.Decompose(&p, &alt.Options{CreateKey: "", UseTags: true, BytesAs: alt.BytesAsArray})
+	v = alt.Decompose(&p, &alt.Options{CreateKey: "", UseTags: true, BytesAs: ojg.BytesAsArray})
 	tt.Equal(t, map[string]interface{}{"x": 3, "buf": []interface{}{98, 121, 116, 101, 32, 109, 101}}, v)
 
 	// TBD try empty for each
@@ -158,10 +159,10 @@ func TestDecomposeSimplifier(t *testing.T) {
 	v = alt.Alter([]interface{}{[]byte("abc")}, &alt.Options{UseTags: true})
 	tt.Equal(t, []interface{}{"abc"}, v)
 
-	v = alt.Alter([]interface{}{[]byte("abc")}, &alt.Options{UseTags: true, BytesAs: alt.BytesAsArray})
+	v = alt.Alter([]interface{}{[]byte("abc")}, &alt.Options{UseTags: true, BytesAs: ojg.BytesAsArray})
 	tt.Equal(t, []interface{}{[]interface{}{97, 98, 99}}, v)
 
-	v = alt.Alter([]interface{}{[]byte("abc")}, &alt.Options{UseTags: true, BytesAs: alt.BytesAsBase64})
+	v = alt.Alter([]interface{}{[]byte("abc")}, &alt.Options{UseTags: true, BytesAs: ojg.BytesAsBase64})
 	tt.Equal(t, []interface{}{"YWJj"}, v)
 }
 

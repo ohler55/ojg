@@ -3,9 +3,19 @@
 package oj
 
 import (
+	"fmt"
 	"io"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
+)
+
+type Options = ojg.Options
+
+var (
+	DefaultOptions = ojg.DefaultOptions
+	BrightOptions  = ojg.BrightOptions
+	GoOptions      = ojg.GoOptions
 )
 
 // Parse JSON into a gen.Node. Arguments are optional and can be a bool
@@ -67,4 +77,86 @@ func Unmarshal(data []byte, vp interface{}, recomposer ...*alt.Recomposer) (err 
 		}
 	}
 	return
+}
+
+// JSON returns a JSON string for the data provided. The data can be a
+// simple type of nil, bool, int, floats, time.Time, []interface{}, or
+// map[string]interface{} or a Node type, The args, if supplied can be an
+// int as an indent or a *Options.
+func JSON(data interface{}, args ...interface{}) string {
+	wr := &Writer{
+		Options: ojg.DefaultOptions,
+		buf:     make([]byte, 0, 256),
+	}
+	wr.InitSize = 256
+	if 0 < len(args) {
+		switch ta := args[0].(type) {
+		case int:
+			wr.Indent = ta
+		case *ojg.Options:
+			wr.Options = *ta
+		case *Writer:
+			wr = ta
+		}
+	}
+	return wr.JSON(data)
+}
+
+// Marshal returns a JSON string for the data provided. The data can be a
+// simple type of nil, bool, int, floats, time.Time, []interface{}, or
+// map[string]interface{} or a Node type, The args, if supplied can be an int
+// as an indent or a *Options. An error will be returned if the Option.Strict
+// flag is true and a value is encountered that can not be encoded other than
+// by using the %v format of the fmt package.
+func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
+	wr := &Writer{
+		Options: ojg.GoOptions,
+		buf:     make([]byte, 0, 256),
+	}
+	wr.InitSize = 256
+	if 0 < len(args) {
+		switch ta := args[0].(type) {
+		case int:
+			wr.Indent = ta
+		case *ojg.Options:
+			wr.Options = *ta
+		case *Writer:
+			wr = ta
+		}
+	}
+	wr.strict = true
+	defer func() {
+		if r := recover(); r != nil {
+			wr.buf = wr.buf[:0]
+			if err, _ = r.(error); err == nil {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
+	wr.JSONp(data)
+	out = wr.buf
+
+	return
+}
+
+// Write a JSON string for the data provided. The data can be a simple type of
+// nil, bool, int, floats, time.Time, []interface{}, or map[string]interface{}
+// or a Node type, The args, if supplied can be an int as an indent or a
+// *Options.
+func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
+	wr := &Writer{
+		Options: ojg.DefaultOptions,
+	}
+	wr.InitSize = 256
+	if 0 < len(args) {
+		switch ta := args[0].(type) {
+		case int:
+			wr.Indent = ta
+		case *ojg.Options:
+			wr.Options = *ta
+		case *Writer:
+			wr = ta
+		}
+	}
+	return wr.Write(w, data)
 }

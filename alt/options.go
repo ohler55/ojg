@@ -2,11 +2,7 @@
 
 package alt
 
-const (
-	BytesAsString = iota
-	BytesAsBase64
-	BytesAsArray
-)
+import "github.com/ohler55/ojg"
 
 // Options are the options available to Decompose() function.
 type Options struct {
@@ -64,5 +60,5 @@ var GoOptions = Options{
 	KeyExact:     true,
 	NestEmbed:    false,
 	Converter:    nil,
-	BytesAs:      BytesAsBase64,
+	BytesAs:      ojg.BytesAsBase64,
 }
