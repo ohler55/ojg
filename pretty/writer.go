@@ -16,7 +16,6 @@ const (
 	falseStr = "false"
 	spaces   = "\n                                                                " +
 		"                                                                "
-	hex = "0123456789abcdef"
 )
 
 // Writer writes data in either JSON or SEN format using setting to determine

@@ -1,11 +1,15 @@
 
+- Add functions to sen to match oj
+- docs for funcs and ojg package
+- use ojg.Options in alt
+- optimize marshal for structs
+
 - more examples
 - readme
  - add marshal and unmarshal example
 
 - benchmarks needs a better mix and not just strings
-
-- UseTags in sen.Options
+ - validate issue?
 
 - separate package for field stuff?
 - need string encoders (json and sen) in alt
@@ -15,22 +19,11 @@
  - need space after tag (0 < indent)
  - BytesAs
 
-- use common Options in shared package
- - rename in to common or shared or ??? com
- - or place all at ojg level
-
-- decomposer
- - how about funcs to serialize values?
-  - precalc key as byte array (with quotes?)
-  - check omit and then write both key and value
-   - flag for need for space after :
-   - sen flag?
-  - if no write func then return indicator and value
-  -
-
 - writers
  - color
  - oj and sen
+
+- add utf []byte to writer and then pass to string writters
 
 - Marshal for reflects
  - need a buildReflectJSON that take a reflect.Value instead of interface{}

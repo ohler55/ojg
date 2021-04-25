@@ -12,6 +12,13 @@ import (
 
 type Options = ojg.Options
 
+var (
+	DefaultOptions = ojg.DefaultOptions
+	BrightOptions  = ojg.BrightOptions
+	GoOptions      = ojg.GoOptions
+	HTMLOptions    = ojg.HTMLOptions
+)
+
 // Parse a JSON string in to simple types. An error is returned if not valid JSON.
 func Parse(buf []byte, args ...interface{}) (interface{}, error) {
 	return DefaultParser.Parse(buf, args...)

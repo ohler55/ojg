@@ -16,6 +16,7 @@ var (
 	DefaultOptions = ojg.DefaultOptions
 	BrightOptions  = ojg.BrightOptions
 	GoOptions      = ojg.GoOptions
+	HTMLOptions    = ojg.HTMLOptions
 )
 
 // Parse JSON into a gen.Node. Arguments are optional and can be a bool

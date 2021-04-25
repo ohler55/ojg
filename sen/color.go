@@ -79,10 +79,10 @@ func (wr *Writer) cbuildJSON(data interface{}, depth int) {
 
 	case string:
 		wr.buf = append(wr.buf, wr.StringColor...)
-		wr.buf = ojg.AppendSENString(wr.buf, td)
+		wr.buf = ojg.AppendSENString(wr.buf, td, !wr.HTMLUnsafe)
 	case gen.String:
 		wr.buf = append(wr.buf, wr.StringColor...)
-		wr.buf = ojg.AppendSENString(wr.buf, string(td))
+		wr.buf = ojg.AppendSENString(wr.buf, string(td), !wr.HTMLUnsafe)
 
 	case time.Time:
 		wr.buf = append(wr.buf, wr.TimeColor...)
@@ -265,7 +265,7 @@ func (wr *Writer) cbuildObject(n gen.Object, depth int) {
 			}
 			wr.buf = append(wr.buf, []byte(cs)...)
 			wr.buf = append(wr.buf, wr.KeyColor...)
-			wr.buf = ojg.AppendSENString(wr.buf, k)
+			wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, wr.NoColor...)
 			wr.buf = append(wr.buf, wr.SyntaxColor...)
 			wr.buf = append(wr.buf, ':')
@@ -287,7 +287,7 @@ func (wr *Writer) cbuildObject(n gen.Object, depth int) {
 			}
 			wr.buf = append(wr.buf, []byte(cs)...)
 			wr.buf = append(wr.buf, wr.KeyColor...)
-			wr.buf = ojg.AppendSENString(wr.buf, k)
+			wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, wr.NoColor...)
 			wr.buf = append(wr.buf, wr.SyntaxColor...)
 			wr.buf = append(wr.buf, ':')
@@ -353,7 +353,7 @@ func (wr *Writer) cbuildSimpleObject(n map[string]interface{}, depth int) {
 			}
 			wr.buf = append(wr.buf, []byte(cs)...)
 			wr.buf = append(wr.buf, wr.KeyColor...)
-			wr.buf = ojg.AppendSENString(wr.buf, k)
+			wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, wr.NoColor...)
 			wr.buf = append(wr.buf, wr.SyntaxColor...)
 			wr.buf = append(wr.buf, ':')
@@ -375,7 +375,7 @@ func (wr *Writer) cbuildSimpleObject(n map[string]interface{}, depth int) {
 			}
 			wr.buf = append(wr.buf, []byte(cs)...)
 			wr.buf = append(wr.buf, wr.KeyColor...)
-			wr.buf = ojg.AppendSENString(wr.buf, k)
+			wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, wr.NoColor...)
 			wr.buf = append(wr.buf, wr.SyntaxColor...)
 			wr.buf = append(wr.buf, ':')

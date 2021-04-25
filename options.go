@@ -75,6 +75,21 @@ var (
 		NestEmbed:    false,
 		BytesAs:      BytesAsBase64,
 	}
+
+	// HTMLOptions defines color options for generating colored HTML. The
+	// encoding is suitable for use in a <pre> element.
+	HTMLOptions = Options{
+		InitSize:    256,
+		SyntaxColor: "<span>",
+		KeyColor:    `<span style="color:#44f">`,
+		NullColor:   `<span style="color:red">`,
+		BoolColor:   `<span style="color:#a40">`,
+		NumberColor: `<span style="color:#04a">`,
+		StringColor: `<span style="color:green">`,
+		TimeColor:   `<span style="color:#f0f">`,
+		NoColor:     "</span>",
+		HTMLUnsafe:  false,
+	}
 )
 
 // Options for writing data to JSON.

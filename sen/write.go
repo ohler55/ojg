@@ -15,10 +15,8 @@ import (
 )
 
 const (
-	spaces      = "\n                                                                                                                                "
-	tabs        = "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
-	hex         = "0123456789abcdef"
-	maxTokenLen = 64
+	spaces = "\n                                                                                                                                "
+	tabs   = "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
 )
 
 type Writer struct {
@@ -76,9 +74,9 @@ func (wr *Writer) buildSen(data interface{}, depth int) {
 		wr.buf = append(wr.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 64))...)
 
 	case string:
-		wr.buf = ojg.AppendSENString(wr.buf, td)
+		wr.buf = ojg.AppendSENString(wr.buf, td, !wr.HTMLUnsafe)
 	case gen.String:
-		wr.buf = ojg.AppendSENString(wr.buf, string(td))
+		wr.buf = ojg.AppendSENString(wr.buf, string(td), !wr.HTMLUnsafe)
 
 	case time.Time:
 		wr.BuildTime(td)
@@ -308,7 +306,7 @@ func (wr *Writer) buildObject(n gen.Object, depth int) {
 					continue
 				}
 				wr.buf = append(wr.buf, []byte(cs)...)
-				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buf = append(wr.buf, ' ')
 				wr.buildSen(m, d2)
@@ -319,7 +317,7 @@ func (wr *Writer) buildObject(n gen.Object, depth int) {
 					continue
 				}
 				wr.buf = append(wr.buf, []byte(cs)...)
-				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buf = append(wr.buf, ' ')
 				wr.buildSen(m, d2)
@@ -344,7 +342,7 @@ func (wr *Writer) buildObject(n gen.Object, depth int) {
 				} else {
 					wr.buf = append(wr.buf, ' ')
 				}
-				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buildSen(m, 0)
 			}
@@ -358,7 +356,7 @@ func (wr *Writer) buildObject(n gen.Object, depth int) {
 				} else {
 					wr.buf = append(wr.buf, ' ')
 				}
-				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buildSen(m, 0)
 			}
@@ -409,7 +407,7 @@ func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
 					continue
 				}
 				wr.buf = append(wr.buf, []byte(cs)...)
-				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buf = append(wr.buf, ' ')
 				wr.buildSen(m, d2)
@@ -420,7 +418,7 @@ func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
 					continue
 				}
 				wr.buf = append(wr.buf, []byte(cs)...)
-				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buf = append(wr.buf, ' ')
 				wr.buildSen(m, d2)
@@ -445,7 +443,7 @@ func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
 				} else {
 					wr.buf = append(wr.buf, ' ')
 				}
-				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buildSen(m, 0)
 			}
@@ -459,7 +457,7 @@ func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
 				} else {
 					wr.buf = append(wr.buf, ' ')
 				}
-				wr.buf = ojg.AppendSENString(wr.buf, k)
+				wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buildSen(m, 0)
 			}

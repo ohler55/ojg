@@ -152,7 +152,7 @@ func (w *Writer) buildFloat64(v float64) (n *node) {
 func (w *Writer) buildStringNode(v string) (n *node) {
 	w.buf = w.buf[:0]
 	if w.SEN {
-		w.buf = ojg.AppendSENString(w.buf, v)
+		w.buf = ojg.AppendSENString(w.buf, v, !w.HTMLUnsafe)
 	} else {
 		w.buf = ojg.AppendJSONString(w.buf, v, !w.HTMLUnsafe)
 	}
@@ -240,7 +240,7 @@ func (w *Writer) buildMapNode(v map[string]interface{}) (n *node) {
 		// build key
 		w.buf = w.buf[:0]
 		if w.SEN {
-			w.buf = ojg.AppendSENString(w.buf, k)
+			w.buf = ojg.AppendSENString(w.buf, k, !w.HTMLUnsafe)
 		} else {
 			w.buf = ojg.AppendJSONString(w.buf, k, !w.HTMLUnsafe)
 		}
@@ -280,7 +280,7 @@ func (w *Writer) buildGenMapNode(v gen.Object) (n *node) {
 		// build key
 		w.buf = w.buf[:0]
 		if w.SEN {
-			w.buf = ojg.AppendSENString(w.buf, k)
+			w.buf = ojg.AppendSENString(w.buf, k, !w.HTMLUnsafe)
 		} else {
 			w.buf = ojg.AppendJSONString(w.buf, k, !w.HTMLUnsafe)
 		}

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/asm"
 	"github.com/ohler55/ojg/jp"
@@ -53,9 +54,8 @@ var (
 	convName    = ""
 	confFile    = ""
 
-	conv   *alt.Converter
-	ojOpt  *oj.Options
-	senOpt *sen.Options
+	conv    *alt.Converter
+	options *ojg.Options
 )
 
 func init() {
@@ -348,14 +348,14 @@ func write(v interface{}) bool {
 }
 
 func writeJSON(v interface{}) {
-	if ojOpt == nil {
-		o := oj.Options{}
+	if options == nil {
+		o := ojg.Options{}
 		if bright {
 			o = oj.BrightOptions
 			o.Color = true
 			o.Sort = sortKeys
 		} else if color || sortKeys || tab {
-			o = oj.DefaultOptions
+			o = ojg.DefaultOptions
 			o.Color = color
 		}
 		o.Indent = indent
@@ -366,58 +366,58 @@ func writeJSON(v interface{}) {
 		if html {
 			o.HTMLUnsafe = false
 			if color {
-				o.SyntaxColor = sen.HTMLOptions.SyntaxColor
-				o.KeyColor = sen.HTMLOptions.KeyColor
-				o.NullColor = sen.HTMLOptions.NullColor
-				o.BoolColor = sen.HTMLOptions.BoolColor
-				o.NumberColor = sen.HTMLOptions.NumberColor
-				o.StringColor = sen.HTMLOptions.StringColor
-				o.TimeColor = sen.HTMLOptions.TimeColor
-				o.NoColor = sen.HTMLOptions.NoColor
+				o.SyntaxColor = ojg.HTMLOptions.SyntaxColor
+				o.KeyColor = ojg.HTMLOptions.KeyColor
+				o.NullColor = ojg.HTMLOptions.NullColor
+				o.BoolColor = ojg.HTMLOptions.BoolColor
+				o.NumberColor = ojg.HTMLOptions.NumberColor
+				o.StringColor = ojg.HTMLOptions.StringColor
+				o.TimeColor = ojg.HTMLOptions.TimeColor
+				o.NoColor = ojg.HTMLOptions.NoColor
 			}
 		}
-		ojOpt = &o
+		options = &o
 	}
 	if 0 < len(prettyOpt) {
 		parsePrettyOpt()
 	}
 	if prettyOn {
-		_ = pretty.WriteJSON(os.Stdout, v, ojOpt, float64(width)+float64(maxDepth)/10.0, align)
+		_ = pretty.WriteJSON(os.Stdout, v, options, float64(width)+float64(maxDepth)/10.0, align)
 	} else {
-		_ = oj.Write(os.Stdout, v, ojOpt)
+		_ = oj.Write(os.Stdout, v, options)
 	}
 	os.Stdout.Write([]byte{'\n'})
 }
 
 func writeSEN(v interface{}) {
-	if senOpt == nil {
-		o := sen.Options{}
+	if options == nil {
+		o := ojg.Options{}
 		switch {
 		case html:
-			o = sen.HTMLOptions
+			o = ojg.HTMLOptions
 			o.Color = true
-			o.HTMLSafe = true
+			o.HTMLUnsafe = false
 		case bright:
-			o = sen.BrightOptions
+			o = ojg.BrightOptions
 			o.Color = true
 		case color || sortKeys || tab:
-			o = sen.DefaultOptions
+			o = ojg.DefaultOptions
 			o.Color = color
 		}
 		o.Indent = indent
 		o.Tab = tab
-		o.HTMLSafe = safe
+		o.HTMLUnsafe = !safe
 		o.TimeFormat = time.RFC3339Nano
 		o.Sort = sortKeys
-		senOpt = &o
+		options = &o
 	}
 	if 0 < len(prettyOpt) {
 		parsePrettyOpt()
 	}
 	if prettyOn {
-		_ = pretty.WriteSEN(os.Stdout, v, senOpt, float64(width)+float64(maxDepth)/10.0, align)
+		_ = pretty.WriteSEN(os.Stdout, v, options, float64(width)+float64(maxDepth)/10.0, align)
 	} else {
-		_ = sen.Write(os.Stdout, v, senOpt)
+		_ = sen.Write(os.Stdout, v, options)
 	}
 	os.Stdout.Write([]byte{'\n'})
 }
@@ -568,59 +568,43 @@ func setOptionsColor(conf interface{}, key string, fun func(color string)) {
 }
 
 func setBoolColor(color string) {
-	oj.DefaultOptions.BoolColor = color
-	oj.BrightOptions.BoolColor = color
-	sen.DefaultOptions.BoolColor = color
-	sen.BrightOptions.BoolColor = color
+	ojg.DefaultOptions.BoolColor = color
+	ojg.BrightOptions.BoolColor = color
 }
 
 func setKeyColor(color string) {
-	oj.DefaultOptions.KeyColor = color
-	oj.BrightOptions.KeyColor = color
-	sen.DefaultOptions.KeyColor = color
-	sen.BrightOptions.KeyColor = color
+	ojg.DefaultOptions.KeyColor = color
+	ojg.BrightOptions.KeyColor = color
 }
 
 func setNoColor(color string) {
-	oj.DefaultOptions.NoColor = color
-	oj.BrightOptions.NoColor = color
-	sen.DefaultOptions.NoColor = color
-	sen.BrightOptions.NoColor = color
+	ojg.DefaultOptions.NoColor = color
+	ojg.BrightOptions.NoColor = color
 }
 
 func setNullColor(color string) {
-	oj.DefaultOptions.NullColor = color
-	oj.BrightOptions.NullColor = color
-	sen.DefaultOptions.NullColor = color
-	sen.BrightOptions.NullColor = color
+	ojg.DefaultOptions.NullColor = color
+	ojg.BrightOptions.NullColor = color
 }
 
 func setNumberColor(color string) {
-	oj.DefaultOptions.NumberColor = color
-	oj.BrightOptions.NumberColor = color
-	sen.DefaultOptions.NumberColor = color
-	sen.BrightOptions.NumberColor = color
+	ojg.DefaultOptions.NumberColor = color
+	ojg.BrightOptions.NumberColor = color
 }
 
 func setStringColor(color string) {
-	oj.DefaultOptions.StringColor = color
-	oj.BrightOptions.StringColor = color
-	sen.DefaultOptions.StringColor = color
-	sen.BrightOptions.StringColor = color
+	ojg.DefaultOptions.StringColor = color
+	ojg.BrightOptions.StringColor = color
 }
 
 func setTimeColor(color string) {
-	oj.DefaultOptions.TimeColor = color
-	oj.BrightOptions.TimeColor = color
-	sen.DefaultOptions.TimeColor = color
-	sen.BrightOptions.TimeColor = color
+	ojg.DefaultOptions.TimeColor = color
+	ojg.BrightOptions.TimeColor = color
 }
 
 func setSyntaxColor(color string) {
-	oj.DefaultOptions.SyntaxColor = color
-	oj.BrightOptions.SyntaxColor = color
-	sen.DefaultOptions.SyntaxColor = color
-	sen.BrightOptions.SyntaxColor = color
+	ojg.DefaultOptions.SyntaxColor = color
+	ojg.BrightOptions.SyntaxColor = color
 }
 
 func setHTMLColor(conf interface{}, key string, sp *string) {

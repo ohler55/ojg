@@ -38,6 +38,26 @@ var (
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0xa0
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0xc0
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuut" //  0xe0
+	//   0123456789abcdef0123456789abcdef
+	htmlValueMap = "" +
+		".........ab..a.................." + // 0x00
+		"a.i.j.....jjafjcghhhhhhhhh.....j" + // 0x20
+		"jjjjjjjjjjjjjjjjjjjjjjjjjjjk.mjj" + // 0x40
+		".jjjjjjjjjjjjjjjjjjjjjjjjjjl.nj." + // 0x60
+		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" + // 0x80
+		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" + // 0xa0
+		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" + // 0xc0
+		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjv" //  0xe0
+	//   0123456789abcdef0123456789abcdef
+	htmlTokenMap = "" +
+		".........GJ..G.................." + // 0x00
+		"G...u.....uuGuucuuuuuuuuuuI....u" + // 0x20
+		"uuuuuuuuuuuuuuuuuuuuuuuuuuuk.muu" + // 0x40
+		".uuuuuuuuuuuuuuuuuuuuuuuuuul.nu." + // 0x60
+		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0x80
+		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0xa0
+		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0xc0
+		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuut" //  0xe0
 )
 
 // AppendJSONString appends a JSON encoding of a string to the provided byte
@@ -87,11 +107,15 @@ func AppendJSONString(buf []byte, s string, htmlSafe bool) []byte {
 	return append(buf, '"')
 }
 
-func AppendSENString(buf []byte, s string) []byte {
+func AppendSENString(buf []byte, s string, htmlSafe bool) []byte {
 	tokOk := false
 	if 0 < len(s) {
 		vm := valueMap
 		tm := tokenMap
+		if htmlSafe {
+			vm = htmlValueMap
+			tm = htmlTokenMap
+		}
 		if vm[s[0]] == tokenStart &&
 			len(s) < maxTokenLen { // arbitrary length, longer strings look better in quotes
 			tokOk = true
@@ -122,6 +146,12 @@ func AppendSENString(buf []byte, s string) []byte {
 			buf = append(buf, []byte{'\\', 'r'}...)
 		case '\t':
 			buf = append(buf, []byte{'\t'}...)
+		case '&', '<', '>': // prefectly okay for JSON but commonly escaped
+			if htmlSafe {
+				buf = append(buf, []byte{'\\', 'u', '0', '0', hex[r>>4], hex[r&0x0f]}...)
+			} else {
+				buf = append(buf, byte(r))
+			}
 		case '\u2028':
 			buf = append(buf, []byte(`\u2028`)...)
 		case '\u2029':

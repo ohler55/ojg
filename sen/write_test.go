@@ -82,8 +82,9 @@ func TestString(t *testing.T) {
 		{value: "str#ing", expect: `"str#ing"`},
 		{value: "\\\tx\n\r\b\f\"&<>\u2028\u2029\x07\U0001D122",
 			expect: `"\\	x
-\r\b\f\"&<>\u2028\u2029\u0007𝄢"`},
-		{value: "<x>", expect: `<x>`},
+\r\b\f\"&<>\u2028\u2029\u0007𝄢"`, options: &sen.Options{HTMLUnsafe: true}},
+		{value: "<x>", expect: `<x>`, options: &sen.Options{HTMLUnsafe: true}},
+		{value: "<x>", expect: `"\u003cx\u003e"`, options: &sen.Options{HTMLUnsafe: false}},
 		{value: "ぴーたー", expect: "ぴーたー", options: &sen.Options{}},
 		{value: gen.String("string"), expect: "string"},
 		{value: []interface{}{true, nil}, expect: "[true null]"},
