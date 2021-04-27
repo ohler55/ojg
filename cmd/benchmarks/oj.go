@@ -93,6 +93,21 @@ func ojTokenizeLoad(b *testing.B) {
 	}
 }
 
+func ojMarshalStruct(b *testing.B) {
+	sample, _ := ioutil.ReadFile(filename)
+	var patient Patient
+	p := oj.Parser{}
+	if err := p.Unmarshal(sample, &patient); err != nil {
+		log.Fatal(err)
+	}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		if _, err := oj.Marshal(&patient); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
 func ojUnmarshal(b *testing.B) {
 	sample, _ := ioutil.ReadFile(filename)
 	p := oj.Parser{Reuse: true}

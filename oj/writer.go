@@ -36,11 +36,12 @@ func (wr *Writer) JSON(data interface{}) string {
 			wr.buf = wr.buf[:0]
 		}
 	}()
-	return wr.MustJSON(data)
+	return string(wr.MustJSON(data))
 }
 
-// MustJSON writes data, JSON encoded. On error a panic is called with the error.
-func (wr *Writer) MustJSON(data interface{}) string {
+// MustJSON writes data, JSON encoded as a []byte and not a string like the
+// JSON() function. On error a panic is called with the error.
+func (wr *Writer) MustJSON(data interface{}) []byte {
 	if wr.InitSize <= 0 {
 		wr.InitSize = 256
 	}
@@ -51,7 +52,7 @@ func (wr *Writer) MustJSON(data interface{}) string {
 	}
 	wr.buildJSON(data, 0, false)
 
-	return string(wr.buf)
+	return wr.buf
 }
 
 // Write a JSON string for the data provided.

@@ -3,7 +3,6 @@
 package ojg
 
 import (
-	"fmt"
 	"reflect"
 	"strconv"
 	"unsafe"
@@ -11,332 +10,462 @@ import (
 
 // Field hold information about a struct field.
 type Field struct {
-	Type     reflect.Type
-	Key      string
-	Kind     reflect.Kind
-	jkey     []byte
-	index    []int
-	empty    func(rv reflect.Value) bool
-	fill     func(buf []byte, v interface{}) []byte
-	fv       func(ptr uintptr) interface{}
-	offset   uintptr
-	asString bool
+	Type      reflect.Type
+	Key       string
+	Kind      reflect.Kind
+	jkey      []byte
+	index     []int
+	offset    uintptr
+	asString  bool
+	omitEmpty bool
+	direct    bool
 }
 
 func (fi *Field) Value(rv reflect.Value, omitNil bool, embedded bool) (v interface{}, omit bool) {
-	fv := rv.FieldByIndex(fi.index)
-	if fi.fv != nil && !embedded {
-		v = fi.fv(uintptr(unsafe.Pointer(rv.UnsafeAddr())) + fi.offset)
+	var fv reflect.Value
+	var ptr uintptr
+	if fi.direct && !embedded {
+		ptr = rv.UnsafeAddr() + fi.offset
 	} else {
+		fv = rv.FieldByIndex(fi.index)
 		v = fv.Interface()
 	}
-	omit = fi.empty != nil && fi.empty(fv)
-	if fi.asString && !omit {
-		v = fmt.Sprintf("%v", v)
+	switch fi.Kind {
+	case reflect.Bool:
+		var b bool
+		if ptr != 0 {
+			b = *(*bool)(unsafe.Pointer(ptr))
+			v = b
+		} else {
+			b = v.(bool)
+		}
+		if omit = !b && fi.omitEmpty; !omit && fi.asString {
+			if b {
+				v = "true"
+			} else {
+				v = "false"
+			}
+		}
+
+	case reflect.Int:
+		var i int
+		if ptr != 0 {
+			i = *(*int)(unsafe.Pointer(ptr))
+			v = i
+		} else {
+			i = v.(int)
+		}
+		if omit = i == 0 && fi.omitEmpty; !omit && fi.asString {
+			v = strconv.FormatInt(int64(i), 10)
+		}
+	case reflect.Int8:
+		var i int8
+		if ptr != 0 {
+			i = *(*int8)(unsafe.Pointer(ptr))
+			v = i
+		} else {
+			i = v.(int8)
+		}
+		if omit = i == 0 && fi.omitEmpty; !omit && fi.asString {
+			v = strconv.FormatInt(int64(i), 10)
+		}
+	case reflect.Int16:
+		var i int16
+		if ptr != 0 {
+			i = *(*int16)(unsafe.Pointer(ptr))
+			v = i
+		} else {
+			i = v.(int16)
+		}
+		if omit = i == 0 && fi.omitEmpty; !omit && fi.asString {
+			v = strconv.FormatInt(int64(i), 10)
+		}
+	case reflect.Int32:
+		var i int32
+		if ptr != 0 {
+			i = *(*int32)(unsafe.Pointer(ptr))
+			v = i
+		} else {
+			i = v.(int32)
+		}
+		if omit = i == 0 && fi.omitEmpty; !omit && fi.asString {
+			v = strconv.FormatInt(int64(i), 10)
+		}
+	case reflect.Int64:
+		var i int64
+		if ptr != 0 {
+			i = *(*int64)(unsafe.Pointer(ptr))
+			v = i
+		} else {
+			i = v.(int64)
+		}
+		if omit = i == 0 && fi.omitEmpty; !omit && fi.asString {
+			v = strconv.FormatInt(i, 10)
+		}
+	case reflect.Uint:
+		var i uint
+		if ptr != 0 {
+			i = *(*uint)(unsafe.Pointer(ptr))
+			v = i
+		} else {
+			i = v.(uint)
+		}
+		if omit = i == 0 && fi.omitEmpty; !omit && fi.asString {
+			v = strconv.FormatUint(uint64(i), 10)
+		}
+	case reflect.Uint8:
+		var i uint8
+		if ptr != 0 {
+			i = *(*uint8)(unsafe.Pointer(ptr))
+			v = i
+		} else {
+			i = v.(uint8)
+		}
+		if omit = i == 0 && fi.omitEmpty; !omit && fi.asString {
+			v = strconv.FormatUint(uint64(i), 10)
+		}
+	case reflect.Uint16:
+		var i uint16
+		if ptr != 0 {
+			i = *(*uint16)(unsafe.Pointer(ptr))
+			v = i
+		} else {
+			i = v.(uint16)
+		}
+		if omit = i == 0 && fi.omitEmpty; !omit && fi.asString {
+			v = strconv.FormatUint(uint64(i), 10)
+		}
+	case reflect.Uint32:
+		var i uint32
+		if ptr != 0 {
+			i = *(*uint32)(unsafe.Pointer(ptr))
+			v = i
+		} else {
+			i = v.(uint32)
+		}
+		if omit = i == 0 && fi.omitEmpty; !omit && fi.asString {
+			v = strconv.FormatUint(uint64(i), 10)
+		}
+	case reflect.Uint64:
+		var i uint64
+		if ptr != 0 {
+			i = *(*uint64)(unsafe.Pointer(ptr))
+			v = i
+		} else {
+			i = v.(uint64)
+		}
+		if omit = i == 0 && fi.omitEmpty; !omit && fi.asString {
+			v = strconv.FormatUint(i, 10)
+		}
+
+	case reflect.Float32:
+		var f float32
+		if ptr != 0 {
+			f = *(*float32)(unsafe.Pointer(ptr))
+			v = f
+		} else {
+			f = v.(float32)
+		}
+		if omit = f == 0.0 && fi.omitEmpty; !omit && fi.asString {
+			v = strconv.FormatFloat(float64(f), 'g', -1, 32)
+		}
+	case reflect.Float64:
+		var f float64
+		if ptr != 0 {
+			f = *(*float64)(unsafe.Pointer(ptr))
+			v = f
+		} else {
+			f = v.(float64)
+		}
+		if omit = f == 0.0 && fi.omitEmpty; !omit && fi.asString {
+			v = strconv.FormatFloat(f, 'g', -1, 64)
+		}
+
+	case reflect.String:
+		s := v.(string)
+		omit = fi.omitEmpty && len(s) == 0 && fi.omitEmpty
+	case reflect.Slice, reflect.Array, reflect.Map:
+		omit = (fi.omitEmpty || omitNil) && fv.Len() == 0
+	case reflect.Interface, reflect.Ptr:
+		omit = (fi.omitEmpty || omitNil) && v == nil
 	}
 	return
 }
 
 func (fi *Field) Append(buf []byte, rv reflect.Value, omitNil bool, embedded bool) ([]byte, interface{}, bool, bool) {
 	var v interface{}
-	fv := rv.FieldByIndex(fi.index)
-	if fi.fv != nil && !embedded {
-		v = fi.fv(uintptr(unsafe.Pointer(rv.UnsafeAddr())) + fi.offset)
+	var fv reflect.Value
+	var ptr uintptr
+	if fi.direct && !embedded {
+		ptr = rv.UnsafeAddr() + fi.offset
 	} else {
+		fv = rv.FieldByIndex(fi.index)
 		v = fv.Interface()
 	}
-	if (fi.empty != nil && fi.empty(fv)) || (omitNil && v == nil) {
-		return buf, nil, false, false
-	}
-	buf = append(buf, fi.jkey...)
-	if fi.fill == nil {
+	var skip bool
+	switch fi.Kind {
+	case reflect.Bool:
+		var b bool
+		if ptr != 0 {
+			b = *(*bool)(unsafe.Pointer(ptr))
+		} else {
+			b = v.(bool)
+		}
+		if b {
+			buf = append(buf, fi.jkey...)
+			if fi.asString {
+				buf = append(buf, `"true"`...)
+			} else {
+				buf = append(buf, "true"...)
+			}
+		} else if fi.omitEmpty {
+			buf = append(buf, fi.jkey...)
+			if fi.asString {
+				buf = append(buf, `"false"`...)
+			} else {
+				buf = append(buf, "false"...)
+			}
+		} else {
+			return buf, nil, false, false
+		}
+	case reflect.Int:
+		var i int
+		if ptr != 0 {
+			i = *(*int)(unsafe.Pointer(ptr))
+		} else {
+			i = v.(int)
+		}
+		if buf, skip = fi.fillInt(buf, int64(i)); skip {
+			return buf, nil, false, false
+		}
+	case reflect.Int8:
+		var i int8
+		if ptr != 0 {
+			i = *(*int8)(unsafe.Pointer(ptr))
+		} else {
+			i = v.(int8)
+		}
+		if buf, skip = fi.fillInt(buf, int64(i)); skip {
+			return buf, nil, false, false
+		}
+	case reflect.Int16:
+		var i int16
+		if ptr != 0 {
+			i = *(*int16)(unsafe.Pointer(ptr))
+		} else {
+			i = v.(int16)
+		}
+		if buf, skip = fi.fillInt(buf, int64(i)); skip {
+			return buf, nil, false, false
+		}
+	case reflect.Int32:
+		var i int32
+		if ptr != 0 {
+			i = *(*int32)(unsafe.Pointer(ptr))
+		} else {
+			i = v.(int32)
+		}
+		if buf, skip = fi.fillInt(buf, int64(i)); skip {
+			return buf, nil, false, false
+		}
+	case reflect.Int64:
+		var i int64
+		if ptr != 0 {
+			i = *(*int64)(unsafe.Pointer(ptr))
+		} else {
+			i = v.(int64)
+		}
+		if buf, skip = fi.fillInt(buf, i); skip {
+			return buf, nil, false, false
+		}
+	case reflect.Uint:
+		var i uint
+		if ptr != 0 {
+			i = *(*uint)(unsafe.Pointer(ptr))
+		} else {
+			i = v.(uint)
+		}
+		if buf, skip = fi.fillUint(buf, uint64(i)); skip {
+			return buf, nil, false, false
+		}
+	case reflect.Uint8:
+		var i uint8
+		if ptr != 0 {
+			i = *(*uint8)(unsafe.Pointer(ptr))
+		} else {
+			i = v.(uint8)
+		}
+		if buf, skip = fi.fillUint(buf, uint64(i)); skip {
+			return buf, nil, false, false
+		}
+	case reflect.Uint16:
+		var i uint16
+		if ptr != 0 {
+			i = *(*uint16)(unsafe.Pointer(ptr))
+		} else {
+			i = v.(uint16)
+		}
+		if buf, skip = fi.fillUint(buf, uint64(i)); skip {
+			return buf, nil, false, false
+		}
+	case reflect.Uint32:
+		var i uint32
+		if ptr != 0 {
+			i = *(*uint32)(unsafe.Pointer(ptr))
+		} else {
+			i = v.(uint32)
+		}
+		if buf, skip = fi.fillUint(buf, uint64(i)); skip {
+			return buf, nil, false, false
+		}
+	case reflect.Uint64:
+		var i uint64
+		if ptr != 0 {
+			i = *(*uint64)(unsafe.Pointer(ptr))
+		} else {
+			i = v.(uint64)
+		}
+		if buf, skip = fi.fillUint(buf, i); skip {
+			return buf, nil, false, false
+		}
+
+	case reflect.Float32:
+		var f float32
+		if ptr != 0 {
+			f = *(*float32)(unsafe.Pointer(ptr))
+		} else {
+			f = v.(float32)
+		}
+		if f == 0.0 && fi.omitEmpty {
+			return buf, nil, false, false
+		}
+		buf = append(buf, fi.jkey...)
+		if fi.asString {
+			buf = append(buf, '"')
+			buf = strconv.AppendFloat(buf, float64(f), 'g', -1, 32)
+			buf = append(buf, '"')
+		} else {
+			buf = strconv.AppendFloat(buf, float64(f), 'g', -1, 32)
+		}
+	case reflect.Float64:
+		var f float64
+		if ptr != 0 {
+			f = *(*float64)(unsafe.Pointer(ptr))
+		} else {
+			f = v.(float64)
+		}
+		if f == 0.0 && fi.omitEmpty {
+			return buf, nil, false, false
+		}
+		buf = append(buf, fi.jkey...)
+		if fi.asString {
+			buf = append(buf, '"')
+			buf = strconv.AppendFloat(buf, f, 'g', -1, 64)
+			buf = append(buf, '"')
+		} else {
+			buf = strconv.AppendFloat(buf, f, 'g', -1, 64)
+		}
+
+	case reflect.String:
+		s := v.(string)
+		if len(s) == 0 && fi.omitEmpty {
+			return buf, nil, false, false
+		}
+		buf = append(buf, fi.jkey...)
+		buf = AppendJSONString(buf, s, false) // TBD html safe flag needed
+
+	case reflect.Slice, reflect.Array, reflect.Map:
+		if fi.omitEmpty && fv.Len() == 0 {
+			return buf, nil, false, false
+		}
+		buf = append(buf, fi.jkey...)
+		return buf, v, false, true
+
+	case reflect.Interface, reflect.Ptr:
+		if fi.omitEmpty && v == nil {
+			return buf, nil, false, false
+		}
+		buf = append(buf, fi.jkey...)
+		return buf, v, false, true
+
+	default:
+		buf = append(buf, fi.jkey...)
 		return buf, v, false, true
 	}
-	if fi.asString && fi.Kind != reflect.String {
-		buf = append(buf, '"')
-		buf = fi.fill(buf, v)
-		buf = append(buf, '"')
-	} else {
-		buf = fi.fill(buf, v)
-	}
 	buf = append(buf, ',')
+
 	return buf, nil, true, false
 }
 
-func boolVal(ptr uintptr) interface{} {
-	return *(*bool)(unsafe.Pointer(ptr))
-}
-
-func intVal(ptr uintptr) interface{} {
-	return *(*int)(unsafe.Pointer(ptr))
-}
-
-func int8Val(ptr uintptr) interface{} {
-	return *(*int8)(unsafe.Pointer(ptr))
-}
-
-func int16Val(ptr uintptr) interface{} {
-	return *(*int16)(unsafe.Pointer(ptr))
-}
-
-func int32Val(ptr uintptr) interface{} {
-	return *(*int32)(unsafe.Pointer(ptr))
-}
-
-func int64Val(ptr uintptr) interface{} {
-	return *(*int64)(unsafe.Pointer(ptr))
-}
-
-func uintVal(ptr uintptr) interface{} {
-	return *(*uint)(unsafe.Pointer(ptr))
-}
-
-func uint8Val(ptr uintptr) interface{} {
-	return *(*uint8)(unsafe.Pointer(ptr))
-}
-
-func uint16Val(ptr uintptr) interface{} {
-	return *(*uint16)(unsafe.Pointer(ptr))
-}
-
-func uint32Val(ptr uintptr) interface{} {
-	return *(*uint32)(unsafe.Pointer(ptr))
-}
-
-func uint64Val(ptr uintptr) interface{} {
-	return *(*uint64)(unsafe.Pointer(ptr))
-}
-
-func float32Val(ptr uintptr) interface{} {
-	return *(*float32)(unsafe.Pointer(ptr))
-}
-
-func float64Val(ptr uintptr) interface{} {
-	return *(*float64)(unsafe.Pointer(ptr))
-}
-
-func (fi *Field) setValueFunc() {
-	switch fi.Kind {
-	case reflect.Bool:
-		fi.fv = boolVal
-	case reflect.Int:
-		fi.fv = intVal
-	case reflect.Int8:
-		fi.fv = int8Val
-	case reflect.Int16:
-		fi.fv = int16Val
-	case reflect.Int32:
-		fi.fv = int32Val
-	case reflect.Int64:
-		fi.fv = int64Val
-	case reflect.Uint:
-		fi.fv = uintVal
-	case reflect.Uint8:
-		fi.fv = uint8Val
-	case reflect.Uint16:
-		fi.fv = uint16Val
-	case reflect.Uint32:
-		fi.fv = uint32Val
-	case reflect.Uint64:
-		fi.fv = uint64Val
-	case reflect.Float32:
-		fi.fv = float32Val
-	case reflect.Float64:
-		fi.fv = float64Val
-		// TBD handle string, Ptr, Interface, Slice, Map if possible
+func (fi *Field) fillInt(buf []byte, i int64) ([]byte, bool) {
+	if i == 0 && fi.omitEmpty {
+		return buf, true
 	}
+	buf = append(buf, fi.jkey...)
+	if fi.asString {
+		buf = append(buf, '"')
+		buf = strconv.AppendInt(buf, i, 10)
+		buf = append(buf, '"')
+	} else {
+		buf = strconv.AppendInt(buf, i, 10)
+	}
+	return buf, false
 }
 
-func boolEmpty(rv reflect.Value) bool {
-	return !*(*bool)(unsafe.Pointer(rv.UnsafeAddr()))
-}
-
-func intEmpty(rv reflect.Value) bool {
-	return *(*int)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func int8Empty(rv reflect.Value) bool {
-	return *(*int8)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func int16Empty(rv reflect.Value) bool {
-	return *(*int16)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func int32Empty(rv reflect.Value) bool {
-	return *(*int32)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func int64Empty(rv reflect.Value) bool {
-	return *(*int64)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func uintEmpty(rv reflect.Value) bool {
-	return *(*uint)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func uint8Empty(rv reflect.Value) bool {
-	return *(*uint8)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func uint16Empty(rv reflect.Value) bool {
-	return *(*uint16)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func uint32Empty(rv reflect.Value) bool {
-	return *(*uint32)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func uint64Empty(rv reflect.Value) bool {
-	return *(*uint64)(unsafe.Pointer(rv.UnsafeAddr())) == 0.0
-}
-
-func float32Empty(rv reflect.Value) bool {
-	return *(*float32)(unsafe.Pointer(rv.UnsafeAddr())) == 0.0
-}
-
-func float64Empty(rv reflect.Value) bool {
-	return *(*float64)(unsafe.Pointer(rv.UnsafeAddr())) == 0
-}
-
-func ptrEmpty(rv reflect.Value) bool {
-	return rv.IsNil()
-}
-
-func lenEmpty(rv reflect.Value) bool {
-	return rv.Len() == 0
+func (fi *Field) fillUint(buf []byte, i uint64) ([]byte, bool) {
+	if i == 0 && fi.omitEmpty {
+		return buf, true
+	}
+	buf = append(buf, fi.jkey...)
+	if fi.asString {
+		buf = append(buf, '"')
+		buf = strconv.AppendUint(buf, i, 10)
+		buf = append(buf, '"')
+	} else {
+		buf = strconv.AppendUint(buf, i, 10)
+	}
+	return buf, false
 }
 
 func (fi *Field) setOmitEmpty() {
 	switch fi.Kind {
-	case reflect.Bool:
-		fi.empty = boolEmpty
-	case reflect.Int:
-		fi.empty = intEmpty
-	case reflect.Int8:
-		fi.empty = int8Empty
-	case reflect.Int16:
-		fi.empty = int16Empty
-	case reflect.Int32:
-		fi.empty = int32Empty
-	case reflect.Int64:
-		fi.empty = int64Empty
-	case reflect.Uint:
-		fi.empty = uintEmpty
-	case reflect.Uint8:
-		fi.empty = uint8Empty
-	case reflect.Uint16:
-		fi.empty = uint16Empty
-	case reflect.Uint32:
-		fi.empty = uint32Empty
-	case reflect.Uint64:
-		fi.empty = uint64Empty
-	case reflect.Float32:
-		fi.empty = float32Empty
-	case reflect.Float64:
-		fi.empty = float64Empty
-	case reflect.Slice, reflect.Array, reflect.Map, reflect.String:
-		fi.empty = lenEmpty
-	case reflect.Interface, reflect.Ptr:
-		fi.empty = ptrEmpty
-	}
-}
-
-func boolFill(buf []byte, v interface{}) []byte {
-	if v.(bool) {
-		return append(buf, "true"...)
-	}
-	return append(buf, "false"...)
-}
-
-func intFill(buf []byte, v interface{}) []byte {
-	return strconv.AppendInt(buf, int64(v.(int)), 10)
-}
-
-func int8Fill(buf []byte, v interface{}) []byte {
-	return strconv.AppendInt(buf, int64(v.(int8)), 10)
-}
-
-func int16Fill(buf []byte, v interface{}) []byte {
-	return strconv.AppendInt(buf, int64(v.(int16)), 10)
-}
-
-func int32Fill(buf []byte, v interface{}) []byte {
-	return strconv.AppendInt(buf, int64(v.(int32)), 10)
-}
-
-func int64Fill(buf []byte, v interface{}) []byte {
-	return strconv.AppendInt(buf, v.(int64), 10)
-}
-
-func uintFill(buf []byte, v interface{}) []byte {
-	return strconv.AppendUint(buf, uint64(v.(uint)), 10)
-}
-
-func uint8Fill(buf []byte, v interface{}) []byte {
-	return strconv.AppendUint(buf, uint64(v.(uint8)), 10)
-}
-
-func uint16Fill(buf []byte, v interface{}) []byte {
-	return strconv.AppendUint(buf, uint64(v.(uint16)), 10)
-}
-
-func uint32Fill(buf []byte, v interface{}) []byte {
-	return strconv.AppendUint(buf, uint64(v.(uint32)), 10)
-}
-
-func uint64Fill(buf []byte, v interface{}) []byte {
-	return strconv.AppendUint(buf, v.(uint64), 10)
-}
-
-func float32Fill(buf []byte, v interface{}) []byte {
-	return strconv.AppendFloat(buf, float64(v.(float32)), 'g', -1, 32)
-}
-
-func float64Fill(buf []byte, v interface{}) []byte {
-	return strconv.AppendFloat(buf, float64(v.(float64)), 'g', -1, 64)
-}
-
-func stringFill(buf []byte, v interface{}) []byte {
-	return AppendJSONString(buf, v.(string), false) // TBD html safe flag needed
-}
-
-func (fi *Field) setFillFunc() {
-	switch fi.Kind {
-	case reflect.Bool:
-		fi.fill = boolFill
-	case reflect.Int:
-		fi.fill = intFill
-	case reflect.Int8:
-		fi.fill = int8Fill
-	case reflect.Int16:
-		fi.fill = int16Fill
-	case reflect.Int32:
-		fi.fill = int32Fill
-	case reflect.Int64:
-		fi.fill = int64Fill
-	case reflect.Uint:
-		fi.fill = uintFill
-	case reflect.Uint8:
-		fi.fill = uint8Fill
-	case reflect.Uint16:
-		fi.fill = uint16Fill
-	case reflect.Uint32:
-		fi.fill = uint32Fill
-	case reflect.Uint64:
-		fi.fill = uint64Fill
-	case reflect.Float32:
-		fi.fill = float32Fill
-	case reflect.Float64:
-		fi.fill = float64Fill
-	case reflect.String:
-		fi.fill = stringFill
+	case reflect.Bool,
+		reflect.Int,
+		reflect.Int8,
+		reflect.Int16,
+		reflect.Int32,
+		reflect.Int64,
+		reflect.Uint,
+		reflect.Uint8,
+		reflect.Uint16,
+		reflect.Uint32,
+		reflect.Uint64,
+		reflect.Float32,
+		reflect.Float64,
+		reflect.String:
+		fi.omitEmpty = true
+	case reflect.Slice, reflect.Array, reflect.Map, reflect.Interface, reflect.Ptr:
+		fi.omitEmpty = true
 	}
 }
 
 func (fi *Field) setup() {
-	fi.setValueFunc()
-	fi.setFillFunc()
+	switch fi.Kind {
+	case reflect.Bool,
+		reflect.Int,
+		reflect.Int8,
+		reflect.Int16,
+		reflect.Int32,
+		reflect.Int64,
+		reflect.Uint,
+		reflect.Uint8,
+		reflect.Uint16,
+		reflect.Uint32,
+		reflect.Uint64,
+		reflect.Float32,
+		reflect.Float64:
+		fi.direct = true
+	}
 	fi.jkey = AppendJSONString(fi.jkey, fi.Key, false)
 	fi.jkey = append(fi.jkey, ':')
 }

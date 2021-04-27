@@ -1,5 +1,10 @@
 
 - optimize marshal for structs
+ - empty check inline with fill
+  - pass in options
+ - maybe stay with functions but make a separate string versions
+  - change to include writing key
+
  - Marshal for reflects
   - need a buildReflectJSON that take a reflect.Value instead of interface{}
    - stay with buildJSON for simple and reflect for structs
@@ -17,7 +22,7 @@
  - color
  - oj and sen
 
-- add utf []byte to writer and then pass to string writters
+- change uft [x]byte
 
 - more examples
 - readme
@@ -54,5 +59,3 @@
 
 - Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)]
 - Exists syntax? [?(@.x exists)]
-QQ79661BQ
-C7090F4B-D872-497A-93C4-5BCE84024103

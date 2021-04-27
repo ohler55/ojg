@@ -65,21 +65,12 @@ func main() {
 	}
 	gen.TimeFormat = "nano"
 
-	/*
-		benchSuite("to JSON", []*bench{
-			{pkg: "json", name: "Marshal", fun: marshalJSON},
-			{pkg: "oj", name: "JSON", fun: ojJSON},
-			{pkg: "sen", name: "String", fun: senString},
-		})
-		benchSuite("Write indented JSON", []*bench{
-			{pkg: "json", name: "Encode", fun: jsonEncodeIndent},
-			{pkg: "oj", name: "Write", fun: ojWriteIndent},
-			{pkg: "sen", name: "Write", fun: senWriteIndent},
-			{pkg: "pretty", name: "WriteJSON", fun: prettyWriteJSON},
-			{pkg: "pretty", name: "WriteSEN", fun: prettyWriteSEN},
-		})
-		return
-	*/
+	benchSuite("Marshal Struct", []*bench{
+		{pkg: "json", name: "Marshal", fun: goMarshalStruct},
+		{pkg: "oj", name: "Marshal", fun: ojMarshalStruct},
+	})
+	// return
+
 	benchSuite("Parse string/[]byte", []*bench{
 		{pkg: "json", name: "Unmarshal", fun: goParse},
 		{pkg: "oj", name: "Parse", fun: ojParse},

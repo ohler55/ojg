@@ -17,6 +17,12 @@ var (
 	BrightOptions  = ojg.BrightOptions
 	GoOptions      = ojg.GoOptions
 	HTMLOptions    = ojg.HTMLOptions
+
+	DefaultWriter = Writer{
+		Options: ojg.GoOptions,
+		buf:     make([]byte, 0, 1024),
+		strict:  true,
+	}
 )
 
 // Parse JSON into a gen.Node. Arguments are optional and can be a bool
@@ -85,19 +91,20 @@ func Unmarshal(data []byte, vp interface{}, recomposer ...*alt.Recomposer) (err 
 // map[string]interface{} or a Node type, The args, if supplied can be an
 // int as an indent or a *Options.
 func JSON(data interface{}, args ...interface{}) string {
-	wr := &Writer{
-		Options: ojg.DefaultOptions,
-		buf:     make([]byte, 0, 256),
-	}
-	wr.InitSize = 256
+	wr := &DefaultWriter
 	if 0 < len(args) {
 		switch ta := args[0].(type) {
 		case int:
+			w2 := *wr
+			wr = &w2
 			wr.Indent = ta
 		case *ojg.Options:
+			w2 := *wr
+			wr = &w2
 			wr.Options = *ta
 		case *Writer:
 			wr = ta
+			wr.strict = true
 		}
 	}
 	return wr.JSON(data)
@@ -110,22 +117,22 @@ func JSON(data interface{}, args ...interface{}) string {
 // flag is true and a value is encountered that can not be encoded other than
 // by using the %v format of the fmt package.
 func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
-	wr := &Writer{
-		Options: ojg.GoOptions,
-		buf:     make([]byte, 0, 256),
-	}
-	wr.InitSize = 256
+	wr := &DefaultWriter
 	if 0 < len(args) {
 		switch ta := args[0].(type) {
 		case int:
+			w2 := *wr
+			wr = &w2
 			wr.Indent = ta
 		case *ojg.Options:
+			w2 := *wr
+			wr = &w2
 			wr.Options = *ta
 		case *Writer:
 			wr = ta
+			wr.strict = true
 		}
 	}
-	wr.strict = true
 	defer func() {
 		if r := recover(); r != nil {
 			wr.buf = wr.buf[:0]
@@ -145,18 +152,20 @@ func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
 // or a Node type, The args, if supplied can be an int as an indent or a
 // *Options.
 func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
-	wr := &Writer{
-		Options: ojg.DefaultOptions,
-	}
-	wr.InitSize = 256
+	wr := &DefaultWriter
 	if 0 < len(args) {
 		switch ta := args[0].(type) {
 		case int:
+			w2 := *wr
+			wr = &w2
 			wr.Indent = ta
 		case *ojg.Options:
+			w2 := *wr
+			wr = &w2
 			wr.Options = *ta
 		case *Writer:
 			wr = ta
+			wr.strict = true
 		}
 	}
 	return wr.Write(w, data)

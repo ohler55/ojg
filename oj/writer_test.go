@@ -33,13 +33,17 @@ func (g *genny) Generic() gen.Node {
 	return gen.Object{"type": gen.String("genny"), "val": gen.Int(g.val)}
 }
 
-type Anno struct {
-	Val   int    `json:"v,omitempty"`
-	Str   int    `json:"str,omitempty,string"`
-	Title int    `json:",omitempty"`
-	Skip  int    `json:"-"`
-	Dash  int    `json:"-,omitempty"`
-	Buf   []byte `json:"buf,omitempty"`
+type Mix struct {
+	Val   int     `json:"v,omitempty"`
+	Str   int     `json:"str,omitempty,string"`
+	Title string  `json:",omitempty"`
+	Skip  int     `json:"-"`
+	Dash  float64 `json:"-,omitempty"`
+	Boo   bool    `json:"boo"`
+}
+
+type Nest struct {
+	List []*Dummy
 }
 
 type Dummy struct {
@@ -303,6 +307,7 @@ func TestWriteShort(t *testing.T) {
 }
 
 func TestMarshal(t *testing.T) {
+	fmt.Printf("*** default exact key: %t\n", oj.DefaultWriter.KeyExact)
 	b, err := oj.Marshal([]gen.Node{gen.True, gen.False}, 0)
 	tt.Nil(t, err)
 	tt.Equal(t, "[true,false]", string(b))
@@ -346,17 +351,30 @@ func TestJSONBad(t *testing.T) {
 	tt.Equal(t, 0, len(out))
 }
 
-func BenchmarkMarshal(b *testing.B) {
-	a := Anno{
+func BenchmarkMarshalFlat(b *testing.B) {
+	m := Mix{
 		Val:   1,
 		Str:   2,
-		Title: 3,
+		Title: "Mix",
 		Skip:  4,
-		Dash:  5,
-		//Buf:   []byte("abcd"),
+		Dash:  5.5,
+		Boo:   true,
 	}
 	for i := 0; i < b.N; i++ {
-		if _, err := oj.Marshal(&a); err != nil {
+		if _, err := oj.Marshal(&m); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkMarshalNest(b *testing.B) {
+	n := Nest{
+		List: []*Dummy{
+			{Val: 1},
+		},
+	}
+	for i := 0; i < b.N; i++ {
+		if _, err := oj.Marshal(&n); err != nil {
 			b.Fatal(err)
 		}
 	}
