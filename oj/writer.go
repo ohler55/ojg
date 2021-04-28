@@ -42,6 +42,7 @@ func (wr *Writer) JSON(data interface{}) string {
 // MustJSON writes data, JSON encoded as a []byte and not a string like the
 // JSON() function. On error a panic is called with the error.
 func (wr *Writer) MustJSON(data interface{}) []byte {
+	wr.w = nil
 	if wr.InitSize <= 0 {
 		wr.InitSize = 256
 	}
@@ -177,17 +178,7 @@ func (wr *Writer) buildJSON(data interface{}, depth int, embedded bool) {
 			return
 		}
 		if 0 < len(wr.CreateKey) {
-			// TBD reuse writer options
-			ao := alt.Options{
-				CreateKey:    wr.CreateKey,
-				OmitNil:      wr.OmitNil,
-				FullTypePath: wr.FullTypePath,
-				UseTags:      wr.UseTags,
-				KeyExact:     wr.KeyExact,
-				NestEmbed:    wr.NestEmbed,
-				BytesAs:      wr.BytesAs,
-			}
-			wr.buildJSON(alt.Decompose(data, &ao), depth, embedded)
+			wr.buildJSON(alt.Decompose(data, &wr.Options), depth, embedded)
 			return
 		}
 		if !wr.NoReflect {
@@ -197,25 +188,15 @@ func (wr *Writer) buildJSON(data interface{}, depth int, embedded bool) {
 				rv = rv.Elem()
 				kind = rv.Kind()
 			}
-			// TBD reuse writer options
-			ao := alt.Options{
-				CreateKey:    wr.CreateKey,
-				OmitNil:      wr.OmitNil,
-				FullTypePath: wr.FullTypePath,
-				UseTags:      wr.UseTags,
-				KeyExact:     wr.KeyExact,
-				NestEmbed:    wr.NestEmbed,
-				BytesAs:      wr.BytesAs,
-			}
 			switch kind {
 			case reflect.Struct:
-				wr.buildStruct(rv, &ao, depth, embedded)
+				wr.buildStruct(rv, depth, embedded)
 			case reflect.Slice, reflect.Array:
-				wr.buildSlice(rv, &ao, depth)
+				wr.buildSlice(rv, depth)
 			default:
 				// Not much should get here except Map, Complex and un-decomposable
 				// values.
-				dec := alt.Decompose(data, &ao)
+				dec := alt.Decompose(data, &wr.Options)
 				wr.buildJSON(dec, depth, false)
 				return
 			}
@@ -588,22 +569,22 @@ func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
 	wr.buf = append(wr.buf, '}')
 }
 
-func (wr *Writer) buildStruct(rv reflect.Value, opt *alt.Options, depth int, embedded bool) {
+func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool) {
 	st := ojg.GetStruct(rv.Interface())
 	var fields []*ojg.Field
 	d2 := depth + 1
-	if opt.NestEmbed {
-		if opt.UseTags {
+	if wr.NestEmbed {
+		if wr.UseTags {
 			fields = st.OutTag
-		} else if opt.KeyExact {
+		} else if wr.KeyExact {
 			fields = st.OutName
 		} else {
 			fields = st.OutLow
 		}
 	} else {
-		if opt.UseTags {
+		if wr.UseTags {
 			fields = st.ByTag
-		} else if opt.KeyExact {
+		} else if wr.KeyExact {
 			fields = st.ByName
 		} else {
 			fields = st.ByLow
@@ -638,8 +619,8 @@ func (wr *Writer) buildStruct(rv reflect.Value, opt *alt.Options, depth int, emb
 			cs = spaces[0:x]
 		}
 		for _, fi := range fields {
-			v, omit := fi.Value(rv, opt.OmitNil, embedded)
-			if omit || (opt.OmitNil && v == nil) {
+			v, omit := fi.Value(rv, wr.OmitNil, embedded)
+			if omit || (wr.OmitNil && v == nil) {
 				continue
 			}
 			if first {
@@ -659,7 +640,7 @@ func (wr *Writer) buildStruct(rv reflect.Value, opt *alt.Options, depth int, emb
 		var wrote bool
 		empty := true
 		for _, fi := range fields {
-			wr.buf, v, wrote, has = fi.Append(wr.buf, rv, opt.OmitNil, embedded)
+			wr.buf, v, wrote, has = fi.Append(wr.buf, rv, wr.OmitNil, embedded)
 			if !has {
 				if wrote {
 					empty = false
@@ -677,7 +658,7 @@ func (wr *Writer) buildStruct(rv reflect.Value, opt *alt.Options, depth int, emb
 	wr.buf = append(wr.buf, '}')
 }
 
-func (wr *Writer) buildSlice(rv reflect.Value, opt *alt.Options, depth int) {
+func (wr *Writer) buildSlice(rv reflect.Value, depth int) {
 	d2 := depth + 1
 	end := rv.Len()
 	wr.buf = append(wr.buf, '[')
@@ -715,9 +696,9 @@ func (wr *Writer) buildSlice(rv reflect.Value, opt *alt.Options, depth int) {
 			rm := rv.Index(j)
 			switch rm.Kind() {
 			case reflect.Struct:
-				wr.buildStruct(rm, opt, d2, false)
+				wr.buildStruct(rm, d2, false)
 			case reflect.Slice, reflect.Array:
-				wr.buildSlice(rm, opt, d2)
+				wr.buildSlice(rm, d2)
 			default:
 				wr.buildJSON(rm.Interface(), d2, false)
 			}
@@ -731,9 +712,9 @@ func (wr *Writer) buildSlice(rv reflect.Value, opt *alt.Options, depth int) {
 			rm := rv.Index(j)
 			switch rm.Kind() {
 			case reflect.Struct:
-				wr.buildStruct(rm, opt, d2, false)
+				wr.buildStruct(rm, d2, false)
 			case reflect.Slice, reflect.Array:
-				wr.buildSlice(rm, opt, d2)
+				wr.buildSlice(rm, d2)
 			default:
 				wr.buildJSON(rm.Interface(), d2, false)
 			}

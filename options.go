@@ -43,6 +43,8 @@ var (
 		NumberColor: Cyan,
 		StringColor: Green,
 		TimeColor:   Magenta,
+		HTMLUnsafe:  true,
+		WriteLimit:  1024,
 	}
 
 	// BrightOptions encoding options for color encoding.
@@ -55,6 +57,7 @@ var (
 		NumberColor: BrightCyan,
 		StringColor: BrightGreen,
 		TimeColor:   BrightMagenta,
+		WriteLimit:  1024,
 	}
 
 	// GoOptions are the options closest to the go json package.
@@ -74,6 +77,7 @@ var (
 		KeyExact:     true,
 		NestEmbed:    false,
 		BytesAs:      BytesAsBase64,
+		WriteLimit:   1024,
 	}
 
 	// HTMLOptions defines color options for generating colored HTML. The
@@ -89,6 +93,7 @@ var (
 		TimeColor:   `<span style="color:#f0f">`,
 		NoColor:     "</span>",
 		HTMLUnsafe:  false,
+		WriteLimit:  1024,
 	}
 )
 

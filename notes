@@ -1,14 +1,15 @@
 
 - optimize marshal for structs
- - empty check inline with fill
-  - pass in options
- - maybe stay with functions but make a separate string versions
-  - change to include writing key
 
  - Marshal for reflects
   - need a buildReflectJSON that take a reflect.Value instead of interface{}
    - stay with buildJSON for simple and reflect for structs
   - how to reduce the number of allocs?
+
+- SEN
+ - update like oj
+  - use ojg.Field
+  - add skey to Field
 
 - benchmarks needs a better mix and not just strings
  - validate issue?

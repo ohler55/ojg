@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
@@ -84,8 +85,11 @@ func TestString(t *testing.T) {
 		{value: true, expect: "true"},
 		{value: false, expect: "false"},
 		{value: "string", expect: `"string"`},
-		{value: "\\\t\n\r\b\f\"&<>\u2028\u2029\x07\U0001D122", expect: `"\\\t\n\r\b\f\"\u0026\u003c\u003e\u2028\u2029\u0007𝄢"`},
-		{value: "&<>", expect: `"&<>"`, options: &oj.Options{HTMLUnsafe: true}},
+		{value: "\\\t\n\r\b\f\"&<>\u2028\u2029\x07\U0001D122",
+			expect:  `"\\\t\n\r\b\f\"\u0026\u003c\u003e\u2028\u2029\u0007𝄢"`,
+			options: &oj.Options{HTMLUnsafe: false},
+		},
+		{value: "&<>", expect: `"&<>"`},
 		{value: gen.String("string"), expect: `"string"`},
 		{value: []interface{}{true, false}, expect: "[true,false]"},
 		{value: gen.Array{gen.Bool(true), nil}, expect: "[true,null]"},
@@ -307,12 +311,11 @@ func TestWriteShort(t *testing.T) {
 }
 
 func TestMarshal(t *testing.T) {
-	fmt.Printf("*** default exact key: %t\n", oj.DefaultWriter.KeyExact)
 	b, err := oj.Marshal([]gen.Node{gen.True, gen.False}, 0)
 	tt.Nil(t, err)
 	tt.Equal(t, "[true,false]", string(b))
 
-	b, err = oj.Marshal([]interface{}{true, false}, &oj.Options{})
+	b, err = oj.Marshal([]interface{}{true, false}, &ojg.Options{})
 	tt.Nil(t, err)
 	tt.Equal(t, "[true,false]", string(b))
 

@@ -19,6 +19,10 @@ var (
 	HTMLOptions    = ojg.HTMLOptions
 
 	DefaultWriter = Writer{
+		Options: ojg.DefaultOptions,
+		buf:     make([]byte, 0, 1024),
+	}
+	GoWriter = Writer{
 		Options: ojg.GoOptions,
 		buf:     make([]byte, 0, 1024),
 		strict:  true,
@@ -104,7 +108,6 @@ func JSON(data interface{}, args ...interface{}) string {
 			wr.Options = *ta
 		case *Writer:
 			wr = ta
-			wr.strict = true
 		}
 	}
 	return wr.JSON(data)
@@ -117,7 +120,7 @@ func JSON(data interface{}, args ...interface{}) string {
 // flag is true and a value is encountered that can not be encoded other than
 // by using the %v format of the fmt package.
 func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
-	wr := &DefaultWriter
+	wr := &GoWriter
 	if 0 < len(args) {
 		switch ta := args[0].(type) {
 		case int:
