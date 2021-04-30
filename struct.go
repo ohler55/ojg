@@ -27,6 +27,25 @@ var (
 	structMap = map[uintptr]*Struct{}
 )
 
+func GetTypeStruct(rt reflect.Type) (st *Struct) {
+	x := (*[2]uintptr)(unsafe.Pointer(&rt))[1]
+	structMut.Lock()
+	defer structMut.Unlock()
+	if st = structMap[x]; st != nil {
+		return
+	}
+	return buildStruct(rt, x)
+}
+
+// Non-locking version used in field creation.
+func getTypeStruct(rt reflect.Type) (st *Struct) {
+	x := (*[2]uintptr)(unsafe.Pointer(&rt))[1]
+	if st = structMap[x]; st != nil {
+		return
+	}
+	return buildStruct(rt, x)
+}
+
 func GetStruct(v interface{}) (st *Struct) {
 	x := (*[2]uintptr)(unsafe.Pointer(&v))[0]
 	structMut.Lock()
@@ -34,8 +53,13 @@ func GetStruct(v interface{}) (st *Struct) {
 	if st = structMap[x]; st != nil {
 		return
 	}
-	rt := reflect.TypeOf(v)
+	return buildStruct(reflect.TypeOf(v), x)
+}
+
+func buildStruct(rt reflect.Type, x uintptr) (st *Struct) {
 	st = &Struct{Type: rt}
+	structMap[x] = st
+
 	st.ByTag = buildTagFields(st.Type)
 	sort.Slice(st.ByTag, func(i, j int) bool { return 0 < strings.Compare(st.ByTag[i].Key, st.ByTag[j].Key) })
 	st.ByName = buildNameFields(st.Type)
@@ -46,8 +70,6 @@ func GetStruct(v interface{}) (st *Struct) {
 	st.OutTag = buildOutTagFields(st.Type)
 	st.OutName = buildOutNameFields(st.Type)
 	st.OutLow = buildOutLowFields(st.Type)
-
-	structMap[x] = st
 
 	return
 }

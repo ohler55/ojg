@@ -3,6 +3,7 @@
 package oj
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -472,7 +473,7 @@ func (t *Tokenizer) handleNum() {
 		t.handler.Int(tn)
 	case float64:
 		t.handler.Float(tn)
-	case string:
-		t.handler.Number(gen.Big(tn))
+	case json.Number:
+		t.handler.Number(string(tn))
 	}
 }

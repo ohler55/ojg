@@ -13,6 +13,7 @@ type Field struct {
 	Type      reflect.Type
 	Key       string
 	Kind      reflect.Kind
+	Elem      *Struct
 	jkey      []byte
 	index     []int
 	offset    uintptr
@@ -465,6 +466,16 @@ func (fi *Field) setup() {
 		reflect.Float32,
 		reflect.Float64:
 		fi.direct = true
+	case reflect.Struct:
+		fi.Elem = getTypeStruct(fi.Type)
+	case reflect.Ptr, reflect.Slice, reflect.Array:
+		et := fi.Type.Elem()
+		if et.Kind() == reflect.Ptr {
+			et = et.Elem()
+		}
+		if et.Kind() == reflect.Struct {
+			fi.Elem = getTypeStruct(et)
+		}
 	}
 	fi.jkey = AppendJSONString(fi.jkey, fi.Key, false)
 	fi.jkey = append(fi.jkey, ':')

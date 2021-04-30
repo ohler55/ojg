@@ -3,6 +3,7 @@
 package tt
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -72,7 +73,7 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 		ta, _ := actual.(gen.Time)
 		eq = ta == te
 
-	case gen.String:
+	case gen.String, json.Number:
 		x, _ := asString(expect)
 		a, ok := asString(actual)
 		eq = x == a && ok

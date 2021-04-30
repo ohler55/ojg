@@ -1,9 +1,10 @@
 
 - optimize marshal for structs
+ - improve AppendJSONString
 
  - Marshal for reflects
-  - need a buildReflectJSON that take a reflect.Value instead of interface{}
-   - stay with buildJSON for simple and reflect for structs
+  - buildMap
+  - update buildSliece so indented is same as unindented
   - how to reduce the number of allocs?
 
 - SEN

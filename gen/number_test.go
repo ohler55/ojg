@@ -3,6 +3,7 @@
 package gen_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -18,7 +19,7 @@ func TestNumber(t *testing.T) {
 		{src: "-1.25", value: -1.25},
 		{src: "1.25e3", value: 1.25e3},
 		{src: "-1.25e-1", value: -1.25e-1},
-		{src: "12345678901234567890", value: "12345678901234567890"},
+		{src: "12345678901234567890", value: json.Number("12345678901234567890")},
 		{src: "0.12345678901234567890", value: "0.12345678901234567890"},
 		{src: "0.9223372036854775808", value: "0.9223372036854775808"},
 	} {

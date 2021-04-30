@@ -3,6 +3,7 @@
 package gen
 
 import (
+	"encoding/json"
 	"math"
 	"strconv"
 )
@@ -12,13 +13,14 @@ const BigLimit = math.MaxInt64 / 10
 
 // Number is used internally by parsers.
 type Number struct {
-	I      uint64
-	Frac   uint64
-	Div    uint64
-	Exp    uint64
-	Neg    bool
-	NegExp bool
-	BigBuf []byte
+	I          uint64
+	Frac       uint64
+	Div        uint64
+	Exp        uint64
+	Neg        bool
+	NegExp     bool
+	BigBuf     []byte
+	ForceFloat bool
 }
 
 // Reset the number.
@@ -107,8 +109,8 @@ func (n *Number) FillBig() {
 // AsNum returns the number as best fit.
 func (n *Number) AsNum() (num interface{}) {
 	if 0 < len(n.BigBuf) {
-		num = string(n.BigBuf)
-	} else if n.Div == 1 && n.Exp == 0 {
+		num = json.Number(n.BigBuf)
+	} else if !n.ForceFloat && n.Div == 1 && n.Exp == 0 {
 		i := int64(n.I)
 		if n.Neg {
 			i = -i

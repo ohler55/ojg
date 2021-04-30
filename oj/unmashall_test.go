@@ -16,6 +16,7 @@ func TestUnmarshal(t *testing.T) {
 	err := oj.Unmarshal([]byte(src), &obj)
 	tt.Nil(t, err)
 	tt.Equal(t, src, oj.JSON(obj))
+	tt.Equal(t, 3.0, obj["x"])
 
 	obj = nil
 	p := oj.Parser{}

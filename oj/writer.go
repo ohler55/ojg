@@ -51,7 +51,7 @@ func (wr *Writer) MustJSON(data interface{}) []byte {
 	} else {
 		wr.buf = wr.buf[:0]
 	}
-	wr.buildJSON(data, 0, false)
+	wr.buildJSON(data, 0)
 
 	return wr.buf
 }
@@ -86,9 +86,9 @@ func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
 		wr.buf = wr.buf[:0]
 	}
 	if wr.Color {
-		wr.cbuildJSON(data, 0) // TBD embedded
+		wr.cbuildJSON(data, 0)
 	} else {
-		wr.buildJSON(data, 0, false)
+		wr.buildJSON(data, 0)
 	}
 	if 0 < len(wr.buf) {
 		if _, err := wr.w.Write(wr.buf); err != nil {
@@ -97,7 +97,7 @@ func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
 	}
 }
 
-func (wr *Writer) buildJSON(data interface{}, depth int, embedded bool) {
+func (wr *Writer) buildJSON(data interface{}, depth int) {
 	switch td := data.(type) {
 	case nil:
 		wr.buf = append(wr.buf, []byte("null")...)
@@ -169,16 +169,16 @@ func (wr *Writer) buildJSON(data interface{}, depth int, embedded bool) {
 
 	default:
 		if g, _ := data.(alt.Genericer); g != nil {
-			wr.buildJSON(g.Generic(), depth, false)
+			wr.buildJSON(g.Generic(), depth)
 			return
 		}
 		if simp, _ := data.(alt.Simplifier); simp != nil {
 			data = simp.Simplify()
-			wr.buildJSON(data, depth, false)
+			wr.buildJSON(data, depth)
 			return
 		}
 		if 0 < len(wr.CreateKey) {
-			wr.buildJSON(alt.Decompose(data, &wr.Options), depth, embedded)
+			wr.buildJSON(alt.Decompose(data, &wr.Options), depth)
 			return
 		}
 		if !wr.NoReflect {
@@ -190,14 +190,14 @@ func (wr *Writer) buildJSON(data interface{}, depth int, embedded bool) {
 			}
 			switch kind {
 			case reflect.Struct:
-				wr.buildStruct(rv, depth, embedded)
+				wr.buildStruct(rv, depth, false, nil)
 			case reflect.Slice, reflect.Array:
-				wr.buildSlice(rv, depth)
+				wr.buildSlice(rv, depth, nil)
 			default:
 				// Not much should get here except Map, Complex and un-decomposable
 				// values.
 				dec := alt.Decompose(data, &wr.Options)
-				wr.buildJSON(dec, depth, false)
+				wr.buildJSON(dec, depth)
 				return
 			}
 		} else if wr.strict {
@@ -287,7 +287,7 @@ func (wr *Writer) buildArray(n gen.Array, depth int) {
 				wr.buf = append(wr.buf, ',')
 			}
 			wr.buf = append(wr.buf, []byte(cs)...)
-			wr.buildJSON(m, d2, false)
+			wr.buildJSON(m, d2)
 		}
 		wr.buf = append(wr.buf, []byte(is)...)
 	} else {
@@ -295,7 +295,7 @@ func (wr *Writer) buildArray(n gen.Array, depth int) {
 			if 0 < j {
 				wr.buf = append(wr.buf, ',')
 			}
-			wr.buildJSON(m, depth, false)
+			wr.buildJSON(m, depth)
 		}
 	}
 	wr.buf = append(wr.buf, ']')
@@ -335,7 +335,7 @@ func (wr *Writer) buildSimpleArray(n []interface{}, depth int) {
 				wr.buf = append(wr.buf, ',')
 			}
 			wr.buf = append(wr.buf, []byte(cs)...)
-			wr.buildJSON(m, d2, false)
+			wr.buildJSON(m, d2)
 		}
 		wr.buf = append(wr.buf, []byte(is)...)
 	} else {
@@ -343,7 +343,7 @@ func (wr *Writer) buildSimpleArray(n []interface{}, depth int) {
 			if 0 < j {
 				wr.buf = append(wr.buf, ',')
 			}
-			wr.buildJSON(m, depth, false)
+			wr.buildJSON(m, depth)
 		}
 	}
 	wr.buf = append(wr.buf, ']')
@@ -399,7 +399,7 @@ func (wr *Writer) buildObject(n gen.Object, depth int) {
 				wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buf = append(wr.buf, ' ')
-				wr.buildJSON(m, d2, false)
+				wr.buildJSON(m, d2)
 			}
 		} else {
 			for k, m := range n {
@@ -415,7 +415,7 @@ func (wr *Writer) buildObject(n gen.Object, depth int) {
 				wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buf = append(wr.buf, ' ')
-				wr.buildJSON(m, d2, false)
+				wr.buildJSON(m, d2)
 			}
 		}
 		wr.buf = append(wr.buf, []byte(is)...)
@@ -438,7 +438,7 @@ func (wr *Writer) buildObject(n gen.Object, depth int) {
 				}
 				wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
-				wr.buildJSON(m, d2, false)
+				wr.buildJSON(m, d2)
 			}
 		} else {
 			for k, m := range n {
@@ -452,7 +452,7 @@ func (wr *Writer) buildObject(n gen.Object, depth int) {
 				}
 				wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
-				wr.buildJSON(m, d2, false)
+				wr.buildJSON(m, d2)
 			}
 		}
 	}
@@ -509,7 +509,7 @@ func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
 				wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buf = append(wr.buf, ' ')
-				wr.buildJSON(m, d2, false)
+				wr.buildJSON(m, d2)
 			}
 		} else {
 			for k, m := range n {
@@ -525,7 +525,7 @@ func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
 				wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
 				wr.buf = append(wr.buf, ' ')
-				wr.buildJSON(m, d2, false)
+				wr.buildJSON(m, d2)
 			}
 		}
 		wr.buf = append(wr.buf, []byte(is)...)
@@ -548,7 +548,7 @@ func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
 				}
 				wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
-				wr.buildJSON(m, d2, false)
+				wr.buildJSON(m, d2)
 			}
 		} else {
 			for k, m := range n {
@@ -562,15 +562,17 @@ func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
 				}
 				wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
 				wr.buf = append(wr.buf, ':')
-				wr.buildJSON(m, d2, false)
+				wr.buildJSON(m, d2)
 			}
 		}
 	}
 	wr.buf = append(wr.buf, '}')
 }
 
-func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool) {
-	st := ojg.GetStruct(rv.Interface())
+func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool, st *ojg.Struct) {
+	if st == nil {
+		st = ojg.GetStruct(rv.Interface())
+	}
 	var fields []*ojg.Field
 	d2 := depth + 1
 	if wr.NestEmbed {
@@ -619,6 +621,7 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool) {
 			cs = spaces[0:x]
 		}
 		for _, fi := range fields {
+			// TBD should be same as no indent
 			v, omit := fi.Value(rv, wr.OmitNil, embedded)
 			if omit || (wr.OmitNil && v == nil) {
 				continue
@@ -631,7 +634,7 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool) {
 			wr.buf = append(wr.buf, []byte(cs)...)
 			wr.buf = ojg.AppendJSONString(wr.buf, fi.Key, !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, []byte{':', ' '}...)
-			wr.buildJSON(v, d2, true)
+			wr.buildJSON(v, d2)
 		}
 		wr.buf = append(wr.buf, []byte(is)...)
 	} else {
@@ -647,7 +650,27 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool) {
 				}
 				continue
 			}
-			wr.buildJSON(v, d2, true)
+			var fv reflect.Value
+			kind := fi.Kind
+			if kind == reflect.Ptr {
+				fv = reflect.ValueOf(v).Elem()
+				kind = fv.Kind()
+				v = fv.Interface()
+			}
+			switch kind {
+			case reflect.Struct:
+				if !fv.IsValid() {
+					fv = reflect.ValueOf(v)
+				}
+				wr.buildStruct(fv, d2, true, fi.Elem)
+			case reflect.Slice, reflect.Array:
+				if !fv.IsValid() {
+					fv = reflect.ValueOf(v)
+				}
+				wr.buildSlice(fv, d2, fi.Elem)
+			default:
+				wr.buildJSON(v, d2)
+			}
 			wr.buf = append(wr.buf, ',')
 			empty = false
 		}
@@ -658,7 +681,8 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool) {
 	wr.buf = append(wr.buf, '}')
 }
 
-func (wr *Writer) buildSlice(rv reflect.Value, depth int) {
+func (wr *Writer) buildSlice(rv reflect.Value, depth int, st *ojg.Struct) {
+	//fmt.Printf("*** build slice with %v\n", st)
 	d2 := depth + 1
 	end := rv.Len()
 	wr.buf = append(wr.buf, '[')
@@ -689,6 +713,7 @@ func (wr *Writer) buildSlice(rv reflect.Value, depth int) {
 			cs = spaces[0:x]
 		}
 		for j := 0; j < end; j++ {
+			// TBD like no indent
 			if 0 < j {
 				wr.buf = append(wr.buf, ',')
 			}
@@ -696,11 +721,11 @@ func (wr *Writer) buildSlice(rv reflect.Value, depth int) {
 			rm := rv.Index(j)
 			switch rm.Kind() {
 			case reflect.Struct:
-				wr.buildStruct(rm, d2, false)
+				wr.buildStruct(rm, d2, false, st)
 			case reflect.Slice, reflect.Array:
-				wr.buildSlice(rm, d2)
+				wr.buildSlice(rm, d2, st)
 			default:
-				wr.buildJSON(rm.Interface(), d2, false)
+				wr.buildJSON(rm.Interface(), d2)
 			}
 		}
 		wr.buf = append(wr.buf, []byte(is)...)
@@ -710,13 +735,17 @@ func (wr *Writer) buildSlice(rv reflect.Value, depth int) {
 				wr.buf = append(wr.buf, ',')
 			}
 			rm := rv.Index(j)
+			if rm.Kind() == reflect.Ptr {
+				rm = rm.Elem()
+			}
 			switch rm.Kind() {
 			case reflect.Struct:
-				wr.buildStruct(rm, d2, false)
+				wr.buildStruct(rm, d2, false, st)
 			case reflect.Slice, reflect.Array:
-				wr.buildSlice(rm, d2)
+				wr.buildSlice(rm, d2, st)
 			default:
-				wr.buildJSON(rm.Interface(), d2, false)
+				// TBD handle maps as well
+				wr.buildJSON(rm.Interface(), d2)
 			}
 		}
 	}

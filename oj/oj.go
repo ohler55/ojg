@@ -79,6 +79,7 @@ func ValidateReader(r io.Reader) error {
 // pointed to by vp.
 func Unmarshal(data []byte, vp interface{}, recomposer ...*alt.Recomposer) (err error) {
 	p := Parser{}
+	p.num.ForceFloat = true
 	var v interface{}
 	if v, err = p.Parse(data); err == nil {
 		if 0 < len(recomposer) {

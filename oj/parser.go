@@ -47,9 +47,12 @@ type Parser struct {
 // pointed to by vp.
 func (p *Parser) Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomposer) (err error) {
 	var v interface{}
+	orig := p.num.ForceFloat
+	p.num.ForceFloat = true
 	if v, err = p.Parse(data); err == nil {
 		_, err = alt.Recompose(v, vp)
 	}
+	p.num.ForceFloat = orig
 	return
 }
 

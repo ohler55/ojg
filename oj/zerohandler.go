@@ -2,10 +2,6 @@
 
 package oj
 
-import (
-	"github.com/ohler55/ojg/gen"
-)
-
 // ZeroHandler is a TokenHandler whose functions do nothing. It is used as an
 // embedded member for TokenHandlers that don't care about all of the
 // TokenHandler functions.
@@ -31,7 +27,7 @@ func (z *ZeroHandler) Float(float64) {
 
 // Number is called when a JSON number is encountered that does not fit
 // into an int64 or float64.
-func (z *ZeroHandler) Number(gen.Big) {
+func (z *ZeroHandler) Number(string) {
 }
 
 // String is called when a JSON string is encountered.

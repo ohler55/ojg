@@ -3,6 +3,7 @@
 package sen
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"math"
@@ -533,6 +534,8 @@ func (t *Tokenizer) handleNum(off int) {
 	case float64:
 		t.handler.Float(tn)
 	case string:
-		t.handler.Number(gen.Big(tn))
+		t.handler.Number(tn)
+	case json.Number:
+		t.handler.Number(string(tn))
 	}
 }

@@ -370,10 +370,12 @@ func BenchmarkMarshalFlat(b *testing.B) {
 	}
 }
 
-func BenchmarkMarshalNest(b *testing.B) {
+func BenchmarkMarshalNestList(b *testing.B) {
 	n := Nest{
 		List: []*Dummy{
 			{Val: 1},
+			{Val: 2},
+			{Val: 3},
 		},
 	}
 	for i := 0; i < b.N; i++ {

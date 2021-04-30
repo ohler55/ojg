@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/sen"
 	"github.com/ohler55/ojg/tt"
@@ -34,7 +33,7 @@ func (h *testHandler) Float(v float64) {
 	h.buf = append(h.buf, fmt.Sprintf("%g ", v)...)
 }
 
-func (h *testHandler) Number(v gen.Big) {
+func (h *testHandler) Number(v string) {
 	h.buf = append(h.buf, fmt.Sprintf("%s ", v)...)
 }
 

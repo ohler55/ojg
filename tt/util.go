@@ -3,6 +3,7 @@
 package tt
 
 import (
+	"encoding/json"
 	"fmt"
 	"runtime"
 	"strings"
@@ -91,6 +92,8 @@ func asString(v interface{}) (s string, ok bool) {
 	case string:
 		s = tv
 	case gen.String:
+		s = string(tv)
+	case json.Number:
 		s = string(tv)
 	default:
 		ok = false

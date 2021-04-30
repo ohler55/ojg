@@ -2,10 +2,6 @@
 
 package oj
 
-import (
-	"github.com/ohler55/ojg/gen"
-)
-
 // TokenHandler describes an interface for handling tokens when using the
 // Tokenizer for parsing JSON or SEN documents.
 type TokenHandler interface {
@@ -24,7 +20,7 @@ type TokenHandler interface {
 
 	// Number is called when a JSON number is encountered that does not fit
 	// into an int64 or float64.
-	Number(gen.Big)
+	Number(string)
 
 	// String is called when a JSON string is encountered.
 	String(string)
