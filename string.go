@@ -90,7 +90,7 @@ func AppendJSONString(buf []byte, s string, htmlSafe bool) []byte {
 			if start < i {
 				buf = append(buf, s[start:i]...)
 			}
-			buf = append(buf, []byte{'\\', 'u', '0', '0'}...)
+			buf = append(buf, `\u00`...)
 			buf = append(buf, hex[(b>>4)&0x0f])
 			buf = append(buf, hex[b&0x0f])
 			start = i + 1
@@ -99,7 +99,7 @@ func AppendJSONString(buf []byte, s string, htmlSafe bool) []byte {
 				if start < i {
 					buf = append(buf, s[start:i]...)
 				}
-				buf = append(buf, []byte{'\\', 'u', '0', '0'}...)
+				buf = append(buf, `\u00`...)
 				buf = append(buf, hex[(b>>4)&0x0f])
 				buf = append(buf, hex[b&0x0f])
 				start = i + 1

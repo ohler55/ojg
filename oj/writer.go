@@ -593,8 +593,12 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool, st *oj
 		}
 	}
 	wr.buf = append(wr.buf, '{')
-	first := true
+	empty := true
+	var v interface{}
+	var has bool
+	var wrote bool
 	if wr.Tab || 0 < wr.Indent {
+		indented := false
 		var is string
 		var cs string
 		if wr.Tab {
@@ -621,29 +625,53 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool, st *oj
 			cs = spaces[0:x]
 		}
 		for _, fi := range fields {
-			// TBD should be same as no indent
-			v, omit := fi.Value(rv, wr.OmitNil, embedded)
-			if omit || (wr.OmitNil && v == nil) {
+			if !indented {
+				wr.buf = append(wr.buf, []byte(cs)...)
+				indented = true
+			}
+			wr.buf, v, wrote, has = fi.Append(wr.buf, rv, embedded)
+			if !has {
+				if wrote {
+					empty = false
+					indented = false
+				}
 				continue
 			}
-			if first {
-				first = false
-			} else {
-				wr.buf = append(wr.buf, ',')
+			indented = false
+			var fv reflect.Value
+			kind := fi.Kind
+			if kind == reflect.Ptr {
+				fv = reflect.ValueOf(v).Elem()
+				kind = fv.Kind()
+				v = fv.Interface()
 			}
-			wr.buf = append(wr.buf, []byte(cs)...)
-			wr.buf = ojg.AppendJSONString(wr.buf, fi.Key, !wr.HTMLUnsafe)
-			wr.buf = append(wr.buf, []byte{':', ' '}...)
-			wr.buildJSON(v, d2)
+			switch kind {
+			case reflect.Struct:
+				if !fv.IsValid() {
+					fv = reflect.ValueOf(v)
+				}
+				wr.buildStruct(fv, d2, true, fi.Elem)
+			case reflect.Slice, reflect.Array:
+				if !fv.IsValid() {
+					fv = reflect.ValueOf(v)
+				}
+				wr.buildSlice(fv, d2, fi.Elem)
+			default:
+				wr.buildJSON(v, d2)
+			}
+			wr.buf = append(wr.buf, ',')
+			empty = false
 		}
-		wr.buf = append(wr.buf, []byte(is)...)
+		if indented {
+			wr.buf = wr.buf[:len(wr.buf)-len(cs)]
+		}
+		if !empty {
+			wr.buf = wr.buf[:len(wr.buf)-1]
+			wr.buf = append(wr.buf, []byte(is)...)
+		}
 	} else {
-		var v interface{}
-		var has bool
-		var wrote bool
-		empty := true
 		for _, fi := range fields {
-			wr.buf, v, wrote, has = fi.Append(wr.buf, rv, wr.OmitNil, embedded)
+			wr.buf, v, wrote, has = fi.Append(wr.buf, rv, embedded)
 			if !has {
 				if wrote {
 					empty = false
@@ -685,6 +713,10 @@ func (wr *Writer) buildSlice(rv reflect.Value, depth int, st *ojg.Struct) {
 	//fmt.Printf("*** build slice with %v\n", st)
 	d2 := depth + 1
 	end := rv.Len()
+
+	// TBD if marshal and nil (as apposed to empty) the null
+	//  use wr.strict field as indicator of marshal called?
+
 	wr.buf = append(wr.buf, '[')
 	if wr.Tab || 0 < wr.Indent {
 		var is string

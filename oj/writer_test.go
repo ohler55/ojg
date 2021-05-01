@@ -354,6 +354,45 @@ func TestJSONBad(t *testing.T) {
 	tt.Equal(t, 0, len(out))
 }
 
+func TestMarshalStruct(t *testing.T) {
+	n := Nest{
+		List: []*Dummy{
+			{Val: 1},
+			{Val: 2},
+		},
+	}
+	j, err := oj.Marshal(&n)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"List":[{"Val":1},{"Val":2}]}`, string(j))
+
+	j, err = oj.Marshal(&n, 2)
+	tt.Nil(t, err)
+	tt.Equal(t, `{
+  "List":[
+    {
+      "Val":1
+    },
+    {
+      "Val":2
+    }
+  ]
+}`, string(j))
+
+	type empty struct {
+		X int `json:"x,omitempty"`
+		Y int `json:"y,omitempty"`
+	}
+	j, err = oj.Marshal(&empty{X: 0, Y: 0}, 2)
+	tt.Nil(t, err)
+	tt.Equal(t, `{}`, string(j))
+
+	j, err = oj.Marshal(&empty{X: 1, Y: 0}, 2)
+	tt.Nil(t, err)
+	tt.Equal(t, `{
+  "x":1
+}`, string(j))
+}
+
 func BenchmarkMarshalFlat(b *testing.B) {
 	m := Mix{
 		Val:   1,

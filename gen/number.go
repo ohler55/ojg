@@ -110,12 +110,16 @@ func (n *Number) FillBig() {
 func (n *Number) AsNum() (num interface{}) {
 	if 0 < len(n.BigBuf) {
 		num = json.Number(n.BigBuf)
-	} else if !n.ForceFloat && n.Div == 1 && n.Exp == 0 {
+	} else if n.Div == 1 && n.Exp == 0 {
 		i := int64(n.I)
 		if n.Neg {
 			i = -i
 		}
-		num = i
+		if n.ForceFloat {
+			num = float64(i)
+		} else {
+			num = i
+		}
 	} else {
 		f := float64(n.I)
 		if 0 < n.Frac {

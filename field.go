@@ -193,7 +193,7 @@ func (fi *Field) Value(rv reflect.Value, omitNil bool, embedded bool) (v interfa
 	return
 }
 
-func (fi *Field) Append(buf []byte, rv reflect.Value, omitNil bool, embedded bool) ([]byte, interface{}, bool, bool) {
+func (fi *Field) Append(buf []byte, rv reflect.Value, embedded bool) ([]byte, interface{}, bool, bool) {
 	var v interface{}
 	var fv reflect.Value
 	var ptr uintptr
@@ -219,7 +219,7 @@ func (fi *Field) Append(buf []byte, rv reflect.Value, omitNil bool, embedded boo
 			} else {
 				buf = append(buf, "true"...)
 			}
-		} else if fi.omitEmpty {
+		} else if !fi.omitEmpty {
 			buf = append(buf, fi.jkey...)
 			if fi.asString {
 				buf = append(buf, `"false"`...)
@@ -369,7 +369,7 @@ func (fi *Field) Append(buf []byte, rv reflect.Value, omitNil bool, embedded boo
 
 	case reflect.String:
 		s := v.(string)
-		if len(s) == 0 && fi.omitEmpty {
+		if fi.omitEmpty && len(s) == 0 {
 			return buf, nil, false, false
 		}
 		buf = append(buf, fi.jkey...)
