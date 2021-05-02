@@ -26,6 +26,7 @@ type Writer struct {
 	ojg.Options
 	buf    []byte
 	w      io.Writer
+	findex uint
 	strict bool
 }
 
@@ -50,6 +51,9 @@ func (wr *Writer) MustJSON(data interface{}) []byte {
 		wr.buf = make([]byte, 0, wr.InitSize)
 	} else {
 		wr.buf = wr.buf[:0]
+	}
+	if wr.findex == 0 {
+		wr.findex = wr.FieldsIndex()
 	}
 	wr.buildJSON(data, 0)
 
@@ -84,6 +88,9 @@ func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
 		wr.buf = make([]byte, 0, wr.InitSize)
 	} else {
 		wr.buf = wr.buf[:0]
+	}
+	if wr.findex == 0 {
+		wr.findex = wr.FieldsIndex()
 	}
 	if wr.Color {
 		wr.cbuildJSON(data, 0)
@@ -177,10 +184,6 @@ func (wr *Writer) buildJSON(data interface{}, depth int) {
 			wr.buildJSON(data, depth)
 			return
 		}
-		if 0 < len(wr.CreateKey) {
-			wr.buildJSON(alt.Decompose(data, &wr.Options), depth)
-			return
-		}
 		if !wr.NoReflect {
 			rv := reflect.ValueOf(data)
 			kind := rv.Kind()
@@ -190,7 +193,7 @@ func (wr *Writer) buildJSON(data interface{}, depth int) {
 			}
 			switch kind {
 			case reflect.Struct:
-				wr.buildStruct(rv, depth, false, nil)
+				wr.buildStruct(rv, depth, nil)
 			case reflect.Slice, reflect.Array:
 				wr.buildSlice(rv, depth, nil)
 			default:
@@ -569,7 +572,7 @@ func (wr *Writer) buildSimpleObject(n map[string]interface{}, depth int) {
 	wr.buf = append(wr.buf, '}')
 }
 
-func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool, st *ojg.Struct) {
+func (wr *Writer) buildStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 	if st == nil {
 		st = ojg.GetStruct(rv.Interface())
 	}
@@ -624,14 +627,28 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool, st *oj
 			}
 			cs = spaces[0:x]
 		}
+		if 0 < len(wr.CreateKey) {
+			wr.buf = append(wr.buf, []byte(cs)...)
+			wr.buf = append(wr.buf, '"')
+			wr.buf = append(wr.buf, wr.CreateKey...)
+			wr.buf = append(wr.buf, `": "`...)
+			if wr.FullTypePath {
+				wr.buf = append(wr.buf, (st.Type.PkgPath() + "/" + st.Type.Name())...)
+			} else {
+				wr.buf = append(wr.buf, st.Type.Name()...)
+			}
+			wr.buf = append(wr.buf, `",`...)
+			empty = false
+		}
 		for _, fi := range fields {
 			if !indented {
 				wr.buf = append(wr.buf, []byte(cs)...)
 				indented = true
 			}
-			wr.buf, v, wrote, has = fi.Append(wr.buf, rv, embedded)
+			wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, !wr.HTMLUnsafe)
 			if !has {
 				if wrote {
+					wr.buf = append(wr.buf, ',')
 					empty = false
 					indented = false
 				}
@@ -650,7 +667,7 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool, st *oj
 				if !fv.IsValid() {
 					fv = reflect.ValueOf(v)
 				}
-				wr.buildStruct(fv, d2, true, fi.Elem)
+				wr.buildStruct(fv, d2, fi.Elem)
 			case reflect.Slice, reflect.Array:
 				if !fv.IsValid() {
 					fv = reflect.ValueOf(v)
@@ -670,10 +687,23 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool, st *oj
 			wr.buf = append(wr.buf, []byte(is)...)
 		}
 	} else {
+		if 0 < len(wr.CreateKey) {
+			wr.buf = append(wr.buf, '"')
+			wr.buf = append(wr.buf, wr.CreateKey...)
+			wr.buf = append(wr.buf, `":"`...)
+			if wr.FullTypePath {
+				wr.buf = append(wr.buf, (st.Type.PkgPath() + "/" + st.Type.Name())...)
+			} else {
+				wr.buf = append(wr.buf, st.Type.Name()...)
+			}
+			wr.buf = append(wr.buf, `",`...)
+			empty = false
+		}
 		for _, fi := range fields {
-			wr.buf, v, wrote, has = fi.Append(wr.buf, rv, embedded)
+			wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, !wr.HTMLUnsafe)
 			if !has {
 				if wrote {
+					wr.buf = append(wr.buf, ',')
 					empty = false
 				}
 				continue
@@ -690,7 +720,7 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool, st *oj
 				if !fv.IsValid() {
 					fv = reflect.ValueOf(v)
 				}
-				wr.buildStruct(fv, d2, true, fi.Elem)
+				wr.buildStruct(fv, d2, fi.Elem)
 			case reflect.Slice, reflect.Array:
 				if !fv.IsValid() {
 					fv = reflect.ValueOf(v)
@@ -710,7 +740,6 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, embedded bool, st *oj
 }
 
 func (wr *Writer) buildSlice(rv reflect.Value, depth int, st *ojg.Struct) {
-	//fmt.Printf("*** build slice with %v\n", st)
 	d2 := depth + 1
 	end := rv.Len()
 
@@ -753,7 +782,7 @@ func (wr *Writer) buildSlice(rv reflect.Value, depth int, st *ojg.Struct) {
 			rm := rv.Index(j)
 			switch rm.Kind() {
 			case reflect.Struct:
-				wr.buildStruct(rm, d2, false, st)
+				wr.buildStruct(rm, d2, st)
 			case reflect.Slice, reflect.Array:
 				wr.buildSlice(rm, d2, st)
 			default:
@@ -772,7 +801,7 @@ func (wr *Writer) buildSlice(rv reflect.Value, depth int, st *ojg.Struct) {
 			}
 			switch rm.Kind() {
 			case reflect.Struct:
-				wr.buildStruct(rm, d2, false, st)
+				wr.buildStruct(rm, d2, st)
 			case reflect.Slice, reflect.Array:
 				wr.buildSlice(rm, d2, st)
 			default:

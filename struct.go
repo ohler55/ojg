@@ -10,6 +10,15 @@ import (
 	"unsafe"
 )
 
+const (
+	MaskByTag  = 0x10
+	MaskExact  = 0x08 // exact key vs lowwer case first letter
+	MaskPretty = 0x04
+	MaskNested = 0x02
+	MaskSen    = 0x01
+	MaskSet    = 0x20
+)
+
 // Struct holds reflect information about a struct.
 type Struct struct {
 	Type    reflect.Type
@@ -60,12 +69,12 @@ func buildStruct(rt reflect.Type, x uintptr) (st *Struct) {
 	st = &Struct{Type: rt}
 	structMap[x] = st
 
-	st.ByTag = buildTagFields(st.Type)
-	sort.Slice(st.ByTag, func(i, j int) bool { return 0 < strings.Compare(st.ByTag[i].Key, st.ByTag[j].Key) })
-	st.ByName = buildNameFields(st.Type)
-	sort.Slice(st.ByName, func(i, j int) bool { return 0 < strings.Compare(st.ByName[i].Key, st.ByName[j].Key) })
-	st.ByLow = buildLowFields(st.Type)
-	sort.Slice(st.ByLow, func(i, j int) bool { return 0 < strings.Compare(st.ByLow[i].Key, st.ByLow[j].Key) })
+	st.ByTag = buildTagFields(st.Type, false)
+	sort.Slice(st.ByTag, func(i, j int) bool { return 0 > strings.Compare(st.ByTag[i].Key, st.ByTag[j].Key) })
+	st.ByName = buildNameFields(st.Type, false)
+	sort.Slice(st.ByName, func(i, j int) bool { return 0 > strings.Compare(st.ByName[i].Key, st.ByName[j].Key) })
+	st.ByLow = buildLowFields(st.Type, false)
+	sort.Slice(st.ByLow, func(i, j int) bool { return 0 > strings.Compare(st.ByLow[i].Key, st.ByLow[j].Key) })
 
 	st.OutTag = buildOutTagFields(st.Type)
 	st.OutName = buildOutNameFields(st.Type)
@@ -74,7 +83,7 @@ func buildStruct(rt reflect.Type, x uintptr) (st *Struct) {
 	return
 }
 
-func buildTagFields(rt reflect.Type) (fa []*Field) {
+func buildTagFields(rt reflect.Type, anon bool) (fa []*Field) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
@@ -82,50 +91,45 @@ func buildTagFields(rt reflect.Type) (fa []*Field) {
 			continue
 		}
 		if f.Anonymous {
-			for _, fi := range buildTagFields(f.Type) {
+			for _, fi := range buildTagFields(f.Type, true) {
 				fi.index = append([]int{i}, fi.index...)
-				fi.direct = false
+				fi.offset += f.Offset
 				fa = append(fa, fi)
 			}
 		} else {
-			fi := Field{
-				Type:   f.Type,
-				Key:    f.Name,
-				Kind:   f.Type.Kind(),
-				index:  f.Index,
-				offset: f.Offset,
-			}
+			omitEmpty := false
+			asString := false
+			key := f.Name
 			if tag, ok := f.Tag.Lookup("json"); ok && 0 < len(tag) {
 				parts := strings.Split(tag, ",")
 				switch parts[0] {
 				case "":
-					fi.Key = f.Name
+					key = f.Name
 				case "-":
 					if 1 < len(parts) {
-						fi.Key = "-"
+						key = "-"
 					} else {
 						continue
 					}
 				default:
-					fi.Key = parts[0]
+					key = parts[0]
 				}
 				for _, p := range parts[1:] {
 					switch p {
 					case "omitempty":
-						fi.setOmitEmpty()
+						omitEmpty = true
 					case "string":
-						fi.asString = true
+						asString = true
 					}
 				}
 			}
-			fi.setup()
-			fa = append(fa, &fi)
+			fa = append(fa, newField(f, key, omitEmpty, asString, anon))
 		}
 	}
 	return
 }
 
-func buildNameFields(rt reflect.Type) (fa []*Field) {
+func buildNameFields(rt reflect.Type, anon bool) (fa []*Field) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
@@ -133,27 +137,18 @@ func buildNameFields(rt reflect.Type) (fa []*Field) {
 			continue
 		}
 		if f.Anonymous {
-			for _, fi := range buildNameFields(f.Type) {
+			for _, fi := range buildNameFields(f.Type, true) {
 				fi.index = append([]int{i}, fi.index...)
-				fi.direct = false
 				fa = append(fa, fi)
 			}
 		} else {
-			fi := Field{
-				Type:   f.Type,
-				Key:    f.Name,
-				Kind:   f.Type.Kind(),
-				index:  f.Index,
-				offset: f.Offset,
-			}
-			fi.setup()
-			fa = append(fa, &fi)
+			fa = append(fa, newField(f, f.Name, false, false, anon))
 		}
 	}
 	return
 }
 
-func buildLowFields(rt reflect.Type) (fa []*Field) {
+func buildLowFields(rt reflect.Type, anon bool) (fa []*Field) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
@@ -161,22 +156,13 @@ func buildLowFields(rt reflect.Type) (fa []*Field) {
 			continue
 		}
 		if f.Anonymous {
-			for _, fi := range buildLowFields(f.Type) {
+			for _, fi := range buildLowFields(f.Type, true) {
 				fi.index = append([]int{i}, fi.index...)
-				fi.direct = false
 				fa = append(fa, fi)
 			}
 		} else {
 			name[0] = name[0] | 0x20
-			fi := Field{
-				Type:   f.Type,
-				Key:    string(name),
-				Kind:   f.Type.Kind(),
-				index:  f.Index,
-				offset: f.Offset,
-			}
-			fi.setup()
-			fa = append(fa, &fi)
+			fa = append(fa, newField(f, string(name), false, false, anon))
 		}
 	}
 	return
@@ -189,13 +175,9 @@ func buildOutTagFields(rt reflect.Type) (fa []*Field) {
 		if len(name) == 0 || 'a' <= name[0] {
 			continue
 		}
-		fi := Field{
-			Type:   f.Type,
-			Key:    f.Name,
-			Kind:   f.Type.Kind(),
-			index:  f.Index,
-			offset: f.Offset,
-		}
+		omitEmpty := false
+		asString := false
+		key := f.Name
 		if tag, ok := f.Tag.Lookup("json"); ok && 0 < len(tag) {
 			parts := strings.Split(tag, ",")
 			switch parts[0] {
@@ -203,24 +185,23 @@ func buildOutTagFields(rt reflect.Type) (fa []*Field) {
 				// ok as is
 			case "-":
 				if 1 < len(parts) {
-					fi.Key = "-"
+					key = "-"
 				} else {
 					continue
 				}
 			default:
-				fi.Key = parts[0]
+				key = parts[0]
 			}
 			for _, p := range parts[1:] {
 				switch p {
 				case "omitempty":
-					fi.setOmitEmpty()
+					omitEmpty = true
 				case "string":
-					fi.asString = true
+					asString = true
 				}
 			}
 		}
-		fi.setup()
-		fa = append(fa, &fi)
+		fa = append(fa, newField(f, key, omitEmpty, asString, false))
 	}
 	sort.Slice(fa, func(i, j int) bool { return 0 < strings.Compare(fa[i].Key, fa[j].Key) })
 	return
@@ -233,15 +214,7 @@ func buildOutNameFields(rt reflect.Type) (fa []*Field) {
 		if len(name) == 0 || 'a' <= name[0] {
 			continue
 		}
-		fi := Field{
-			Type:   f.Type,
-			Key:    f.Name,
-			Kind:   f.Type.Kind(),
-			index:  f.Index,
-			offset: f.Offset,
-		}
-		fi.setup()
-		fa = append(fa, &fi)
+		fa = append(fa, newField(f, f.Name, false, false, false))
 	}
 	sort.Slice(fa, func(i, j int) bool { return 0 < strings.Compare(fa[i].Key, fa[j].Key) })
 	return
@@ -255,15 +228,7 @@ func buildOutLowFields(rt reflect.Type) (fa []*Field) {
 			continue
 		}
 		name[0] = name[0] | 0x20
-		fi := Field{
-			Type:   f.Type,
-			Key:    string(name),
-			Kind:   f.Type.Kind(),
-			index:  f.Index,
-			offset: f.Offset,
-		}
-		fi.setup()
-		fa = append(fa, &fi)
+		fa = append(fa, newField(f, string(name), false, false, false))
 	}
 	sort.Slice(fa, func(i, j int) bool { return 0 < strings.Compare(fa[i].Key, fa[j].Key) })
 	return

@@ -81,6 +81,8 @@ func TestString(t *testing.T) {
 	tm := time.Date(2020, time.May, 7, 19, 29, 19, 123456789, time.UTC)
 	tm2 := time.Unix(-10, -100000000)
 	for i, d := range []data{
+		{value: &Dummy{Val: 3}, expect: `{"^":"Dummy","val":3}`, options: &oj.Options{Sort: true, CreateKey: "^"}},
+
 		{value: nil, expect: "null"},
 		{value: true, expect: "true"},
 		{value: false, expect: "false"},
@@ -393,6 +395,27 @@ func TestMarshalStruct(t *testing.T) {
 }`, string(j))
 }
 
+type One struct {
+	X int
+}
+
+type Two struct {
+	Y int
+	One
+}
+
+type Three struct {
+	Two
+	Z int
+}
+
+func TestMarshalNestedStruct(t *testing.T) {
+	obj := &Three{Two: Two{One: One{X: 1}, Y: 2}, Z: 3}
+	j, err := oj.Marshal(obj)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"X":1,"Y":2,"Z":3}`, string(j))
+}
+
 func BenchmarkMarshalFlat(b *testing.B) {
 	m := Mix{
 		Val:   1,
@@ -419,6 +442,21 @@ func BenchmarkMarshalNestList(b *testing.B) {
 	}
 	for i := 0; i < b.N; i++ {
 		if _, err := oj.Marshal(&n); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+type Play struct {
+	X int `json:"x"`
+	Y int `json:"y"`
+	Z int `json:"z"`
+}
+
+func BenchmarkMarshalPlay(b *testing.B) {
+	play := Play{X: 1, Y: 2, Z: 3}
+	for i := 0; i < b.N; i++ {
+		if _, err := oj.Marshal(&play); err != nil {
 			b.Fatal(err)
 		}
 	}

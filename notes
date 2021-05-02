@@ -1,31 +1,15 @@
 
+
+- fields Value
+- alt decompose
+- index fields list from options
+
 - null or empty list?
  - difference in behavior
 
-- struct fields
- - calculate index for fields (24 lists)
-  - tag 0x10 - precedence of low/exact
-  - low, exact 0x08
-  - nested 0x04
-  - pretty - 0x02
-  - sen 0x01
-  - set flag 0x20
- - use index for picking fields list
-  - repeat/reference where dups
- - lazy calculations of fields?
-  - on use of writer check if findex is != 0
-  - check fields for index is set
- - just need embedded and htmlsafe with this approach
-
-- field.append
- - args
-  - pretty (0 < indent)
-  - htmlSafe
- - swap out functions for different features?
-  - pretty
-
 - Marshal for reflects
  - how to reduce the number of allocs?
+ - reduce branching
 
 - SEN
  - update like oj

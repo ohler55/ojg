@@ -245,3 +245,22 @@ func (o *Options) BuildTime(buf []byte, t time.Time) []byte {
 	}
 	return buf
 }
+
+// FieldsIndex calculates the fields index in the Struct. Used internally by
+// several of the OjG packages.
+func (o *Options) FieldsIndex() (index uint) {
+	if o.NestEmbed {
+		index |= MaskNested
+	}
+	if o.UseTags {
+		index |= MaskByTag
+	}
+	if o.KeyExact {
+		index |= MaskExact
+	}
+	if 0 < o.Indent {
+		index |= MaskPretty
+	}
+	index |= MaskSet
+	return
+}

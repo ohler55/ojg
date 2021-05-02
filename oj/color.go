@@ -113,23 +113,11 @@ func (wr *Writer) cbuildJSON(data interface{}, depth int) {
 			return
 		}
 		if 0 < len(wr.CreateKey) {
-			ao := alt.Options{
-				CreateKey:    wr.CreateKey,
-				OmitNil:      wr.OmitNil,
-				FullTypePath: wr.FullTypePath,
-				UseTags:      wr.UseTags,
-			}
-			wr.cbuildJSON(alt.Decompose(data, &ao), depth)
+			wr.cbuildJSON(alt.Decompose(data, &wr.Options), depth)
 			return
 		}
 		if !wr.NoReflect {
-			ao := alt.Options{
-				CreateKey:    wr.CreateKey,
-				OmitNil:      wr.OmitNil,
-				FullTypePath: wr.FullTypePath,
-				UseTags:      wr.UseTags,
-			}
-			if dec := alt.Decompose(data, &ao); dec != nil {
+			if dec := alt.Decompose(data, &wr.Options); dec != nil {
 				wr.cbuildJSON(dec, depth)
 				return
 			}
