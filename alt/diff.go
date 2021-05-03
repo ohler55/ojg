@@ -149,8 +149,8 @@ func diff(v0, v1 interface{}, one bool, ignores ...Path) (diffs []Path) {
 			}
 			opt := &Options{}
 			// TBD optimize by a more direct compare of fields
-			v0 = reflectValue(reflect.ValueOf(v0), v0, opt, false)
-			v1 = reflectValue(reflect.ValueOf(v1), v1, opt, false)
+			v0 = reflectValue(reflect.ValueOf(v0), v0, opt)
+			v1 = reflectValue(reflect.ValueOf(v1), v1, opt)
 			if v0 != nil && v1 != nil {
 				return diff(v0, v1, one, ignores...)
 			}

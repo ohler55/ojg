@@ -8,6 +8,8 @@ import (
 	"unsafe"
 )
 
+var nilValue reflect.Value
+
 // Field hold information about a struct field.
 type Field struct {
 	Type   reflect.Type
@@ -15,321 +17,321 @@ type Field struct {
 	Kind   reflect.Kind
 	Elem   *Struct
 	Append func(fi *Field, buf []byte, rv reflect.Value, safe bool) ([]byte, interface{}, bool, bool)
-	Value  func(fi *Field, rv reflect.Value) (v interface{}, fv *reflect.Value, omit bool)
+	Value  func(fi *Field, rv reflect.Value) (v interface{}, fv reflect.Value, omit bool)
 	jkey   []byte
 	Index  []int
 	offset uintptr
 }
 
-func valBool(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return *(*bool)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nil, false
+func valBool(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return *(*bool)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
 }
 
-func valBoolAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valBoolAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	if *(*bool)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)) {
-		return "true", nil, false
+		return "true", nilValue, false
 	}
-	return "false", nil, false
+	return "false", nilValue, false
 }
 
-func valBoolNotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valBoolNotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*bool)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nil, !v
+	return v, nilValue, !v
 }
 
-func valBoolNotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valBoolNotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	if *(*bool)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)) {
-		return "true", nil, false
+		return "true", nilValue, false
 	}
-	return "false", nil, true
+	return "false", nilValue, true
 }
 
-func valInt(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return *(*int)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nil, false
+func valInt(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return *(*int)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
 }
 
-func valIntAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return strconv.FormatInt(int64(*(*int)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nil, false
+func valIntAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return strconv.FormatInt(int64(*(*int)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nilValue, false
 }
 
-func valIntNotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valIntNotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*int)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nil, v == 0
+	return v, nilValue, v == 0
 }
 
-func valIntNotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valIntNotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*int)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
 	if v == 0 {
-		return nil, nil, true
+		return nil, nilValue, true
 	}
-	return strconv.FormatInt(int64(v), 10), nil, false
+	return strconv.FormatInt(int64(v), 10), nilValue, false
 }
 
-func valInt8(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return *(*int8)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nil, false
+func valInt8(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return *(*int8)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
 }
 
-func valInt8AsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return strconv.FormatInt(int64(*(*int8)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nil, false
+func valInt8AsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return strconv.FormatInt(int64(*(*int8)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nilValue, false
 }
 
-func valInt8NotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valInt8NotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*int8)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nil, v == 0
+	return v, nilValue, v == 0
 }
 
-func valInt8NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valInt8NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*int8)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
 	if v == 0 {
-		return nil, nil, true
+		return nil, nilValue, true
 	}
-	return strconv.FormatInt(int64(v), 10), nil, false
+	return strconv.FormatInt(int64(v), 10), nilValue, false
 }
 
-func valInt16(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return *(*int16)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nil, false
+func valInt16(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return *(*int16)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
 }
 
-func valInt16AsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return strconv.FormatInt(int64(*(*int16)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nil, false
+func valInt16AsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return strconv.FormatInt(int64(*(*int16)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nilValue, false
 }
 
-func valInt16NotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valInt16NotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*int16)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nil, v == 0
+	return v, nilValue, v == 0
 }
 
-func valInt16NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valInt16NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*int16)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
 	if v == 0 {
-		return nil, nil, true
+		return nil, nilValue, true
 	}
-	return strconv.FormatInt(int64(v), 10), nil, false
+	return strconv.FormatInt(int64(v), 10), nilValue, false
 }
 
-func valInt32(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return *(*int32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nil, false
+func valInt32(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return *(*int32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
 }
 
-func valInt32AsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return strconv.FormatInt(int64(*(*int32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nil, false
+func valInt32AsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return strconv.FormatInt(int64(*(*int32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nilValue, false
 }
 
-func valInt32NotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valInt32NotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*int32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nil, v == 0
+	return v, nilValue, v == 0
 }
 
-func valInt32NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valInt32NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*int32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
 	if v == 0 {
-		return nil, nil, true
+		return nil, nilValue, true
 	}
-	return strconv.FormatInt(int64(v), 10), nil, false
+	return strconv.FormatInt(int64(v), 10), nilValue, false
 }
 
-func valInt64(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return *(*int64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nil, false
+func valInt64(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return *(*int64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
 }
 
-func valInt64AsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return strconv.FormatInt(*(*int64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), 10), nil, false
+func valInt64AsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return strconv.FormatInt(*(*int64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), 10), nilValue, false
 }
 
-func valInt64NotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valInt64NotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*int64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nil, v == 0
+	return v, nilValue, v == 0
 }
 
-func valInt64NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valInt64NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*int64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
 	if v == 0 {
-		return nil, nil, true
+		return nil, nilValue, true
 	}
-	return strconv.FormatInt(v, 10), nil, false
+	return strconv.FormatInt(v, 10), nilValue, false
 }
 
-func valUint(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return *(*uint)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nil, false
+func valUint(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return *(*uint)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
 }
 
-func valUintAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return strconv.FormatUint(uint64(*(*uint)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nil, false
+func valUintAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return strconv.FormatUint(uint64(*(*uint)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nilValue, false
 }
 
-func valUintNotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valUintNotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*uint)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nil, v == 0
+	return v, nilValue, v == 0
 }
 
-func valUintNotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valUintNotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*uint)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
 	if v == 0 {
-		return nil, nil, true
+		return nil, nilValue, true
 	}
-	return strconv.FormatUint(uint64(v), 10), nil, false
+	return strconv.FormatUint(uint64(v), 10), nilValue, false
 }
 
-func valUint8(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return *(*uint8)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nil, false
+func valUint8(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return *(*uint8)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
 }
 
-func valUint8AsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return strconv.FormatUint(uint64(*(*uint8)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nil, false
+func valUint8AsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return strconv.FormatUint(uint64(*(*uint8)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nilValue, false
 }
 
-func valUint8NotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valUint8NotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*uint8)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nil, v == 0
+	return v, nilValue, v == 0
 }
 
-func valUint8NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valUint8NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*uint8)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
 	if v == 0 {
-		return nil, nil, true
+		return nil, nilValue, true
 	}
-	return strconv.FormatUint(uint64(v), 10), nil, false
+	return strconv.FormatUint(uint64(v), 10), nilValue, false
 }
 
-func valUint16(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return *(*uint16)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nil, false
+func valUint16(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return *(*uint16)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
 }
 
-func valUint16AsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return strconv.FormatUint(uint64(*(*uint16)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nil, false
+func valUint16AsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return strconv.FormatUint(uint64(*(*uint16)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nilValue, false
 }
 
-func valUint16NotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valUint16NotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*uint16)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nil, v == 0
+	return v, nilValue, v == 0
 }
 
-func valUint16NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valUint16NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*uint16)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
 	if v == 0 {
-		return nil, nil, true
+		return nil, nilValue, true
 	}
-	return strconv.FormatUint(uint64(v), 10), nil, false
+	return strconv.FormatUint(uint64(v), 10), nilValue, false
 }
 
-func valUint32(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return *(*uint32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nil, false
+func valUint32(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return *(*uint32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
 }
 
-func valUint32AsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return strconv.FormatUint(uint64(*(*uint32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nil, false
+func valUint32AsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return strconv.FormatUint(uint64(*(*uint32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nilValue, false
 }
 
-func valUint32NotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valUint32NotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*uint32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nil, v == 0
+	return v, nilValue, v == 0
 }
 
-func valUint32NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valUint32NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*uint32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
 	if v == 0 {
-		return nil, nil, true
+		return nil, nilValue, true
 	}
-	return strconv.FormatUint(uint64(v), 10), nil, false
+	return strconv.FormatUint(uint64(v), 10), nilValue, false
 }
 
-func valUint64(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return *(*uint64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nil, false
+func valUint64(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return *(*uint64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
 }
 
-func valUint64AsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return strconv.FormatUint(*(*uint64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), 10), nil, false
+func valUint64AsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return strconv.FormatUint(*(*uint64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), 10), nilValue, false
 }
 
-func valUint64NotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valUint64NotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*uint64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nil, v == 0
+	return v, nilValue, v == 0
 }
 
-func valUint64NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valUint64NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*uint64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
 	if v == 0 {
-		return nil, nil, true
+		return nil, nilValue, true
 	}
-	return strconv.FormatUint(v, 10), nil, false
+	return strconv.FormatUint(v, 10), nilValue, false
 }
 
-func valFloat32(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return *(*float32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nil, false
+func valFloat32(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return *(*float32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
 }
 
-func valFloat32AsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return strconv.FormatFloat(float64(*(*float32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 'g', -1, 32), nil, false
+func valFloat32AsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return strconv.FormatFloat(float64(*(*float32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 'g', -1, 32), nilValue, false
 }
 
-func valFloat32NotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valFloat32NotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*float32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nil, v == 0.0
+	return v, nilValue, v == 0.0
 }
 
-func valFloat32NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valFloat32NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*float32)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
 	if v == 0.0 {
-		return nil, nil, true
+		return nil, nilValue, true
 	}
-	return strconv.FormatFloat(float64(v), 'g', -1, 32), nil, false
+	return strconv.FormatFloat(float64(v), 'g', -1, 32), nilValue, false
 }
 
-func valFloat64(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return *(*float64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nil, false
+func valFloat64(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return *(*float64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
 }
 
-func valFloat64AsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return strconv.FormatFloat(*(*float64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), 'g', -1, 64), nil, false
+func valFloat64AsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return strconv.FormatFloat(*(*float64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), 'g', -1, 64), nilValue, false
 }
 
-func valFloat64NotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valFloat64NotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*float64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nil, v == 0.0
+	return v, nilValue, v == 0.0
 }
 
-func valFloat64NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valFloat64NotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	v := *(*float64)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
 	if v == 0.0 {
-		return nil, nil, true
+		return nil, nilValue, true
 	}
-	return strconv.FormatFloat(v, 'g', -1, 64), nil, false
+	return strconv.FormatFloat(v, 'g', -1, 64), nilValue, false
 }
 
-func valString(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
-	return rv.FieldByIndex(fi.Index).String(), nil, false
+func valString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
+	return rv.FieldByIndex(fi.Index).String(), nilValue, false
 }
 
-func valStringNotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valStringNotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	s := rv.FieldByIndex(fi.Index).String()
 	if len(s) == 0 {
-		return s, nil, true
+		return s, nilValue, true
 	}
-	return s, nil, false
+	return s, nilValue, false
 }
 
-func valJustVal(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valJustVal(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	fv := rv.FieldByIndex(fi.Index)
-	return fv.Interface(), &fv, false
+	return fv.Interface(), fv, false
 }
 
-func valStruct(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valStruct(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	fv := rv.FieldByIndex(fi.Index)
-	return fv.Interface(), &fv, false
+	return fv.Interface(), fv, false
 }
 
-func valPtrNotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valPtrNotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	fv := rv.FieldByIndex(fi.Index)
 	v := fv.Interface()
-	return v, &fv, v == nil
+	return v, fv, v == nil
 }
 
-func valSliceNotEmpty(fi *Field, rv reflect.Value) (interface{}, *reflect.Value, bool) {
+func valSliceNotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	fv := rv.FieldByIndex(fi.Index)
 	if fv.Len() == 0 {
-		return nil, nil, true
+		return nil, nilValue, true
 	}
-	return fv.Interface(), &fv, false
+	return fv.Interface(), fv, false
 }
 
 func appendBool(fi *Field, buf []byte, rv reflect.Value, safe bool) ([]byte, interface{}, bool, bool) {

@@ -49,7 +49,7 @@ func Decompose(v interface{}, options ...*ojg.Options) interface{} {
 	if opt.Converter != nil {
 		v = opt.Converter.Convert(v)
 	}
-	return decompose(v, opt, false)
+	return decompose(v, opt)
 }
 
 // Alter the data into all simple types converting non simple to simple types
@@ -64,7 +64,7 @@ func Alter(v interface{}, options ...*ojg.Options) interface{} {
 	if opt.Converter != nil {
 		v = opt.Converter.Convert(v)
 	}
-	return alter(v, opt, false)
+	return alter(v, opt)
 }
 
 // Recompose simple data into more complex go types.

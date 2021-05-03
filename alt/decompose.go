@@ -16,7 +16,7 @@ import (
 // 10 so that numbers look correct when displayed in base 10.
 const fracMax = 10000000.0
 
-func decompose(v interface{}, opt *Options, embedded bool) interface{} {
+func decompose(v interface{}, opt *Options) interface{} {
 	switch tv := v.(type) {
 	case nil, bool, int64, float64, string, time.Time:
 	case int:
@@ -46,13 +46,13 @@ func decompose(v interface{}, opt *Options, embedded bool) interface{} {
 	case []interface{}:
 		a := make([]interface{}, len(tv))
 		for i, m := range tv {
-			a[i] = decompose(m, opt, false)
+			a[i] = decompose(m, opt)
 		}
 		v = a
 	case map[string]interface{}:
 		o := map[string]interface{}{}
 		for k, m := range tv {
-			if mv := decompose(m, opt, false); mv != nil || !opt.OmitNil {
+			if mv := decompose(m, opt); mv != nil || !opt.OmitNil {
 				if mv != nil || !opt.OmitNil {
 					o[k] = mv
 				}
@@ -66,7 +66,7 @@ func decompose(v interface{}, opt *Options, embedded bool) interface{} {
 		case ojg.BytesAsArray:
 			a := make([]interface{}, len(tv))
 			for i, m := range tv {
-				a[i] = decompose(m, opt, false)
+				a[i] = decompose(m, opt)
 			}
 			v = a
 		default:
@@ -74,14 +74,14 @@ func decompose(v interface{}, opt *Options, embedded bool) interface{} {
 		}
 	default:
 		if simp, _ := v.(Simplifier); simp != nil {
-			return decompose(simp.Simplify(), opt, false)
+			return decompose(simp.Simplify(), opt)
 		}
-		return reflectValue(reflect.ValueOf(v), v, opt, embedded)
+		return reflectValue(reflect.ValueOf(v), v, opt)
 	}
 	return v
 }
 
-func alter(v interface{}, opt *Options, embedded bool) interface{} {
+func alter(v interface{}, opt *Options) interface{} {
 	switch tv := v.(type) {
 	case bool, nil, int64, float64, string, time.Time:
 	case int:
@@ -110,11 +110,11 @@ func alter(v interface{}, opt *Options, embedded bool) interface{} {
 		v = math.Ldexp(f, i)
 	case []interface{}:
 		for i, m := range tv {
-			tv[i] = alter(m, opt, false)
+			tv[i] = alter(m, opt)
 		}
 	case map[string]interface{}:
 		for k, m := range tv {
-			if mv := alter(m, opt, false); mv != nil || !opt.OmitNil {
+			if mv := alter(m, opt); mv != nil || !opt.OmitNil {
 				if mv != nil || !opt.OmitNil {
 					tv[k] = mv
 				}
@@ -127,7 +127,7 @@ func alter(v interface{}, opt *Options, embedded bool) interface{} {
 		case ojg.BytesAsArray:
 			a := make([]interface{}, len(tv))
 			for i, m := range tv {
-				a[i] = decompose(m, opt, false)
+				a[i] = decompose(m, opt)
 			}
 			v = a
 		default:
@@ -135,19 +135,16 @@ func alter(v interface{}, opt *Options, embedded bool) interface{} {
 		}
 	default:
 		if simp, _ := v.(Simplifier); simp != nil {
-			return alter(simp.Simplify(), opt, false)
+			return alter(simp.Simplify(), opt)
 		}
-		return reflectValue(reflect.ValueOf(v), v, opt, embedded)
+		return reflectValue(reflect.ValueOf(v), v, opt)
 	}
 	return v
 }
 
-func reflectValue(rv reflect.Value, val interface{}, opt *Options, embedded bool) (v interface{}) {
+func reflectValue(rv reflect.Value, val interface{}, opt *Options) (v interface{}) {
 	switch rv.Kind() {
-	case reflect.Interface:
-		fmt.Printf("*** interface %T %v\n", v, v)
-		v = nil
-	case reflect.Invalid, reflect.Uintptr, reflect.UnsafePointer, reflect.Chan, reflect.Func:
+	case reflect.Invalid, reflect.Uintptr, reflect.UnsafePointer, reflect.Chan, reflect.Func, reflect.Interface:
 		v = nil
 	case reflect.Complex64, reflect.Complex128:
 		v = reflectComplex(rv, opt)
@@ -156,21 +153,21 @@ func reflectValue(rv reflect.Value, val interface{}, opt *Options, embedded bool
 	case reflect.Ptr:
 		elem := rv.Elem()
 		if elem.IsValid() && elem.CanInterface() {
-			v = reflectValue(elem, elem.Interface(), opt, false)
+			v = reflectValue(elem, elem.Interface(), opt)
 		} else {
 			v = nil
 		}
 	case reflect.Slice, reflect.Array:
 		v = reflectArray(rv, opt)
 	case reflect.Struct:
-		v = reflectStruct(rv, val, opt, embedded)
+		v = reflectStruct(rv, val, opt)
 	default:
 		v = val
 	}
 	return
 }
 
-func reflectStruct(rv reflect.Value, val interface{}, opt *Options, embedded bool) interface{} {
+func reflectStruct(rv reflect.Value, val interface{}, opt *Options) interface{} {
 	obj := map[string]interface{}{}
 	st := ojg.GetStruct(val)
 	t := st.Type
@@ -200,22 +197,21 @@ func reflectStruct(rv reflect.Value, val interface{}, opt *Options, embedded boo
 		}
 	}
 	for _, fi := range fields {
-		// TBD is using a blank reflect.Value better than a pointer?
 		if v, fv, omit := fi.Value(fi, rv); !omit {
-			if fv == nil {
+			if fv.IsValid() {
+				if simp, _ := v.(Simplifier); simp != nil {
+					v = simp.Simplify()
+				} else if _, ok := v.([]byte); ok {
+					v = decompose(v, opt)
+				} else if opt.NestEmbed && fv.Kind() == reflect.Struct {
+					v = reflectEmbed(fv, v, opt)
+				} else {
+					v = decompose(v, opt)
+				}
 				if !opt.OmitNil || v != nil {
 					obj[fi.Key] = v
 				}
 			} else {
-				if simp, _ := v.(Simplifier); simp != nil {
-					v = simp.Simplify()
-				} else if _, ok := v.([]byte); ok {
-					v = decompose(v, opt, false)
-				} else if opt.NestEmbed {
-					v = reflectEmbed(reflect.ValueOf(v), v, opt)
-				} else {
-					v = decompose(v, opt, false)
-				}
 				if !opt.OmitNil || v != nil {
 					obj[fi.Key] = v
 				}
@@ -260,7 +256,7 @@ func reflectEmbed(rv reflect.Value, val interface{}, opt *Options) interface{} {
 		if fv.Kind() == reflect.Struct {
 			v = reflectEmbed(fv, fv.Interface(), opt)
 		} else {
-			v = decompose(fv.Interface(), opt, false)
+			v = decompose(fv.Interface(), opt)
 		}
 		if !opt.OmitNil || v != nil {
 			obj[fi.Key] = v
@@ -289,7 +285,7 @@ func reflectMap(rv reflect.Value, opt *Options) interface{} {
 		var g interface{}
 		vv := it.Value()
 		if !isNil(vv) {
-			g = decompose(vv.Interface(), opt, false)
+			g = decompose(vv.Interface(), opt)
 		}
 		if g != nil || !opt.OmitNil {
 			if ks, ok := k.(string); ok {
@@ -306,7 +302,7 @@ func reflectArray(rv reflect.Value, opt *Options) interface{} {
 	size := rv.Len()
 	a := make([]interface{}, size)
 	for i := size - 1; 0 <= i; i-- {
-		a[i] = decompose(rv.Index(i).Interface(), opt, false)
+		a[i] = decompose(rv.Index(i).Interface(), opt)
 	}
 	return a
 }
