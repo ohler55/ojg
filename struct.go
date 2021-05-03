@@ -92,7 +92,7 @@ func buildTagFields(rt reflect.Type, anon bool) (fa []*Field) {
 		}
 		if f.Anonymous {
 			for _, fi := range buildTagFields(f.Type, true) {
-				fi.index = append([]int{i}, fi.index...)
+				fi.Index = append([]int{i}, fi.Index...)
 				fi.offset += f.Offset
 				fa = append(fa, fi)
 			}
@@ -138,7 +138,7 @@ func buildNameFields(rt reflect.Type, anon bool) (fa []*Field) {
 		}
 		if f.Anonymous {
 			for _, fi := range buildNameFields(f.Type, true) {
-				fi.index = append([]int{i}, fi.index...)
+				fi.Index = append([]int{i}, fi.Index...)
 				fa = append(fa, fi)
 			}
 		} else {
@@ -157,7 +157,7 @@ func buildLowFields(rt reflect.Type, anon bool) (fa []*Field) {
 		}
 		if f.Anonymous {
 			for _, fi := range buildLowFields(f.Type, true) {
-				fi.index = append([]int{i}, fi.index...)
+				fi.Index = append([]int{i}, fi.Index...)
 				fa = append(fa, fi)
 			}
 		} else {

@@ -701,6 +701,7 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 		}
 		for _, fi := range fields {
 			wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, !wr.HTMLUnsafe)
+			// TBD check wrote first
 			if !has {
 				if wrote {
 					wr.buf = append(wr.buf, ',')
