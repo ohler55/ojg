@@ -369,16 +369,17 @@ func TestMarshalStruct(t *testing.T) {
 
 	j, err = oj.Marshal(&n, 2)
 	tt.Nil(t, err)
-	tt.Equal(t, `{
-  "List":[
+	expect := `{
+  "List": [
     {
-      "Val":1
+      "Val": 1
     },
     {
-      "Val":2
+      "Val": 2
     }
   ]
-}`, string(j))
+}`
+	tt.Equal(t, expect, string(j))
 
 	type empty struct {
 		X int `json:"x,omitempty"`
@@ -391,7 +392,7 @@ func TestMarshalStruct(t *testing.T) {
 	j, err = oj.Marshal(&empty{X: 1, Y: 0}, 2)
 	tt.Nil(t, err)
 	tt.Equal(t, `{
-  "x":1
+  "x": 1
 }`, string(j))
 }
 

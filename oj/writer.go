@@ -26,7 +26,7 @@ type Writer struct {
 	ojg.Options
 	buf    []byte
 	w      io.Writer
-	findex uint
+	findex byte
 	strict bool
 }
 
@@ -576,25 +576,8 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 	if st == nil {
 		st = ojg.GetStruct(rv.Interface())
 	}
-	var fields []*ojg.Field
 	d2 := depth + 1
-	if wr.NestEmbed {
-		if wr.UseTags {
-			fields = st.OutTag
-		} else if wr.KeyExact {
-			fields = st.OutName
-		} else {
-			fields = st.OutLow
-		}
-	} else {
-		if wr.UseTags {
-			fields = st.ByTag
-		} else if wr.KeyExact {
-			fields = st.ByName
-		} else {
-			fields = st.ByLow
-		}
-	}
+	fields := st.Fields[wr.findex&ojg.MaskIndex]
 	wr.buf = append(wr.buf, '{')
 	empty := true
 	var v interface{}

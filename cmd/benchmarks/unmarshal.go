@@ -112,7 +112,6 @@ type Communication struct {
 }
 
 // Types for the citm_catalog.json file.
-/*
 type Catalog struct {
 	AreaNames                map[string]string
 	AudienceSubCategoryNames map[string]string
@@ -165,4 +164,3 @@ type Area struct {
 	AreaID   int
 	BlockIDs []int
 }
-*/

@@ -864,9 +864,7 @@ func appendString(fi *Field, buf []byte, rv reflect.Value, safe bool) ([]byte, i
 }
 
 func appendStringNotEmpty(fi *Field, buf []byte, rv reflect.Value, safe bool) ([]byte, interface{}, bool, bool) {
-	var fv reflect.Value
-	fv = rv.FieldByIndex(fi.Index)
-	s := fv.String()
+	s := rv.FieldByIndex(fi.Index).String()
 	if len(s) == 0 {
 		return buf, nil, false, false
 	}
@@ -900,7 +898,7 @@ func appendSliceNotEmpty(fi *Field, buf []byte, rv reflect.Value, safe bool) ([]
 	return buf, fv.Interface(), false, true
 }
 
-func newField(f reflect.StructField, key string, omitEmpty, asString, anon bool) *Field {
+func newField(f reflect.StructField, key string, omitEmpty, asString, pretty, sen bool) *Field {
 	fi := Field{
 		Type:   f.Type,
 		Key:    key,
@@ -1196,8 +1194,14 @@ func newField(f reflect.StructField, key string, omitEmpty, asString, anon bool)
 			fi.Value = valJustVal
 		}
 	}
-	fi.jkey = AppendJSONString(fi.jkey, fi.Key, false)
+	if sen {
+		fi.jkey = AppendSENString(fi.jkey, fi.Key, false)
+	} else {
+		fi.jkey = AppendJSONString(fi.jkey, fi.Key, false)
+	}
 	fi.jkey = append(fi.jkey, ':')
-
+	if pretty {
+		fi.jkey = append(fi.jkey, ' ')
+	}
 	return &fi
 }

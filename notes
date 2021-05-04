@@ -1,6 +1,5 @@
 
-
-- index fields list from options
+- buildMap in writer
 
 - null or empty list?
  - difference in behavior

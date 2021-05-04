@@ -103,10 +103,12 @@ func JSON(data interface{}, args ...interface{}) string {
 			w2 := *wr
 			wr = &w2
 			wr.Indent = ta
+			wr.findex = 0
 		case *ojg.Options:
 			w2 := *wr
 			wr = &w2
 			wr.Options = *ta
+			wr.findex = 0
 		case *Writer:
 			wr = ta
 		}
@@ -128,10 +130,12 @@ func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
 			w2 := *wr
 			wr = &w2
 			wr.Indent = ta
+			wr.findex = 0
 		case *ojg.Options:
 			w2 := *wr
 			wr = &w2
 			wr.Options = *ta
+			wr.findex = 0
 		case *Writer:
 			wr = ta
 			wr.strict = true
@@ -163,10 +167,12 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 			w2 := *wr
 			wr = &w2
 			wr.Indent = ta
+			wr.findex = 0
 		case *ojg.Options:
 			w2 := *wr
 			wr = &w2
 			wr.Options = *ta
+			wr.findex = 0
 		case *Writer:
 			wr = ta
 			wr.strict = true

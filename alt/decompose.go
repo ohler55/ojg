@@ -178,24 +178,7 @@ func reflectStruct(rv reflect.Value, val interface{}, opt *Options) interface{} 
 			obj[opt.CreateKey] = t.Name()
 		}
 	}
-	var fields []*ojg.Field
-	if opt.NestEmbed {
-		if opt.UseTags {
-			fields = st.OutTag
-		} else if opt.KeyExact {
-			fields = st.OutName
-		} else {
-			fields = st.OutLow
-		}
-	} else {
-		if opt.UseTags {
-			fields = st.ByTag
-		} else if opt.KeyExact {
-			fields = st.ByName
-		} else {
-			fields = st.ByLow
-		}
-	}
+	fields := st.Fields[opt.FieldsIndex()&ojg.MaskIndex]
 	for _, fi := range fields {
 		if v, fv, omit := fi.Value(fi, rv); !omit {
 			if fv.IsValid() {
@@ -232,24 +215,7 @@ func reflectEmbed(rv reflect.Value, val interface{}, opt *Options) interface{} {
 			obj[opt.CreateKey] = t.Name()
 		}
 	}
-	var fields []*ojg.Field
-	if opt.NestEmbed {
-		if opt.UseTags {
-			fields = st.OutTag
-		} else if opt.KeyExact {
-			fields = st.OutName
-		} else {
-			fields = st.OutLow
-		}
-	} else {
-		if opt.UseTags {
-			fields = st.ByTag
-		} else if opt.KeyExact {
-			fields = st.ByName
-		} else {
-			fields = st.ByLow
-		}
-	}
+	fields := st.Fields[opt.FieldsIndex()&ojg.MaskIndex]
 	for _, fi := range fields {
 		fv := rv.FieldByIndex(fi.Index)
 		var v interface{}

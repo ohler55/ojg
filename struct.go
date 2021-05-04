@@ -11,23 +11,19 @@ import (
 )
 
 const (
-	MaskByTag  = 0x10
-	MaskExact  = 0x08 // exact key vs lowwer case first letter
-	MaskPretty = 0x04
-	MaskNested = 0x02
-	MaskSen    = 0x01
-	MaskSet    = 0x20
+	MaskByTag  = byte(0x10)
+	MaskExact  = byte(0x08) // exact key vs lowwer case first letter
+	MaskPretty = byte(0x04)
+	MaskNested = byte(0x02)
+	MaskSen    = byte(0x01)
+	MaskSet    = byte(0x20)
+	MaskIndex  = byte(0x1f)
 )
 
 // Struct holds reflect information about a struct.
 type Struct struct {
-	Type    reflect.Type
-	ByTag   []*Field
-	ByName  []*Field
-	ByLow   []*Field
-	OutTag  []*Field
-	OutName []*Field
-	OutLow  []*Field
+	Type   reflect.Type
+	Fields [32][]*Field
 }
 
 var (
@@ -69,29 +65,37 @@ func buildStruct(rt reflect.Type, x uintptr) (st *Struct) {
 	st = &Struct{Type: rt}
 	structMap[x] = st
 
-	st.ByTag = buildTagFields(st.Type, false)
-	sort.Slice(st.ByTag, func(i, j int) bool { return 0 > strings.Compare(st.ByTag[i].Key, st.ByTag[j].Key) })
-	st.ByName = buildNameFields(st.Type, false)
-	sort.Slice(st.ByName, func(i, j int) bool { return 0 > strings.Compare(st.ByName[i].Key, st.ByName[j].Key) })
-	st.ByLow = buildLowFields(st.Type, false)
-	sort.Slice(st.ByLow, func(i, j int) bool { return 0 > strings.Compare(st.ByLow[i].Key, st.ByLow[j].Key) })
-
-	st.OutTag = buildOutTagFields(st.Type)
-	st.OutName = buildOutNameFields(st.Type)
-	st.OutLow = buildOutLowFields(st.Type)
-
+	for u := byte(0); u < MaskSet; u++ {
+		if (MaskByTag&u) != 0 && (MaskExact&u) != 0 { // reuse previously built
+			st.Fields[u] = st.Fields[u & ^MaskExact]
+			continue
+		}
+		st.Fields[u] = buildFields(st.Type, u)
+	}
 	return
 }
 
-func buildTagFields(rt reflect.Type, anon bool) (fa []*Field) {
+func buildFields(rt reflect.Type, u byte) (fa []*Field) {
+	if (MaskByTag & u) != 0 {
+		fa = buildTagFields(rt, (MaskNested&u) != 0, (MaskPretty&u) != 0, (MaskSen&u) != 0)
+	} else if (MaskExact & u) != 0 {
+		fa = buildExactFields(rt, (MaskNested&u) != 0, (MaskPretty&u) != 0, (MaskSen&u) != 0)
+	} else {
+		fa = buildLowFields(rt, (MaskNested&u) != 0, (MaskPretty&u) != 0, (MaskSen&u) != 0)
+	}
+	sort.Slice(fa, func(i, j int) bool { return 0 > strings.Compare(fa[i].Key, fa[j].Key) })
+	return
+}
+
+func buildTagFields(rt reflect.Type, out, pretty, sen bool) (fa []*Field) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
 		if len(name) == 0 || 'a' <= name[0] {
 			continue
 		}
-		if f.Anonymous {
-			for _, fi := range buildTagFields(f.Type, true) {
+		if f.Anonymous && !out {
+			for _, fi := range buildTagFields(f.Type, out, pretty, sen) {
 				fi.Index = append([]int{i}, fi.Index...)
 				fi.offset += f.Offset
 				fa = append(fa, fi)
@@ -123,113 +127,49 @@ func buildTagFields(rt reflect.Type, anon bool) (fa []*Field) {
 					}
 				}
 			}
-			fa = append(fa, newField(f, key, omitEmpty, asString, anon))
+			fa = append(fa, newField(f, key, omitEmpty, asString, pretty, sen))
 		}
 	}
 	return
 }
 
-func buildNameFields(rt reflect.Type, anon bool) (fa []*Field) {
+func buildExactFields(rt reflect.Type, out, pretty, sen bool) (fa []*Field) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
 		if len(name) == 0 || 'a' <= name[0] {
 			continue
 		}
-		if f.Anonymous {
-			for _, fi := range buildNameFields(f.Type, true) {
+		if f.Anonymous && !out {
+			for _, fi := range buildExactFields(f.Type, out, pretty, sen) {
 				fi.Index = append([]int{i}, fi.Index...)
+				fi.offset += f.Offset
 				fa = append(fa, fi)
 			}
 		} else {
-			fa = append(fa, newField(f, f.Name, false, false, anon))
+			fa = append(fa, newField(f, f.Name, false, false, pretty, sen))
 		}
 	}
 	return
 }
 
-func buildLowFields(rt reflect.Type, anon bool) (fa []*Field) {
+func buildLowFields(rt reflect.Type, out, pretty, sen bool) (fa []*Field) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
 		if len(name) == 0 || 'a' <= name[0] {
 			continue
 		}
-		if f.Anonymous {
-			for _, fi := range buildLowFields(f.Type, true) {
+		if f.Anonymous && !out {
+			for _, fi := range buildLowFields(f.Type, out, pretty, sen) {
 				fi.Index = append([]int{i}, fi.Index...)
+				fi.offset += f.Offset
 				fa = append(fa, fi)
 			}
 		} else {
 			name[0] = name[0] | 0x20
-			fa = append(fa, newField(f, string(name), false, false, anon))
+			fa = append(fa, newField(f, string(name), false, false, pretty, sen))
 		}
 	}
-	return
-}
-
-func buildOutTagFields(rt reflect.Type) (fa []*Field) {
-	for i := rt.NumField() - 1; 0 <= i; i-- {
-		f := rt.Field(i)
-		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
-			continue
-		}
-		omitEmpty := false
-		asString := false
-		key := f.Name
-		if tag, ok := f.Tag.Lookup("json"); ok && 0 < len(tag) {
-			parts := strings.Split(tag, ",")
-			switch parts[0] {
-			case "":
-				// ok as is
-			case "-":
-				if 1 < len(parts) {
-					key = "-"
-				} else {
-					continue
-				}
-			default:
-				key = parts[0]
-			}
-			for _, p := range parts[1:] {
-				switch p {
-				case "omitempty":
-					omitEmpty = true
-				case "string":
-					asString = true
-				}
-			}
-		}
-		fa = append(fa, newField(f, key, omitEmpty, asString, false))
-	}
-	sort.Slice(fa, func(i, j int) bool { return 0 < strings.Compare(fa[i].Key, fa[j].Key) })
-	return
-}
-
-func buildOutNameFields(rt reflect.Type) (fa []*Field) {
-	for i := rt.NumField() - 1; 0 <= i; i-- {
-		f := rt.Field(i)
-		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
-			continue
-		}
-		fa = append(fa, newField(f, f.Name, false, false, false))
-	}
-	sort.Slice(fa, func(i, j int) bool { return 0 < strings.Compare(fa[i].Key, fa[j].Key) })
-	return
-}
-
-func buildOutLowFields(rt reflect.Type) (fa []*Field) {
-	for i := rt.NumField() - 1; 0 <= i; i-- {
-		f := rt.Field(i)
-		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
-			continue
-		}
-		name[0] = name[0] | 0x20
-		fa = append(fa, newField(f, string(name), false, false, false))
-	}
-	sort.Slice(fa, func(i, j int) bool { return 0 < strings.Compare(fa[i].Key, fa[j].Key) })
 	return
 }

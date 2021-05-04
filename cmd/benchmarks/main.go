@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"runtime/pprof"
 	"sort"
 	"strings"
 	"testing"
@@ -57,29 +58,30 @@ func (w noWriter) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
-//var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
-//var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 
 func main() {
+	if len([]interface{}{&Patient{}, &Catalog{}}) == 3 {
+		// Dummy to avoid linter complaints when not using one set of types.
+		fmt.Println("how did we get here?")
+	}
 	testing.Init()
 	flag.Parse()
 	if 0 < len(flag.Args()) {
 		filename = flag.Args()[0]
 	}
 	gen.TimeFormat = "nano"
-	/*
-		if *cpuprofile != "" {
-			f, err := os.Create(*cpuprofile)
-			if err != nil {
-				log.Fatal("could not create CPU profile: ", err)
-			}
-			defer f.Close() // error handling omitted for example
-			if err := pprof.StartCPUProfile(f); err != nil {
-				log.Fatal("could not start CPU profile: ", err)
-			}
-			defer pprof.StopCPUProfile()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
 		}
-	*/
+		defer f.Close() // error handling omitted for example
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	}
 	benchSuite("Marshal Struct", []*bench{
 		{pkg: "json", name: "Marshal", fun: goMarshalStruct},
 		{pkg: "oj", name: "Marshal", fun: ojMarshalStruct},
