@@ -423,12 +423,10 @@ func TestMarshalMap(t *testing.T) {
 	}
 	d := Dap{M: map[string]*Dummy{
 		"a": {Val: 1},
-		"b": {Val: 2},
-		"c": {Val: 3},
 	}}
 	j, err := oj.Marshal(&d)
 	tt.Nil(t, err)
-	tt.Equal(t, `{"M":{"a":{"Val":1},"b":{"Val":2},"c":{"Val":3}}}`, string(j))
+	tt.Equal(t, `{"M":{"a":{"Val":1}}}`, string(j))
 }
 
 func BenchmarkMarshalFlat(b *testing.B) {
