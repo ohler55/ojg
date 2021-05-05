@@ -1178,7 +1178,7 @@ func newField(f reflect.StructField, key string, omitEmpty, asString, pretty, se
 			fi.Append = appendJustKey
 			fi.Value = valJustVal
 		}
-	case reflect.Slice, reflect.Array:
+	case reflect.Slice, reflect.Array, reflect.Map:
 		et := fi.Type.Elem()
 		if et.Kind() == reflect.Ptr {
 			et = et.Elem()

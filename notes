@@ -1,6 +1,7 @@
 
 - buildMap in writer
 
+
 - null or empty list?
  - difference in behavior
 
@@ -12,6 +13,9 @@
  - update like oj
   - use ojg.Field
   - add skey to Field
+
+- jp
+ - MustParse
 
 - benchmarks needs a better mix and not just strings
  - validate issue?

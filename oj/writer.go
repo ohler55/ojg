@@ -629,12 +629,13 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 				indented = true
 			}
 			wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, !wr.HTMLUnsafe)
+			if wrote {
+				wr.buf = append(wr.buf, ',')
+				empty = false
+				indented = false
+				continue
+			}
 			if !has {
-				if wrote {
-					wr.buf = append(wr.buf, ',')
-					empty = false
-					indented = false
-				}
 				continue
 			}
 			indented = false
@@ -684,12 +685,12 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 		}
 		for _, fi := range fields {
 			wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, !wr.HTMLUnsafe)
-			// TBD check wrote first
+			if wrote {
+				wr.buf = append(wr.buf, ',')
+				empty = false
+				continue
+			}
 			if !has {
-				if wrote {
-					wr.buf = append(wr.buf, ',')
-					empty = false
-				}
 				continue
 			}
 			var fv reflect.Value
@@ -710,6 +711,11 @@ func (wr *Writer) buildStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 					fv = reflect.ValueOf(v)
 				}
 				wr.buildSlice(fv, d2, fi.Elem)
+			case reflect.Map:
+				if !fv.IsValid() {
+					fv = reflect.ValueOf(v)
+				}
+				wr.buildMap(fv, d2, fi.Elem)
 			default:
 				wr.buildJSON(v, d2)
 			}
@@ -795,4 +801,11 @@ func (wr *Writer) buildSlice(rv reflect.Value, depth int, st *ojg.Struct) {
 		}
 	}
 	wr.buf = append(wr.buf, ']')
+}
+
+func (wr *Writer) buildMap(rv reflect.Value, depth int, st *ojg.Struct) {
+	//d2 := depth + 1
+	//end := rv.Len()
+
+	wr.buildJSON(rv.Interface(), depth)
 }

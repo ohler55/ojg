@@ -417,6 +417,20 @@ func TestMarshalNestedStruct(t *testing.T) {
 	tt.Equal(t, `{"X":1,"Y":2,"Z":3}`, string(j))
 }
 
+func TestMarshalMap(t *testing.T) {
+	type Dap struct {
+		M map[string]*Dummy
+	}
+	d := Dap{M: map[string]*Dummy{
+		"a": {Val: 1},
+		"b": {Val: 2},
+		"c": {Val: 3},
+	}}
+	j, err := oj.Marshal(&d)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"M":{"a":{"Val":1},"b":{"Val":2},"c":{"Val":3}}}`, string(j))
+}
+
 func BenchmarkMarshalFlat(b *testing.B) {
 	m := Mix{
 		Val:   1,
@@ -448,16 +462,17 @@ func BenchmarkMarshalNestList(b *testing.B) {
 	}
 }
 
-type Play struct {
-	X int `json:"x"`
-	Y int `json:"y"`
-	Z int `json:"z"`
-}
-
-func BenchmarkMarshalPlay(b *testing.B) {
-	play := Play{X: 1, Y: 2, Z: 3}
+func BenchmarkMarshalMap(b *testing.B) {
+	type Dap struct {
+		M map[string]*Dummy
+	}
+	d := Dap{M: map[string]*Dummy{
+		"a": {Val: 1},
+		"b": {Val: 2},
+		"c": {Val: 3},
+	}}
 	for i := 0; i < b.N; i++ {
-		if _, err := oj.Marshal(&play); err != nil {
+		if _, err := oj.Marshal(&d); err != nil {
 			b.Fatal(err)
 		}
 	}
