@@ -3,6 +3,7 @@
 package alt
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/ohler55/ojg"
@@ -80,7 +81,23 @@ func MustRecompose(v interface{}, tv ...interface{}) (out interface{}) {
 // NewRecomposer creates a new instance. The composers are a map of objects
 // expected and functions to recompose them. If no function is provided then
 // reflection is used instead.
-func NewRecomposer(createKey string, composers map[interface{}]RecomposeFunc) (*Recomposer, error) {
+func NewRecomposer(createKey string, composers map[interface{}]RecomposeFunc) (rec *Recomposer, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if err, _ = r.(error); err == nil {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
+	rec = MustNewRecomposer(createKey, composers)
+
+	return
+}
+
+// MustNewRecomposer creates a new instance. The composers are a map of objects
+// expected and functions to recompose them. If no function is provided then
+// reflection is used instead. Panics on error.
+func MustNewRecomposer(createKey string, composers map[interface{}]RecomposeFunc) *Recomposer {
 	r := Recomposer{
 		CreateKey: createKey,
 		composers: map[string]*composer{},
@@ -88,8 +105,8 @@ func NewRecomposer(createKey string, composers map[interface{}]RecomposeFunc) (*
 	for v, fun := range composers {
 		rt := reflect.TypeOf(v)
 		if _, err := r.registerComposer(rt, fun); err != nil {
-			return nil, err
+			panic(err)
 		}
 	}
-	return &r, nil
+	return &r
 }
