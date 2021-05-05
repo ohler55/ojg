@@ -153,6 +153,10 @@ func buildExactFields(rt reflect.Type, out, pretty, sen bool) (fa []*Field) {
 	return
 }
 
+var special = map[string]string{
+	"ID": "id",
+}
+
 func buildLowFields(rt reflect.Type, out, pretty, sen bool) (fa []*Field) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
@@ -167,8 +171,17 @@ func buildLowFields(rt reflect.Type, out, pretty, sen bool) (fa []*Field) {
 				fa = append(fa, fi)
 			}
 		} else {
-			name[0] = name[0] | 0x20
-			fa = append(fa, newField(f, string(name), false, false, pretty, sen))
+			var key string
+			for k, lo := range special {
+				if strings.EqualFold(k, f.Name) {
+					key = lo
+				}
+			}
+			if len(key) == 0 {
+				name[0] = name[0] | 0x20
+				key = string(name)
+			}
+			fa = append(fa, newField(f, key, false, false, pretty, sen))
 		}
 	}
 	return

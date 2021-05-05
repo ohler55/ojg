@@ -80,6 +80,12 @@ func (r *Recomposer) Recompose(v interface{}, tv ...interface{}) (out interface{
 			out = nil
 		}
 	}()
+	out = r.MustRecompose(v, tv...)
+	return
+}
+
+// MustRecompose simple data into more complex go types.
+func (r *Recomposer) MustRecompose(v interface{}, tv ...interface{}) (out interface{}) {
 	if 0 < len(tv) {
 		out = tv[0]
 		rv := reflect.ValueOf(tv[0])
@@ -97,7 +103,7 @@ func (r *Recomposer) Recompose(v interface{}, tv ...interface{}) (out interface{
 				out = rv.Elem().Interface()
 			}
 		default:
-			return nil, fmt.Errorf("only a slice, map, or pointer is allowed as an optional argument")
+			panic(fmt.Errorf("only a slice, map, or pointer is allowed as an optional argument"))
 		}
 	} else {
 		out = r.recompAny(v)
@@ -339,7 +345,9 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 				if m, has = vm[sf.Name]; !has {
 					name := []byte(sf.Name)
 					name[0] = name[0] | 0x20
-					m, has = vm[string(name)]
+					if m, has = vm[string(name)]; !has {
+						m, has = vm[strings.ToLower(string(name))]
+					}
 				}
 			}
 			if has && m != nil {

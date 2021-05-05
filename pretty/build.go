@@ -71,12 +71,7 @@ func (w *Writer) build(data interface{}) (n *node) {
 		if simp, _ := data.(alt.Simplifier); simp != nil {
 			return w.build(simp.Simplify())
 		}
-		if 0 < len(w.CreateKey) {
-			ao := alt.Options{CreateKey: w.CreateKey, OmitNil: w.OmitNil, FullTypePath: w.FullTypePath}
-			return w.build(alt.Decompose(data, &ao))
-		} else {
-			return w.build(alt.Decompose(data, &alt.Options{OmitNil: w.OmitNil}))
-		}
+		n = w.build(alt.Decompose(data, &w.Options))
 	}
 	return
 }

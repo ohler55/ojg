@@ -119,9 +119,10 @@ type Options struct {
 	// using a writer.
 	WriteLimit int
 
-	// TimeFormat defines how time is encoded. Options are to use a time. layout
-	// string format such as time.RFC3339Nano, "second" for a decimal
-	// representation, "nano" for a an integer.
+	// TimeFormat defines how time is encoded. Options are to use a
+	// time. layout string format such as time.RFC3339Nano, "second" for a
+	// decimal representation, "nano" for a an integer. For decompose setting
+	// to "time" will leave it unchanged.
 	TimeFormat string
 
 	// TimeWrap if not empty encoded time as an object with a single member. For
@@ -244,6 +245,29 @@ func (o *Options) BuildTime(buf []byte, t time.Time) []byte {
 		buf = append(buf, '}')
 	}
 	return buf
+}
+
+func (o *Options) DecomposeTime(t time.Time) (v interface{}) {
+	switch o.TimeFormat {
+	case "time":
+		// no change
+	case "", "nano":
+		v = t.UnixNano()
+	case "second":
+		v = float64(t.UnixNano()) / float64(time.Second)
+	default:
+		v = t.Format(o.TimeFormat)
+	}
+	if o.TimeMap {
+		if o.FullTypePath {
+			v = map[string]interface{}{o.CreateKey: "time/Time", "value": v}
+		} else {
+			v = map[string]interface{}{o.CreateKey: "Time", "value": v}
+		}
+	} else if 0 < len(o.TimeWrap) {
+		v = map[string]interface{}{o.TimeWrap: v}
+	}
+	return
 }
 
 // FieldsIndex calculates the fields index in the Struct. Used internally by

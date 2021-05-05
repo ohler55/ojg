@@ -18,7 +18,7 @@ const fracMax = 10000000.0
 
 func decompose(v interface{}, opt *Options) interface{} {
 	switch tv := v.(type) {
-	case nil, bool, int64, float64, string, time.Time:
+	case nil, bool, int64, float64, string:
 	case int:
 		v = int64(tv)
 	case int8:
@@ -72,6 +72,8 @@ func decompose(v interface{}, opt *Options) interface{} {
 		default:
 			v = string(tv)
 		}
+	case time.Time:
+		v = opt.DecomposeTime(tv)
 	default:
 		if simp, _ := v.(Simplifier); simp != nil {
 			return decompose(simp.Simplify(), opt)

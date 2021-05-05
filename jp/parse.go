@@ -49,7 +49,12 @@ func ParseString(s string) (x Expr, err error) {
 	return Parse([]byte(s))
 }
 
-// ParseExpr parses a []byte into an Expr.
+// MustParseExprString parses a string into an Expr and panics on error.
+func MustParseString(s string) (x Expr) {
+	return MustParse([]byte(s))
+}
+
+// Parse parses a []byte into an Expr.
 func Parse(buf []byte) (x Expr, err error) {
 	p := &parser{buf: buf}
 	x, err = p.readExpr()
@@ -58,6 +63,15 @@ func Parse(buf []byte) (x Expr, err error) {
 	}
 	if err != nil {
 		err = fmt.Errorf("%s at %d in %s", err, p.pos+1, buf)
+	}
+	return
+}
+
+// MustParse parses a []byte into an Expr and panics on error.
+func MustParse(buf []byte) (x Expr) {
+	var err error
+	if x, err = Parse(buf); err != nil {
+		panic(err)
 	}
 	return
 }

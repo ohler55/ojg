@@ -72,6 +72,11 @@ func Recompose(v interface{}, tv ...interface{}) (out interface{}, err error) {
 	return DefaultRecomposer.Recompose(v, tv...)
 }
 
+// MustRecompose simple data into more complex go types and panics on error.
+func MustRecompose(v interface{}, tv ...interface{}) (out interface{}) {
+	return DefaultRecomposer.MustRecompose(v, tv...)
+}
+
 // NewRecomposer creates a new instance. The composers are a map of objects
 // expected and functions to recompose them. If no function is provided then
 // reflection is used instead.
