@@ -10,18 +10,28 @@ type Filter struct {
 }
 
 func NewFilter(str string) (f *Filter, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if err, _ = r.(error); err == nil {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
+	f = MustNewFilter(str)
+	return
+}
+
+func MustNewFilter(str string) (f *Filter) {
 	p := &parser{buf: []byte(str)}
 	if len(p.buf) <= 5 ||
 		p.buf[0] != '[' || p.buf[1] != '?' || p.buf[2] != '(' ||
 		p.buf[len(p.buf)-2] != ')' || p.buf[len(p.buf)-1] != ']' {
-		return nil, fmt.Errorf("a filter must start with a '[?(' and end with ')]'")
+		panic(fmt.Errorf("a filter must start with a '[?(' and end with ')]'"))
 	}
 	p.buf = p.buf[3 : len(p.buf)-1]
-	eq, err := p.readEquation()
-	if err != nil {
-		return nil, fmt.Errorf("%s at %d in %s", err, p.pos, p.buf)
-	}
-	return eq.Filter(), nil
+	eq := p.readEquation()
+
+	return eq.Filter()
 }
 
 // String representation of the filter.

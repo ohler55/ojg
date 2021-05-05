@@ -9,6 +9,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 - Struct with pointers to base types such as *float64 are fixed.
 ### Added
 - Added `[]byte` converation option for decompose.
+- Added MustXxx versions of multiple functions to allow a panic and recover code pattern.
 ### Changed
 - oj.Unmarshal now emits float64 for all numbers instead of int64 for
   integers. The parse functions remain unchanged.

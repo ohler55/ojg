@@ -79,7 +79,7 @@ func TestScriptParse(t *testing.T) {
 		{src: "(!(3 == @.x))", expect: "(!(3 == @.x))"},
 
 		{src: "@.x == 4", err: "a script must start with a '('"},
-		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 7 in (@.x ++ 4)"},
+		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 8 in (@.x ++ 4)"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)

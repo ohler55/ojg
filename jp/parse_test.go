@@ -83,8 +83,8 @@ func TestParse(t *testing.T) {
 		{src: "[1,", err: "not terminated at 4 in [1,"},
 		{src: "[:", err: "not terminated at 3 in [:"},
 		{src: "[::", err: "not terminated at 4 in [::"},
-		{src: "[:-x", err: "invalid slice syntax at 5 in [:-x"},
-		{src: "[1:-x", err: "invalid slice syntax at 6 in [1:-x"},
+		{src: "[:-x", err: "expected a number at 5 in [:-x"},
+		{src: "[1:-x", err: "expected a number at 6 in [1:-x"},
 		{src: "[1::-x", err: "expected a number at 7 in [1::-x"},
 		{src: "[1:2:", err: "not terminated at 6 in [1:2:"},
 		{src: "[1:2:-x", err: "expected a number at 8 in [1:2:-x"},
@@ -129,7 +129,7 @@ func TestParse(t *testing.T) {
 func BenchmarkParse(b *testing.B) {
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
-		_, _ = jp.Parse([]byte("@.abc.*[2,3]..xyz[2]"))
+		_ = jp.MustParse([]byte("@.abc.*[2,3]..xyz[2]"))
 		//fmt.Printf("*** x: %s\n", x)
 	}
 }

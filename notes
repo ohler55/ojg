@@ -16,11 +16,8 @@
  - update like oj
   - use ojg.Field
   - add skey to Field
+  - MustXxxx
 
-- jp
- - flip error handling with MustParse and Parse
-  - need to capture location
-   - Parser.raise(format string, args ...interface{})
 
 - benchmarks needs a better mix and not just strings
  - validate issue?

@@ -63,16 +63,27 @@ type Script struct {
 
 // NewScript parses the string argument and returns a script or an error.
 func NewScript(str string) (s *Script, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			if err, _ = r.(error); err == nil {
+				err = fmt.Errorf("%v", r)
+			}
+		}
+	}()
+	s = MustNewScript(str)
+	return
+}
+
+// MustNewScript parses the string argument and returns a script or an error.
+func MustNewScript(str string) (s *Script) {
 	p := &parser{buf: []byte(str)}
 	if len(p.buf) == 0 || p.buf[0] != '(' {
-		return nil, fmt.Errorf("a script must start with a '('")
+		panic(fmt.Errorf("a script must start with a '('"))
 	}
 	p.pos = 1
-	eq, err := p.readEquation()
-	if err != nil {
-		return nil, fmt.Errorf("%s at %d in %s", err, p.pos, p.buf)
-	}
-	return eq.Script(), nil
+	eq := p.readEquation()
+
+	return eq.Script()
 }
 
 // Append a string representation of the fragment to the buffer and then
