@@ -15,6 +15,11 @@ type delFlagType struct{}
 
 var delFlag = &delFlagType{}
 
+// MustDel removes matching nodes and pinics on error.
+func (x Expr) MustDel(n interface{}) {
+	x.MustSet(n, delFlag)
+}
+
 // Del removes matching nodes.
 func (x Expr) Del(n interface{}) error {
 	return x.Set(n, delFlag)
@@ -23,6 +28,15 @@ func (x Expr) Del(n interface{}) error {
 // Del removes at most one node.
 func (x Expr) DelOne(n interface{}) error {
 	return x.SetOne(n, delFlag)
+}
+
+// MustSet all matching child node values. An error is returned if it is not
+// possible. If the path to the child does not exist array and map elements
+// are added. Panics on error.
+func (x Expr) MustSet(data, value interface{}) {
+	if err := x.Set(data, value); err != nil {
+		panic(err)
+	}
 }
 
 // Set all matching child node values. An error is returned if it is not

@@ -1,12 +1,10 @@
 
-- for lower, special for id and some others
-- use time format stuff in alt
-
 - buildMap in writer
 
+- use time format stuff in alt
 
 - null or empty list?
- - difference in behavior
+ - difference in behavior to golang marshal
 
 - Marshal for reflects
  - how to reduce the number of allocs?
