@@ -29,9 +29,13 @@ const (
 	//lightBlock  = "░"
 )
 
-var filename = "test/patient.json"
+var (
+	filename    = "test/patient.json"
+	catFilename = "test/citm_catalog.json"
 
-//var filename = "test/citm_catalog.json"
+	useCat     = flag.Bool("cat", false, "marshal catalog instead of patient")
+	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
+)
 
 type specs struct {
 	os        string
@@ -58,8 +62,6 @@ func (w noWriter) Write(b []byte) (int, error) {
 	return len(b), nil
 }
 
-var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
-
 func main() {
 	if len([]interface{}{&Patient{}, &Catalog{}}) == 3 {
 		// Dummy to avoid linter complaints when not using one set of types.
@@ -82,10 +84,18 @@ func main() {
 		}
 		defer pprof.StopCPUProfile()
 	}
-	benchSuite("Marshal Struct", []*bench{
-		{pkg: "json", name: "Marshal", fun: goMarshalStruct},
-		{pkg: "oj", name: "Marshal", fun: ojMarshalStruct},
-	})
+
+	if *useCat {
+		benchSuite("Marshal Struct", []*bench{
+			{pkg: "json", name: "Marshal", fun: goMarshalCatalog},
+			{pkg: "oj", name: "Marshal", fun: ojMarshalCatalog},
+		})
+	} else {
+		benchSuite("Marshal Struct", []*bench{
+			{pkg: "json", name: "Marshal", fun: goMarshalPatient},
+			{pkg: "oj", name: "Marshal", fun: ojMarshalPatient},
+		})
+	}
 
 	benchSuite("Parse string/[]byte", []*bench{
 		{pkg: "json", name: "Unmarshal", fun: goParse},

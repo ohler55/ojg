@@ -1,14 +1,10 @@
 
-- buildMap in writer
+- validate reader catalog file
 
 - use time format stuff in alt
 
 - null or empty list?
  - difference in behavior to golang marshal
-
-- Marshal for reflects
- - how to reduce the number of allocs?
- - reduce branching
 
 - SEN
  - update like oj
@@ -19,6 +15,10 @@
 
 - benchmarks needs a better mix and not just strings
  - validate issue?
+
+- Marshal for reflects
+ - how to reduce the number of allocs?
+ - reduce branching
 
 - pass args as pointer to struct instead of several bools (EncodeOptions)
  - need htmlsafe

@@ -11,8 +11,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-
-	"github.com/ohler55/ojg/oj"
 )
 
 func goParse(b *testing.B) {
@@ -109,11 +107,24 @@ func goValidate(b *testing.B) {
 	}
 }
 
-func goMarshalStruct(b *testing.B) {
+func goMarshalCatalog(b *testing.B) {
+	sample, _ := ioutil.ReadFile(catFilename)
+	var cat Catalog
+	if err := json.Unmarshal(sample, &cat); err != nil {
+		log.Fatal(err)
+	}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		if _, err := json.Marshal(&cat); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func goMarshalPatient(b *testing.B) {
 	sample, _ := ioutil.ReadFile(filename)
 	var patient Patient
-	p := oj.Parser{}
-	if err := p.Unmarshal(sample, &patient); err != nil {
+	if err := json.Unmarshal(sample, &patient); err != nil {
 		log.Fatal(err)
 	}
 	b.ResetTimer()

@@ -357,6 +357,15 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 	case reflect.Interface:
 		v = r.recompAny(v)
 		rv.Set(reflect.ValueOf(v))
+	case reflect.Bool:
+		rv.Set(reflect.ValueOf(v))
+
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64,
+		reflect.String:
+		rv.Set(reflect.ValueOf(v).Convert(rv.Type()))
+
 	default:
 		panic(fmt.Errorf("can not convert (%T)%v to a %s", v, v, rv.Type()))
 	}
