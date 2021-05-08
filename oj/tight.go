@@ -14,7 +14,7 @@ import (
 
 func tightDefault(wr *Writer, data interface{}, _ int) {
 	if g, _ := data.(alt.Genericer); g != nil {
-		wr.buildJSON(g.Generic(), 0)
+		wr.buildJSON(g.Generic().Simplify(), 0)
 		return
 	}
 	if simp, _ := data.(alt.Simplifier); simp != nil {
@@ -66,34 +66,41 @@ func tightArray(wr *Writer, n []interface{}, _ int) {
 func tightObject(wr *Writer, n map[string]interface{}, _ int) {
 	comma := false
 	wr.buf = append(wr.buf, '{')
-	if wr.Sort {
-		keys := make([]string, 0, len(n))
-		for k := range n {
-			keys = append(keys, k)
+	for k, m := range n {
+		if m == nil && wr.OmitNil {
+			continue
 		}
-		sort.Strings(keys)
-		for _, k := range keys {
-			m := n[k]
-			if m == nil && wr.OmitNil {
-				continue
-			}
-			wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
-			wr.buf = append(wr.buf, ':')
-			wr.buildJSON(m, 0)
-			wr.buf = append(wr.buf, ',')
-			comma = true
-		}
+		wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
+		wr.buf = append(wr.buf, ':')
+		wr.buildJSON(m, 0)
+		wr.buf = append(wr.buf, ',')
+		comma = true
+	}
+	if comma {
+		wr.buf[len(wr.buf)-1] = '}'
 	} else {
-		for k, m := range n {
-			if m == nil && wr.OmitNil {
-				continue
-			}
-			wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
-			wr.buf = append(wr.buf, ':')
-			wr.buildJSON(m, 0)
-			wr.buf = append(wr.buf, ',')
-			comma = true
+		wr.buf = append(wr.buf, '}')
+	}
+}
+
+func tightSortObject(wr *Writer, n map[string]interface{}, _ int) {
+	comma := false
+	wr.buf = append(wr.buf, '{')
+	keys := make([]string, 0, len(n))
+	for k := range n {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		m := n[k]
+		if m == nil && wr.OmitNil {
+			continue
 		}
+		wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
+		wr.buf = append(wr.buf, ':')
+		wr.buildJSON(m, 0)
+		wr.buf = append(wr.buf, ',')
+		comma = true
 	}
 	if comma {
 		wr.buf[len(wr.buf)-1] = '}'

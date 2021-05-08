@@ -1,10 +1,11 @@
 
-- use func pointers for different write modes
- - start with pointer to default on top tightJSON
-  - see what the performance diff is
+- todo
+ - tighten writer (comma)
+ - color
+  - no pointers but better comma handling
+  - handle structs or just use decompose? decompose
 
  - tight, with reflect, sort, (maybe gen if value is a gen or maybe gen writer)
- - let gen get scooped up in default with Simplifier
  - if it is as fast then could be a common writer in ojg for oj and sen
 
 - use time format stuff in alt
