@@ -81,7 +81,10 @@ func MustRecompose(v interface{}, tv ...interface{}) (out interface{}) {
 // NewRecomposer creates a new instance. The composers are a map of objects
 // expected and functions to recompose them. If no function is provided then
 // reflection is used instead.
-func NewRecomposer(createKey string, composers map[interface{}]RecomposeFunc) (rec *Recomposer, err error) {
+func NewRecomposer(
+	createKey string,
+	composers map[interface{}]RecomposeFunc,
+	anyComposers ...map[interface{}]RecomposeAnyFunc) (rec *Recomposer, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if err, _ = r.(error); err == nil {
@@ -89,7 +92,7 @@ func NewRecomposer(createKey string, composers map[interface{}]RecomposeFunc) (r
 			}
 		}
 	}()
-	rec = MustNewRecomposer(createKey, composers)
+	rec = MustNewRecomposer(createKey, composers, anyComposers...)
 
 	return
 }
@@ -97,7 +100,11 @@ func NewRecomposer(createKey string, composers map[interface{}]RecomposeFunc) (r
 // MustNewRecomposer creates a new instance. The composers are a map of objects
 // expected and functions to recompose them. If no function is provided then
 // reflection is used instead. Panics on error.
-func MustNewRecomposer(createKey string, composers map[interface{}]RecomposeFunc) *Recomposer {
+func MustNewRecomposer(
+	createKey string,
+	composers map[interface{}]RecomposeFunc,
+	anyComposers ...map[interface{}]RecomposeAnyFunc) *Recomposer {
+
 	r := Recomposer{
 		CreateKey: createKey,
 		composers: map[string]*composer{},
@@ -106,6 +113,14 @@ func MustNewRecomposer(createKey string, composers map[interface{}]RecomposeFunc
 		rt := reflect.TypeOf(v)
 		if _, err := r.registerComposer(rt, fun); err != nil {
 			panic(err)
+		}
+	}
+	if 0 < len(anyComposers) {
+		for v, fun := range anyComposers[0] {
+			rt := reflect.TypeOf(v)
+			if _, err := r.registerAnyComposer(rt, fun); err != nil {
+				panic(err)
+			}
 		}
 	}
 	return &r

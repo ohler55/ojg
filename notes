@@ -1,12 +1,5 @@
 
-- todo
- - tighten writer (comma)
- - color
-  - no pointers but better comma handling
-  - handle structs or just use decompose? decompose
-
- - tight, with reflect, sort, (maybe gen if value is a gen or maybe gen writer)
- - if it is as fast then could be a common writer in ojg for oj and sen
+- tighten writer (comma)
 
 - use time format stuff in alt
 

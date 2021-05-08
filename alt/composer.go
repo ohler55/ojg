@@ -9,6 +9,7 @@ import (
 
 type composer struct {
 	fun     RecomposeFunc
+	any     RecomposeAnyFunc
 	short   string
 	full    string
 	rtype   reflect.Type

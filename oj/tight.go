@@ -14,12 +14,12 @@ import (
 
 func tightDefault(wr *Writer, data interface{}, _ int) {
 	if g, _ := data.(alt.Genericer); g != nil {
-		wr.buildJSON(g.Generic().Simplify(), 0)
+		wr.appendJSON(g.Generic().Simplify(), 0)
 		return
 	}
 	if simp, _ := data.(alt.Simplifier); simp != nil {
 		data = simp.Simplify()
-		wr.buildJSON(data, 0)
+		wr.appendJSON(data, 0)
 		return
 	}
 	if !wr.NoReflect {
@@ -40,7 +40,7 @@ func tightDefault(wr *Writer, data interface{}, _ int) {
 			// Not much should get here except Map, Complex and un-decomposable
 			// values.
 			dec := alt.Decompose(data, &wr.Options)
-			wr.buildJSON(dec, 0)
+			wr.appendJSON(dec, 0)
 			return
 		}
 	} else if wr.strict {
@@ -54,7 +54,7 @@ func tightArray(wr *Writer, n []interface{}, _ int) {
 	if 0 < len(n) {
 		wr.buf = append(wr.buf, '[')
 		for _, m := range n {
-			wr.buildJSON(m, 0)
+			wr.appendJSON(m, 0)
 			wr.buf = append(wr.buf, ',')
 		}
 		wr.buf[len(wr.buf)-1] = ']'
@@ -72,7 +72,7 @@ func tightObject(wr *Writer, n map[string]interface{}, _ int) {
 		}
 		wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, ':')
-		wr.buildJSON(m, 0)
+		wr.appendJSON(m, 0)
 		wr.buf = append(wr.buf, ',')
 		comma = true
 	}
@@ -98,7 +98,7 @@ func tightSortObject(wr *Writer, n map[string]interface{}, _ int) {
 		}
 		wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, ':')
-		wr.buildJSON(m, 0)
+		wr.appendJSON(m, 0)
 		wr.buf = append(wr.buf, ',')
 		comma = true
 	}
@@ -168,7 +168,7 @@ func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
 			}
 			wr.tightMap(fv, fi.Elem)
 		default:
-			wr.buildJSON(v, 0)
+			wr.appendJSON(v, 0)
 		}
 		wr.buf = append(wr.buf, ',')
 		comma = true
@@ -197,7 +197,7 @@ func (wr *Writer) tightSlice(rv reflect.Value, st *ojg.Struct) {
 		case reflect.Map:
 			wr.tightMap(rm, st)
 		default:
-			wr.buildJSON(rm.Interface(), 0)
+			wr.appendJSON(rm.Interface(), 0)
 		}
 		wr.buf = append(wr.buf, ',')
 		comma = true
@@ -246,7 +246,7 @@ func (wr *Writer) tightMap(rv reflect.Value, st *ojg.Struct) {
 		default:
 			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
-			wr.buildJSON(rm.Interface(), 0)
+			wr.appendJSON(rm.Interface(), 0)
 		}
 		wr.buf = append(wr.buf, ',')
 		comma = true

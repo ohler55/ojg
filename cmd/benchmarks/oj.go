@@ -109,7 +109,7 @@ func ojMarshalCatalog(b *testing.B) {
 }
 
 func ojMarshalPatient(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+	sample, _ := ioutil.ReadFile(patFilename)
 	var patient Patient
 	if err := json.Unmarshal(sample, &patient); err != nil {
 		log.Fatal(err)

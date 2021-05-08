@@ -24,6 +24,10 @@ var DefaultRecomposer = Recomposer{
 // recomposed object or an error.
 type RecomposeFunc func(map[string]interface{}) (interface{}, error)
 
+// RecomposeAnyFunc should build an object from data in an interface{}
+// returning the recomposed object or an error.
+type RecomposeAnyFunc func(interface{}) (interface{}, error)
+
 // Recomposer is used to recompose simple data into structs.
 type Recomposer struct {
 
@@ -67,6 +71,26 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*comp
 		}
 		_, _ = r.registerComposer(ft, nil)
 	}
+	return &c, nil
+}
+
+func (r *Recomposer) registerAnyComposer(rt reflect.Type, fun RecomposeAnyFunc) (*composer, error) {
+	if rt.Kind() == reflect.Ptr {
+		rt = rt.Elem()
+	}
+	full := rt.PkgPath() + "/" + rt.Name()
+	if rt.Kind() != reflect.Struct {
+		return nil, fmt.Errorf("only structs can be recomposed. %s is not a struct type", rt)
+	}
+	c := composer{
+		any:   fun,
+		short: rt.Name(),
+		full:  full,
+		rtype: rt,
+	}
+	r.composers[c.short] = &c
+	r.composers[c.full] = &c
+
 	return &c, nil
 }
 
@@ -296,6 +320,19 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 	case reflect.Struct:
 		vm, ok := (v).(map[string]interface{})
 		if !ok {
+			if c := r.composers[rv.Type().Name()]; c != nil && c.any != nil {
+				if val, err := c.any(v); err == nil {
+					vv := reflect.ValueOf(val)
+					if vv.Type().Kind() == reflect.Ptr {
+						vv = vv.Elem()
+					}
+					rv.Set(vv)
+				} else {
+					panic(err)
+				}
+				break
+			}
+
 			vv := reflect.ValueOf(v)
 			if vv.Kind() != reflect.Map {
 				panic(fmt.Errorf("can only recompose a %s from a map[string]interface{}, not a %T", rv.Type(), v))

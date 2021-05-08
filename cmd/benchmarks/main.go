@@ -31,6 +31,7 @@ const (
 
 var (
 	filename    = "test/patient.json"
+	patFilename = "test/patient.json"
 	catFilename = "test/citm_catalog.json"
 
 	useCat     = flag.Bool("cat", false, "marshal catalog instead of patient")
