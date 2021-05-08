@@ -260,3 +260,57 @@ const (
 		"................................" + // 0xc0
 		"................................s" //   0xe0
 )
+
+/*
+// Uncomment for debugging
+func whichMode(mode string) string {
+	switch mode {
+	case valueMap:
+		return "value"
+	case nullMap:
+		return "null"
+	case trueMap:
+		return "true"
+	case falseMap:
+		return "false"
+	case commaMap:
+		return "comma"
+	case afterMap:
+		return "after"
+	case key1Map:
+		return "key1"
+	case keyMap:
+		return "key"
+	case colonMap:
+		return "colon"
+	case negMap:
+		return "neg"
+	case zeroMap:
+		return "zero"
+	case digitMap:
+		return "digit"
+	case dotMap:
+		return "dot"
+	case fracMap:
+		return "frac"
+	case expSignMap:
+		return "expSign"
+	case expZeroMap:
+		return "expZero"
+	case expMap:
+		return "exp"
+	case stringMap:
+		return "string"
+	case escMap:
+		return "esc"
+	case escByteMap:
+		return "escByte"
+	case uMap:
+		return "u"
+	case spaceMap:
+		return "space"
+	default:
+		return "unknown"
+	}
+}
+*/

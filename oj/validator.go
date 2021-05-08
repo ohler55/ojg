@@ -87,6 +87,7 @@ func (p *Validator) ValidateReader(r io.Reader) error {
 		if err != nil {
 			return err
 		}
+		p.noff -= len(buf)
 		if eof {
 			break
 		}
@@ -129,13 +130,14 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 		case strOk:
 			continue
 		case keyQuote:
+			i = 0
 			for i, b = range buf[off+1:] {
 				if stringMap[b] != strOk {
 					break
 				}
 			}
 			off += i
-			if b == '"' {
+			if b == '"' && 0 < i {
 				off++
 				p.mode = colonMap
 			} else {
@@ -151,13 +153,14 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			}
 			continue
 		case valQuote:
+			i = 0
 			for i, b = range buf[off+1:] {
 				if stringMap[b] != strOk {
 					break
 				}
 			}
 			off += i
-			if b == '"' {
+			if b == '"' && 0 < i {
 				off++
 				p.mode = afterMap
 			} else {
@@ -260,6 +263,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			p.line++
 			p.noff = off
 			p.mode = afterMap
+			i = 0
 			for i, b = range buf[off+1:] {
 				if spaceMap[b] != skipChar {
 					break

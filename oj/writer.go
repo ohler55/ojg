@@ -56,8 +56,11 @@ func (wr *Writer) MustJSON(data interface{}) []byte {
 	if wr.findex == 0 {
 		wr.findex = wr.FieldsIndex()
 	}
-	wr.buildJSON(data, 0)
-
+	if wr.Tab || 0 < wr.Indent {
+		wr.buildJSON(data, 0)
+	} else {
+		wr.tightJSON(data)
+	}
 	return wr.buf
 }
 
