@@ -6,119 +6,55 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
 )
 
-func (wr *Writer) tightJSON(data interface{}) {
-
-	// TBD if marshal and nil (as apposed to empty) the null
-	//  use wr.strict field as indicator of marshal called?
-
-	switch td := data.(type) {
-	case nil:
-		wr.buf = append(wr.buf, "null"...)
-
-	case bool:
-		if td {
-			wr.buf = append(wr.buf, "true"...)
-		} else {
-			wr.buf = append(wr.buf, "false"...)
-		}
-
-	case int:
-		wr.buf = strconv.AppendInt(wr.buf, int64(td), 10)
-	case int8:
-		wr.buf = strconv.AppendInt(wr.buf, int64(td), 10)
-	case int16:
-		wr.buf = strconv.AppendInt(wr.buf, int64(td), 10)
-	case int32:
-		wr.buf = strconv.AppendInt(wr.buf, int64(td), 10)
-	case int64:
-		wr.buf = strconv.AppendInt(wr.buf, td, 10)
-	case uint:
-		wr.buf = strconv.AppendUint(wr.buf, uint64(td), 10)
-	case uint8:
-		wr.buf = strconv.AppendUint(wr.buf, uint64(td), 10)
-	case uint16:
-		wr.buf = strconv.AppendUint(wr.buf, uint64(td), 10)
-	case uint32:
-		wr.buf = strconv.AppendUint(wr.buf, uint64(td), 10)
-	case uint64:
-		wr.buf = strconv.AppendUint(wr.buf, td, 10)
-
-	case float32:
-		wr.buf = strconv.AppendFloat(wr.buf, float64(td), 'g', -1, 32)
-	case float64:
-		wr.buf = strconv.AppendFloat(wr.buf, float64(td), 'g', -1, 64)
-
-	case string:
-		wr.buf = ojg.AppendJSONString(wr.buf, td, !wr.HTMLUnsafe)
-
-	case time.Time:
-		wr.buildTime(td)
-
-	case []interface{}:
-		wr.tightArray(td)
-
-	case map[string]interface{}:
-		wr.tightObject(td)
-
-	default:
-
-		// TBD make this a separate function and point to it from wr?
-
-		if g, _ := data.(alt.Genericer); g != nil {
-			wr.tightJSON(g.Generic())
-			return
-		}
-		if simp, _ := data.(alt.Simplifier); simp != nil {
-			data = simp.Simplify()
-			wr.tightJSON(data)
-			return
-		}
-		if !wr.NoReflect {
-			rv := reflect.ValueOf(data)
-			kind := rv.Kind()
-			if kind == reflect.Ptr {
-				rv = rv.Elem()
-				kind = rv.Kind()
-			}
-			switch kind {
-			case reflect.Struct:
-				wr.tightStruct(rv, nil)
-			case reflect.Slice, reflect.Array:
-				wr.tightSlice(rv, nil)
-			default:
-				// Not much should get here except Map, Complex and un-decomposable
-				// values.
-				dec := alt.Decompose(data, &wr.Options)
-				wr.tightJSON(dec)
-				return
-			}
-		} else if wr.strict {
-			panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
-		} else {
-			wr.buf = ojg.AppendJSONString(wr.buf, fmt.Sprintf("%v", td), !wr.HTMLUnsafe)
-		}
+func tightDefault(wr *Writer, data interface{}, _ int) {
+	if g, _ := data.(alt.Genericer); g != nil {
+		wr.buildJSON(g.Generic(), 0)
+		return
 	}
-	if wr.w != nil && wr.WriteLimit < len(wr.buf) {
-		if _, err := wr.w.Write(wr.buf); err != nil {
-			panic(err)
+	if simp, _ := data.(alt.Simplifier); simp != nil {
+		data = simp.Simplify()
+		wr.buildJSON(data, 0)
+		return
+	}
+	if !wr.NoReflect {
+		rv := reflect.ValueOf(data)
+		kind := rv.Kind()
+		if kind == reflect.Ptr {
+			rv = rv.Elem()
+			kind = rv.Kind()
 		}
-		wr.buf = wr.buf[:0]
+		switch kind {
+		case reflect.Struct:
+			wr.tightStruct(rv, nil)
+		case reflect.Slice, reflect.Array:
+			wr.tightSlice(rv, nil)
+		case reflect.Map:
+			wr.tightSlice(rv, nil)
+		default:
+			// Not much should get here except Map, Complex and un-decomposable
+			// values.
+			dec := alt.Decompose(data, &wr.Options)
+			wr.buildJSON(dec, 0)
+			return
+		}
+	} else if wr.strict {
+		panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
+	} else {
+		wr.buf = ojg.AppendJSONString(wr.buf, fmt.Sprintf("%v", data), !wr.HTMLUnsafe)
 	}
 }
 
-func (wr *Writer) tightArray(n []interface{}) {
+func tightArray(wr *Writer, n []interface{}, _ int) {
 	if 0 < len(n) {
 		wr.buf = append(wr.buf, '[')
 		for _, m := range n {
-			wr.tightJSON(m)
+			wr.buildJSON(m, 0)
 			wr.buf = append(wr.buf, ',')
 		}
 		wr.buf[len(wr.buf)-1] = ']'
@@ -127,7 +63,7 @@ func (wr *Writer) tightArray(n []interface{}) {
 	}
 }
 
-func (wr *Writer) tightObject(n map[string]interface{}) {
+func tightObject(wr *Writer, n map[string]interface{}, _ int) {
 	comma := false
 	wr.buf = append(wr.buf, '{')
 	if wr.Sort {
@@ -143,7 +79,7 @@ func (wr *Writer) tightObject(n map[string]interface{}) {
 			}
 			wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
-			wr.tightJSON(m)
+			wr.buildJSON(m, 0)
 			wr.buf = append(wr.buf, ',')
 			comma = true
 		}
@@ -154,7 +90,7 @@ func (wr *Writer) tightObject(n map[string]interface{}) {
 			}
 			wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
-			wr.tightJSON(m)
+			wr.buildJSON(m, 0)
 			wr.buf = append(wr.buf, ',')
 			comma = true
 		}
@@ -225,7 +161,7 @@ func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
 			}
 			wr.tightMap(fv, fi.Elem)
 		default:
-			wr.tightJSON(v)
+			wr.buildJSON(v, 0)
 		}
 		wr.buf = append(wr.buf, ',')
 		comma = true
@@ -254,7 +190,7 @@ func (wr *Writer) tightSlice(rv reflect.Value, st *ojg.Struct) {
 		case reflect.Map:
 			wr.tightMap(rm, st)
 		default:
-			wr.tightJSON(rm.Interface())
+			wr.buildJSON(rm.Interface(), 0)
 		}
 		wr.buf = append(wr.buf, ',')
 		comma = true
@@ -303,7 +239,7 @@ func (wr *Writer) tightMap(rv reflect.Value, st *ojg.Struct) {
 		default:
 			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
-			wr.tightJSON(rm.Interface())
+			wr.buildJSON(rm.Interface(), 0)
 		}
 		wr.buf = append(wr.buf, ',')
 		comma = true
