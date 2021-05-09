@@ -104,12 +104,24 @@ func senParseReaderReuse(b *testing.B) {
 	}
 }
 
-func senUnmarshal(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+func senUnmarshalPatient(b *testing.B) {
+	sample, _ := ioutil.ReadFile(patFilename)
 	p := sen.Parser{Reuse: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		var out Patient
+		if err := p.Unmarshal(sample, &out); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func senUnmarshalCatalog(b *testing.B) {
+	sample, _ := ioutil.ReadFile(catFilename)
+	p := sen.Parser{Reuse: true}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		var out Catalog
 		if err := p.Unmarshal(sample, &out); err != nil {
 			log.Fatal(err)
 		}

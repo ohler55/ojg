@@ -122,12 +122,24 @@ func ojMarshalPatient(b *testing.B) {
 	}
 }
 
-func ojUnmarshal(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+func ojUnmarshalPatient(b *testing.B) {
+	sample, _ := ioutil.ReadFile(patFilename)
 	p := oj.Parser{Reuse: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		var out Patient
+		if err := p.Unmarshal(sample, &out); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func ojUnmarshalCatalog(b *testing.B) {
+	sample, _ := ioutil.ReadFile(catFilename)
+	p := oj.Parser{Reuse: true}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		var out Catalog
 		if err := p.Unmarshal(sample, &out); err != nil {
 			log.Fatal(err)
 		}

@@ -24,11 +24,22 @@ func goParse(b *testing.B) {
 	}
 }
 
-func goUnmarshal(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+func goUnmarshalPatient(b *testing.B) {
+	sample, _ := ioutil.ReadFile(patFilename)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		var out Patient
+		if err := json.Unmarshal(sample, &out); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func goUnmarshalCatalog(b *testing.B) {
+	sample, _ := ioutil.ReadFile(catFilename)
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		var out Catalog
 		if err := json.Unmarshal(sample, &out); err != nil {
 			log.Fatal(err)
 		}

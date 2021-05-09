@@ -72,6 +72,8 @@ func main() {
 	flag.Parse()
 	if 0 < len(flag.Args()) {
 		filename = flag.Args()[0]
+	} else if *useCat {
+		filename = catFilename
 	}
 	gen.TimeFormat = "nano"
 	if *cpuprofile != "" {
@@ -107,11 +109,20 @@ func main() {
 		{pkg: "sen", name: "Parse", fun: senParse},
 		{pkg: "sen-reuse", name: "Parse", fun: senParseReuse},
 	})
-	benchSuite("Unmarshal []byte to type", []*bench{
-		{pkg: "json", name: "Unmarshal", fun: goUnmarshal},
-		{pkg: "oj", name: "Unmarshal", fun: ojUnmarshal},
-		{pkg: "sen", name: "Unmarshal", fun: senUnmarshal},
-	})
+
+	if *useCat {
+		benchSuite("Unmarshal []byte to type", []*bench{
+			{pkg: "json", name: "Unmarshal", fun: goUnmarshalCatalog},
+			{pkg: "oj", name: "Unmarshal", fun: ojUnmarshalCatalog},
+			{pkg: "sen", name: "Unmarshal", fun: senUnmarshalCatalog},
+		})
+	} else {
+		benchSuite("Unmarshal []byte to type", []*bench{
+			{pkg: "json", name: "Unmarshal", fun: goUnmarshalPatient},
+			{pkg: "oj", name: "Unmarshal", fun: ojUnmarshalPatient},
+			{pkg: "sen", name: "Unmarshal", fun: senUnmarshalPatient},
+		})
+	}
 	benchSuite("Tokenize", []*bench{
 		{pkg: "json", name: "Decode", fun: goDecode},
 		{pkg: "oj", name: "Tokenize", fun: ojTokenize},
@@ -170,6 +181,18 @@ func main() {
 		{pkg: "pretty", name: "WriteJSON", fun: prettyWriteJSON},
 		{pkg: "pretty", name: "WriteSEN", fun: prettyWriteSEN},
 	})
+
+	if *useCat {
+		benchSuite("Marshal Struct", []*bench{
+			{pkg: "json", name: "Marshal", fun: goMarshalCatalog},
+			{pkg: "oj", name: "Marshal", fun: ojMarshalCatalog},
+		})
+	} else {
+		benchSuite("Marshal Struct", []*bench{
+			{pkg: "json", name: "Marshal", fun: goMarshalPatient},
+			{pkg: "oj", name: "Marshal", fun: ojMarshalPatient},
+		})
+	}
 
 	benchSuite("Convert or Alter", []*bench{
 		{pkg: "alt", name: "Generify", fun: altGenerify},

@@ -31,6 +31,7 @@ type Writer struct {
 	appendArray   func(wr *Writer, data []interface{}, depth int)
 	appendObject  func(wr *Writer, data map[string]interface{}, depth int)
 	appendDefault func(wr *Writer, data interface{}, depth int)
+	appendString  func(buf []byte, s string, htmlSafe bool) []byte
 }
 
 // JSON writes data, JSON encoded. On error, an empty string is returned.
@@ -58,25 +59,29 @@ func (wr *Writer) MustJSON(data interface{}) []byte {
 	if wr.findex == 0 {
 		wr.findex = wr.FieldsIndex()
 	}
-	if wr.Tab || 0 < wr.Indent {
-		wr.appendArray = appendArray
-		if wr.Sort {
-			wr.appendObject = appendSortObject
-		} else {
-			wr.appendObject = appendObject
-		}
-		wr.appendDefault = appendDefault
+	if wr.Color {
+		wr.colorJSON(data, 0)
 	} else {
-		wr.appendArray = tightArray
-		if wr.Sort {
-			wr.appendObject = tightSortObject
+		wr.appendString = ojg.AppendJSONString
+		if wr.Tab || 0 < wr.Indent {
+			wr.appendArray = appendArray
+			if wr.Sort {
+				wr.appendObject = appendSortObject
+			} else {
+				wr.appendObject = appendObject
+			}
+			wr.appendDefault = appendDefault
 		} else {
-			wr.appendObject = tightObject
+			wr.appendArray = tightArray
+			if wr.Sort {
+				wr.appendObject = tightSortObject
+			} else {
+				wr.appendObject = tightObject
+			}
+			wr.appendDefault = tightDefault
 		}
-		wr.appendDefault = tightDefault
+		wr.appendJSON(data, 0)
 	}
-	wr.appendJSON(data, 0)
-
 	return wr.buf
 }
 
@@ -115,6 +120,7 @@ func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
 	if wr.Color {
 		wr.colorJSON(data, 0)
 	} else {
+		wr.appendString = ojg.AppendJSONString
 		if wr.Tab || 0 < wr.Indent {
 			wr.appendArray = appendArray
 			wr.appendObject = appendObject
@@ -134,10 +140,6 @@ func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
 }
 
 func (wr *Writer) appendJSON(data interface{}, depth int) {
-
-	// TBD if marshal and nil (as apposed to empty) the null
-	//  use wr.strict field as indicator of marshal called?
-
 	switch td := data.(type) {
 	case nil:
 		wr.buf = append(wr.buf, []byte("null")...)
@@ -176,12 +178,18 @@ func (wr *Writer) appendJSON(data interface{}, depth int) {
 		wr.buf = strconv.AppendFloat(wr.buf, float64(td), 'g', -1, 64)
 
 	case string:
-		wr.buf = ojg.AppendJSONString(wr.buf, td, !wr.HTMLUnsafe)
+		wr.buf = wr.appendString(wr.buf, td, !wr.HTMLUnsafe)
 
 	case time.Time:
 		wr.appendTime(td)
 
 	case []interface{}:
+		// go marshal treats a nil slice as a special case different from an
+		// empty slice. Seems kind of odd but here is the check.
+		if wr.strict && td == nil {
+			wr.buf = append(wr.buf, []byte("null")...)
+			break
+		}
 		wr.appendArray(wr, td, depth)
 
 	case map[string]interface{}:
@@ -232,7 +240,7 @@ func appendDefault(wr *Writer, data interface{}, depth int) {
 	} else if wr.strict {
 		panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
 	} else {
-		wr.buf = ojg.AppendJSONString(wr.buf, fmt.Sprintf("%v", data), !wr.HTMLUnsafe)
+		wr.buf = wr.appendString(wr.buf, fmt.Sprintf("%v", data), !wr.HTMLUnsafe)
 	}
 }
 
@@ -352,7 +360,7 @@ func appendObject(wr *Writer, n map[string]interface{}, depth int) {
 		}
 		empty = false
 		wr.buf = append(wr.buf, []byte(cs)...)
-		wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
+		wr.buf = wr.appendString(wr.buf, k, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, ':')
 		wr.buf = append(wr.buf, ' ')
 		wr.appendJSON(m, d2)
@@ -406,7 +414,7 @@ func appendSortObject(wr *Writer, n map[string]interface{}, depth int) {
 		}
 		empty = false
 		wr.buf = append(wr.buf, []byte(cs)...)
-		wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
+		wr.buf = wr.appendString(wr.buf, k, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, ':')
 		wr.buf = append(wr.buf, ' ')
 		wr.appendJSON(m, d2)
@@ -621,25 +629,25 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, st *ojg.Struct) {
 		wr.buf = append(wr.buf, []byte(cs)...)
 		switch rm.Kind() {
 		case reflect.Struct:
-			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendStruct(rm, d2, st)
 		case reflect.Slice, reflect.Array:
 			if wr.OmitNil && rm.IsNil() {
 				continue
 			}
-			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendSlice(rm, d2, st)
 		case reflect.Map:
 			if wr.OmitNil && rm.IsNil() {
 				continue
 			}
-			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendMap(rm, d2, st)
 		default:
-			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendJSON(rm.Interface(), d2)
 		}

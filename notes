@@ -1,31 +1,16 @@
 
-- null or empty list?
- - difference in behavior to golang marshal
-
 - use time format stuff in alt
 
 - SEN
+ - use common writer?
  - update like oj
   - use ojg.Field
   - add skey to Field
   - MustXxxx
 
-
-- benchmarks needs a better mix and not just strings
- - validate issue?
-
 - Marshal for reflects
  - how to reduce the number of allocs?
  - reduce branching
-
-- pass args as pointer to struct instead of several bools (EncodeOptions)
- - need htmlsafe
- - need space after tag (0 < indent)
- - BytesAs
-
-- writers
- - color
- - oj and sen
 
 - change uft [x]byte
 
