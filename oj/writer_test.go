@@ -81,8 +81,6 @@ func TestString(t *testing.T) {
 	tm := time.Date(2020, time.May, 7, 19, 29, 19, 123456789, time.UTC)
 	tm2 := time.Unix(-10, -100000000)
 	for i, d := range []data{
-		{value: &Dummy{Val: 3}, expect: `{"^":"Dummy","val":3}`, options: &oj.Options{Sort: true, CreateKey: "^"}},
-
 		{value: nil, expect: "null"},
 		{value: true, expect: "true"},
 		{value: false, expect: "false"},
@@ -135,7 +133,7 @@ func TestString(t *testing.T) {
 		{value: map[string]interface{}{"t": true, "n": nil, "f": false}, expect: "{\n\t\"f\": false,\n\t\"n\": null,\n\t\"t\": true\n}",
 			options: &oj.Options{OmitNil: false, Sort: true, Tab: true}},
 		{value: map[string]interface{}{"n": nil}, expect: "{\"n\":null}"},
-		{value: map[string]interface{}{"n": nil}, expect: "{\n}", options: &oj.Options{OmitNil: true, Sort: false, Indent: 2}},
+		{value: map[string]interface{}{"n": nil}, expect: "{}", options: &oj.Options{OmitNil: true, Sort: false, Indent: 2}},
 
 		{value: gen.Object{"t": gen.True, "x": nil}, expect: "{\"t\":true}", options: &oj.Options{OmitNil: true}},
 		{value: gen.Object{"t": gen.True}, expect: "{\n  \"t\": true\n}", options: &oj.Options{Indent: 2}},
@@ -151,7 +149,7 @@ func TestString(t *testing.T) {
 		{value: gen.Object{"t": gen.True, "n": nil, "f": gen.False}, expect: "{\"f\":false,\"n\":null,\"t\":true}",
 			options: &oj.Options{OmitNil: false, Sort: true}},
 		{value: gen.Object{"n": nil}, expect: "{\"n\":null}"},
-		{value: gen.Object{"n": nil}, expect: "{\n}", options: &oj.Options{OmitNil: true, Sort: false, Indent: 2}},
+		{value: gen.Object{"n": nil}, expect: "{}", options: &oj.Options{OmitNil: true, Sort: false, Indent: 2}},
 
 		{value: &simon{x: 3}, expect: `{"type":"simon","x":3}`, options: &oj.Options{Sort: true}},
 		{value: &genny{val: 3}, expect: `{"type":"genny","val":3}`, options: &oj.Options{Sort: true}},
@@ -457,6 +455,20 @@ func BenchmarkMarshalNestList(b *testing.B) {
 		if _, err := oj.Marshal(&n); err != nil {
 			b.Fatal(err)
 		}
+	}
+}
+
+func BenchmarkWriteNestIndentList(b *testing.B) {
+	n := Nest{
+		List: []*Dummy{
+			{Val: 1},
+			{Val: 2},
+			{Val: 3},
+		},
+	}
+	wr := oj.Writer{Options: oj.Options{Indent: 2}}
+	for i := 0; i < b.N; i++ {
+		_ = wr.JSON(&n)
 	}
 }
 

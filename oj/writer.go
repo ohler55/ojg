@@ -223,7 +223,7 @@ func appendDefault(wr *Writer, data interface{}, depth int) {
 		case reflect.Map:
 			wr.appendMap(rv, depth, nil)
 		default:
-			// Not much should get here except Map, Complex and un-decomposable
+			// Not much should get here except Complex and non-decomposable
 			// values.
 			dec := alt.Decompose(data, &wr.Options)
 			wr.appendJSON(dec, depth)
@@ -276,7 +276,6 @@ func (wr *Writer) appendTime(t time.Time) {
 }
 
 func appendArray(wr *Writer, n []interface{}, depth int) {
-	wr.buf = append(wr.buf, '[')
 	var is string
 	var cs string
 	d2 := depth + 1
@@ -285,7 +284,7 @@ func appendArray(wr *Writer, n []interface{}, depth int) {
 		if len(tabs) < x {
 			x = len(tabs)
 		}
-		is = tabs[0:x]
+		is = tabs[1:x]
 		x = d2 + 1
 		if len(tabs) < x {
 			x = len(tabs)
@@ -296,27 +295,29 @@ func appendArray(wr *Writer, n []interface{}, depth int) {
 		if len(spaces) < x {
 			x = len(spaces)
 		}
-		is = spaces[0:x]
+		is = spaces[1:x]
 		x = d2*wr.Indent + 1
 		if len(spaces) < x {
 			x = len(spaces)
 		}
 		cs = spaces[0:x]
 	}
-	for j, m := range n {
-		if 0 < j {
+	if 0 < len(n) {
+		wr.buf = append(wr.buf, '[')
+		for _, m := range n {
+			wr.buf = append(wr.buf, cs...)
+			wr.appendJSON(m, d2)
 			wr.buf = append(wr.buf, ',')
 		}
-		wr.buf = append(wr.buf, []byte(cs)...)
-		wr.appendJSON(m, d2)
+		wr.buf[len(wr.buf)-1] = '\n'
+		wr.buf = append(wr.buf, is...)
+		wr.buf = append(wr.buf, ']')
+	} else {
+		wr.buf = append(wr.buf, "[]"...)
 	}
-	wr.buf = append(wr.buf, []byte(is)...)
-	wr.buf = append(wr.buf, ']')
 }
 
 func appendObject(wr *Writer, n map[string]interface{}, depth int) {
-	wr.buf = append(wr.buf, '{')
-	first := true
 	d2 := depth + 1
 	var is string
 	var cs string
@@ -325,7 +326,7 @@ func appendObject(wr *Writer, n map[string]interface{}, depth int) {
 		if len(tabs) < x {
 			x = len(tabs)
 		}
-		is = tabs[0:x]
+		is = tabs[1:x]
 		x = d2 + 1
 		if len(tabs) < x {
 			x = len(tabs)
@@ -336,35 +337,35 @@ func appendObject(wr *Writer, n map[string]interface{}, depth int) {
 		if len(spaces) < x {
 			x = len(spaces)
 		}
-		is = spaces[0:x]
+		is = spaces[1:x]
 		x = d2*wr.Indent + 1
 		if len(spaces) < x {
 			x = len(spaces)
 		}
 		cs = spaces[0:x]
 	}
+	empty := true
+	wr.buf = append(wr.buf, '{')
 	for k, m := range n {
 		if m == nil && wr.OmitNil {
 			continue
 		}
-		if first {
-			first = false
-		} else {
-			wr.buf = append(wr.buf, ',')
-		}
+		empty = false
 		wr.buf = append(wr.buf, []byte(cs)...)
 		wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, ':')
 		wr.buf = append(wr.buf, ' ')
 		wr.appendJSON(m, d2)
+		wr.buf = append(wr.buf, ',')
 	}
-	wr.buf = append(wr.buf, []byte(is)...)
+	if !empty {
+		wr.buf[len(wr.buf)-1] = '\n'
+		wr.buf = append(wr.buf, []byte(is)...)
+	}
 	wr.buf = append(wr.buf, '}')
 }
 
 func appendSortObject(wr *Writer, n map[string]interface{}, depth int) {
-	wr.buf = append(wr.buf, '{')
-	first := true
 	d2 := depth + 1
 	var is string
 	var cs string
@@ -373,7 +374,7 @@ func appendSortObject(wr *Writer, n map[string]interface{}, depth int) {
 		if len(tabs) < x {
 			x = len(tabs)
 		}
-		is = tabs[0:x]
+		is = tabs[1:x]
 		x = d2 + 1
 		if len(tabs) < x {
 			x = len(tabs)
@@ -384,7 +385,7 @@ func appendSortObject(wr *Writer, n map[string]interface{}, depth int) {
 		if len(spaces) < x {
 			x = len(spaces)
 		}
-		is = spaces[0:x]
+		is = spaces[1:x]
 		x = d2*wr.Indent + 1
 		if len(spaces) < x {
 			x = len(spaces)
@@ -396,23 +397,25 @@ func appendSortObject(wr *Writer, n map[string]interface{}, depth int) {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
+	empty := true
+	wr.buf = append(wr.buf, '{')
 	for _, k := range keys {
 		m := n[k]
 		if m == nil && wr.OmitNil {
 			continue
 		}
-		if first {
-			first = false
-		} else {
-			wr.buf = append(wr.buf, ',')
-		}
+		empty = false
 		wr.buf = append(wr.buf, []byte(cs)...)
 		wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, ':')
 		wr.buf = append(wr.buf, ' ')
 		wr.appendJSON(m, d2)
+		wr.buf = append(wr.buf, ',')
 	}
-	wr.buf = append(wr.buf, []byte(is)...)
+	if !empty {
+		wr.buf[len(wr.buf)-1] = '\n'
+		wr.buf = append(wr.buf, []byte(is)...)
+	}
 	wr.buf = append(wr.buf, '}')
 }
 
@@ -435,7 +438,7 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 		if len(tabs) < x {
 			x = len(tabs)
 		}
-		is = tabs[0:x]
+		is = tabs[1:x]
 		x = d2 + 1
 		if len(tabs) < x {
 			x = len(tabs)
@@ -446,7 +449,7 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 		if len(spaces) < x {
 			x = len(spaces)
 		}
-		is = spaces[0:x]
+		is = spaces[1:x]
 		x = d2*wr.Indent + 1
 		if len(spaces) < x {
 			x = len(spaces)
@@ -515,7 +518,7 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 		wr.buf = wr.buf[:len(wr.buf)-len(cs)]
 	}
 	if !empty {
-		wr.buf = wr.buf[:len(wr.buf)-1]
+		wr.buf[len(wr.buf)-1] = '\n'
 		wr.buf = append(wr.buf, []byte(is)...)
 	}
 	wr.buf = append(wr.buf, '}')
@@ -524,7 +527,6 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 func (wr *Writer) appendSlice(rv reflect.Value, depth int, st *ojg.Struct) {
 	d2 := depth + 1
 	end := rv.Len()
-	wr.buf = append(wr.buf, '[')
 	var is string
 	var cs string
 	if wr.Tab {
@@ -532,7 +534,7 @@ func (wr *Writer) appendSlice(rv reflect.Value, depth int, st *ojg.Struct) {
 		if len(tabs) < x {
 			x = len(tabs)
 		}
-		is = tabs[0:x]
+		is = tabs[1:x]
 		x = d2 + 1
 		if len(tabs) < x {
 			x = len(tabs)
@@ -543,17 +545,16 @@ func (wr *Writer) appendSlice(rv reflect.Value, depth int, st *ojg.Struct) {
 		if len(spaces) < x {
 			x = len(spaces)
 		}
-		is = spaces[0:x]
+		is = spaces[1:x]
 		x = d2*wr.Indent + 1
 		if len(spaces) < x {
 			x = len(spaces)
 		}
 		cs = spaces[0:x]
 	}
+	empty := true
+	wr.buf = append(wr.buf, '[')
 	for j := 0; j < end; j++ {
-		if 0 < j {
-			wr.buf = append(wr.buf, ',')
-		}
 		wr.buf = append(wr.buf, []byte(cs)...)
 		rm := rv.Index(j)
 		switch rm.Kind() {
@@ -566,14 +567,18 @@ func (wr *Writer) appendSlice(rv reflect.Value, depth int, st *ojg.Struct) {
 		default:
 			wr.appendJSON(rm.Interface(), d2)
 		}
+		wr.buf = append(wr.buf, ',')
+		empty = false
 	}
-	wr.buf = append(wr.buf, []byte(is)...)
+	if !empty {
+		wr.buf[len(wr.buf)-1] = '\n'
+		wr.buf = append(wr.buf, []byte(is)...)
+	}
 	wr.buf = append(wr.buf, ']')
 }
 
 func (wr *Writer) appendMap(rv reflect.Value, depth int, st *ojg.Struct) {
 	d2 := depth + 1
-	wr.buf = append(wr.buf, '{')
 	var is string
 	var cs string
 	if wr.Tab {
@@ -581,7 +586,7 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, st *ojg.Struct) {
 		if len(tabs) < x {
 			x = len(tabs)
 		}
-		is = tabs[0:x]
+		is = tabs[1:x]
 		x = d2 + 1
 		if len(tabs) < x {
 			x = len(tabs)
@@ -592,7 +597,7 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, st *ojg.Struct) {
 		if len(spaces) < x {
 			x = len(spaces)
 		}
-		is = spaces[0:x]
+		is = spaces[1:x]
 		x = d2*wr.Indent + 1
 		if len(spaces) < x {
 			x = len(spaces)
@@ -603,7 +608,9 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, st *ojg.Struct) {
 	if wr.Sort {
 		sort.Slice(keys, func(i, j int) bool { return 0 < strings.Compare(keys[i].String(), keys[j].String()) })
 	}
-	for j, kv := range keys {
+	empty := true
+	wr.buf = append(wr.buf, '{')
+	for _, kv := range keys {
 		rm := rv.MapIndex(kv)
 		if rm.Kind() == reflect.Ptr {
 			if wr.OmitNil && rm.IsNil() {
@@ -611,48 +618,37 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, st *ojg.Struct) {
 			}
 			rm = rm.Elem()
 		}
-		if 0 < j {
-			wr.buf = append(wr.buf, ',')
-		}
 		wr.buf = append(wr.buf, []byte(cs)...)
-
 		switch rm.Kind() {
 		case reflect.Struct:
-			if 0 < j {
-				wr.buf = append(wr.buf, ',')
-			}
 			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
-			wr.buf = append(wr.buf, ':')
+			wr.buf = append(wr.buf, ": "...)
 			wr.appendStruct(rm, d2, st)
 		case reflect.Slice, reflect.Array:
 			if wr.OmitNil && rm.IsNil() {
 				continue
 			}
-			if 0 < j {
-				wr.buf = append(wr.buf, ',')
-			}
 			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
-			wr.buf = append(wr.buf, ':')
+			wr.buf = append(wr.buf, ": "...)
 			wr.appendSlice(rm, d2, st)
 		case reflect.Map:
 			if wr.OmitNil && rm.IsNil() {
 				continue
 			}
-			if 0 < j {
-				wr.buf = append(wr.buf, ',')
-			}
 			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
-			wr.buf = append(wr.buf, ':')
+			wr.buf = append(wr.buf, ": "...)
 			wr.appendMap(rm, d2, st)
 		default:
-			if 0 < j {
-				wr.buf = append(wr.buf, ',')
-			}
 			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
-			wr.buf = append(wr.buf, ':')
+			wr.buf = append(wr.buf, ": "...)
 			wr.appendJSON(rm.Interface(), d2)
 		}
+		wr.buf = append(wr.buf, ',')
+		empty = false
 	}
-	wr.buf = append(wr.buf, []byte(is)...)
+	if !empty {
+		wr.buf[len(wr.buf)-1] = '\n'
+		wr.buf = append(wr.buf, []byte(is)...)
+	}
 	wr.buf = append(wr.buf, '}')
 }
