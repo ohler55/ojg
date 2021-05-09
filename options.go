@@ -206,39 +206,46 @@ type Options struct {
 	Converter *Converter
 }
 
-// BuildTime appends a time string to the buffer.
-func (o *Options) BuildTime(buf []byte, t time.Time) []byte {
+// AppendTime appends a time string to the buffer.
+func (o *Options) AppendTime(buf []byte, t time.Time, sen bool) []byte {
 	if o.TimeMap {
-		buf = append(buf, []byte(`{"`)...)
+		buf = append(buf, `{"`...)
 		buf = append(buf, o.CreateKey...)
-		buf = append(buf, []byte(`":`)...)
-		if o.FullTypePath {
-			buf = append(buf, []byte(`"time/Time"`)...)
+		buf = append(buf, `":`...)
+		if sen {
+			if o.FullTypePath {
+				buf = append(buf, `"time/Time" value:`...)
+			} else {
+				buf = append(buf, "Time value:"...)
+			}
 		} else {
-			buf = append(buf, []byte("Time")...)
+			if o.FullTypePath {
+				buf = append(buf, `"time/Time","value":`...)
+			} else {
+				buf = append(buf, `"Time","value":`...)
+			}
 		}
-		buf = append(buf, []byte(` value:`)...)
 	} else if 0 < len(o.TimeWrap) {
-		buf = append(buf, []byte(`{"`)...)
-		buf = append(buf, []byte(o.TimeWrap)...)
-		buf = append(buf, []byte(`":`)...)
+		buf = append(buf, `{"`...)
+		buf = append(buf, o.TimeWrap...)
+		buf = append(buf, `":`...)
 	}
 	switch o.TimeFormat {
 	case "", "nano":
-		buf = append(buf, []byte(strconv.FormatInt(t.UnixNano(), 10))...)
+		buf = strconv.AppendInt(buf, t.UnixNano(), 10)
 	case "second":
 		// Decimal format but float is not accurate enough so build the output
 		// in two parts.
 		nano := t.UnixNano()
 		secs := nano / int64(time.Second)
 		if 0 < nano {
-			buf = append(buf, []byte(fmt.Sprintf("%d.%09d", secs, nano-(secs*int64(time.Second))))...)
+			buf = append(buf, fmt.Sprintf("%d.%09d", secs, nano-(secs*int64(time.Second)))...)
 		} else {
-			buf = append(buf, []byte(fmt.Sprintf("%d.%09d", secs, -(nano-(secs*int64(time.Second)))))...)
+			buf = append(buf, fmt.Sprintf("%d.%09d", secs, -(nano-(secs*int64(time.Second))))...)
 		}
 	default:
 		buf = append(buf, '"')
-		buf = append(buf, []byte(t.Format(o.TimeFormat))...)
+		buf = t.AppendFormat(buf, o.TimeFormat)
 		buf = append(buf, '"')
 	}
 	if 0 < len(o.TimeWrap) || o.TimeMap {

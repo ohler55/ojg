@@ -70,7 +70,7 @@ func (wr *Writer) colorJSON(data interface{}, depth int) {
 
 	case time.Time:
 		wr.buf = append(wr.buf, wr.TimeColor...)
-		wr.appendTime(td)
+		wr.buf = wr.AppendTime(wr.buf, td, false)
 
 	case []interface{}:
 		wr.colorArray(td, depth)
@@ -79,13 +79,13 @@ func (wr *Writer) colorJSON(data interface{}, depth int) {
 		wr.colorObject(td, depth)
 
 	default:
-		if g, _ := data.(alt.Genericer); g != nil {
-			wr.colorJSON(g.Generic().Simplify(), depth)
-			return
-		}
 		if simp, _ := data.(alt.Simplifier); simp != nil {
 			data = simp.Simplify()
 			wr.colorJSON(data, depth)
+			return
+		}
+		if g, _ := data.(alt.Genericer); g != nil {
+			wr.colorJSON(g.Generic().Simplify(), depth)
 			return
 		}
 		if !wr.NoReflect {

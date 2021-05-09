@@ -13,13 +13,13 @@ import (
 )
 
 func tightDefault(wr *Writer, data interface{}, _ int) {
-	if g, _ := data.(alt.Genericer); g != nil {
-		wr.appendJSON(g.Generic().Simplify(), 0)
-		return
-	}
 	if simp, _ := data.(alt.Simplifier); simp != nil {
 		data = simp.Simplify()
 		wr.appendJSON(data, 0)
+		return
+	}
+	if g, _ := data.(alt.Genericer); g != nil {
+		wr.appendJSON(g.Generic().Simplify(), 0)
 		return
 	}
 	if !wr.NoReflect {

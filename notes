@@ -1,6 +1,10 @@
 
 - use time format stuff in alt
 
+- alt.Match
+ - matches only elements in the pattern/target fingerprint
+
+
 - SEN
  - use common writer?
  - update like oj

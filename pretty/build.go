@@ -162,7 +162,7 @@ func (w *Writer) buildStringNode(v string) (n *node) {
 
 func (w *Writer) buildTimeNode(v time.Time) (n *node) {
 	w.buf = w.buf[:0]
-	w.buf = w.BuildTime(w.buf, v)
+	w.buf = w.AppendTime(w.buf, v, w.SEN)
 	n = &node{size: len(w.buf), kind: strNode}
 	n.buf = make([]byte, len(w.buf))
 	copy(n.buf, w.buf)

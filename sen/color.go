@@ -9,7 +9,6 @@ import (
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
-	"github.com/ohler55/ojg/gen"
 )
 
 func (wr *Writer) cbuildSen(data interface{}, depth int) {
@@ -19,13 +18,6 @@ func (wr *Writer) cbuildSen(data interface{}, depth int) {
 		wr.buf = append(wr.buf, []byte("null")...)
 
 	case bool:
-		wr.buf = append(wr.buf, wr.BoolColor...)
-		if td {
-			wr.buf = append(wr.buf, []byte("true")...)
-		} else {
-			wr.buf = append(wr.buf, []byte("false")...)
-		}
-	case gen.Bool:
 		wr.buf = append(wr.buf, wr.BoolColor...)
 		if td {
 			wr.buf = append(wr.buf, []byte("true")...)
@@ -63,9 +55,6 @@ func (wr *Writer) cbuildSen(data interface{}, depth int) {
 	case uint64:
 		wr.buf = append(wr.buf, wr.NumberColor...)
 		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
-	case gen.Int:
-		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
 
 	case float32:
 		wr.buf = append(wr.buf, wr.NumberColor...)
@@ -73,42 +62,29 @@ func (wr *Writer) cbuildSen(data interface{}, depth int) {
 	case float64:
 		wr.buf = append(wr.buf, wr.NumberColor...)
 		wr.buf = append(wr.buf, []byte(strconv.FormatFloat(td, 'g', -1, 64))...)
-	case gen.Float:
-		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = append(wr.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 64))...)
 
 	case string:
 		wr.buf = append(wr.buf, wr.StringColor...)
 		wr.buf = ojg.AppendSENString(wr.buf, td, !wr.HTMLUnsafe)
-	case gen.String:
-		wr.buf = append(wr.buf, wr.StringColor...)
-		wr.buf = ojg.AppendSENString(wr.buf, string(td), !wr.HTMLUnsafe)
 
 	case time.Time:
 		wr.buf = append(wr.buf, wr.TimeColor...)
-		wr.BuildTime(td)
-	case gen.Time:
-		wr.buf = append(wr.buf, wr.TimeColor...)
-		wr.BuildTime(time.Time(td))
+		wr.buf = wr.AppendTime(wr.buf, td, true)
 
 	case []interface{}:
 		wr.cbuildSimpleArray(td, depth)
-	case gen.Array:
-		wr.cbuildArray(td, depth)
 
 	case map[string]interface{}:
 		wr.cbuildSimpleObject(td, depth)
-	case gen.Object:
-		wr.cbuildObject(td, depth)
 
 	default:
-		if g, _ := data.(alt.Genericer); g != nil {
-			wr.cbuildSen(g.Generic(), depth)
-			return
-		}
 		if simp, _ := data.(alt.Simplifier); simp != nil {
 			data = simp.Simplify()
 			wr.cbuildSen(data, depth)
+			return
+		}
+		if g, _ := data.(alt.Genericer); g != nil {
+			wr.cbuildSen(g.Generic().Simplify(), depth)
 			return
 		}
 		if 0 < len(wr.CreateKey) {
@@ -127,49 +103,6 @@ func (wr *Writer) cbuildSen(data interface{}, depth int) {
 		}
 		wr.buf = wr.buf[:0]
 	}
-}
-
-func (wr *Writer) cbuildArray(n gen.Array, depth int) {
-	wr.buf = append(wr.buf, wr.SyntaxColor...)
-	wr.buf = append(wr.buf, '[')
-	wr.buf = append(wr.buf, wr.NoColor...)
-
-	d2 := depth + 1
-	var is string
-	var cs string
-	if wr.Tab {
-		x := depth + 1
-		if len(tabs) < x {
-			x = len(tabs)
-		}
-		is = tabs[0:x]
-		x = d2 + 1
-		if len(tabs) < x {
-			x = len(tabs)
-		}
-		cs = tabs[0:x]
-	} else if 0 < wr.Indent {
-		x := depth*wr.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		is = spaces[0:x]
-		x = d2*wr.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		cs = spaces[0:x]
-	}
-	for j, m := range n {
-		if 0 < j && len(cs) == 0 {
-			wr.buf = append(wr.buf, ' ')
-		}
-		wr.buf = append(wr.buf, []byte(cs)...)
-		wr.cbuildSen(m, d2)
-	}
-	wr.buf = append(wr.buf, []byte(is)...)
-	wr.buf = append(wr.buf, wr.SyntaxColor...)
-	wr.buf = append(wr.buf, ']')
 }
 
 func (wr *Writer) cbuildSimpleArray(n []interface{}, depth int) {
@@ -213,94 +146,6 @@ func (wr *Writer) cbuildSimpleArray(n []interface{}, depth int) {
 	wr.buf = append(wr.buf, []byte(is)...)
 	wr.buf = append(wr.buf, wr.SyntaxColor...)
 	wr.buf = append(wr.buf, ']')
-}
-
-func (wr *Writer) cbuildObject(n gen.Object, depth int) {
-	wr.buf = append(wr.buf, wr.SyntaxColor...)
-	wr.buf = append(wr.buf, '{')
-	wr.buf = append(wr.buf, wr.NoColor...)
-
-	d2 := depth + 1
-	var is string
-	var cs string
-	first := true
-	if wr.Tab {
-		x := depth + 1
-		if len(tabs) < x {
-			x = len(tabs)
-		}
-		is = tabs[0:x]
-		x = d2 + 1
-		if len(tabs) < x {
-			x = len(tabs)
-		}
-		cs = tabs[0:x]
-	} else if 0 < wr.Indent {
-		x := depth*wr.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		is = spaces[0:x]
-		x = d2*wr.Indent + 1
-		if len(spaces) < x {
-			x = len(spaces)
-		}
-		cs = spaces[0:x]
-	}
-	if wr.Sort {
-		keys := make([]string, 0, len(n))
-		for k := range n {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for _, k := range keys {
-			m := n[k]
-			if m == nil && wr.OmitNil {
-				continue
-			}
-			if first {
-				first = false
-			} else if len(cs) == 0 {
-				wr.buf = append(wr.buf, ' ')
-			}
-			wr.buf = append(wr.buf, []byte(cs)...)
-			wr.buf = append(wr.buf, wr.KeyColor...)
-			wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
-			wr.buf = append(wr.buf, wr.NoColor...)
-			wr.buf = append(wr.buf, wr.SyntaxColor...)
-			wr.buf = append(wr.buf, ':')
-			wr.buf = append(wr.buf, wr.NoColor...)
-			if 0 < wr.Indent {
-				wr.buf = append(wr.buf, ' ')
-			}
-			wr.cbuildSen(m, d2)
-		}
-	} else {
-		for k, m := range n {
-			if m == nil && wr.OmitNil {
-				continue
-			}
-			if first {
-				first = false
-			} else if len(cs) == 0 {
-				wr.buf = append(wr.buf, ' ')
-			}
-			wr.buf = append(wr.buf, []byte(cs)...)
-			wr.buf = append(wr.buf, wr.KeyColor...)
-			wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
-			wr.buf = append(wr.buf, wr.NoColor...)
-			wr.buf = append(wr.buf, wr.SyntaxColor...)
-			wr.buf = append(wr.buf, ':')
-			wr.buf = append(wr.buf, wr.NoColor...)
-			if 0 < wr.Indent {
-				wr.buf = append(wr.buf, ' ')
-			}
-			wr.cbuildSen(m, d2)
-		}
-	}
-	wr.buf = append(wr.buf, []byte(is)...)
-	wr.buf = append(wr.buf, wr.SyntaxColor...)
-	wr.buf = append(wr.buf, '}')
 }
 
 func (wr *Writer) cbuildSimpleObject(n map[string]interface{}, depth int) {

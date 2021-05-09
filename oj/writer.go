@@ -181,13 +181,13 @@ func (wr *Writer) appendJSON(data interface{}, depth int) {
 		wr.buf = wr.appendString(wr.buf, td, !wr.HTMLUnsafe)
 
 	case time.Time:
-		wr.appendTime(td)
+		wr.buf = wr.AppendTime(wr.buf, td, false)
 
 	case []interface{}:
 		// go marshal treats a nil slice as a special case different from an
 		// empty slice. Seems kind of odd but here is the check.
 		if wr.strict && td == nil {
-			wr.buf = append(wr.buf, []byte("null")...)
+			wr.buf = append(wr.buf, "null"...)
 			break
 		}
 		wr.appendArray(wr, td, depth)
@@ -207,13 +207,13 @@ func (wr *Writer) appendJSON(data interface{}, depth int) {
 }
 
 func appendDefault(wr *Writer, data interface{}, depth int) {
-	if g, _ := data.(alt.Genericer); g != nil {
-		wr.appendJSON(g.Generic().Simplify(), depth)
-		return
-	}
 	if simp, _ := data.(alt.Simplifier); simp != nil {
 		data = simp.Simplify()
 		wr.appendJSON(data, depth)
+		return
+	}
+	if g, _ := data.(alt.Genericer); g != nil {
+		wr.appendJSON(g.Generic().Simplify(), depth)
 		return
 	}
 	if !wr.NoReflect {
@@ -241,45 +241,6 @@ func appendDefault(wr *Writer, data interface{}, depth int) {
 		panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
 	} else {
 		wr.buf = wr.appendString(wr.buf, fmt.Sprintf("%v", data), !wr.HTMLUnsafe)
-	}
-}
-
-func (wr *Writer) appendTime(t time.Time) {
-	if wr.TimeMap {
-		wr.buf = append(wr.buf, []byte(`{"`)...)
-		wr.buf = append(wr.buf, wr.CreateKey...)
-		wr.buf = append(wr.buf, []byte(`":"`)...)
-		if wr.FullTypePath {
-			wr.buf = append(wr.buf, []byte("time/Time")...)
-		} else {
-			wr.buf = append(wr.buf, []byte("Time")...)
-		}
-		wr.buf = append(wr.buf, []byte(`","value":`)...)
-	} else if 0 < len(wr.TimeWrap) {
-		wr.buf = append(wr.buf, []byte(`{"`)...)
-		wr.buf = append(wr.buf, []byte(wr.TimeWrap)...)
-		wr.buf = append(wr.buf, []byte(`":`)...)
-	}
-	switch wr.TimeFormat {
-	case "", "nano":
-		wr.buf = append(wr.buf, []byte(strconv.FormatInt(t.UnixNano(), 10))...)
-	case "second":
-		// Decimal format but float is not accurate enough so append the output
-		// in two parts.
-		nano := t.UnixNano()
-		secs := nano / int64(time.Second)
-		if 0 < nano {
-			wr.buf = append(wr.buf, []byte(fmt.Sprintf("%d.%09d", secs, nano-(secs*int64(time.Second))))...)
-		} else {
-			wr.buf = append(wr.buf, []byte(fmt.Sprintf("%d.%09d", secs, -(nano-(secs*int64(time.Second)))))...)
-		}
-	default:
-		wr.buf = append(wr.buf, '"')
-		wr.buf = append(wr.buf, []byte(t.Format(wr.TimeFormat))...)
-		wr.buf = append(wr.buf, '"')
-	}
-	if 0 < len(wr.TimeWrap) || wr.TimeMap {
-		wr.buf = append(wr.buf, '}')
 	}
 }
 
@@ -359,7 +320,7 @@ func appendObject(wr *Writer, n map[string]interface{}, depth int) {
 			continue
 		}
 		empty = false
-		wr.buf = append(wr.buf, []byte(cs)...)
+		wr.buf = append(wr.buf, cs...)
 		wr.buf = wr.appendString(wr.buf, k, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, ':')
 		wr.buf = append(wr.buf, ' ')
@@ -368,7 +329,7 @@ func appendObject(wr *Writer, n map[string]interface{}, depth int) {
 	}
 	if !empty {
 		wr.buf[len(wr.buf)-1] = '\n'
-		wr.buf = append(wr.buf, []byte(is)...)
+		wr.buf = append(wr.buf, is...)
 	}
 	wr.buf = append(wr.buf, '}')
 }
@@ -413,7 +374,7 @@ func appendSortObject(wr *Writer, n map[string]interface{}, depth int) {
 			continue
 		}
 		empty = false
-		wr.buf = append(wr.buf, []byte(cs)...)
+		wr.buf = append(wr.buf, cs...)
 		wr.buf = wr.appendString(wr.buf, k, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, ':')
 		wr.buf = append(wr.buf, ' ')
@@ -422,7 +383,7 @@ func appendSortObject(wr *Writer, n map[string]interface{}, depth int) {
 	}
 	if !empty {
 		wr.buf[len(wr.buf)-1] = '\n'
-		wr.buf = append(wr.buf, []byte(is)...)
+		wr.buf = append(wr.buf, is...)
 	}
 	wr.buf = append(wr.buf, '}')
 }
@@ -465,7 +426,7 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 		cs = spaces[0:x]
 	}
 	if 0 < len(wr.CreateKey) {
-		wr.buf = append(wr.buf, []byte(cs)...)
+		wr.buf = append(wr.buf, cs...)
 		wr.buf = append(wr.buf, '"')
 		wr.buf = append(wr.buf, wr.CreateKey...)
 		wr.buf = append(wr.buf, `": "`...)
@@ -479,7 +440,7 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 	}
 	for _, fi := range fields {
 		if !indented {
-			wr.buf = append(wr.buf, []byte(cs)...)
+			wr.buf = append(wr.buf, cs...)
 			indented = true
 		}
 		wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, !wr.HTMLUnsafe)
@@ -527,7 +488,7 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 	}
 	if !empty {
 		wr.buf[len(wr.buf)-1] = '\n'
-		wr.buf = append(wr.buf, []byte(is)...)
+		wr.buf = append(wr.buf, is...)
 	}
 	wr.buf = append(wr.buf, '}')
 }
@@ -563,7 +524,7 @@ func (wr *Writer) appendSlice(rv reflect.Value, depth int, st *ojg.Struct) {
 	empty := true
 	wr.buf = append(wr.buf, '[')
 	for j := 0; j < end; j++ {
-		wr.buf = append(wr.buf, []byte(cs)...)
+		wr.buf = append(wr.buf, cs...)
 		rm := rv.Index(j)
 		switch rm.Kind() {
 		case reflect.Struct:
@@ -580,7 +541,7 @@ func (wr *Writer) appendSlice(rv reflect.Value, depth int, st *ojg.Struct) {
 	}
 	if !empty {
 		wr.buf[len(wr.buf)-1] = '\n'
-		wr.buf = append(wr.buf, []byte(is)...)
+		wr.buf = append(wr.buf, is...)
 	}
 	wr.buf = append(wr.buf, ']')
 }
@@ -626,7 +587,7 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, st *ojg.Struct) {
 			}
 			rm = rm.Elem()
 		}
-		wr.buf = append(wr.buf, []byte(cs)...)
+		wr.buf = append(wr.buf, cs...)
 		switch rm.Kind() {
 		case reflect.Struct:
 			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
@@ -656,7 +617,7 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, st *ojg.Struct) {
 	}
 	if !empty {
 		wr.buf[len(wr.buf)-1] = '\n'
-		wr.buf = append(wr.buf, []byte(is)...)
+		wr.buf = append(wr.buf, is...)
 	}
 	wr.buf = append(wr.buf, '}')
 }
