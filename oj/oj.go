@@ -175,7 +175,6 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 			wr.findex = 0
 		case *Writer:
 			wr = ta
-			wr.strict = true
 		}
 	}
 	return wr.Write(w, data)

@@ -157,30 +157,30 @@ func senParseChan(b *testing.B) {
 	rc <- nil
 }
 
-func senString(b *testing.B) {
+func senBytes(b *testing.B) {
 	data := loadSample()
 	opt := sen.Options{OmitNil: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = sen.String(data, &opt)
+		_ = sen.Bytes(data, &opt)
 	}
 }
 
-func senStringIndent(b *testing.B) {
+func senBytesIndent(b *testing.B) {
 	data := loadSample()
 	b.ResetTimer()
 	opt := sen.Options{OmitNil: true, Indent: 2}
 	for n := 0; n < b.N; n++ {
-		_ = sen.String(data, &opt)
+		_ = sen.Bytes(data, &opt)
 	}
 }
 
-func senStringSort(b *testing.B) {
+func senBytesSort(b *testing.B) {
 	data := loadSample()
 	opt := sen.Options{OmitNil: true, Indent: 2, Sort: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = sen.String(data, &opt)
+		_ = sen.Bytes(data, &opt)
 	}
 }
 

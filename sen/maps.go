@@ -55,7 +55,7 @@ const (
 		".........GJ..G.................." + // 0x00
 		"G...u.....uuGuucuuuuuuuuuuI.u.uu" + // 0x20
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuk.muu" + // 0x40
-		".uuuuuuuuuuuuuuuuuuuuuuuuuul.nu." + // 0x60
+		".uuuuuuuuuuuuuuuuuuuuuuuuuul.nuu" + // 0x60
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0x80
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0xa0
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0xc0

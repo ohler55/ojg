@@ -1,6 +1,6 @@
-// Copyright (c) 2020, Peter Ohler, All rights reserved.
+// Copyright (c) 2021, Peter Ohler, All rights reserved.
 
-package oj
+package sen
 
 import (
 	"fmt"
@@ -15,11 +15,11 @@ import (
 func tightDefault(wr *Writer, data interface{}, _ int) {
 	if simp, _ := data.(alt.Simplifier); simp != nil {
 		data = simp.Simplify()
-		wr.appendJSON(data, 0)
+		wr.appendSEN(data, 0)
 		return
 	}
 	if g, _ := data.(alt.Genericer); g != nil {
-		wr.appendJSON(g.Generic().Simplify(), 0)
+		wr.appendSEN(g.Generic().Simplify(), 0)
 		return
 	}
 	if !wr.NoReflect {
@@ -40,24 +40,32 @@ func tightDefault(wr *Writer, data interface{}, _ int) {
 			// Not much should get here except Map, Complex and un-decomposable
 			// values.
 			dec := alt.Decompose(data, &wr.Options)
-			wr.appendJSON(dec, 0)
+			wr.appendSEN(dec, 0)
 			return
 		}
-	} else if wr.strict {
-		panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
 	} else {
-		wr.buf = ojg.AppendJSONString(wr.buf, fmt.Sprintf("%v", data), !wr.HTMLUnsafe)
+		wr.buf = ojg.AppendSENString(wr.buf, fmt.Sprintf("%v", data), !wr.HTMLUnsafe)
 	}
 }
 
 func tightArray(wr *Writer, n []interface{}, _ int) {
 	if 0 < len(n) {
+		space := false
 		wr.buf = append(wr.buf, '[')
 		for _, m := range n {
-			wr.appendJSON(m, 0)
-			wr.buf = append(wr.buf, ',')
+			wr.appendSEN(m, 0)
+			if wr.needSep {
+				wr.buf = append(wr.buf, ' ')
+				space = true
+			} else {
+				space = false
+			}
 		}
-		wr.buf[len(wr.buf)-1] = ']'
+		if space {
+			wr.buf[len(wr.buf)-1] = ']'
+		} else {
+			wr.buf = append(wr.buf, ']')
+		}
 	} else {
 		wr.buf = append(wr.buf, "[]"...)
 	}
@@ -70,10 +78,10 @@ func tightObject(wr *Writer, n map[string]interface{}, _ int) {
 		if m == nil && wr.OmitNil {
 			continue
 		}
-		wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
+		wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, ':')
-		wr.appendJSON(m, 0)
-		wr.buf = append(wr.buf, ',')
+		wr.appendSEN(m, 0)
+		wr.buf = append(wr.buf, ' ')
 		comma = true
 	}
 	if comma {
@@ -96,10 +104,10 @@ func tightSortObject(wr *Writer, n map[string]interface{}, _ int) {
 		if m == nil && wr.OmitNil {
 			continue
 		}
-		wr.buf = ojg.AppendJSONString(wr.buf, k, !wr.HTMLUnsafe)
+		wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, ':')
-		wr.appendJSON(m, 0)
-		wr.buf = append(wr.buf, ',')
+		wr.appendSEN(m, 0)
+		wr.buf = append(wr.buf, ' ')
 		comma = true
 	}
 	if comma {
@@ -121,19 +129,23 @@ func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
 	comma := false
 	if 0 < len(wr.CreateKey) {
 		wr.buf = wr.appendString(wr.buf, wr.CreateKey, !wr.HTMLUnsafe)
-		wr.buf = append(wr.buf, `:"`...)
+		wr.buf = append(wr.buf, ':')
 		if wr.FullTypePath {
-			wr.buf = append(wr.buf, (st.Type.PkgPath() + "/" + st.Type.Name())...)
-		} else {
+			wr.buf = append(wr.buf, '"')
+			wr.buf = append(wr.buf, st.Type.PkgPath()...)
+			wr.buf = append(wr.buf, '/')
 			wr.buf = append(wr.buf, st.Type.Name()...)
+			wr.buf = append(wr.buf, '"')
+		} else {
+			wr.buf = wr.appendString(wr.buf, st.Type.Name(), !wr.HTMLUnsafe)
 		}
-		wr.buf = append(wr.buf, `",`...)
+		wr.buf = append(wr.buf, ' ')
 		comma = true
 	}
 	for _, fi := range fields {
 		wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, !wr.HTMLUnsafe)
 		if wrote {
-			wr.buf = append(wr.buf, ',')
+			wr.buf = append(wr.buf, ' ')
 			comma = true
 			continue
 		}
@@ -167,9 +179,9 @@ func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
 			}
 			wr.tightMap(fv, fi.Elem)
 		default:
-			wr.appendJSON(v, 0)
+			wr.appendSEN(v, 0)
 		}
-		wr.buf = append(wr.buf, ',')
+		wr.buf = append(wr.buf, ' ')
 		comma = true
 	}
 	if comma {
@@ -196,9 +208,9 @@ func (wr *Writer) tightSlice(rv reflect.Value, st *ojg.Struct) {
 		case reflect.Map:
 			wr.tightMap(rm, st)
 		default:
-			wr.appendJSON(rm.Interface(), 0)
+			wr.appendSEN(rm.Interface(), 0)
 		}
-		wr.buf = append(wr.buf, ',')
+		wr.buf = append(wr.buf, ' ')
 		comma = true
 	}
 	if comma {
@@ -225,29 +237,29 @@ func (wr *Writer) tightMap(rv reflect.Value, st *ojg.Struct) {
 		}
 		switch rm.Kind() {
 		case reflect.Struct:
-			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
 			wr.tightStruct(rm, st)
 		case reflect.Slice, reflect.Array:
 			if wr.OmitNil && rm.IsNil() {
 				continue
 			}
-			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
 			wr.tightSlice(rm, st)
 		case reflect.Map:
 			if wr.OmitNil && rm.IsNil() {
 				continue
 			}
-			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
 			wr.tightMap(rm, st)
 		default:
-			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
-			wr.appendJSON(rm.Interface(), 0)
+			wr.appendSEN(rm.Interface(), 0)
 		}
-		wr.buf = append(wr.buf, ',')
+		wr.buf = append(wr.buf, ' ')
 		comma = true
 	}
 	if comma {

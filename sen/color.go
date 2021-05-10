@@ -11,7 +11,7 @@ import (
 	"github.com/ohler55/ojg/alt"
 )
 
-func (wr *Writer) cbuildSen(data interface{}, depth int) {
+func (wr *Writer) colorSEN(data interface{}, depth int) {
 	switch td := data.(type) {
 	case nil:
 		wr.buf = append(wr.buf, wr.NullColor...)
@@ -27,41 +27,41 @@ func (wr *Writer) cbuildSen(data interface{}, depth int) {
 
 	case int:
 		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = strconv.AppendInt(wr.buf, int64(td), 10)
 	case int8:
 		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = strconv.AppendInt(wr.buf, int64(td), 10)
 	case int16:
 		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = strconv.AppendInt(wr.buf, int64(td), 10)
 	case int32:
 		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = strconv.AppendInt(wr.buf, int64(td), 10)
 	case int64:
 		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = append(wr.buf, []byte(strconv.FormatInt(td, 10))...)
+		wr.buf = strconv.AppendInt(wr.buf, td, 10)
 	case uint:
 		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = strconv.AppendUint(wr.buf, uint64(td), 10)
 	case uint8:
 		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = strconv.AppendUint(wr.buf, uint64(td), 10)
 	case uint16:
 		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = strconv.AppendUint(wr.buf, uint64(td), 10)
 	case uint32:
 		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = strconv.AppendUint(wr.buf, uint64(td), 10)
 	case uint64:
 		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = append(wr.buf, []byte(strconv.FormatInt(int64(td), 10))...)
+		wr.buf = strconv.AppendUint(wr.buf, td, 10)
 
 	case float32:
 		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = append(wr.buf, []byte(strconv.FormatFloat(float64(td), 'g', -1, 32))...)
+		wr.buf = strconv.AppendFloat(wr.buf, float64(td), 'g', -1, 32)
 	case float64:
 		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = append(wr.buf, []byte(strconv.FormatFloat(td, 'g', -1, 64))...)
+		wr.buf = strconv.AppendFloat(wr.buf, float64(td), 'g', -1, 64)
 
 	case string:
 		wr.buf = append(wr.buf, wr.StringColor...)
@@ -72,27 +72,27 @@ func (wr *Writer) cbuildSen(data interface{}, depth int) {
 		wr.buf = wr.AppendTime(wr.buf, td, true)
 
 	case []interface{}:
-		wr.cbuildSimpleArray(td, depth)
+		wr.colorArray(td, depth)
 
 	case map[string]interface{}:
-		wr.cbuildSimpleObject(td, depth)
+		wr.colorObject(td, depth)
 
 	default:
 		if simp, _ := data.(alt.Simplifier); simp != nil {
 			data = simp.Simplify()
-			wr.cbuildSen(data, depth)
+			wr.colorSEN(data, depth)
 			return
 		}
 		if g, _ := data.(alt.Genericer); g != nil {
-			wr.cbuildSen(g.Generic().Simplify(), depth)
+			wr.colorSEN(g.Generic().Simplify(), depth)
 			return
 		}
 		if 0 < len(wr.CreateKey) {
 			ao := alt.Options{CreateKey: wr.CreateKey, OmitNil: wr.OmitNil, FullTypePath: wr.FullTypePath}
-			wr.cbuildSen(alt.Decompose(data, &ao), depth)
+			wr.colorSEN(alt.Decompose(data, &ao), depth)
 			return
 		} else {
-			wr.cbuildSen(alt.Decompose(data, &alt.Options{OmitNil: wr.OmitNil}), depth)
+			wr.colorSEN(alt.Decompose(data, &alt.Options{OmitNil: wr.OmitNil}), depth)
 		}
 	}
 	wr.buf = append(wr.buf, wr.NoColor...)
@@ -105,7 +105,7 @@ func (wr *Writer) cbuildSen(data interface{}, depth int) {
 	}
 }
 
-func (wr *Writer) cbuildSimpleArray(n []interface{}, depth int) {
+func (wr *Writer) colorArray(n []interface{}, depth int) {
 	wr.buf = append(wr.buf, wr.SyntaxColor...)
 	wr.buf = append(wr.buf, '[')
 	wr.buf = append(wr.buf, wr.NoColor...)
@@ -141,14 +141,14 @@ func (wr *Writer) cbuildSimpleArray(n []interface{}, depth int) {
 			wr.buf = append(wr.buf, ' ')
 		}
 		wr.buf = append(wr.buf, []byte(cs)...)
-		wr.cbuildSen(m, d2)
+		wr.colorSEN(m, d2)
 	}
 	wr.buf = append(wr.buf, []byte(is)...)
 	wr.buf = append(wr.buf, wr.SyntaxColor...)
 	wr.buf = append(wr.buf, ']')
 }
 
-func (wr *Writer) cbuildSimpleObject(n map[string]interface{}, depth int) {
+func (wr *Writer) colorObject(n map[string]interface{}, depth int) {
 	wr.buf = append(wr.buf, wr.SyntaxColor...)
 	wr.buf = append(wr.buf, '{')
 	wr.buf = append(wr.buf, wr.NoColor...)
@@ -206,7 +206,7 @@ func (wr *Writer) cbuildSimpleObject(n map[string]interface{}, depth int) {
 			if 0 < wr.Indent {
 				wr.buf = append(wr.buf, ' ')
 			}
-			wr.cbuildSen(m, d2)
+			wr.colorSEN(m, d2)
 		}
 	} else {
 		for k, m := range n {
@@ -228,7 +228,7 @@ func (wr *Writer) cbuildSimpleObject(n map[string]interface{}, depth int) {
 			if 0 < wr.Indent {
 				wr.buf = append(wr.buf, ' ')
 			}
-			wr.cbuildSen(m, d2)
+			wr.colorSEN(m, d2)
 		}
 	}
 	wr.buf = append(wr.buf, []byte(is)...)

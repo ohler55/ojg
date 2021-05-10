@@ -88,17 +88,11 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	if *useCat {
-		benchSuite("Marshal Struct", []*bench{
-			{pkg: "json", name: "Marshal", fun: goMarshalCatalog},
-			{pkg: "oj", name: "Marshal", fun: ojMarshalCatalog},
-		})
-	} else {
-		benchSuite("Marshal Struct", []*bench{
-			{pkg: "json", name: "Marshal", fun: goMarshalPatient},
-			{pkg: "oj", name: "Marshal", fun: ojMarshalPatient},
-		})
-	}
+	benchSuite("to JSON", []*bench{
+		{pkg: "json", name: "Marshal", fun: marshalJSON},
+		{pkg: "oj", name: "JSON", fun: ojJSON},
+		{pkg: "sen", name: "Bytes", fun: senBytes},
+	})
 
 	benchSuite("Parse string/[]byte", []*bench{
 		{pkg: "json", name: "Unmarshal", fun: goParse},
@@ -159,18 +153,18 @@ func main() {
 	benchSuite("to JSON", []*bench{
 		{pkg: "json", name: "Marshal", fun: marshalJSON},
 		{pkg: "oj", name: "JSON", fun: ojJSON},
-		{pkg: "sen", name: "String", fun: senString},
+		{pkg: "sen", name: "Bytes", fun: senBytes},
 	})
 	benchSuite("to JSON with indentation", []*bench{
 		{pkg: "json", name: "Marshal", fun: marshalJSONIndent},
 		{pkg: "oj", name: "JSON", fun: ojJSONIndent},
-		{pkg: "sen", name: "String", fun: senStringIndent},
+		{pkg: "sen", name: "Bytes", fun: senBytesIndent},
 		{pkg: "pretty", name: "JSON", fun: prettyJSON},
 		{pkg: "pretty", name: "SEN", fun: prettySEN},
 	})
 	benchSuite("to JSON with indentation and sorted keys", []*bench{
 		{pkg: "oj", name: "JSON", fun: ojJSONSort},
-		{pkg: "sen", name: "String", fun: senStringSort},
+		{pkg: "sen", name: "Bytes", fun: senBytesSort},
 		{pkg: "pretty", name: "JSON", fun: prettyJSON},
 		{pkg: "pretty", name: "SEN", fun: prettySEN},
 	})

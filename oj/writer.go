@@ -142,13 +142,13 @@ func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
 func (wr *Writer) appendJSON(data interface{}, depth int) {
 	switch td := data.(type) {
 	case nil:
-		wr.buf = append(wr.buf, []byte("null")...)
+		wr.buf = append(wr.buf, "null"...)
 
 	case bool:
 		if td {
-			wr.buf = append(wr.buf, []byte("true")...)
+			wr.buf = append(wr.buf, "true"...)
 		} else {
-			wr.buf = append(wr.buf, []byte("false")...)
+			wr.buf = append(wr.buf, "false"...)
 		}
 
 	case int:
@@ -431,7 +431,9 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 		wr.buf = append(wr.buf, wr.CreateKey...)
 		wr.buf = append(wr.buf, `": "`...)
 		if wr.FullTypePath {
-			wr.buf = append(wr.buf, (st.Type.PkgPath() + "/" + st.Type.Name())...)
+			wr.buf = append(wr.buf, st.Type.PkgPath()...)
+			wr.buf = append(wr.buf, '/')
+			wr.buf = append(wr.buf, st.Type.Name()...)
 		} else {
 			wr.buf = append(wr.buf, st.Type.Name()...)
 		}
