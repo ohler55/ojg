@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+
+	"github.com/ohler55/ojg"
 )
 
 const (
@@ -44,12 +46,12 @@ type parser struct {
 	pos int
 }
 
-// ParseExprString parses a string into an Expr.
+// ParseString parses a string into an Expr.
 func ParseString(s string) (x Expr, err error) {
 	return Parse([]byte(s))
 }
 
-// MustParseExprString parses a string into an Expr and panics on error.
+// MustParseString parses a string into an Expr and panics on error.
 func MustParseString(s string) (x Expr) {
 	return MustParse([]byte(s))
 }
@@ -58,9 +60,7 @@ func MustParseString(s string) (x Expr) {
 func Parse(buf []byte) (x Expr, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			if err, _ = r.(error); err == nil {
-				err = fmt.Errorf("%v", r)
-			}
+			err = ojg.NewError(r)
 		}
 	}()
 	x = MustParse(buf)

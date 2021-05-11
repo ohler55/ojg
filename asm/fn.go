@@ -12,6 +12,7 @@ import (
 
 var fnMap = map[string]Fn{}
 
+// Fn encapsulates the information about a formula function in the package.
 type Fn struct {
 	Name     string
 	Eval     func(root map[string]interface{}, at interface{}, args ...interface{}) interface{}
@@ -21,6 +22,7 @@ type Fn struct {
 	compiled bool
 }
 
+// Define a function for assembly use.
 func Define(f *Fn) {
 	if _, has := fnMap[f.Name]; has {
 		panic(fmt.Errorf("%s already defined", f.Name))
@@ -28,6 +30,7 @@ func Define(f *Fn) {
 	fnMap[f.Name] = *f
 }
 
+// FnDocs returns the documentation for all function.
 func FnDocs() map[string]string {
 	docs := map[string]string{}
 	for k, f := range fnMap {
@@ -36,6 +39,7 @@ func FnDocs() map[string]string {
 	return docs
 }
 
+// NewFn create a new named function of the named behavior.
 func NewFn(name string) (fn *Fn) {
 	if f, has := fnMap[name]; has {
 		fn = &f
@@ -43,6 +47,7 @@ func NewFn(name string) (fn *Fn) {
 	return
 }
 
+// Simplify a function in to simple types that can be encodes as JSON or SEN.
 func (f *Fn) Simplify() interface{} {
 	simple := make([]interface{}, 0, len(f.Args)+1)
 	simple = append(simple, f.Name)
@@ -59,6 +64,7 @@ func (f *Fn) Simplify() interface{} {
 	return simple
 }
 
+// String return a string representation of the function.
 func (f *Fn) String() string {
 	return sen.String(f)
 }

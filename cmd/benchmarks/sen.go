@@ -8,6 +8,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/sen"
 )
@@ -157,30 +158,30 @@ func senParseChan(b *testing.B) {
 	rc <- nil
 }
 
-func senBytes(b *testing.B) {
+func senSEN(b *testing.B) {
 	data := loadSample()
-	opt := sen.Options{OmitNil: true}
+	wr := sen.Writer{Options: ojg.Options{OmitNil: true}}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = sen.Bytes(data, &opt)
+		_ = wr.MustSEN(data)
 	}
 }
 
-func senBytesIndent(b *testing.B) {
+func senSENIndent(b *testing.B) {
 	data := loadSample()
 	b.ResetTimer()
-	opt := sen.Options{OmitNil: true, Indent: 2}
+	wr := sen.Writer{Options: ojg.Options{OmitNil: true, Indent: 2}}
 	for n := 0; n < b.N; n++ {
-		_ = sen.Bytes(data, &opt)
+		_ = wr.MustSEN(data)
 	}
 }
 
-func senBytesSort(b *testing.B) {
+func senSENSort(b *testing.B) {
 	data := loadSample()
-	opt := sen.Options{OmitNil: true, Indent: 2, Sort: true}
+	wr := sen.Writer{Options: ojg.Options{OmitNil: true, Indent: 2, Sort: true}}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_ = sen.Bytes(data, &opt)
+		_ = wr.MustSEN(data)
 	}
 }
 
@@ -188,10 +189,8 @@ func senWriteIndent(b *testing.B) {
 	data := loadSample()
 	var w noWriter
 	b.ResetTimer()
-	opt := oj.Options{OmitNil: true, Indent: 2}
+	wr := sen.Writer{Options: ojg.Options{OmitNil: true, Indent: 2}}
 	for n := 0; n < b.N; n++ {
-		if err := sen.Write(w, data, &opt); err != nil {
-			log.Fatal(err)
-		}
+		wr.MustWrite(w, data)
 	}
 }

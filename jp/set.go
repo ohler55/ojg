@@ -25,7 +25,7 @@ func (x Expr) Del(n interface{}) error {
 	return x.Set(n, delFlag)
 }
 
-// Del removes at most one node.
+// DelOne removes at most one node.
 func (x Expr) DelOne(n interface{}) error {
 	return x.SetOne(n, delFlag)
 }
@@ -631,7 +631,7 @@ func (x Expr) Set(data, value interface{}) error {
 	return nil
 }
 
-// Set a child node value. An error is returned if it is not possible. If the
+// SetOne child node value. An error is returned if it is not possible. If the
 // path to the child does not exist array and map elements are added.
 func (x Expr) SetOne(data, value interface{}) error {
 	fun := "set"
@@ -774,21 +774,20 @@ func (x Expr) SetOne(data, value interface{}) error {
 							tv[i] = value
 						}
 						return nil
-					} else {
-						v = tv[i]
-						switch v.(type) {
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+					}
+					v = tv[i]
+					switch v.(type) {
+					case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+						bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
+					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						stack = append(stack, v)
+					default:
+						switch reflect.TypeOf(v).Kind() {
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-								stack = append(stack, v)
-							default:
-								return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-							}
+							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 						}
 					}
 				} else {
@@ -806,14 +805,13 @@ func (x Expr) SetOne(data, value interface{}) error {
 							tv[i] = nodeValue
 						}
 						return nil
-					} else {
-						v = tv[i]
-						switch v.(type) {
-						case gen.Object, gen.Array:
-							stack = append(stack, v)
-						default:
-							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-						}
+					}
+					v = tv[i]
+					switch v.(type) {
+					case gen.Object, gen.Array:
+						stack = append(stack, v)
+					default:
+						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 					}
 				} else {
 					return fmt.Errorf("can not follow out of bounds array index at '%s'", x[:fi+1])

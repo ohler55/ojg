@@ -19,8 +19,10 @@ var TimeFormat = ""
 // time will look like '{"@":"2020-04-12T16:34:04.123456789Z"}'
 var TimeWrap = ""
 
+// Time is a time.Time Node.
 type Time time.Time
 
+// String returns a string representation of the Node.
 func (n Time) String() string {
 	var b strings.Builder
 
@@ -29,18 +31,22 @@ func (n Time) String() string {
 	return b.String()
 }
 
+// Alter returns the backing time.Time value of the Node.
 func (n Time) Alter() interface{} {
 	return time.Time(n)
 }
 
+// Simplify returns the backing time.Time value of the Node.
 func (n Time) Simplify() interface{} {
 	return time.Time(n)
 }
 
+// Dup returns the backing time.Time value of the Node.
 func (n Time) Dup() Node {
 	return n
 }
 
+// Empty returns false.
 func (n Time) Empty() bool {
 	return false
 }

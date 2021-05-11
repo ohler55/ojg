@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
 )
 
@@ -98,9 +99,7 @@ func (r *Recomposer) registerAnyComposer(rt reflect.Type, fun RecomposeAnyFunc) 
 func (r *Recomposer) Recompose(v interface{}, tv ...interface{}) (out interface{}, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
-			if err, _ = rec.(error); err == nil {
-				err = fmt.Errorf("%v", rec)
-			}
+			err = ojg.NewError(r)
 			out = nil
 		}
 	}()

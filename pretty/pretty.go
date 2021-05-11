@@ -36,7 +36,7 @@ func SEN(data interface{}, args ...interface{}) string {
 	return string(b)
 }
 
-// JSON encoded output written to the provided io.Writer.
+// WriteJSON encoded output written to the provided io.Writer.
 func WriteJSON(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	pw := Writer{
 		Options:  ojg.DefaultOptions,
@@ -51,7 +51,7 @@ func WriteJSON(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	return
 }
 
-// SEN encoded output written to the provided io.Writer.
+// WriteSEN encoded output written to the provided io.Writer.
 func WriteSEN(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	pw := Writer{
 		Options:  ojg.DefaultOptions,

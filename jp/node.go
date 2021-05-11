@@ -353,6 +353,7 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 	return
 }
 
+// FirstNode returns the first matcning node.
 func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 	if len(x) == 0 {
 		return nil
@@ -406,11 +407,10 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 					v = tv[i]
 					if fi == index(len(x))-1 { // last one
 						return v
-					} else {
-						switch v.(type) {
-						case gen.Object, gen.Array:
-							stack = append(stack, v)
-						}
+					}
+					switch v.(type) {
+					case gen.Object, gen.Array:
+						stack = append(stack, v)
 					}
 				}
 			}

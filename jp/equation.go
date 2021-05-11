@@ -129,32 +129,32 @@ func Divide(left, right *Equation) *Equation {
 
 // Append a fragment string representation of the fragment to the buffer
 // then returning the expanded buffer.
-func (s *Equation) Append(buf []byte, parens bool) []byte {
+func (e *Equation) Append(buf []byte, parens bool) []byte {
 	if parens {
 		buf = append(buf, '(')
 	}
-	if s.o == nil {
-		buf = s.appendValue(buf, s.result)
+	if e.o == nil {
+		buf = e.appendValue(buf, e.result)
 	} else {
-		switch s.o.code {
+		switch e.o.code {
 		case not.code:
 			buf = append(buf, '!')
-			if s.left != nil {
-				buf = s.left.Append(buf, s.left.o != nil && s.left.o.prec >= s.o.prec)
+			if e.left != nil {
+				buf = e.left.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)
 			}
 		case get.code:
-			if s.left != nil {
-				buf = s.appendValue(buf, s.left.result)
+			if e.left != nil {
+				buf = e.appendValue(buf, e.left.result)
 			}
 		default:
-			if s.left != nil {
-				buf = s.left.Append(buf, s.left.o != nil && s.left.o.prec >= s.o.prec)
+			if e.left != nil {
+				buf = e.left.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)
 			}
 			buf = append(buf, ' ')
-			buf = append(buf, s.o.name...)
+			buf = append(buf, e.o.name...)
 			buf = append(buf, ' ')
-			if s.right != nil {
-				buf = s.right.Append(buf, s.left.o != nil && s.left.o.prec >= s.o.prec)
+			if e.right != nil {
+				buf = e.right.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)
 			}
 		}
 	}
@@ -164,7 +164,7 @@ func (s *Equation) Append(buf []byte, parens bool) []byte {
 	return buf
 }
 
-func (s *Equation) appendValue(buf []byte, v interface{}) []byte {
+func (e *Equation) appendValue(buf []byte, v interface{}) []byte {
 	switch tv := v.(type) {
 	case nil:
 		buf = append(buf, "null"...)
@@ -189,8 +189,8 @@ func (s *Equation) appendValue(buf []byte, v interface{}) []byte {
 }
 
 // String representation of the equation.
-func (s *Equation) String() string {
-	return string(s.Append([]byte{}, true))
+func (e *Equation) String() string {
+	return string(e.Append([]byte{}, true))
 }
 
 func (e *Equation) buildScript(stack []interface{}) []interface{} {

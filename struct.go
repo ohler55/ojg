@@ -12,13 +12,20 @@ import (
 )
 
 const (
-	MaskByTag  = byte(0x10)
-	MaskExact  = byte(0x08) // exact key vs lowwer case first letter
+	// MaskByTag is the mask for byTag fields.
+	MaskByTag = byte(0x10)
+	// MaskExact is the mask for Exact fields.
+	MaskExact = byte(0x08) // exact key vs lowwer case first letter
+	// MaskPretty is the mask for Pretty fields.
 	MaskPretty = byte(0x04)
+	// MaskNested is the mask for Nested fields.
 	MaskNested = byte(0x02)
-	MaskSen    = byte(0x01)
-	MaskSet    = byte(0x20)
-	MaskIndex  = byte(0x1f)
+	// MaskSen is the mask for Sen fields.
+	MaskSen = byte(0x01)
+	// MaskSet is the mask for Set fields.
+	MaskSet = byte(0x20)
+	// MaskIndex is the mask for an index that has been set up.
+	MaskIndex = byte(0x1f)
 )
 
 // Struct holds reflect information about a struct.
@@ -33,6 +40,8 @@ var (
 	structMap = map[uintptr]*Struct{}
 )
 
+// GetTypeStruct gets the struct information about the reflect type. This is
+// use internally and is not expected to be used externally.
 func GetTypeStruct(rt reflect.Type) (st *Struct) {
 	x := (*[2]uintptr)(unsafe.Pointer(&rt))[1]
 	structMut.Lock()
@@ -52,6 +61,8 @@ func getTypeStruct(rt reflect.Type) (st *Struct) {
 	return buildStruct(rt, x)
 }
 
+// GetStruct gets the struct information for the provided value. This is use
+// internally and is not expected to be used externally.
 func GetStruct(v interface{}) (st *Struct) {
 	x := (*[2]uintptr)(unsafe.Pointer(&v))[0]
 	structMut.Lock()

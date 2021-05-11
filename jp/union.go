@@ -30,7 +30,7 @@ func (f Union) Append(buf []byte, _, _ bool) []byte {
 	return buf
 }
 
-// NewUnion
+// NewUnion creates a new Union with the provide keys.
 func NewUnion(keys ...interface{}) (u Union) {
 	for _, k := range keys {
 		switch tk := k.(type) {

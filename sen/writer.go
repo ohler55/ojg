@@ -90,9 +90,7 @@ func (wr *Writer) Write(w io.Writer, data interface{}) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			wr.buf = wr.buf[:0]
-			if err, _ = r.(error); err == nil {
-				err = fmt.Errorf("%v", r)
-			}
+			err = ojg.NewError(r)
 		}
 	}()
 	wr.MustWrite(w, data)

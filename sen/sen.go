@@ -9,14 +9,22 @@ import (
 	"github.com/ohler55/ojg/alt"
 )
 
+// Options is an alias for ojg.Options
 type Options = ojg.Options
 
 var (
+	// DefaultOptions are the default options for the this package.
 	DefaultOptions = ojg.DefaultOptions
-	BrightOptions  = ojg.BrightOptions
-	GoOptions      = ojg.GoOptions
-	HTMLOptions    = ojg.HTMLOptions
+	// BrightOptions are the bright color options.
+	BrightOptions = ojg.BrightOptions
+	// GoOptions are the options that match the go json.Marshal behavior.
+	GoOptions = ojg.GoOptions
+	// HTMLOptions are the options that can be used to encode as HTML JSON.
+	HTMLOptions = ojg.HTMLOptions
 
+	// DefaultWriter is the default writer. This is not concurrent
+	// safe. Individual go routine writers should be used when writing
+	// concurrently.
 	DefaultWriter = Writer{
 		Options: ojg.DefaultOptions,
 		buf:     make([]byte, 0, 1024),

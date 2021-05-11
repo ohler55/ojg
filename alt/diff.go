@@ -10,6 +10,7 @@ import (
 	"github.com/ohler55/ojg/gen"
 )
 
+// TimeTolerance is the tolerance when comparing time elements
 var TimeTolerance = time.Millisecond
 
 // Path is a list of keys that can be either a string, int, or nil. Strings
@@ -30,6 +31,82 @@ func Compare(v0, v1 interface{}, ignores ...Path) Path {
 		return diffs[0]
 	}
 	return nil
+}
+
+// Match returns true if all elements in the fingerprint match those in
+// target. Fields in target but not in the fingerprint are not ignored. An
+// explicit nil in the fingerprint will match either a nil in the target or a
+// missing value in the target.
+func Match(fingerprint, target interface{}) bool {
+	switch fp := fingerprint.(type) {
+	case nil:
+		if target != nil {
+			return false
+		}
+	case bool:
+		if t1, ok := target.(bool); !ok || fp != t1 {
+			return false
+		}
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		i0, _ := asInt(fp)
+		if i1, ok := asInt(target); !ok || i0 != i1 {
+			return false
+		}
+	case float32, float64:
+		f0, _ := asFloat(fp)
+		if f1, ok := asFloat(target); !ok || f0 != f1 {
+			return false
+		}
+	case string:
+		if t1, ok := target.(string); !ok || fp != t1 {
+			return false
+		}
+	case time.Time:
+		if t1, ok := target.(time.Time); !ok || !fp.Round(TimeTolerance).Equal(t1.Round(TimeTolerance)) {
+			return false
+		}
+	case []interface{}:
+		t1, ok := target.([]interface{})
+		if !ok {
+			return false
+		}
+		if len(fp) != len(t1) {
+			return false
+		}
+		for i, v := range fp {
+			if !Match(v, t1[i]) {
+				return false
+			}
+		}
+	case map[string]interface{}:
+		t1, ok := target.(map[string]interface{})
+		if !ok {
+			return false
+		}
+		for k, v := range fp {
+			if !Match(v, t1[k]) {
+				return false
+			}
+		}
+	default:
+		vt0 := (*[2]uintptr)(unsafe.Pointer(&fingerprint))[0]
+		vt1 := (*[2]uintptr)(unsafe.Pointer(&target))[0]
+		if vt0 == vt1 {
+			if s0, _ := fingerprint.(Simplifier); s0 != nil {
+				if s1, _ := target.(Simplifier); s1 != nil {
+					return Match(s0.Simplify(), s1.Simplify())
+				}
+			}
+			opt := &Options{}
+			fingerprint = reflectValue(reflect.ValueOf(fingerprint), fingerprint, opt)
+			target = reflectValue(reflect.ValueOf(target), target, opt)
+			if fingerprint != nil && target != nil {
+				return Match(fingerprint, target)
+			}
+		}
+		return false
+	}
+	return true
 }
 
 func diff(v0, v1 interface{}, one bool, ignores ...Path) (diffs []Path) {

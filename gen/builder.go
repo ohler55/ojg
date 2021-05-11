@@ -4,11 +4,13 @@ package gen
 
 import "fmt"
 
+// Builder is assists in build a more complex Node.
 type Builder struct {
 	stack  []Node
 	starts []int
 }
 
+// Reset clears the the Builder of previous built nodes.
 func (b *Builder) Reset() {
 	if 0 < cap(b.stack) && 0 < len(b.stack) {
 		b.stack = b.stack[:0]
@@ -19,6 +21,8 @@ func (b *Builder) Reset() {
 	}
 }
 
+// Object adds an object to the builder. A key is required if adding to a
+// parent object.
 func (b *Builder) Object(key ...string) error {
 	newObj := Object{}
 	if 0 < len(key) {
@@ -37,6 +41,8 @@ func (b *Builder) Object(key ...string) error {
 	return nil
 }
 
+// Array adds an array to the builder. A key is required if adding to a parent
+// object.
 func (b *Builder) Array(key ...string) error {
 	if 0 < len(key) {
 		if len(b.starts) == 0 || 0 <= b.starts[len(b.starts)-1] {
@@ -52,6 +58,8 @@ func (b *Builder) Array(key ...string) error {
 	return nil
 }
 
+// Value adds a Node to the builder. A key is required if adding to a parent
+// object.
 func (b *Builder) Value(value Node, key ...string) error {
 	if 0 < len(key) {
 		if len(b.starts) == 0 || 0 <= b.starts[len(b.starts)-1] {
@@ -68,6 +76,7 @@ func (b *Builder) Value(value Node, key ...string) error {
 	return nil
 }
 
+// Pop close a parent Object or Array Node.
 func (b *Builder) Pop() {
 	if 0 < len(b.starts) {
 		start := b.starts[len(b.starts)-1]
@@ -91,13 +100,15 @@ func (b *Builder) Pop() {
 	}
 }
 
+// PopAll close all parent Object or Array Nodes.
 func (b *Builder) PopAll() {
 	for 0 < len(b.starts) {
 		b.Pop()
 	}
 }
 
-func (b *Builder) Result() (result interface{}) {
+// Result returns the current built Node.
+func (b *Builder) Result() (result Node) {
 	if 0 < len(b.stack) {
 		result = b.stack[0]
 	}

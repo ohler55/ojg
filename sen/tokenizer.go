@@ -9,6 +9,7 @@ import (
 	"math"
 	"unicode/utf8"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/oj"
 )
@@ -73,7 +74,7 @@ func (t *Tokenizer) Parse(buf []byte, handler oj.TokenHandler) (err error) {
 	t.mi = 0
 	defer func() {
 		if r := recover(); r != nil {
-			err, _ = r.(error)
+			err = ojg.NewError(r)
 		}
 	}()
 	// Skip BOM if present.
@@ -106,7 +107,7 @@ func (t *Tokenizer) Load(r io.Reader, handler oj.TokenHandler) (err error) {
 	eof := false
 	defer func() {
 		if r := recover(); r != nil {
-			err, _ = r.(error)
+			err = ojg.NewError(r)
 		}
 	}()
 	var cnt int

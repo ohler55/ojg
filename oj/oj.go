@@ -3,25 +3,36 @@
 package oj
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
 )
 
+// Options is an alias for ojg.Options
 type Options = ojg.Options
 
 var (
+	// DefaultOptions are the default options for the this package.
 	DefaultOptions = ojg.DefaultOptions
-	BrightOptions  = ojg.BrightOptions
-	GoOptions      = ojg.GoOptions
-	HTMLOptions    = ojg.HTMLOptions
+	// BrightOptions are the bright color options.
+	BrightOptions = ojg.BrightOptions
+	// GoOptions are the options that match the go json.Marshal behavior.
+	GoOptions = ojg.GoOptions
+	// HTMLOptions are the options that can be used to encode as HTML JSON.
+	HTMLOptions = ojg.HTMLOptions
 
+	// DefaultWriter is the default writer. This is not concurrent
+	// safe. Individual go routine writers should be used when writing
+	// concurrently.
 	DefaultWriter = Writer{
 		Options: ojg.DefaultOptions,
 		buf:     make([]byte, 0, 1024),
 	}
+
+	// GoWriter provides the options that are similar to the go json.Marshal
+	// behavior. This is not concurrent safe. Individual go routine writers
+	// should be used when writing concurrently.
 	GoWriter = Writer{
 		Options: ojg.GoOptions,
 		buf:     make([]byte, 0, 1024),
@@ -144,9 +155,7 @@ func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			wr.buf = wr.buf[:0]
-			if err, _ = r.(error); err == nil {
-				err = fmt.Errorf("%v", r)
-			}
+			err = ojg.NewError(r)
 		}
 	}()
 	wr.MustJSON(data)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
 )
 
@@ -65,9 +66,7 @@ type Script struct {
 func NewScript(str string) (s *Script, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			if err, _ = r.(error); err == nil {
-				err = fmt.Errorf("%v", r)
-			}
+			err = ojg.NewError(r)
 		}
 	}()
 	s = MustNewScript(str)

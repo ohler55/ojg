@@ -2,24 +2,30 @@
 
 package gen
 
+// String is a string Node.
 type String string
 
+// String returns a string representation of the Node.
 func (n String) String() string {
 	return `"` + string(n) + `"`
 }
 
+// Alter returns the backing float64 value of the Node.
 func (n String) Alter() interface{} {
 	return string(n)
 }
 
+// Simplify returns the backing float64 value of the Node.
 func (n String) Simplify() interface{} {
 	return string(n)
 }
 
+// Dup returns the backing float64 value of the Node.
 func (n String) Dup() Node {
 	return n
 }
 
+// Empty returns false if the string has no characters and true otherwise.
 func (n String) Empty() bool {
 	return len(string(n)) == 0
 }

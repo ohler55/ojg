@@ -1,22 +1,11 @@
 
-- use time format stuff in alt
-
 - alt.Match
  - matches only elements in the pattern/target fingerprint
 
-
-- SEN
- - use common writer?
- - update like oj
-  - use ojg.Field
-  - add skey to Field
-  - MustXxxx
-
-- Marshal for reflects
- - how to reduce the number of allocs?
- - reduce branching
-
-- change uft [x]byte
+- TBD
+ - alt
+  - Bool()
+   - don't use strconv, just true and false, not 0 1, etc
 
 - more examples
 - readme

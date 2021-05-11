@@ -14,6 +14,7 @@ import (
 	"github.com/ohler55/ojg/gen"
 )
 
+// Equal return true if two values are equal and fails a test if not equal.
 func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bool) {
 	switch te := expect.(type) {
 	case nil:

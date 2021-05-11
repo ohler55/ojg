@@ -2,6 +2,7 @@
 
 package gen
 
+// Key use for parsing.
 type Key string
 
 // String returns the key as a string.

@@ -353,7 +353,7 @@ func (w *Writer) alignMap(n *node, t *table, comma, cs []byte) {
 			pad := len(k) + 2 + col.size
 			if i < len(t.columns)-1 {
 				if w.SEN {
-					pad += 1
+					pad++
 				} else {
 					pad += 2
 				}

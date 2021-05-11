@@ -8,7 +8,8 @@ import (
 	"strconv"
 )
 
-// 9223372036854775807 / 10 = 922337203685477580
+// BigLimit is the limit before a number is converted into a Big
+// instance. (9223372036854775807 / 10 = 922337203685477580)
 const BigLimit = math.MaxInt64 / 10
 
 // Number is used internally by parsers.

@@ -6,8 +6,10 @@ import (
 	"unsafe"
 )
 
+// Array represents an array of nodes.
 type Array []Node
 
+// EmptyArray is a array of nodes of zero length.
 var EmptyArray = Array{}
 
 func (n Array) String() string {
@@ -27,6 +29,7 @@ func (n Array) String() string {
 	return string(b)
 }
 
+// Alter the array into a simple []interface{}.
 func (n Array) Alter() interface{} {
 	var simple []interface{}
 
@@ -43,6 +46,7 @@ func (n Array) Alter() interface{} {
 	return simple
 }
 
+// Simplify creates a simplified version of the Node as a []interface{}.
 func (n Array) Simplify() interface{} {
 	var dup []interface{}
 
@@ -59,6 +63,7 @@ func (n Array) Simplify() interface{} {
 	return dup
 }
 
+// Dup creates a deep duplicate of the Node.
 func (n Array) Dup() Node {
 	var a Array
 
@@ -75,6 +80,7 @@ func (n Array) Dup() Node {
 	return a
 }
 
+// Empty returns true if the Array is empty.
 func (n Array) Empty() bool {
 	return len(n) == 0
 }

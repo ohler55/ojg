@@ -7,10 +7,13 @@ import (
 	"unsafe"
 )
 
+// Sort if true sorts Object keys on output.
 var Sort = false
 
+// Object is a map of Nodes with string keys.
 type Object map[string]Node
 
+// String returns a string representation of the Node.
 func (n Object) String() string {
 	b := []byte{'{'}
 	first := true
@@ -58,6 +61,7 @@ func (n Object) String() string {
 	return string(b)
 }
 
+// Alter the Object into a simple map[string]interface{}.
 func (n Object) Alter() interface{} {
 	var simple map[string]interface{}
 
@@ -74,6 +78,8 @@ func (n Object) Alter() interface{} {
 	return simple
 }
 
+// Simplify creates a simplified version of the Node as a
+// map[string]interface{}.
 func (n Object) Simplify() interface{} {
 	var dup map[string]interface{}
 
@@ -90,6 +96,7 @@ func (n Object) Simplify() interface{} {
 	return dup
 }
 
+// Dup creates a deep duplicate of the Node.
 func (n Object) Dup() Node {
 	var o Object
 
@@ -106,6 +113,7 @@ func (n Object) Dup() Node {
 	return o
 }
 
+// Empty returns true if the Object is empty.
 func (n Object) Empty() bool {
 	return len(n) == 0
 }

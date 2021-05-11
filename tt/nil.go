@@ -8,6 +8,7 @@ import (
 	"testing"
 )
 
+// Nil check.
 func Nil(t *testing.T, actual interface{}, args ...interface{}) {
 	if !isNil(actual) {
 		var b strings.Builder
@@ -24,6 +25,7 @@ func Nil(t *testing.T, actual interface{}, args ...interface{}) {
 	}
 }
 
+// NotNil check.
 func NotNil(t *testing.T, actual interface{}, args ...interface{}) {
 	if isNil(actual) {
 		var b strings.Builder

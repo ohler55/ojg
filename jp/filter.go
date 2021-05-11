@@ -2,25 +2,29 @@
 
 package jp
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/ohler55/ojg"
+)
 
 // Filter is a script used as a filter.
 type Filter struct {
 	Script
 }
 
+// NewFilter creates a new Filter.
 func NewFilter(str string) (f *Filter, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			if err, _ = r.(error); err == nil {
-				err = fmt.Errorf("%v", r)
-			}
+			err = ojg.NewError(r)
 		}
 	}()
 	f = MustNewFilter(str)
 	return
 }
 
+// MustNewFilter creates a new Filter and panics on error.
 func MustNewFilter(str string) (f *Filter) {
 	p := &parser{buf: []byte(str)}
 	if len(p.buf) <= 5 ||

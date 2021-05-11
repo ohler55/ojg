@@ -3,24 +3,35 @@
 package alt
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/ohler55/ojg"
 )
 
+// Options is an alias for ojg.Options
 type Options = ojg.Options
+
+// Converter is an alias for ojg.Converter
 type Converter = ojg.Converter
 
 var (
+	// DefaultOptions are the default options for the this package.
 	DefaultOptions = ojg.DefaultOptions
-	BrightOptions  = ojg.BrightOptions
-	GoOptions      = ojg.GoOptions
-	HTMLOptions    = ojg.HTMLOptions
+	// BrightOptions are the bright color options.
+	BrightOptions = ojg.BrightOptions
+	// GoOptions are the options that match the go json.Marshal behavior.
+	GoOptions = ojg.GoOptions
+	// HTMLOptions are the options that can be used to encode as HTML JSON.
+	HTMLOptions = ojg.HTMLOptions
 
+	// TimeRFC3339Converter converts RFC3339 string into time.Time when
+	// parsing.
 	TimeRFC3339Converter = ojg.TimeRFC3339Converter
-	TimeNanoConverter    = ojg.TimeNanoConverter
-	MongoConverter       = ojg.MongoConverter
+	// TimeNanoConverter converts integer values to time.Time assuming the
+	// integer are nonoseconds,
+	TimeNanoConverter = ojg.TimeNanoConverter
+	// MongoConverter converts mongodb decorations into the correct times.
+	MongoConverter = ojg.MongoConverter
 )
 
 func init() {
@@ -87,9 +98,7 @@ func NewRecomposer(
 	anyComposers ...map[interface{}]RecomposeAnyFunc) (rec *Recomposer, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			if err, _ = r.(error); err == nil {
-				err = fmt.Errorf("%v", r)
-			}
+			err = ojg.NewError(r)
 		}
 	}()
 	rec = MustNewRecomposer(createKey, composers, anyComposers...)

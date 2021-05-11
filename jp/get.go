@@ -633,17 +633,16 @@ func (x Expr) First(data interface{}) interface{} {
 			if has {
 				if int(fi) == len(x)-1 { // last one
 					return v
-				} else {
-					switch v.(type) {
-					case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-					case nil, gen.Bool, gen.Int, gen.Float, gen.String:
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+				}
+				switch v.(type) {
+				case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+				case nil, gen.Bool, gen.Int, gen.Float, gen.String:
+				case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+					stack = append(stack, v)
+				default:
+					switch reflect.TypeOf(v).Kind() {
+					case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 						stack = append(stack, v)
-					default:
-						switch reflect.TypeOf(v).Kind() {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-							stack = append(stack, v)
-						}
 					}
 				}
 			}
@@ -761,17 +760,16 @@ func (x Expr) First(data interface{}) interface{} {
 				if v, has = x.reflectGetWildOne(tv); has {
 					if int(fi) == len(x)-1 { // last one
 						return v
-					} else {
-						switch v.(type) {
-						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+					}
+					switch v.(type) {
+					case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+					case nil, gen.Bool, gen.Int, gen.Float, gen.String:
+					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						stack = append(stack, v)
+					default:
+						switch reflect.TypeOf(v).Kind() {
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 							stack = append(stack, v)
-						default:
-							switch reflect.TypeOf(v).Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-								stack = append(stack, v)
-							}
 						}
 					}
 				}

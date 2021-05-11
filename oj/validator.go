@@ -30,6 +30,7 @@ type Validator struct {
 	OnlyOne bool
 }
 
+// Validate a JSON encoded byte slice.
 func (p *Validator) Validate(buf []byte) (err error) {
 	if cap(p.stack) < stackMinSize {
 		p.stack = make([]byte, 0, stackMinSize)

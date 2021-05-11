@@ -88,12 +88,6 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	benchSuite("to JSON", []*bench{
-		{pkg: "json", name: "Marshal", fun: marshalJSON},
-		{pkg: "oj", name: "JSON", fun: ojJSON},
-		{pkg: "sen", name: "Bytes", fun: senBytes},
-	})
-
 	benchSuite("Parse string/[]byte", []*bench{
 		{pkg: "json", name: "Unmarshal", fun: goParse},
 		{pkg: "oj", name: "Parse", fun: ojParse},
@@ -153,18 +147,18 @@ func main() {
 	benchSuite("to JSON", []*bench{
 		{pkg: "json", name: "Marshal", fun: marshalJSON},
 		{pkg: "oj", name: "JSON", fun: ojJSON},
-		{pkg: "sen", name: "Bytes", fun: senBytes},
+		{pkg: "sen", name: "SEN", fun: senSEN},
 	})
 	benchSuite("to JSON with indentation", []*bench{
 		{pkg: "json", name: "Marshal", fun: marshalJSONIndent},
 		{pkg: "oj", name: "JSON", fun: ojJSONIndent},
-		{pkg: "sen", name: "Bytes", fun: senBytesIndent},
+		{pkg: "sen", name: "Bytes", fun: senSENIndent},
 		{pkg: "pretty", name: "JSON", fun: prettyJSON},
 		{pkg: "pretty", name: "SEN", fun: prettySEN},
 	})
 	benchSuite("to JSON with indentation and sorted keys", []*bench{
 		{pkg: "oj", name: "JSON", fun: ojJSONSort},
-		{pkg: "sen", name: "Bytes", fun: senBytesSort},
+		{pkg: "sen", name: "Bytes", fun: senSENSort},
 		{pkg: "pretty", name: "JSON", fun: prettyJSON},
 		{pkg: "pretty", name: "SEN", fun: prettySEN},
 	})
