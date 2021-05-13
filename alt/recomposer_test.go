@@ -584,3 +584,66 @@ func TestRecomposeNil(t *testing.T) {
 	tt.NotNil(t, d2)
 
 }
+
+func TestMustNewRecomposePanic(t *testing.T) {
+	tt.Panic(t, func() {
+		_ = alt.MustNewRecomposer("^", nil, map[interface{}]alt.RecomposeAnyFunc{true: nil})
+	})
+}
+
+func TestRecomposerRegister(t *testing.T) {
+	type Sample struct {
+		Int  int
+		When time.Time
+	}
+	r := alt.MustNewRecomposer("^", nil)
+	r.RegisterComposer(&Sample{}, nil)
+	r.RegisterAnyComposer(time.Time{},
+		func(v interface{}) (interface{}, error) {
+			if secs, ok := v.(int); ok {
+				return time.Unix(int64(secs), 0), nil
+			}
+			return nil, fmt.Errorf("can not convert a %T to a time.Time", v)
+		})
+	data := map[string]interface{}{"^": "Sample", "int": 3, "when": 1612872722}
+	v := r.MustRecompose(data)
+	sample, _ := v.(*Sample)
+	tt.NotNil(t, sample)
+	tt.Equal(t, 3, sample.Int)
+	tt.Equal(t, int64(1612872722), sample.When.Unix())
+}
+
+func TestRecomposeReflectBool(t *testing.T) {
+	type Sample struct {
+		Boo bool
+	}
+	r := alt.MustNewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Sample{}: nil})
+	data := map[string]interface{}{"^": "Sample", "boo": true}
+	var sample Sample
+	v := r.MustRecompose(data, &sample)
+	tt.NotNil(t, v)
+}
+
+func TestRecomposerAnyComposePtr(t *testing.T) {
+	type Sample struct {
+		When time.Time
+	}
+	r := alt.MustNewRecomposer("^", nil)
+	r.RegisterAnyComposer(time.Time{},
+		func(v interface{}) (interface{}, error) {
+			if secs, ok := v.(int); ok {
+				t := time.Unix(int64(secs), 0)
+				return &t, nil
+			}
+			return nil, fmt.Errorf("can not convert a %T to a time.Time", v)
+		})
+	data := map[string]interface{}{"^": "Sample", "when": 1612872722}
+	var sample Sample
+	_ = r.MustRecompose(data, &sample)
+	tt.Equal(t, int64(1612872722), sample.When.Unix())
+
+	data = map[string]interface{}{"^": "Sample", "when": true}
+	tt.Panic(t, func() {
+		_ = r.MustRecompose(data, &sample)
+	})
+}

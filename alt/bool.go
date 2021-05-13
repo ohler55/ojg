@@ -3,7 +3,7 @@
 package alt
 
 import (
-	"strconv"
+	"strings"
 
 	"github.com/ohler55/ojg/gen"
 )
@@ -24,24 +24,26 @@ func Bool(v interface{}, defaults ...bool) (b bool) {
 	case bool:
 		b = tv
 	case string:
-		var err error
 		if 1 < len(defaults) {
 			b = defaults[1]
-		} else if b, err = strconv.ParseBool(tv); err != nil {
-			if 0 < len(defaults) {
-				b = defaults[0]
-			}
+		} else if strings.EqualFold(tv, "true") {
+			b = true
+		} else if strings.EqualFold(tv, "false") {
+			b = false
+		} else if 0 < len(defaults) {
+			b = defaults[0]
 		}
 	case gen.Bool:
 		b = bool(tv)
 	case gen.String:
-		var err error
 		if 1 < len(defaults) {
 			b = defaults[1]
-		} else if b, err = strconv.ParseBool(string(tv)); err != nil {
-			if 0 < len(defaults) {
-				b = defaults[0]
-			}
+		} else if strings.EqualFold(string(tv), "true") {
+			b = true
+		} else if strings.EqualFold(string(tv), "false") {
+			b = false
+		} else if 0 < len(defaults) {
+			b = defaults[0]
 		}
 	default:
 		if 0 < len(defaults) {

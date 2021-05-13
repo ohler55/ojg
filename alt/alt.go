@@ -65,9 +65,9 @@ func Decompose(v interface{}, options ...*ojg.Options) interface{} {
 }
 
 // Alter the data into all simple types converting non simple to simple types
-// using either the Simplify() interface or reflection. Unlike Decompose() map and
-// slices members are modified if necessary to assure all elements are simple
-// types.
+// using either the Simplify() interface or reflection. Unlike Decompose() map
+// and slice members are modified if necessary to assure all elements are
+// simple types.
 func Alter(v interface{}, options ...*ojg.Options) interface{} {
 	opt := &DefaultOptions
 	if 0 < len(options) {

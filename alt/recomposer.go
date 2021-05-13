@@ -38,6 +38,22 @@ type Recomposer struct {
 	composers map[string]*composer
 }
 
+// RegisterComposer regsiters a composer function for a value type. A nil
+// function will still register the default composer which uses reflection.
+func (r *Recomposer) RegisterComposer(val interface{}, fun RecomposeFunc) error {
+	_, err := r.registerComposer(reflect.TypeOf(val), fun)
+
+	return err
+}
+
+// RegisterAnyComposer regsiters a composer function for a value type. A nil
+// function will still register the default composer which uses reflection.
+func (r *Recomposer) RegisterAnyComposer(val interface{}, fun RecomposeAnyFunc) error {
+	_, err := r.registerAnyComposer(reflect.TypeOf(val), fun)
+
+	return err
+}
+
 func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*composer, error) {
 	if rt.Kind() == reflect.Ptr {
 		rt = rt.Elem()
@@ -247,9 +263,6 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 	}
 	switch rv.Kind() {
 	case reflect.Array, reflect.Slice:
-		if v == nil {
-			return
-		}
 		va, ok := (v).([]interface{})
 		if !ok {
 			vv := reflect.ValueOf(v)
@@ -393,14 +406,16 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 	case reflect.Interface:
 		v = r.recompAny(v)
 		rv.Set(reflect.ValueOf(v))
-	case reflect.Bool:
-		rv.Set(reflect.ValueOf(v))
 
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-		reflect.Float32, reflect.Float64,
-		reflect.String:
-		rv.Set(reflect.ValueOf(v).Convert(rv.Type()))
+		/* The primitive types should ge handled directly in the field handling.
+		case reflect.Bool:
+			rv.Set(reflect.ValueOf(v))
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+			reflect.Float32, reflect.Float64,
+			reflect.String:
+			rv.Set(reflect.ValueOf(v).Convert(rv.Type()))
+		*/
 
 	default:
 		panic(fmt.Errorf("can not convert (%T)%v to a %s", v, v, rv.Type()))

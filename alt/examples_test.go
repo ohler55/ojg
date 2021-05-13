@@ -5,6 +5,7 @@ package alt_test
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
@@ -24,7 +25,7 @@ func ExampleDecompose() {
 	// Output: {"^":"github.com/ohler55/ojg/alt_test/Sample","int":3,"str":"three"}
 }
 
-func ExampleRecomposer() {
+func ExampleRecomposer_Recompose() {
 	type Sample struct {
 		Int int
 		Str string
@@ -47,19 +48,53 @@ func ExampleRecomposer() {
 	// sample: {Int: 3, Str: "three"}
 }
 
-func ExampleInt() {
-	for _, src := range []interface{}{1, "1", "x", 1.5, []interface{}{}} {
-		fmt.Printf("alt.Int(%T(%v)) = %d  alt.Int(%T(%v), 2) = %d   alt.Int(%T(%v), 2, 3) = %d\n",
-			src, src, alt.Int(src),
-			src, src, alt.Int(src, 2),
-			src, src, alt.Int(src, 2, 3))
+func ExampleMustRecompose() {
+	type Sample struct {
+		Int int
+		Str string
+	}
+	// Create a Recomposer that
+
+	// Simplified sample data or JSON as a map[string]interface{}.
+	data := map[string]interface{}{"int": 3, "str": "three"}
+	var sample Sample
+	v := alt.MustRecompose(data, &sample)
+
+	fmt.Printf("type: %T\n", v)
+	fmt.Printf("sample: {Int: %d, Str: %q}\n", sample.Int, sample.Str)
+
+	// Output:
+	// type: *alt_test.Sample
+	// sample: {Int: 3, Str: "three"}
+}
+
+func ExampleRecomposer_MustRecompose() {
+	type Sample struct {
+		Int  int
+		When time.Time
+	}
+	// Create a new Recomposer that uses "^" as the create key and register a
+	// default reflection recompose function (nil). A time recomposer from an
+	// integer is also included in the new recomposer compser options.
+	r := alt.MustNewRecomposer("^",
+		map[interface{}]alt.RecomposeFunc{&Sample{}: nil},
+		map[interface{}]alt.RecomposeAnyFunc{&time.Time{}: func(v interface{}) (interface{}, error) {
+			if secs, ok := v.(int); ok {
+				return time.Unix(int64(secs), 0), nil
+			}
+			return nil, fmt.Errorf("can not convert a %T to a time.Time", v)
+		}})
+	// Simplified sample data or JSON as a map[string]interface{} with an
+	// included create key using "^" to avoid possible conflicts with other
+	// fields in the struct.
+	data := map[string]interface{}{"^": "Sample", "int": 3, "when": 1612872722}
+	v := r.MustRecompose(data)
+
+	if sample, _ := v.(*Sample); sample != nil {
+		fmt.Printf("sample: {Int: %d, When: %q}\n", sample.Int, sample.When.Format(time.RFC3339))
 	}
 	// Output:
-	// alt.Int(int(1)) = 1  alt.Int(int(1), 2) = 1   alt.Int(int(1), 2, 3) = 1
-	// alt.Int(string(1)) = 1  alt.Int(string(1), 2) = 1   alt.Int(string(1), 2, 3) = 3
-	// alt.Int(string(x)) = 0  alt.Int(string(x), 2) = 2   alt.Int(string(x), 2, 3) = 3
-	// alt.Int(float64(1.5)) = 1  alt.Int(float64(1.5), 2) = 1   alt.Int(float64(1.5), 2, 3) = 3
-	// alt.Int([]interface {}([])) = 0  alt.Int([]interface {}([]), 2) = 2   alt.Int([]interface {}([]), 2, 3) = 2
+	// sample: {Int: 3, When: "2021-02-09T07:12:02-05:00"}
 }
 
 type Genny struct {
