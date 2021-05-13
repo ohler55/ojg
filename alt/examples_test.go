@@ -79,22 +79,22 @@ func ExampleRecomposer_MustRecompose() {
 	r := alt.MustNewRecomposer("^",
 		map[interface{}]alt.RecomposeFunc{&Sample{}: nil},
 		map[interface{}]alt.RecomposeAnyFunc{&time.Time{}: func(v interface{}) (interface{}, error) {
-			if secs, ok := v.(int); ok {
-				return time.Unix(int64(secs), 0), nil
+			if s, _ := v.(string); 0 < len(s) {
+				return time.ParseInLocation(time.RFC3339, s, time.UTC)
 			}
-			return nil, fmt.Errorf("can not convert a %T to a time.Time", v)
+			return nil, fmt.Errorf("can not convert a %v to a time.Time", v)
 		}})
 	// Simplified sample data or JSON as a map[string]interface{} with an
 	// included create key using "^" to avoid possible conflicts with other
 	// fields in the struct.
-	data := map[string]interface{}{"^": "Sample", "int": 3, "when": 1612872722}
+	data := map[string]interface{}{"^": "Sample", "int": 3, "when": "2021-02-09T01:02:03Z"}
 	v := r.MustRecompose(data)
 
 	if sample, _ := v.(*Sample); sample != nil {
 		fmt.Printf("sample: {Int: %d, When: %q}\n", sample.Int, sample.When.Format(time.RFC3339))
 	}
 	// Output:
-	// sample: {Int: 3, When: "2021-02-09T07:12:02-05:00"}
+	// sample: {Int: 3, When: "2021-02-09T01:02:03Z"}
 }
 
 type Genny struct {
