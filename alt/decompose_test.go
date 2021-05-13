@@ -4,6 +4,7 @@ package alt_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
@@ -19,6 +20,10 @@ type Dummy struct {
 type Bummy struct {
 	Dummy
 	Num int
+}
+
+type Rummy struct {
+	Bummy
 }
 
 type Anno struct {
@@ -111,12 +116,33 @@ func TestDecomposeStructWithPointers(t *testing.T) {
 }
 
 func TestDecomposeEmbeddedStruct(t *testing.T) {
-	d := Bummy{Dummy: Dummy{Val: 3}, Num: 5}
-	v := alt.Decompose(&d, &alt.Options{NestEmbed: false, OmitNil: true})
+	b := Bummy{Dummy: Dummy{Val: 3}, Num: 5}
+	v := alt.Decompose(&b, &alt.Options{NestEmbed: false, OmitNil: true})
 	tt.Equal(t, map[string]interface{}{"val": 3, "num": 5}, v)
 
-	v = alt.Decompose(&d, &alt.Options{NestEmbed: true, OmitNil: true})
+	v = alt.Decompose(&b, &alt.Options{NestEmbed: true, OmitNil: true})
 	tt.Equal(t, map[string]interface{}{"dummy": map[string]interface{}{"val": 3}, "num": 5}, v)
+
+	v = alt.Decompose(&b, &alt.Options{NestEmbed: true, OmitNil: true, CreateKey: "^"})
+	tt.Equal(t, map[string]interface{}{
+		"^":     "Bummy",
+		"dummy": map[string]interface{}{"^": "Dummy", "val": 3}, "num": 5}, v)
+
+	v = alt.Decompose(&b, &alt.Options{NestEmbed: true, OmitNil: true, CreateKey: "^", FullTypePath: true})
+	tt.Equal(t, map[string]interface{}{
+		"^":     "github.com/ohler55/ojg/alt_test/Bummy",
+		"dummy": map[string]interface{}{"^": "github.com/ohler55/ojg/alt_test/Dummy", "val": 3}, "num": 5}, v)
+
+	r := Rummy{Bummy: Bummy{Dummy: Dummy{Val: 3}, Num: 5}}
+	v = alt.Decompose(&r, &alt.Options{NestEmbed: true, OmitNil: true, CreateKey: "^"})
+	tt.Equal(t, map[string]interface{}{
+		"^": "Rummy",
+		"bummy": map[string]interface{}{
+			"^":     "Bummy",
+			"dummy": map[string]interface{}{"^": "Dummy", "val": 3}, "num": 5}}, v)
+	d := Dummy{Nest: &silly{val: 3}}
+	v = alt.Decompose(&d, &alt.Options{OmitNil: true})
+	tt.Equal(t, map[string]interface{}{"nest": map[string]interface{}{"type": "silly", "val": 3}, "val": 0}, v)
 }
 
 func TestDecomposeComplex(t *testing.T) {
@@ -164,6 +190,13 @@ func TestDecomposeSimplifier(t *testing.T) {
 
 	v = alt.Alter([]interface{}{[]byte("abc")}, &alt.Options{UseTags: true, BytesAs: ojg.BytesAsBase64})
 	tt.Equal(t, []interface{}{"YWJj"}, v)
+}
+
+func TestDecomposeTime(t *testing.T) {
+	tm := time.Date(2021, time.February, 9, 12, 13, 14, 0, time.UTC)
+	a := []interface{}{tm}
+	v := alt.Decompose(a, &ojg.Options{TimeFormat: "nano"})
+	tt.Equal(t, []interface{}{1612872794000000000}, v)
 }
 
 func TestAlterNumbers(t *testing.T) {

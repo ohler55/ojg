@@ -66,28 +66,25 @@ func Match(fingerprint, target interface{}) bool {
 			return false
 		}
 	case []interface{}:
-		t1, ok := target.([]interface{})
-		if !ok {
-			return false
-		}
-		if len(fp) != len(t1) {
-			return false
-		}
-		for i, v := range fp {
-			if !Match(v, t1[i]) {
-				return false
+		if t1, ok := target.([]interface{}); ok && len(fp) == len(t1) {
+			for i, v := range fp {
+				if !Match(v, t1[i]) {
+					return false
+				}
 			}
+			return true
 		}
+		return false
 	case map[string]interface{}:
-		t1, ok := target.(map[string]interface{})
-		if !ok {
-			return false
-		}
-		for k, v := range fp {
-			if !Match(v, t1[k]) {
-				return false
+		if t1, ok := target.(map[string]interface{}); ok {
+			for k, v := range fp {
+				if !Match(v, t1[k]) {
+					return false
+				}
 			}
+			return true
 		}
+		return false
 	default:
 		vt0 := (*[2]uintptr)(unsafe.Pointer(&fingerprint))[0]
 		vt1 := (*[2]uintptr)(unsafe.Pointer(&target))[0]

@@ -1,6 +1,23 @@
 
-- alt.Match
- - matches only elements in the pattern/target fingerprint
+- alt
+ - examples
+  - comment
+  - Dup
+  - GenAlter
+  - Match
+  - Recompose
+  - AttrSetter
+  - Converter
+  - Genericer
+  - Compare
+  - Diff
+  - Recomposer
+  - NewRecomposer
+  - MustNewRecomposer
+  - RegisterAnyComposer
+  - RegisterComposer
+  - Simplifier
+
 
 - TBD
  - alt

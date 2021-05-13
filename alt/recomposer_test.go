@@ -597,14 +597,16 @@ func TestRecomposerRegister(t *testing.T) {
 		When time.Time
 	}
 	r := alt.MustNewRecomposer("^", nil)
-	r.RegisterComposer(&Sample{}, nil)
-	r.RegisterAnyComposer(time.Time{},
+	err := r.RegisterComposer(&Sample{}, nil)
+	tt.Nil(t, err)
+	err = r.RegisterAnyComposer(time.Time{},
 		func(v interface{}) (interface{}, error) {
 			if secs, ok := v.(int); ok {
 				return time.Unix(int64(secs), 0), nil
 			}
 			return nil, fmt.Errorf("can not convert a %T to a time.Time", v)
 		})
+	tt.Nil(t, err)
 	data := map[string]interface{}{"^": "Sample", "int": 3, "when": 1612872722}
 	v := r.MustRecompose(data)
 	sample, _ := v.(*Sample)
@@ -629,7 +631,7 @@ func TestRecomposerAnyComposePtr(t *testing.T) {
 		When time.Time
 	}
 	r := alt.MustNewRecomposer("^", nil)
-	r.RegisterAnyComposer(time.Time{},
+	err := r.RegisterAnyComposer(time.Time{},
 		func(v interface{}) (interface{}, error) {
 			if secs, ok := v.(int); ok {
 				t := time.Unix(int64(secs), 0)
@@ -637,6 +639,7 @@ func TestRecomposerAnyComposePtr(t *testing.T) {
 			}
 			return nil, fmt.Errorf("can not convert a %T to a time.Time", v)
 		})
+	tt.Nil(t, err)
 	data := map[string]interface{}{"^": "Sample", "when": 1612872722}
 	var sample Sample
 	_ = r.MustRecompose(data, &sample)
