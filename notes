@@ -1,37 +1,14 @@
 
-- alt
- - examples
-  - comment
-  - Dup
-  - GenAlter
-  - Match
-  - Recompose
-  - AttrSetter
-  - Converter
-  - Genericer
-  - Compare
-  - Diff
-  - Recomposer
-  - NewRecomposer
-  - MustNewRecomposer
-  - RegisterAnyComposer
-  - RegisterComposer
-  - Simplifier
+- examples
+ - jp
+ - oj
+ - sen
+ - gen
+ - asm
+ - pretty
 
-
-- TBD
- - alt
-  - Bool()
-   - don't use strconv, just true and false, not 0 1, etc
-
-- more examples
 - readme
  - add marshal and unmarshal example
- - examples
-  - asm
-  - decompose and alter
-  - parse (oj, sen)
-  - write (oj, sen, and pretty)
 
 - unit tests for cmd/oj
 ----------------

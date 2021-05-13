@@ -34,28 +34,6 @@ func (c *Child) String() string {
 	return c.Name
 }
 
-type Setter struct {
-	a int64
-	b string
-	//s *Setter
-}
-
-func (s *Setter) String() string {
-	return fmt.Sprintf("Setter{a:%d,b:%s}", s.a, s.b)
-}
-
-func (s *Setter) SetAttr(attr string, val interface{}) error {
-	switch attr {
-	case "a":
-		s.a = alt.Int(val)
-	case "b":
-		s.b, _ = val.(string)
-	default:
-		return fmt.Errorf("%s is not an attribute of Setter", attr)
-	}
-	return nil
-}
-
 func sillyRecompose(data map[string]interface{}) (interface{}, error) {
 	i, ok := data["val"].(int)
 	if !ok {

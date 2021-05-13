@@ -11,14 +11,6 @@ import (
 	"github.com/ohler55/ojg/tt"
 )
 
-type genny struct {
-	val int
-}
-
-func (g *genny) Generic() gen.Node {
-	return gen.Object{"type": gen.String("genny"), "val": gen.Int(g.val)}
-}
-
 func TestGenerifyBase(t *testing.T) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	a := []interface{}{

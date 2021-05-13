@@ -3,13 +3,14 @@
 package alt_test
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/oj"
+	"github.com/ohler55/ojg/sen"
 )
 
 func ExampleDecompose() {
@@ -18,11 +19,27 @@ func ExampleDecompose() {
 		Str string
 	}
 	sample := Sample{Int: 3, Str: "three"}
-	simple := alt.Decompose(&sample, &alt.Options{CreateKey: "^", FullTypePath: true})
+	// Decompose and add a CreateKey to indicate the type with a full path.
+	simple := alt.Decompose(&sample, &ojg.Options{CreateKey: "^", FullTypePath: true})
 
 	fmt.Println(oj.JSON(simple, &oj.Options{Sort: true}))
 
 	// Output: {"^":"github.com/ohler55/ojg/alt_test/Sample","int":3,"str":"three"}
+}
+
+func ExampleDup() {
+	type Sample struct {
+		Int int
+		Str string
+	}
+	sample := []interface{}{&Sample{Int: 3, Str: "three"}, 42}
+	// Dup creates a deep duplicate of a simple type and decomposes any
+	// structs according to the optional options just like alt.Decompose does.
+	simple := alt.Decompose(sample, &ojg.Options{CreateKey: "^"})
+
+	fmt.Println(oj.JSON(simple, &ojg.Options{Sort: true}))
+
+	// Output: [{"^":"Sample","int":3,"str":"three"},42]
 }
 
 func ExampleRecomposer_Recompose() {
@@ -30,19 +47,67 @@ func ExampleRecomposer_Recompose() {
 		Int int
 		Str string
 	}
+	// Recomposers are reuseable. Create one and use the default reflect composer (nil).
 	r, err := alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Sample{}: nil})
+	if err != nil {
+		panic(err)
+	}
 	var v interface{}
-	if err == nil {
-		v, err = r.Recompose(map[string]interface{}{"^": "Sample", "int": 3, "str": "three"})
+	// Recompose without providing a struct to populate.
+	v, err = r.Recompose(map[string]interface{}{"^": "Sample", "int": 3, "str": "three"})
+	if err != nil {
+		panic(err)
 	}
-	if err == nil {
-		fmt.Printf("type: %T\n", v)
-		if sample, _ := v.(*Sample); sample != nil {
-			fmt.Printf("sample: {Int: %d, Str: %q}\n", sample.Int, sample.Str)
-		}
-	} else {
-		fmt.Println(err.Error())
+	fmt.Printf("type: %T\n", v)
+	if sample, _ := v.(*Sample); sample != nil {
+		fmt.Printf("sample: {Int: %d, Str: %q}\n", sample.Int, sample.Str)
 	}
+	// Output:
+	// type: *alt_test.Sample
+	// sample: {Int: 3, Str: "three"}
+}
+
+func ExampleNewRecomposer() {
+	type Sample struct {
+		Int int
+		Str string
+	}
+	// Recomposers are reuseable. Create one and use the default reflect composer (nil).
+	r, err := alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Sample{}: nil})
+	if err != nil {
+		panic(err)
+	}
+	var v interface{}
+	// Recompose without providing a struct to populate.
+	v, err = r.Recompose(map[string]interface{}{"^": "Sample", "int": 3, "str": "three"})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("type: %T\n", v)
+	if sample, _ := v.(*Sample); sample != nil {
+		fmt.Printf("sample: {Int: %d, Str: %q}\n", sample.Int, sample.Str)
+	}
+	// Output:
+	// type: *alt_test.Sample
+	// sample: {Int: 3, Str: "three"}
+}
+
+func ExampleRecompose() {
+	type Sample struct {
+		Int int
+		Str string
+	}
+	// Simplified sample data or JSON as a map[string]interface{}.
+	data := map[string]interface{}{"int": 3, "str": "three"}
+	var sample Sample
+	// Recompose into the sample struct. Panic on failure.
+	v, err := alt.Recompose(data, &sample)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("type: %T\n", v)
+	fmt.Printf("sample: {Int: %d, Str: %q}\n", sample.Int, sample.Str)
+
 	// Output:
 	// type: *alt_test.Sample
 	// sample: {Int: 3, Str: "three"}
@@ -53,11 +118,10 @@ func ExampleMustRecompose() {
 		Int int
 		Str string
 	}
-	// Create a Recomposer that
-
 	// Simplified sample data or JSON as a map[string]interface{}.
 	data := map[string]interface{}{"int": 3, "str": "three"}
 	var sample Sample
+	// Recompose into the sample struct. Panic on failure.
 	v := alt.MustRecompose(data, &sample)
 
 	fmt.Printf("type: %T\n", v)
@@ -97,104 +161,116 @@ func ExampleRecomposer_MustRecompose() {
 	// sample: {Int: 3, When: "2021-02-09T01:02:03Z"}
 }
 
-type Genny struct {
-	val int
-}
+func ExampleMustNewRecomposer() {
+	type Sample struct {
+		Int  int
+		When time.Time
+	}
+	// Create a new Recomposer that uses "^" as the create key and register a
+	// default reflection recompose function (nil). A time recomposer from an
+	// integer is also included in the new recomposer compser options.
+	r := alt.MustNewRecomposer("^",
+		map[interface{}]alt.RecomposeFunc{&Sample{}: nil},
+		map[interface{}]alt.RecomposeAnyFunc{&time.Time{}: func(v interface{}) (interface{}, error) {
+			if s, _ := v.(string); 0 < len(s) {
+				return time.ParseInLocation(time.RFC3339, s, time.UTC)
+			}
+			return nil, fmt.Errorf("can not convert a %v to a time.Time", v)
+		}})
+	// Simplified sample data or JSON as a map[string]interface{} with an
+	// included create key using "^" to avoid possible conflicts with other
+	// fields in the struct.
+	data := map[string]interface{}{"^": "Sample", "int": 3, "when": "2021-02-09T01:02:03Z"}
+	v := r.MustRecompose(data)
 
-func (g *Genny) Generic() gen.Node {
-	return gen.Object{"type": gen.String("Genny"), "val": gen.Int(g.val)}
-}
-
-func ExampleGenerify() {
-	// type Genny struct {
-	// 	val int
-	// }
-	//
-	// func (g *Genny) Generic() gen.Node {
-	// 	return gen.Object{"type": gen.String("genny"), "val": gen.Int(g.val)}
-	// }
-	ga := []*Genny{&Genny{val: 3}}
-	v := alt.Generify(ga)
-	fmt.Println(oj.JSON(v, &oj.Options{Sort: true}))
-
-	// Output: [{"type":"Genny","val":3}]
+	if sample, _ := v.(*Sample); sample != nil {
+		fmt.Printf("sample: {Int: %d, When: %q}\n", sample.Int, sample.When.Format(time.RFC3339))
+	}
+	// Output:
+	// sample: {Int: 3, When: "2021-02-09T01:02:03Z"}
 }
 
 func ExampleAlter() {
+	src := map[string]interface{}{"a": 1, "b": 4, "c": 9}
+	// Alter the src as needed avoiding duplicating when possible.
+	val := alt.Alter(src)
+	// Modify src should change val since they are the same map.
+	src["d"] = 16
+	fmt.Println(sen.String(val, &oj.Options{Sort: true}))
+
+	// Output: {a:1 b:4 c:9 d:16}
+}
+
+func ExampleGenAlter() {
 	m := map[string]interface{}{"a": 1, "b": 4, "c": 9}
-	v := alt.GenAlter(m)
-	fmt.Println(oj.JSON(v, &oj.Options{Sort: true}))
+	// Convert to a gen.Node.
+	node := alt.GenAlter(m)
+	fmt.Println(sen.String(node, &oj.Options{Sort: true}))
+	obj, _ := node.(gen.Object)
+	fmt.Printf("member type: %T\n", obj["b"])
 
-	// Output: {"a":1,"b":4,"c":9}
+	// Output: {a:1 b:4 c:9}
+	// member type: gen.Int
 }
 
-type Animal interface {
-	Kind() string
-}
-
-type Dog struct {
-	Size string
-}
-
-func (d *Dog) Kind() string {
-	return fmt.Sprintf("%s dog", d.Size)
-}
-
-type Cat struct {
-	Color string
-}
-
-func (c *Cat) Kind() string {
-	return fmt.Sprintf("%s cat", c.Color)
-}
-
-func ExampleDecompose_animal() {
-	pets := []Animal{&Dog{Size: "big"}, &Cat{Color: "black"}}
-
-	// First marshal using the go json package.
-	pj, err := json.Marshal(pets)
+func ExampleRecomposer_RegisterComposer() {
+	type Sample struct {
+		Int  int
+		When time.Time
+	}
+	r := alt.MustNewRecomposer("^", nil)
+	err := r.RegisterComposer(&Sample{}, nil)
 	if err != nil {
-		fmt.Printf("error: %s\n", err)
+		panic(err)
 	}
-	// Works just fine.
-	fmt.Printf("json.Marshal: %s\n", pj)
-
-	// Now try to unmarshall. An error is returned with a list of nils.
-	var petsOut []Animal
-	err = json.Unmarshal(pj, &petsOut)
-	fmt.Printf("error: %s\n", err)
-	fmt.Printf("jsom.Unmarshal: %v\n", petsOut)
-
-	// Now try OjG. Decompress and create a JSON []byte slice.
-	simple := alt.Decompose(pets, &alt.Options{CreateKey: "^"})
-	// Sort the object members in the output for repeatability.
-	ps := oj.JSON(simple, &oj.Options{Sort: true})
-	fmt.Printf("oj.JSON: %s\n", ps)
-
-	// Create a new Recomposer. This can be use over and over again. Register
-	// the types with a nil creation function to let reflection do the work
-	// since the styles are exported.
-	var r *alt.Recomposer
-	if r, err = alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Dog{}: nil, &Cat{}: nil}); err != nil {
-		fmt.Printf("error: %s\n", err)
+	err = r.RegisterAnyComposer(time.Time{},
+		func(v interface{}) (interface{}, error) {
+			if secs, ok := v.(int); ok {
+				return time.Unix(int64(secs), 0), nil
+			}
+			return nil, fmt.Errorf("can not convert a %T to a time.Time", v)
+		})
+	if err != nil {
+		panic(err)
 	}
+	data := map[string]interface{}{"^": "Sample", "int": 3, "when": 1612872722}
+	sample, _ := r.MustRecompose(data).(*Sample)
 
-	// Recompose from the simplified data earlier. The one that matches the JSON.
-	var result interface{}
-	if result, err = r.Recompose(simple, []Animal{}); err != nil {
-		fmt.Printf("error: %s\n", err)
-	}
-	// Check the results.
-	// members.
-	pets, _ = result.([]Animal)
-	for _, animal := range pets {
-		fmt.Printf("  %T - %s\n", animal, animal.Kind())
-	}
+	fmt.Printf("sample.Int: %d\n", sample.Int)
+	fmt.Printf("sample.When: %d\n", sample.When.Unix())
+
 	// Output:
-	// json.Marshal: [{"Size":"big"},{"Color":"black"}]
-	// error: json: cannot unmarshal object into Go value of type alt_test.Animal
-	// jsom.Unmarshal: [<nil> <nil>]
-	// oj.JSON: [{"^":"Dog","size":"big"},{"^":"Cat","color":"black"}]
-	//   *alt_test.Dog - big dog
-	//   *alt_test.Cat - black cat
+	// sample.Int: 3
+	// sample.When: 1612872722
+}
+
+func ExampleRecomposer_RegisterAnyComposer() {
+	type Sample struct {
+		Int  int
+		When time.Time
+	}
+	r := alt.MustNewRecomposer("^", nil)
+	err := r.RegisterComposer(&Sample{}, nil)
+	if err != nil {
+		panic(err)
+	}
+	err = r.RegisterAnyComposer(time.Time{},
+		func(v interface{}) (interface{}, error) {
+			if secs, ok := v.(int); ok {
+				return time.Unix(int64(secs), 0), nil
+			}
+			return nil, fmt.Errorf("can not convert a %T to a time.Time", v)
+		})
+	if err != nil {
+		panic(err)
+	}
+	data := map[string]interface{}{"^": "Sample", "int": 3, "when": 1612872722}
+	sample, _ := r.MustRecompose(data).(*Sample)
+
+	fmt.Printf("sample.Int: %d\n", sample.Int)
+	fmt.Printf("sample.When: %d\n", sample.When.Unix())
+
+	// Output:
+	// sample.Int: 3
+	// sample.When: 1612872722
 }
