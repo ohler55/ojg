@@ -80,6 +80,7 @@ func TestScriptParse(t *testing.T) {
 
 		{src: "@.x == 4", err: "a script must start with a '('"},
 		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 8 in (@.x ++ 4)"},
+		{src: "(@[1:5} == 3)", err: "invalid slice syntax at 8 in (@[1:5} == 3)"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
