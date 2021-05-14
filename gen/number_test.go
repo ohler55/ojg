@@ -59,3 +59,14 @@ func TestNumber(t *testing.T) {
 		tt.Equal(t, d.value, v, ": ", d.src)
 	}
 }
+
+func TestNumberForceFloat(t *testing.T) {
+	var n gen.Number
+	n.Reset()
+	n.ForceFloat = true
+	for _, b := range []byte("123") {
+		n.AddDigit(b)
+	}
+	v := n.AsNum()
+	tt.Equal(t, 123.0, v)
+}

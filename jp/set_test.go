@@ -357,3 +357,8 @@ func TestExprSetOneReflect(t *testing.T) {
 		}
 	}
 }
+
+func TestExprMustSet(t *testing.T) {
+	data := map[string]interface{}{"a": 1, "b": 2, "c": 3}
+	tt.Panic(t, func() { jp.C("b").N(0).MustSet(data, 7) })
+}

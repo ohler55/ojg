@@ -232,7 +232,7 @@ func (p *parser) afterBracket() Frag {
 		p.pos--
 		p.raise("parse error")
 	}
-	return nil // can never get here
+	return nil // can never get here but the compiler requires the statement
 }
 
 func (p *parser) readInt(b byte) (int, byte) {
