@@ -21,38 +21,85 @@ var (
 	// HTMLOptions are the options that can be used to encode as HTML JSON.
 	HTMLOptions = ojg.HTMLOptions
 
-	// DefaultWriter is the default writer. This is not concurrent
-	// safe. Individual go routine writers should be used when writing
-	// concurrently.
-	DefaultWriter = Writer{
-		Options: ojg.DefaultOptions,
-		buf:     make([]byte, 0, 1024),
-	}
 	writerPool = sync.Pool{
 		New: func() interface{} {
 			return &Writer{Options: DefaultOptions, buf: make([]byte, 0, 1024)}
 		},
 	}
+	parserPool = sync.Pool{
+		New: func() interface{} {
+			return &Parser{}
+		},
+	}
 )
 
-// Parse a SEN byte slice into simple types. An error is returned if not valid
-// JSON.
+// Parse SEN into a simple type. Arguments are optional and can be a
+// func(interface{}) bool for callbacks or a chan interface{} for chan based
+// result delivery. The SEN parser will also Parse JSON.
+//
+// A func argument is the callback for the parser if processing multiple
+// SENs. If no callback function is provided the processing is limited to
+// only one SEN.
+//
+// A chan argument will be used to deliver parse results.
 func Parse(buf []byte, args ...interface{}) (interface{}, error) {
-	return DefaultParser.Parse(buf, args...)
+	p, _ := parserPool.Get().(*Parser)
+	defer parserPool.Put(p)
+	return p.Parse(buf, args...)
 }
 
-// MustParse a SEN byte slice into simple types. Panics on error.
+// MustParse SEN into a simple type. Arguments are optional and can be a
+// func(interface{}) bool for callbacks or a chan interface{} for chan based
+// result delivery. The SEN parser will also Parse JSON. Panics on error.
+//
+// A func argument is the callback for the parser if processing multiple
+// SENs. If no callback function is provided the processing is limited to
+// only one SEN.
+//
+// A chan argument will be used to deliver parse results.
 func MustParse(buf []byte, args ...interface{}) interface{} {
-	val, err := DefaultParser.Parse(buf, args...)
+	p := parserPool.Get().(*Parser)
+	defer parserPool.Put(p)
+	val, err := p.Parse(buf, args...)
 	if err != nil {
 		panic(err)
 	}
 	return val
 }
 
-// ParseReader a JSON io.Reader. An error is returned if not valid JSON.
+// ParseReader reads and parses SEN into a simple type. Arguments are optional
+// and can be a func(interface{}) bool for callbacks or a chan interface{} for
+// chan based result delivery. The SEN parser will also Parse JSON.
+//
+// A func argument is the callback for the parser if processing multiple
+// SENs. If no callback function is provided the processing is limited to
+// only one SEN.
+//
+// A chan argument will be used to deliver parse results.
 func ParseReader(r io.Reader, args ...interface{}) (data interface{}, err error) {
-	return DefaultParser.ParseReader(r, args...)
+	p, _ := parserPool.Get().(*Parser)
+	defer parserPool.Put(p)
+	return p.ParseReader(r, args...)
+}
+
+// MustParseReader reads and parses SEN into a simple type. Arguments are
+// optional and can be a func(interface{}) bool for callbacks or a chan
+// interface{} for chan based result delivery. The SEN parser will also Parse
+// JSON. Panics on error.
+//
+// A func argument is the callback for the parser if processing multiple
+// SENs. If no callback function is provided the processing is limited to
+// only one SEN.
+//
+// A chan argument will be used to deliver parse results.
+func MustParseReader(r io.Reader, args ...interface{}) (data interface{}) {
+	p := parserPool.Get().(*Parser)
+	defer parserPool.Put(p)
+	var err error
+	if data, err = p.ParseReader(r, args...); err != nil {
+		panic(err)
+	}
+	return
 }
 
 // Unmarshal parses the provided JSON and stores the result in the value

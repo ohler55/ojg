@@ -22,10 +22,6 @@ const (
 
 var (
 	emptySlice = []interface{}{}
-
-	// DefaultParser is the default parser. Like any other instance of the
-	// parser it can not be used to parse concurrently.
-	DefaultParser = Parser{}
 )
 
 // Parser is a reusable JSON parser. It can be reused for multiple parsings

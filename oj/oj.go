@@ -22,14 +22,6 @@ var (
 	// HTMLOptions are the options that can be used to encode as HTML JSON.
 	HTMLOptions = ojg.HTMLOptions
 
-	// DefaultWriter is the default writer. This is not concurrent
-	// safe. Individual go routine writers should be used when writing
-	// concurrently.
-	DefaultWriter = Writer{
-		Options: ojg.DefaultOptions,
-		buf:     make([]byte, 0, 1024),
-	}
-
 	goOptions  = ojg.GoOptions
 	writerPool = sync.Pool{
 		New: func() interface{} {
@@ -41,10 +33,16 @@ var (
 			return &Writer{Options: goOptions, buf: make([]byte, 0, 1024)}
 		},
 	}
+	parserPool = sync.Pool{
+		New: func() interface{} {
+			return &Parser{}
+		},
+	}
 )
 
-// Parse JSON into a gen.Node. Arguments are optional and can be a bool
-// or func(interface{}) bool.
+// Parse JSON into a simple type. Arguments are optional and can be a bool,
+// func(interface{}) bool for callbacks, or a chan interface{} for chan based
+// result delivery.
 //
 // A bool indicates the NoComment parser attribute should be set to the bool
 // value.
@@ -52,23 +50,73 @@ var (
 // A func argument is the callback for the parser if processing multiple
 // JSONs. If no callback function is provided the processing is limited to
 // only one JSON.
+//
+// A chan argument will be used to deliver parse results.
 func Parse(b []byte, args ...interface{}) (n interface{}, err error) {
-	p := Parser{}
+	p := parserPool.Get().(*Parser)
+	defer parserPool.Put(p)
 	return p.Parse(b, args...)
+}
+
+// MustParse JSON into a simple type. Arguments are optional and can be a bool,
+// func(interface{}) bool for callbacks, or a chan interface{} for chan based
+// result delivery. Panics on error
+//
+// A bool indicates the NoComment parser attribute should be set to the bool
+// value.
+//
+// A func argument is the callback for the parser if processing multiple
+// JSONs. If no callback function is provided the processing is limited to
+// only one JSON.
+//
+// A chan argument will be used to deliver parse results.
+func MustParse(b []byte, args ...interface{}) (n interface{}) {
+	p := parserPool.Get().(*Parser)
+	defer parserPool.Put(p)
+	var err error
+	if n, err = p.Parse(b, args...); err != nil {
+		panic(err)
+	}
+	return
 }
 
 // ParseString is similar to Parse except it takes a string
 // argument to be parsed instead of a []byte.
 func ParseString(s string, args ...interface{}) (n interface{}, err error) {
-	p := Parser{}
+	p := parserPool.Get().(*Parser)
+	defer parserPool.Put(p)
 	return p.Parse([]byte(s), args...)
+}
+
+// MustParseString is similar to MustParse except it takes a string
+// argument to be parsed instead of a []byte.
+func MustParseString(s string, args ...interface{}) (n interface{}) {
+	p := parserPool.Get().(*Parser)
+	defer parserPool.Put(p)
+	var err error
+	if n, err = p.Parse([]byte(s), args...); err != nil {
+		panic(err)
+	}
+	return
 }
 
 // Load a JSON from a io.Reader into a simple type. An error is returned
 // if not valid JSON.
 func Load(r io.Reader, args ...interface{}) (interface{}, error) {
-	p := Parser{}
+	p := parserPool.Get().(*Parser)
+	defer parserPool.Put(p)
 	return p.ParseReader(r, args...)
+}
+
+// MustLoad a JSON from a io.Reader into a simple type. Panics on error.
+func MustLoad(r io.Reader, args ...interface{}) (n interface{}) {
+	p := parserPool.Get().(*Parser)
+	defer parserPool.Put(p)
+	var err error
+	if n, err = p.ParseReader(r, args...); err != nil {
+		panic(err)
+	}
+	return
 }
 
 // Validate a JSON string. An error is returned if not valid JSON.
