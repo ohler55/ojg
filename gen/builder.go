@@ -21,6 +21,14 @@ func (b *Builder) Reset() {
 	}
 }
 
+// MustObject adds an object to the builder. A key is required if adding to a
+// parent object.
+func (b *Builder) MustObject(key ...string) {
+	if err := b.Object(key...); err != nil {
+		panic(err)
+	}
+}
+
 // Object adds an object to the builder. A key is required if adding to a
 // parent object.
 func (b *Builder) Object(key ...string) error {
@@ -41,6 +49,14 @@ func (b *Builder) Object(key ...string) error {
 	return nil
 }
 
+// MustArray adds an array to the builder. A key is required if adding to a
+// parent object.
+func (b *Builder) MustArray(key ...string) {
+	if err := b.Array(key...); err != nil {
+		panic(err)
+	}
+}
+
 // Array adds an array to the builder. A key is required if adding to a parent
 // object.
 func (b *Builder) Array(key ...string) error {
@@ -56,6 +72,14 @@ func (b *Builder) Array(key ...string) error {
 	b.stack = append(b.stack, EmptyArray)
 
 	return nil
+}
+
+// MustValue adds a Node to the builder. A key is required if adding to a
+// parent object.
+func (b *Builder) MustValue(value Node, key ...string) {
+	if err := b.Value(value, key...); err != nil {
+		panic(err)
+	}
 }
 
 // Value adds a Node to the builder. A key is required if adding to a parent

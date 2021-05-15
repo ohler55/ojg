@@ -110,3 +110,15 @@ func TestGenBuilderErrors(t *testing.T) {
 	err = b.Value(gen.True)
 	tt.Equal(t, "must have a key when pushing to an object", err.Error())
 }
+
+func TestGenBuilderPanic(t *testing.T) {
+	var b gen.Builder
+
+	tt.Panic(t, func() { b.MustObject("bad") })
+	tt.Panic(t, func() { b.MustArray("bad") })
+	tt.Panic(t, func() { b.MustValue(gen.True, "bad") })
+	b.MustObject()
+	tt.Panic(t, func() { b.MustObject() })
+	tt.Panic(t, func() { b.MustArray() })
+	tt.Panic(t, func() { b.MustValue(gen.True) })
+}
