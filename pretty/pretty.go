@@ -8,7 +8,11 @@ import (
 	"github.com/ohler55/ojg"
 )
 
-// JSON encoded output.
+// JSON encoded output. Arguments can be used to set the writer options. An
+// int sets the width while a float64 is separated into a width as the integer
+// portion of the float and the 10ths sets the maximum depth per line. A bool
+// sets the align option and a *ojg.Options replaces the options portion of
+// the writer.
 func JSON(data interface{}, args ...interface{}) string {
 	w := Writer{
 		Options:  ojg.DefaultOptions,
@@ -22,7 +26,11 @@ func JSON(data interface{}, args ...interface{}) string {
 	return string(b)
 }
 
-// SEN encoded output.
+// SEN encoded output. Arguments can be used to set the writer options. An int
+// sets the width while a float64 is separated into a width as the integer
+// portion of the float and the 10ths sets the maximum depth per line. A bool
+// sets the align option and a *ojg.Options replaces the options portion of
+// the writer.
 func SEN(data interface{}, args ...interface{}) string {
 	w := Writer{
 		Options:  ojg.DefaultOptions,
@@ -36,7 +44,11 @@ func SEN(data interface{}, args ...interface{}) string {
 	return string(b)
 }
 
-// WriteJSON encoded output written to the provided io.Writer.
+// WriteJSON encoded output written to the provided io.Writer. Arguments can
+// be used to set the writer options. An int sets the width while a float64 is
+// separated into a width as the integer portion of the float and the 10ths
+// sets the maximum depth per line. A bool sets the align option and a
+// *ojg.Options replaces the options portion of the writer.
 func WriteJSON(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	pw := Writer{
 		Options:  ojg.DefaultOptions,
@@ -51,7 +63,11 @@ func WriteJSON(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	return
 }
 
-// WriteSEN encoded output written to the provided io.Writer.
+// WriteSEN encoded output written to the provided io.Writer. Arguments can be
+// used to set the writer options. An int sets the width while a float64 is
+// separated into a width as the integer portion of the float and the 10ths
+// sets the maximum depth per line. A bool sets the align option and a
+// *ojg.Options replaces the options portion of the writer.
 func WriteSEN(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	pw := Writer{
 		Options:  ojg.DefaultOptions,

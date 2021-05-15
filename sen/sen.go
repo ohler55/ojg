@@ -4,6 +4,7 @@ package sen
 
 import (
 	"io"
+	"sync"
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
@@ -17,8 +18,6 @@ var (
 	DefaultOptions = ojg.DefaultOptions
 	// BrightOptions are the bright color options.
 	BrightOptions = ojg.BrightOptions
-	// GoOptions are the options that match the go json.Marshal behavior.
-	GoOptions = ojg.GoOptions
 	// HTMLOptions are the options that can be used to encode as HTML JSON.
 	HTMLOptions = ojg.HTMLOptions
 
@@ -29,11 +28,26 @@ var (
 		Options: ojg.DefaultOptions,
 		buf:     make([]byte, 0, 1024),
 	}
+	writerPool = sync.Pool{
+		New: func() interface{} {
+			return &Writer{Options: DefaultOptions, buf: make([]byte, 0, 1024)}
+		},
+	}
 )
 
-// Parse a JSON string in to simple types. An error is returned if not valid JSON.
+// Parse a SEN byte slice into simple types. An error is returned if not valid
+// JSON.
 func Parse(buf []byte, args ...interface{}) (interface{}, error) {
 	return DefaultParser.Parse(buf, args...)
+}
+
+// MustParse a SEN byte slice into simple types. Panics on error.
+func MustParse(buf []byte, args ...interface{}) interface{} {
+	val, err := DefaultParser.Parse(buf, args...)
+	if err != nil {
+		panic(err)
+	}
+	return val
 }
 
 // ParseReader a JSON io.Reader. An error is returned if not valid JSON.
@@ -55,24 +69,15 @@ func Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomposer) (err e
 // String returns a SEN string for the data provided. The data can be a simple
 // type of nil, bool, int, floats, time.Time, []interface{}, or
 // map[string]interface{} or a Node type, The args, if supplied can be an int
-// as an indent or a *Options.
+// as an indent, *ojg.Options, or a *Writer.
 func String(data interface{}, args ...interface{}) string {
-	wr := &DefaultWriter
+	var wr *Writer
 	if 0 < len(args) {
-		switch ta := args[0].(type) {
-		case int:
-			w2 := *wr
-			wr = &w2
-			wr.Indent = ta
-			wr.findex = 0
-		case *ojg.Options:
-			w2 := *wr
-			wr = &w2
-			wr.Options = *ta
-			wr.findex = 0
-		case *Writer:
-			wr = ta
-		}
+		wr = pickWriter(args[0])
+	}
+	if wr == nil {
+		wr, _ = writerPool.Get().(*Writer)
+		defer writerPool.Put(wr)
 	}
 	return wr.SEN(data)
 }
@@ -80,49 +85,50 @@ func String(data interface{}, args ...interface{}) string {
 // Bytes returns a SEN []byte for the data provided. The data can be a simple
 // type of nil, bool, int, floats, time.Time, []interface{}, or
 // map[string]interface{} or a Node type, The args, if supplied can be an int
-// as an indent or a *Options.
+// as an indent, *ojg.Options, or a *Writer.
 func Bytes(data interface{}, args ...interface{}) []byte {
-	wr := &DefaultWriter
+	var wr *Writer
 	if 0 < len(args) {
-		switch ta := args[0].(type) {
-		case int:
-			w2 := *wr
-			wr = &w2
-			wr.Indent = ta
-			wr.findex = 0
-		case *ojg.Options:
-			w2 := *wr
-			wr = &w2
-			wr.Options = *ta
-			wr.findex = 0
-		case *Writer:
-			wr = ta
-		}
+		wr = pickWriter(args[0])
+	}
+	if wr == nil {
+		wr, _ = writerPool.Get().(*Writer)
+		defer writerPool.Put(wr)
 	}
 	return wr.MustSEN(data)
 }
 
-// Write a JSON string for the data provided. The data can be a simple type of
-// nil, bool, int, floats, time.Time, []interface{}, or map[string]interface{}
-// or a Node type, The args, if supplied can be an int as an indent or a
-// *Options.
+// Write SEN for the data provided. The data can be a simple type of nil,
+// bool, int, floats, time.Time, []interface{}, or map[string]interface{} or a
+// Node type, The args, if supplied can be an int as an indent, *ojg.Options,
+// or a *Writer.
 func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
-	wr := &DefaultWriter
+	var wr *Writer
 	if 0 < len(args) {
-		switch ta := args[0].(type) {
-		case int:
-			w2 := *wr
-			wr = &w2
-			wr.Indent = ta
-			wr.findex = 0
-		case *ojg.Options:
-			w2 := *wr
-			wr = &w2
-			wr.Options = *ta
-			wr.findex = 0
-		case *Writer:
-			wr = ta
-		}
+		wr = pickWriter(args[0])
+	}
+	if wr == nil {
+		wr, _ = writerPool.Get().(*Writer)
+		defer writerPool.Put(wr)
 	}
 	return wr.Write(w, data)
+}
+
+func pickWriter(arg interface{}) (wr *Writer) {
+	switch ta := arg.(type) {
+	case int:
+		wr = &Writer{
+			Options: ojg.GoOptions,
+			buf:     make([]byte, 0, 1024),
+		}
+		wr.Indent = ta
+	case *ojg.Options:
+		wr = &Writer{
+			Options: *ta,
+			buf:     make([]byte, 0, 1024),
+		}
+	case *Writer:
+		wr = ta
+	}
+	return
 }

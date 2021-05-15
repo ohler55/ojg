@@ -1,13 +1,14 @@
 
 - examples
  - oj
+  - Must
  - sen
- - pretty
+  - Must
 
 - readme
  - add marshal and unmarshal example
 
-- unit tests for cmd/oj
+- unit tests and example for cmd/oj
 ----------------
 
 - option to detect duplicate keys or make part of validator

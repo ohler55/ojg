@@ -4,6 +4,7 @@ package oj
 
 import (
 	"io"
+	"sync"
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
@@ -17,8 +18,7 @@ var (
 	DefaultOptions = ojg.DefaultOptions
 	// BrightOptions are the bright color options.
 	BrightOptions = ojg.BrightOptions
-	// GoOptions are the options that match the go json.Marshal behavior.
-	GoOptions = ojg.GoOptions
+
 	// HTMLOptions are the options that can be used to encode as HTML JSON.
 	HTMLOptions = ojg.HTMLOptions
 
@@ -30,13 +30,16 @@ var (
 		buf:     make([]byte, 0, 1024),
 	}
 
-	// GoWriter provides the options that are similar to the go json.Marshal
-	// behavior. This is not concurrent safe. Individual go routine writers
-	// should be used when writing concurrently.
-	GoWriter = Writer{
-		Options: ojg.GoOptions,
-		buf:     make([]byte, 0, 1024),
-		strict:  true,
+	goOptions  = ojg.GoOptions
+	writerPool = sync.Pool{
+		New: func() interface{} {
+			return &Writer{Options: DefaultOptions, buf: make([]byte, 0, 1024)}
+		},
+	}
+	marshalPool = sync.Pool{
+		New: func() interface{} {
+			return &Writer{Options: goOptions, buf: make([]byte, 0, 1024)}
+		},
 	}
 )
 
@@ -107,50 +110,33 @@ func Unmarshal(data []byte, vp interface{}, recomposer ...*alt.Recomposer) (err 
 // map[string]interface{} or a Node type, The args, if supplied can be an
 // int as an indent or a *Options.
 func JSON(data interface{}, args ...interface{}) string {
-	wr := &DefaultWriter
+	var wr *Writer
 	if 0 < len(args) {
-		switch ta := args[0].(type) {
-		case int:
-			w2 := *wr
-			wr = &w2
-			wr.Indent = ta
-			wr.findex = 0
-		case *ojg.Options:
-			w2 := *wr
-			wr = &w2
-			wr.Options = *ta
-			wr.findex = 0
-		case *Writer:
-			wr = ta
-		}
+		wr = pickWriter(args[0])
+	}
+	if wr == nil {
+		wr, _ = writerPool.Get().(*Writer)
+		defer writerPool.Put(wr)
 	}
 	return wr.JSON(data)
 }
 
 // Marshal returns a JSON string for the data provided. The data can be a
 // simple type of nil, bool, int, floats, time.Time, []interface{}, or
-// map[string]interface{} or a Node type, The args, if supplied can be an int
-// as an indent or a *Options. An error will be returned if the Option.Strict
-// flag is true and a value is encountered that can not be encoded other than
-// by using the %v format of the fmt package.
+// map[string]interface{} or a gen.Node type, The args, if supplied can be an
+// int as an indent, *ojg.Options, or a *Writer. An error will be returned if
+// the Option.Strict flag is true and a value is encountered that can not be
+// encoded other than by using the %v format of the fmt package.
 func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
-	wr := &GoWriter
+	var wr *Writer
 	if 0 < len(args) {
-		switch ta := args[0].(type) {
-		case int:
-			w2 := *wr
-			wr = &w2
-			wr.Indent = ta
-			wr.findex = 0
-		case *ojg.Options:
-			w2 := *wr
-			wr = &w2
-			wr.Options = *ta
-			wr.findex = 0
-		case *Writer:
-			wr = ta
-			wr.strict = true
-		}
+		wr = pickWriter(args[0])
+	}
+	if wr == nil {
+		wr, _ = marshalPool.Get().(*Writer)
+		defer marshalPool.Put(wr)
+	} else {
+		wr.strict = true
 	}
 	defer func() {
 		if r := recover(); r != nil {
@@ -169,22 +155,32 @@ func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
 // or a Node type, The args, if supplied can be an int as an indent or a
 // *Options.
 func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
-	wr := &DefaultWriter
+	var wr *Writer
 	if 0 < len(args) {
-		switch ta := args[0].(type) {
-		case int:
-			w2 := *wr
-			wr = &w2
-			wr.Indent = ta
-			wr.findex = 0
-		case *ojg.Options:
-			w2 := *wr
-			wr = &w2
-			wr.Options = *ta
-			wr.findex = 0
-		case *Writer:
-			wr = ta
-		}
+		wr = pickWriter(args[0])
+	}
+	if wr == nil {
+		wr, _ = writerPool.Get().(*Writer)
+		defer writerPool.Put(wr)
 	}
 	return wr.Write(w, data)
+}
+
+func pickWriter(arg interface{}) (wr *Writer) {
+	switch ta := arg.(type) {
+	case int:
+		wr = &Writer{
+			Options: ojg.GoOptions,
+			buf:     make([]byte, 0, 1024),
+		}
+		wr.Indent = ta
+	case *ojg.Options:
+		wr = &Writer{
+			Options: *ta,
+			buf:     make([]byte, 0, 1024),
+		}
+	case *Writer:
+		wr = ta
+	}
+	return
 }
