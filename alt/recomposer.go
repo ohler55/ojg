@@ -63,15 +63,20 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*comp
 	if rt.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("only structs can be recomposed. %s is not a struct type", rt)
 	}
-	c := composer{
-		fun:   fun,
-		short: rt.Name(),
-		full:  full,
-		rtype: rt,
+	c := r.composers[full]
+	if c == nil {
+		c = &composer{
+			fun:   fun,
+			short: rt.Name(),
+			full:  full,
+			rtype: rt,
+		}
+		c.indexes = indexType(c.rtype)
+		r.composers[c.short] = c
+		r.composers[c.full] = c
+	} else {
+		c.fun = fun
 	}
-	c.indexes = indexType(c.rtype)
-	r.composers[c.short] = &c
-	r.composers[c.full] = &c
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		// Private fields should be skipped.
@@ -88,7 +93,7 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*comp
 		}
 		_, _ = r.registerComposer(ft, nil)
 	}
-	return &c, nil
+	return c, nil
 }
 
 func (r *Recomposer) registerAnyComposer(rt reflect.Type, fun RecomposeAnyFunc) (*composer, error) {
@@ -99,16 +104,21 @@ func (r *Recomposer) registerAnyComposer(rt reflect.Type, fun RecomposeAnyFunc) 
 	if rt.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("only structs can be recomposed. %s is not a struct type", rt)
 	}
-	c := composer{
-		any:   fun,
-		short: rt.Name(),
-		full:  full,
-		rtype: rt,
+	c := r.composers[full]
+	if c == nil {
+		c = &composer{
+			any:   fun,
+			short: rt.Name(),
+			full:  full,
+			rtype: rt,
+		}
+		c.indexes = indexType(c.rtype)
+		r.composers[c.short] = c
+		r.composers[c.full] = c
+	} else {
+		c.any = fun
 	}
-	r.composers[c.short] = &c
-	r.composers[c.full] = &c
-
-	return &c, nil
+	return c, nil
 }
 
 // Recompose simple data into more complex go types.
