@@ -3,6 +3,7 @@
 package alt_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -197,6 +198,27 @@ func TestDecomposeTime(t *testing.T) {
 	a := []interface{}{tm}
 	v := alt.Decompose(a, &ojg.Options{TimeFormat: "nano"})
 	tt.Equal(t, []interface{}{1612872794000000000}, v)
+}
+
+func TestDecomposeAliasedTypes(t *testing.T) {
+	type Stringy string
+	type Inty int
+	type Uinty uint
+	type Floaty float64
+	type Booly bool
+	tcs := [][]interface{}{
+		{Stringy("stringy"), "stringy"},
+		{Inty(1), 1},
+		{Uinty(1), uint(1)},
+		{Floaty(1.3), 1.3},
+		{Booly(true), true},
+	}
+	for i, tc := range tcs {
+		input := tc[0]
+		expect := tc[1]
+		dec := alt.Decompose(input)
+		tt.Equal(t, expect, dec, fmt.Sprintf("case %d failed", i))
+	}
 }
 
 func TestAlterNumbers(t *testing.T) {

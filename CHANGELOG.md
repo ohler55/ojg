@@ -7,6 +7,8 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.10.1] - unreleased
 ### Fixed
 - Struct with pointers to base types such as *float64 are fixed.
+- Stack overflow when converting values to JSON which are a type alias of a
+  builtin.
 ### Added
 - Added `[]byte` converation option for decompose.
 - Added MustXxx versions of multiple functions to allow a panic and recover code pattern.

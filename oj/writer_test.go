@@ -427,6 +427,14 @@ func TestMarshalMap(t *testing.T) {
 	tt.Equal(t, `{"M":{"a":{"Val":1}}}`, string(j))
 }
 
+func TestMarshalTypeAlias(t *testing.T) {
+	type Stringy string
+	d := Stringy("s")
+	j, err := oj.Marshal(&d)
+	tt.Nil(t, err)
+	tt.Equal(t, `"s"`, string(j))
+}
+
 func BenchmarkMarshalFlat(b *testing.B) {
 	m := Mix{
 		Val:   1,
