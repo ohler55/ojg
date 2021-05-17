@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/sen"
@@ -90,8 +91,10 @@ func TestString(t *testing.T) {
 		{value: []interface{}{true, nil}, expect: "[true null]"},
 		{value: gen.Array{gen.Bool(true), nil}, expect: "[true null]"},
 		{value: []interface{}{true, false}, indent: 2, expect: "[\n  true\n  false\n]"},
+		{value: []interface{}{}, indent: 2, expect: "[]"},
 		{value: []interface{}{[]interface{}{}, []interface{}{}}, expect: "[[][]]"},
 		{value: []interface{}{map[string]interface{}{}, map[string]interface{}{}}, expect: "[{}{}]"},
+		{value: map[string]interface{}{}, indent: 0, expect: "{}", options: &sen.Options{Sort: true}},
 		{value: gen.Array{gen.True, gen.False}, indent: 2, expect: "[\n  true\n  false\n]"},
 		{value: map[string]interface{}{"t": true, "f": false}, expect: `{f:false t:true}`, options: &sen.Options{Sort: true}},
 		{value: gen.Object{"t": gen.True, "f": gen.False}, expect: `{f:false t:true}`, options: &sen.Options{Sort: true}},
@@ -146,8 +149,16 @@ func TestString(t *testing.T) {
 
 		{value: &simon{x: 3}, expect: `{type:simon x:3}`, options: &sen.Options{Sort: true}},
 		{value: &genny{val: 3}, expect: `{type:genny val:3}`, options: &sen.Options{Sort: true}},
+		{value: &genny{val: 3}, expect: "{\n  type: genny\n  val: 3\n}", options: &sen.Options{Sort: true, Indent: 2}},
 		{value: &Dummy{Val: 3}, expect: `{val:3}`, options: &sen.Options{}},
+		{value: &Dummy{Val: 3}, expect: "{\n  val: 3\n}", options: &sen.Options{Indent: 2}},
 		{value: &Dummy{Val: 3}, expect: `{^:Dummy val:3}`, options: &sen.Options{Sort: true, CreateKey: "^"}},
+		{value: []*Dummy{{Val: 3}}, expect: "[\n  {\n    val: 3\n  }\n]", options: &sen.Options{Indent: 2}},
+		{value: []*Dummy{{Val: 3}}, expect: "[{val:3}]", options: &sen.Options{Indent: 0}},
+		{value: map[string]*Dummy{"d": {Val: 3}}, expect: "{\n  d: {\n    val: 3\n  }\n}", options: &sen.Options{Indent: 2}},
+		{value: complex(1, 7), expect: "{\n  imag: 7\n  real: 1\n}", options: &sen.Options{Indent: 2, Sort: true}},
+		{value: complex(1, 7), expect: `"(1+7i)"`, options: &sen.Options{Indent: 2, NoReflect: true}},
+		{value: complex(1, 7), expect: `"(1+7i)"`, options: &sen.Options{Indent: 0, NoReflect: true}},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, oj.JSON(d.value))
@@ -219,7 +230,7 @@ func TestWriteBasic(t *testing.T) {
 
 func TestWriteWide(t *testing.T) {
 	var b strings.Builder
-	opt := sen.Options{Indent: 300}
+	opt := ojg.Options{Indent: 300}
 	err := sen.Write(&b, []interface{}{[]interface{}{true, nil}}, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, 529, len(b.String()))
@@ -236,6 +247,12 @@ func TestWriteWide(t *testing.T) {
 
 	b.Reset()
 	err = sen.Write(&b, gen.Object{"x": gen.Object{"y": gen.True, "z": nil}}, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 538, len(b.String()))
+
+	opt = ojg.Options{Indent: 300, Sort: true}
+	b.Reset()
+	err = sen.Write(&b, map[string]interface{}{"x": map[string]interface{}{"y": true, "z": nil}}, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, 538, len(b.String()))
 }
@@ -257,6 +274,12 @@ func TestWriteDeep(t *testing.T) {
 		g = gen.Array{g}
 	}
 	err = sen.Write(&b, g, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 1795, len(b.String()))
+
+	opt.Sort = true
+	b.Reset()
+	err = sen.Write(&b, a, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, 1795, len(b.String()))
 }
@@ -313,4 +336,316 @@ func TestWriteBad(t *testing.T) {
 func TestStringBad(t *testing.T) {
 	out := sen.String([]interface{}{true, &Panik{}})
 	tt.Equal(t, 0, len(out))
+}
+
+func TestMustWritePanic(t *testing.T) {
+	tt.Panic(t, func() { sen.MustWrite(&shortWriter{max: 3}, []interface{}{func() {}}) })
+}
+
+func TestBytes(t *testing.T) {
+	wr := sen.Writer{Options: ojg.Options{Sort: true}}
+	obj := map[string]interface{}{"t": true, "n": nil}
+	b := sen.Bytes(obj, &wr)
+	tt.Equal(t, "{n:null t:true}", string(b))
+}
+
+func TestWriteStructWide(t *testing.T) {
+	type Nest struct {
+		Dig   *Nest
+		Level int
+	}
+	var b strings.Builder
+	opt := sen.Options{Tab: true, OmitNil: true}
+	var n *Nest
+	for i := 40; 0 < i; i-- {
+		n = &Nest{Dig: n, Level: i}
+	}
+	err := sen.Write(&b, n, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 2901, len(b.String()))
+
+	b.Reset()
+	opt.Tab = false
+	opt.Indent = 8
+	err = sen.Write(&b, n, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 12969, len(b.String()))
+
+	b.Reset()
+	opt.Indent = 0
+	err = sen.Write(&b, n, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 586, len(b.String()))
+}
+
+func TestWriteStructCreateKey(t *testing.T) {
+	type Sample struct {
+		X int
+		Y int
+	}
+	sample := Sample{X: 1, Y: 2}
+	opt := sen.Options{Indent: 2, CreateKey: "^"}
+	s := sen.String(&sample, &opt)
+	tt.Equal(t, `{
+  ^: "Sample"
+  x: 1
+  y: 2
+}`, s)
+
+	opt.FullTypePath = true
+	s = sen.String(&sample, &opt)
+	tt.Equal(t, `{
+  ^: "github.com/ohler55/ojg/sen_test/Sample"
+  x: 1
+  y: 2
+}`, s)
+
+	opt.Indent = 0
+	s = sen.String(&sample, &opt)
+	tt.Equal(t, `{^:"github.com/ohler55/ojg/sen_test/Sample" x:1 y:2}`, s)
+
+	opt.FullTypePath = false
+	s = sen.String(&sample, &opt)
+	tt.Equal(t, `{^:Sample x:1 y:2}`, s)
+}
+
+func TestWriteStruct(t *testing.T) {
+	type Sample struct {
+		X []int
+		Y map[string]int
+		Z *int
+	}
+	sample := Sample{X: []int{1}, Y: map[string]int{"y": 2}}
+	opt := sen.Options{Indent: 2, OmitNil: true}
+	s := sen.String(&sample, &opt)
+	tt.Equal(t, `{
+  x: [
+    1
+  ]
+  y: {
+    y: 2
+  }
+}`, s)
+}
+
+func TestWriteStructSkip(t *testing.T) {
+	type Skippy struct {
+		X int `json:"a,omitempty"`
+		Y int `json:"b,omitempty"`
+	}
+	opt := sen.Options{Indent: 2, OmitNil: true, UseTags: true}
+	skippy := Skippy{X: 0, Y: 1}
+	s := sen.String(&skippy, &opt)
+	tt.Equal(t, `{
+  b: 1
+}`, s)
+	opt.Indent = 0
+	s = sen.String(&skippy, &opt)
+	tt.Equal(t, `{b:1}`, s)
+
+	opt.Indent = 2
+	skippy.X = 1
+	skippy.Y = 0
+	s = sen.String(&skippy, &opt)
+	tt.Equal(t, `{
+  a: 1
+}`, s)
+
+	opt.Indent = 0
+	s = sen.String(&skippy, &opt)
+	tt.Equal(t, `{a:1}`, s)
+}
+
+func TestWriteSliceWide(t *testing.T) {
+	type Nest struct {
+		Dig []Nest
+	}
+	opt := sen.Options{Tab: true}
+	n := &Nest{}
+	for i := 16; 0 < i; i-- {
+		n = &Nest{Dig: []Nest{*n}}
+	}
+	s := sen.String(n, &opt)
+	tt.Equal(t, 1313, len(s))
+
+	opt.Tab = false
+	opt.Indent = 4
+	s = sen.String(n, &opt)
+	tt.Equal(t, 4700, len(s))
+
+	opt.Indent = 0
+	s = sen.String(n, &opt)
+	tt.Equal(t, 136, len(s))
+}
+
+func TestWriteSliceArray(t *testing.T) {
+	type Matrix struct {
+		Rows [][4]int
+	}
+	opt := sen.Options{Indent: 2}
+	m := &Matrix{Rows: [][4]int{[4]int{1, 2, 3, 4}}}
+	s := sen.String(m, &opt)
+	tt.Equal(t, `{
+  rows: [
+    [
+      1
+      2
+      3
+      4
+    ]
+  ]
+}`, s)
+
+	opt.Indent = 0
+	s = sen.String(m, &opt)
+	tt.Equal(t, `{rows:[[1 2 3 4]]}`, s)
+}
+
+func TestWriteSliceMap(t *testing.T) {
+	type SMS struct {
+		Maps []map[string]int
+	}
+	opt := sen.Options{Indent: 2, Sort: true}
+	m := &SMS{Maps: []map[string]int{map[string]int{"x": 1, "y": 2}}}
+	s := sen.String(m, &opt)
+	tt.Equal(t, `{
+  maps: [
+    {
+      x: 1
+      y: 2
+    }
+  ]
+}`, s)
+
+	opt.Indent = 0
+	s = sen.String(m, &opt)
+	tt.Equal(t, `{maps:[{x:1 y:2}]}`, s)
+}
+
+func TestWriteMapWide(t *testing.T) {
+	type Nest struct {
+		Dig map[string]*Nest
+	}
+	opt := sen.Options{Tab: true, OmitNil: true}
+	n := &Nest{map[string]*Nest{"x": nil}}
+	for i := 16; 0 < i; i-- {
+		n = &Nest{Dig: map[string]*Nest{"x": n}}
+	}
+	s := sen.String(n, &opt)
+	tt.Equal(t, 1361, len(s))
+
+	opt.Tab = false
+	opt.Indent = 4
+	s = sen.String(n, &opt)
+	tt.Equal(t, 4748, len(s))
+
+	opt.Indent = 0
+	s = sen.String(n, &opt)
+	tt.Equal(t, 168, len(s))
+}
+
+func TestWriteMapSlice(t *testing.T) {
+	m := map[string][]int{"x": []int{1, 2, 3}, "y": []int{}}
+	opt := sen.Options{Indent: 2, OmitNil: true, Sort: true}
+	s := sen.String(m, &opt)
+	tt.Equal(t, `{
+  x: [
+    1
+    2
+    3
+  ]
+}`, s)
+
+	opt.OmitNil = false
+	s = sen.String(m, &opt)
+	tt.Equal(t, `{
+  x: [
+    1
+    2
+    3
+  ]
+  y: [
+  ]
+}`, s)
+
+	opt.OmitNil = false
+	opt.Indent = 0
+	s = sen.String(m, &opt)
+	tt.Equal(t, `{x:[1 2 3] y:[]}`, s)
+
+	opt.OmitNil = true
+	s = sen.String(m, &opt)
+	tt.Equal(t, `{x:[1 2 3]}`, s)
+}
+
+func TestWriteMapMap(t *testing.T) {
+	m := map[string]map[string]int{"x": map[string]int{"y": 3}, "z": map[string]int{}}
+	opt := sen.Options{Indent: 2, OmitNil: true, Sort: true}
+	s := sen.String(m, &opt)
+	tt.Equal(t, `{
+  x: {
+    y: 3
+  }
+}`, s)
+
+	opt.Indent = 0
+	s = sen.String(m, &opt)
+	tt.Equal(t, `{x:{y:3}}`, s)
+}
+
+func TestWriteStructOther(t *testing.T) {
+	type Sample struct {
+		X *int
+		Y int
+	}
+	x := 1
+	sample := Sample{X: &x, Y: 2}
+	opt := sen.Options{Indent: 2}
+	b := sen.Bytes(&sample, &opt)
+	tt.Equal(t, `{
+  x: 1
+  y: 2
+}`, string(b))
+
+	opt.Indent = 0
+	b = sen.Bytes(&sample, &opt)
+	tt.Equal(t, `{x:1 y:2}`, string(b))
+}
+
+func TestWriteStructOmit(t *testing.T) {
+	type Sample struct {
+		X *int
+	}
+	sample := Sample{X: nil}
+	opt := sen.Options{Indent: 2, OmitNil: true}
+	b := sen.Bytes(&sample, &opt)
+	tt.Equal(t, `{
+}`, string(b))
+
+	opt.Indent = 0
+	b = sen.Bytes(&sample, &opt)
+	tt.Equal(t, `{}`, string(b))
+}
+
+func TestWriteStructEmbed(t *testing.T) {
+	type In struct {
+		X int
+	}
+	type Out struct {
+		In In
+		Y  int
+	}
+	o := Out{In: In{X: 1}, Y: 2}
+	opt := sen.Options{Indent: 2}
+	b := sen.Bytes(&o, &opt)
+	tt.Equal(t, `{
+  in: {
+    x: 1
+  }
+  y: 2
+}`, string(b))
+
+	opt.Indent = 0
+	b = sen.Bytes(&o, &opt)
+	tt.Equal(t, `{in:{x:1} y:2}`, string(b))
 }

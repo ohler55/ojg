@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unsafe"
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
@@ -121,11 +122,19 @@ func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
 		wr.appendString = ojg.AppendSENString
 		if wr.Tab || 0 < wr.Indent {
 			wr.appendArray = appendArray
-			wr.appendObject = appendObject
+			if wr.Sort {
+				wr.appendObject = appendSortObject
+			} else {
+				wr.appendObject = appendObject
+			}
 			wr.appendDefault = appendDefault
 		} else {
 			wr.appendArray = tightArray
-			wr.appendObject = tightObject
+			if wr.Sort {
+				wr.appendObject = tightSortObject
+			} else {
+				wr.appendObject = tightObject
+			}
 			wr.appendDefault = tightDefault
 		}
 		wr.appendSEN(data, 0)
@@ -438,9 +447,15 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 		var fv reflect.Value
 		kind := fi.Kind
 		if kind == reflect.Ptr {
-			fv = reflect.ValueOf(v).Elem()
-			kind = fv.Kind()
-			v = fv.Interface()
+			if (*[2]uintptr)(unsafe.Pointer(&v))[1] != 0 { // Check for nil of any type
+				fv = reflect.ValueOf(v).Elem()
+				kind = fv.Kind()
+				v = fv.Interface()
+			} else if wr.OmitNil {
+				wr.buf = wr.buf[:len(wr.buf)-fi.KeyLen()]
+				indented = true
+				continue
+			}
 		}
 		switch kind {
 		case reflect.Struct:
@@ -459,9 +474,9 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 			}
 			wr.appendMap(fv, d2, fi.Elem)
 		default:
+			fmt.Printf("*** struct field %s\n", fi.Key)
 			wr.appendSEN(v, d2)
 		}
-		wr.buf = append(wr.buf, ' ')
 	}
 	if indented {
 		wr.buf = wr.buf[:len(wr.buf)-len(cs)]
@@ -546,38 +561,44 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, st *ojg.Struct) {
 	}
 	keys := rv.MapKeys()
 	if wr.Sort {
-		sort.Slice(keys, func(i, j int) bool { return 0 < strings.Compare(keys[i].String(), keys[j].String()) })
+		sort.Slice(keys, func(i, j int) bool { return 0 > strings.Compare(keys[i].String(), keys[j].String()) })
 	}
 	wr.buf = append(wr.buf, '{')
 	for _, kv := range keys {
 		rm := rv.MapIndex(kv)
 		if rm.Kind() == reflect.Ptr {
-			if wr.OmitNil && rm.IsNil() {
-				continue
+			if rm.IsNil() {
+				if wr.OmitNil {
+					continue
+				}
+			} else {
+				rm = rm.Elem()
 			}
-			rm = rm.Elem()
 		}
-		wr.buf = append(wr.buf, cs...)
 		switch rm.Kind() {
 		case reflect.Struct:
+			wr.buf = append(wr.buf, cs...)
 			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendStruct(rm, d2, st)
 		case reflect.Slice, reflect.Array:
-			if wr.OmitNil && rm.IsNil() {
+			if wr.OmitNil && rm.Len() == 0 {
 				continue
 			}
+			wr.buf = append(wr.buf, cs...)
 			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendSlice(rm, d2, st)
 		case reflect.Map:
-			if wr.OmitNil && rm.IsNil() {
+			if wr.OmitNil && rm.Len() == 0 {
 				continue
 			}
+			wr.buf = append(wr.buf, cs...)
 			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendMap(rm, d2, st)
 		default:
+			wr.buf = append(wr.buf, cs...)
 			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendSEN(rm.Interface(), d2)

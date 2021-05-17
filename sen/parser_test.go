@@ -378,3 +378,21 @@ func TestParserParseReaderChan(t *testing.T) {
 	}
 	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
 }
+
+func TestMustParsePanic(t *testing.T) {
+	tt.Panic(t, func() { _ = sen.MustParse([]byte("[1 2}")) })
+}
+
+func TestMustParseReaderPanic(t *testing.T) {
+	tt.Panic(t, func() { _ = sen.MustParseReader(strings.NewReader("[1 2}")) })
+}
+
+func TestParserMustParsePanic(t *testing.T) {
+	var p sen.Parser
+	tt.Panic(t, func() { _ = p.MustParse([]byte("[1 2}")) })
+}
+
+func TestParserMustParseReader(t *testing.T) {
+	var p sen.Parser
+	tt.Panic(t, func() { _ = p.MustParseReader(iotest.DataErrReader(strings.NewReader("[1 2}"))) })
+}

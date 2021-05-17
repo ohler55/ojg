@@ -534,8 +534,6 @@ func (t *Tokenizer) handleNum(off int) {
 		t.handler.Int(tn)
 	case float64:
 		t.handler.Float(tn)
-	case string:
-		t.handler.Number(tn)
 	case json.Number:
 		t.handler.Number(string(tn))
 	}

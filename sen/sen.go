@@ -44,6 +44,10 @@ var (
 // A chan argument will be used to deliver parse results.
 func Parse(buf []byte, args ...interface{}) (interface{}, error) {
 	p, _ := parserPool.Get().(*Parser)
+	p.cb = nil
+	p.resultChan = nil
+	p.OnlyOne = false
+	p.Reuse = false
 	defer parserPool.Put(p)
 	return p.Parse(buf, args...)
 }
@@ -59,6 +63,10 @@ func Parse(buf []byte, args ...interface{}) (interface{}, error) {
 // A chan argument will be used to deliver parse results.
 func MustParse(buf []byte, args ...interface{}) interface{} {
 	p := parserPool.Get().(*Parser)
+	p.cb = nil
+	p.resultChan = nil
+	p.OnlyOne = false
+	p.Reuse = false
 	defer parserPool.Put(p)
 	val, err := p.Parse(buf, args...)
 	if err != nil {
@@ -78,6 +86,10 @@ func MustParse(buf []byte, args ...interface{}) interface{} {
 // A chan argument will be used to deliver parse results.
 func ParseReader(r io.Reader, args ...interface{}) (data interface{}, err error) {
 	p, _ := parserPool.Get().(*Parser)
+	p.cb = nil
+	p.resultChan = nil
+	p.OnlyOne = false
+	p.Reuse = false
 	defer parserPool.Put(p)
 	return p.ParseReader(r, args...)
 }
@@ -94,6 +106,10 @@ func ParseReader(r io.Reader, args ...interface{}) (data interface{}, err error)
 // A chan argument will be used to deliver parse results.
 func MustParseReader(r io.Reader, args ...interface{}) (data interface{}) {
 	p := parserPool.Get().(*Parser)
+	p.cb = nil
+	p.resultChan = nil
+	p.OnlyOne = false
+	p.Reuse = false
 	defer parserPool.Put(p)
 	var err error
 	if data, err = p.ParseReader(r, args...); err != nil {
@@ -104,11 +120,15 @@ func MustParseReader(r io.Reader, args ...interface{}) (data interface{}) {
 
 // Unmarshal parses the provided JSON and stores the result in the value
 // pointed to by vp.
-func Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomposer) (err error) {
+func Unmarshal(data []byte, vp interface{}, recomposer ...*alt.Recomposer) (err error) {
 	p := Parser{}
 	var v interface{}
 	if v, err = p.Parse(data); err == nil {
-		_, err = alt.Recompose(v, vp)
+		if 0 < len(recomposer) {
+			_, err = recomposer[0].Recompose(v, vp)
+		} else {
+			_, err = alt.Recompose(v, vp)
+		}
 	}
 	return
 }
@@ -159,6 +179,16 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 		defer writerPool.Put(wr)
 	}
 	return wr.Write(w, data)
+}
+
+// MustWrite SEN for the data provided. The data can be a simple type of nil,
+// bool, int, floats, time.Time, []interface{}, or map[string]interface{} or a
+// Node type, The args, if supplied can be an int as an indent, *ojg.Options,
+// or a *Writer. Panics on error.
+func MustWrite(w io.Writer, data interface{}, args ...interface{}) {
+	if err := Write(w, data, args...); err != nil {
+		panic(err)
+	}
 }
 
 func pickWriter(arg interface{}) (wr *Writer) {

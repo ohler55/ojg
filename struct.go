@@ -41,7 +41,7 @@ var (
 )
 
 // GetTypeStruct gets the struct information about the reflect type. This is
-// use internally and is not expected to be used externally.
+// used internally and is not expected to be used externally.
 func GetTypeStruct(rt reflect.Type) (st *Struct) {
 	x := (*[2]uintptr)(unsafe.Pointer(&rt))[1]
 	structMut.Lock()
@@ -49,16 +49,16 @@ func GetTypeStruct(rt reflect.Type) (st *Struct) {
 	if st = structMap[x]; st != nil {
 		return
 	}
-	return buildStruct(rt, x)
+	return buildStruct(rt, x, false)
 }
 
 // Non-locking version used in field creation.
-func getTypeStruct(rt reflect.Type) (st *Struct) {
+func getTypeStruct(rt reflect.Type, embedded bool) (st *Struct) {
 	x := (*[2]uintptr)(unsafe.Pointer(&rt))[1]
 	if st = structMap[x]; st != nil {
 		return
 	}
-	return buildStruct(rt, x)
+	return buildStruct(rt, x, embedded)
 }
 
 // GetStruct gets the struct information for the provided value. This is use
@@ -70,10 +70,10 @@ func GetStruct(v interface{}) (st *Struct) {
 	if st = structMap[x]; st != nil {
 		return
 	}
-	return buildStruct(reflect.TypeOf(v), x)
+	return buildStruct(reflect.TypeOf(v), x, false)
 }
 
-func buildStruct(rt reflect.Type, x uintptr) (st *Struct) {
+func buildStruct(rt reflect.Type, x uintptr, embedded bool) (st *Struct) {
 	st = &Struct{Type: rt}
 	structMap[x] = st
 
@@ -82,24 +82,24 @@ func buildStruct(rt reflect.Type, x uintptr) (st *Struct) {
 			st.Fields[u] = st.Fields[u & ^MaskExact]
 			continue
 		}
-		st.Fields[u] = buildFields(st.Type, u)
+		st.Fields[u] = buildFields(st.Type, u, embedded)
 	}
 	return
 }
 
-func buildFields(rt reflect.Type, u byte) (fa []*Field) {
+func buildFields(rt reflect.Type, u byte, embedded bool) (fa []*Field) {
 	if (MaskByTag & u) != 0 {
-		fa = buildTagFields(rt, (MaskNested&u) != 0, (MaskPretty&u) != 0, (MaskSen&u) != 0)
+		fa = buildTagFields(rt, (MaskNested&u) != 0, (MaskPretty&u) != 0, (MaskSen&u) != 0, embedded)
 	} else if (MaskExact & u) != 0 {
-		fa = buildExactFields(rt, (MaskNested&u) != 0, (MaskPretty&u) != 0, (MaskSen&u) != 0)
+		fa = buildExactFields(rt, (MaskNested&u) != 0, (MaskPretty&u) != 0, (MaskSen&u) != 0, embedded)
 	} else {
-		fa = buildLowFields(rt, (MaskNested&u) != 0, (MaskPretty&u) != 0, (MaskSen&u) != 0)
+		fa = buildLowFields(rt, (MaskNested&u) != 0, (MaskPretty&u) != 0, (MaskSen&u) != 0, embedded)
 	}
 	sort.Slice(fa, func(i, j int) bool { return 0 > strings.Compare(fa[i].Key, fa[j].Key) })
 	return
 }
 
-func buildTagFields(rt reflect.Type, out, pretty, sen bool) (fa []*Field) {
+func buildTagFields(rt reflect.Type, out, pretty, sen, embedded bool) (fa []*Field) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
@@ -107,7 +107,7 @@ func buildTagFields(rt reflect.Type, out, pretty, sen bool) (fa []*Field) {
 			continue
 		}
 		if f.Anonymous && !out {
-			for _, fi := range buildTagFields(f.Type, out, pretty, sen) {
+			for _, fi := range buildTagFields(f.Type, out, pretty, sen, embedded) {
 				fi.Index = append([]int{i}, fi.Index...)
 				fi.offset += f.Offset
 				fa = append(fa, fi)
@@ -139,13 +139,13 @@ func buildTagFields(rt reflect.Type, out, pretty, sen bool) (fa []*Field) {
 					}
 				}
 			}
-			fa = append(fa, newField(f, key, omitEmpty, asString, pretty, sen))
+			fa = append(fa, newField(f, key, omitEmpty, asString, pretty, sen, embedded))
 		}
 	}
 	return
 }
 
-func buildExactFields(rt reflect.Type, out, pretty, sen bool) (fa []*Field) {
+func buildExactFields(rt reflect.Type, out, pretty, sen, embedded bool) (fa []*Field) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
@@ -153,19 +153,19 @@ func buildExactFields(rt reflect.Type, out, pretty, sen bool) (fa []*Field) {
 			continue
 		}
 		if f.Anonymous && !out {
-			for _, fi := range buildExactFields(f.Type, out, pretty, sen) {
+			for _, fi := range buildExactFields(f.Type, out, pretty, sen, embedded) {
 				fi.Index = append([]int{i}, fi.Index...)
 				fi.offset += f.Offset
 				fa = append(fa, fi)
 			}
 		} else {
-			fa = append(fa, newField(f, f.Name, false, false, pretty, sen))
+			fa = append(fa, newField(f, f.Name, false, false, pretty, sen, embedded))
 		}
 	}
 	return
 }
 
-func buildLowFields(rt reflect.Type, out, pretty, sen bool) (fa []*Field) {
+func buildLowFields(rt reflect.Type, out, pretty, sen, embedded bool) (fa []*Field) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
@@ -173,7 +173,7 @@ func buildLowFields(rt reflect.Type, out, pretty, sen bool) (fa []*Field) {
 			continue
 		}
 		if f.Anonymous && !out {
-			for _, fi := range buildLowFields(f.Type, out, pretty, sen) {
+			for _, fi := range buildLowFields(f.Type, out, pretty, sen, embedded) {
 				fi.Index = append([]int{i}, fi.Index...)
 				fi.offset += f.Offset
 				fa = append(fa, fi)
@@ -186,7 +186,7 @@ func buildLowFields(rt reflect.Type, out, pretty, sen bool) (fa []*Field) {
 			} else {
 				name = bytes.ToLower(name)
 			}
-			fa = append(fa, newField(f, string(name), false, false, pretty, sen))
+			fa = append(fa, newField(f, string(name), false, false, pretty, sen, embedded))
 		}
 	}
 	return

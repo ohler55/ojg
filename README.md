@@ -48,6 +48,11 @@ $ oj -m "(@.name == 'Pete')" myfile.json
 
 ```
 
+More complete examples are available in the go docs for most
+functions. The example for [Unmarshalling
+interfaces](oj/example_interface_test.go) demonstrates a feature that
+allows interfaces to be marshalled and unmarshalled.
+
 ## Installation
 ```
 go get github.com/ohler55/ojg

@@ -61,7 +61,16 @@ func (p *Parser) Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomp
 	return
 }
 
-// Parse a JSON string in to simple types. An error is returned if not valid JSON.
+// MustParse a JSON string in to simple types. Panics on error.
+func (p *Parser) MustParse(buf []byte, args ...interface{}) interface{} {
+	val, err := p.Parse(buf, args...)
+	if err != nil {
+		panic(err)
+	}
+	return val
+}
+
+// Parse a SEN string in to simple types. An error is returned if not valid SEN.
 func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 	for _, a := range args {
 		switch ta := a.(type) {
@@ -114,7 +123,16 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 	return p.result, err
 }
 
-// ParseReader a JSON io.Reader. An error is returned if not valid JSON.
+// MustParseReader a JSON io.Reader. Panics on error.
+func (p *Parser) MustParseReader(r io.Reader, args ...interface{}) (data interface{}) {
+	var err error
+	if data, err = p.ParseReader(r, args...); err != nil {
+		panic(err)
+	}
+	return
+}
+
+// ParseReader a SEN io.Reader. An error is returned if not valid SEN.
 func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}, err error) {
 	for _, a := range args {
 		switch ta := a.(type) {

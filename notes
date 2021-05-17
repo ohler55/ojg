@@ -1,7 +1,13 @@
 
 - examples
  - oj
- - sen
+  - animals
+
+- ojg unit tests
+- ojg.Field embedded fields
+  - merge all int together, same with uint and float
+  - handle omit and as-string
+
 
 - readme
  - add marshal and unmarshal example

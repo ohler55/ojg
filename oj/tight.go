@@ -212,7 +212,7 @@ func (wr *Writer) tightMap(rv reflect.Value, st *ojg.Struct) {
 	wr.buf = append(wr.buf, '{')
 	keys := rv.MapKeys()
 	if wr.Sort {
-		sort.Slice(keys, func(i, j int) bool { return 0 < strings.Compare(keys[i].String(), keys[j].String()) })
+		sort.Slice(keys, func(i, j int) bool { return 0 > strings.Compare(keys[i].String(), keys[j].String()) })
 	}
 	comma := false
 	for _, kv := range keys {

@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"unsafe"
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
@@ -35,7 +36,7 @@ func tightDefault(wr *Writer, data interface{}, _ int) {
 		case reflect.Slice, reflect.Array:
 			wr.tightSlice(rv, nil)
 		case reflect.Map:
-			wr.tightSlice(rv, nil)
+			wr.tightMap(rv, nil)
 		default:
 			// Not much should get here except Map, Complex and un-decomposable
 			// values.
@@ -155,12 +156,14 @@ func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
 		var fv reflect.Value
 		kind := fi.Kind
 		if kind == reflect.Ptr {
-			fv = reflect.ValueOf(v).Elem()
-			if !fv.IsValid() {
+			if (*[2]uintptr)(unsafe.Pointer(&v))[1] != 0 { // Check for nil of any type
+				fv = reflect.ValueOf(v).Elem()
+				kind = fv.Kind()
+				v = fv.Interface()
+			} else if wr.OmitNil {
+				wr.buf = wr.buf[:len(wr.buf)-fi.KeyLen()]
 				continue
 			}
-			kind = fv.Kind()
-			v = fv.Interface()
 		}
 		switch kind {
 		case reflect.Struct:
@@ -197,9 +200,6 @@ func (wr *Writer) tightSlice(rv reflect.Value, st *ojg.Struct) {
 	wr.buf = append(wr.buf, '[')
 	for j := 0; j < end; j++ {
 		rm := rv.Index(j)
-		if rm.Kind() == reflect.Ptr {
-			rm = rm.Elem()
-		}
 		switch rm.Kind() {
 		case reflect.Struct:
 			wr.tightStruct(rm, st)
@@ -224,16 +224,19 @@ func (wr *Writer) tightMap(rv reflect.Value, st *ojg.Struct) {
 	wr.buf = append(wr.buf, '{')
 	keys := rv.MapKeys()
 	if wr.Sort {
-		sort.Slice(keys, func(i, j int) bool { return 0 < strings.Compare(keys[i].String(), keys[j].String()) })
+		sort.Slice(keys, func(i, j int) bool { return 0 > strings.Compare(keys[i].String(), keys[j].String()) })
 	}
 	comma := false
 	for _, kv := range keys {
 		rm := rv.MapIndex(kv)
 		if rm.Kind() == reflect.Ptr {
-			if wr.OmitNil && rm.IsNil() {
-				continue
+			if rm.IsNil() {
+				if wr.OmitNil {
+					continue
+				}
+			} else {
+				rm = rm.Elem()
 			}
-			rm = rm.Elem()
 		}
 		switch rm.Kind() {
 		case reflect.Struct:
@@ -241,14 +244,14 @@ func (wr *Writer) tightMap(rv reflect.Value, st *ojg.Struct) {
 			wr.buf = append(wr.buf, ':')
 			wr.tightStruct(rm, st)
 		case reflect.Slice, reflect.Array:
-			if wr.OmitNil && rm.IsNil() {
+			if wr.OmitNil && rm.Len() == 0 {
 				continue
 			}
 			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
 			wr.tightSlice(rm, st)
 		case reflect.Map:
-			if wr.OmitNil && rm.IsNil() {
+			if wr.OmitNil && rm.Len() == 0 {
 				continue
 			}
 			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)

@@ -23,6 +23,12 @@ type Field struct {
 	offset uintptr
 }
 
+// KeyLen returns the length of the key plus syntax. For example a JSON key of
+// _key_ would become "key": with a KeyLen of 6.
+func (f *Field) KeyLen() int {
+	return len(f.jkey)
+}
+
 func valBool(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	return *(*bool)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
 }
@@ -874,6 +880,25 @@ func appendStringNotEmpty(fi *Field, buf []byte, rv reflect.Value, safe bool) ([
 	return buf, nil, true, false
 }
 
+func appendSENString(fi *Field, buf []byte, rv reflect.Value, safe bool) ([]byte, interface{}, bool, bool) {
+	v := rv.FieldByIndex(fi.Index).String()
+	buf = append(buf, fi.jkey...)
+	buf = AppendSENString(buf, v, safe)
+
+	return buf, nil, true, false
+}
+
+func appendSENStringNotEmpty(fi *Field, buf []byte, rv reflect.Value, safe bool) ([]byte, interface{}, bool, bool) {
+	s := rv.FieldByIndex(fi.Index).String()
+	if len(s) == 0 {
+		return buf, nil, false, false
+	}
+	buf = append(buf, fi.jkey...)
+	buf = AppendSENString(buf, s, safe)
+
+	return buf, nil, true, false
+}
+
 func appendJustKey(fi *Field, buf []byte, rv reflect.Value, safe bool) ([]byte, interface{}, bool, bool) {
 	v := rv.FieldByIndex(fi.Index).Interface()
 	buf = append(buf, fi.jkey...)
@@ -898,13 +923,28 @@ func appendSliceNotEmpty(fi *Field, buf []byte, rv reflect.Value, safe bool) ([]
 	return buf, fv.Interface(), false, true
 }
 
-func newField(f reflect.StructField, key string, omitEmpty, asString, pretty, sen bool) *Field {
+func newField(f reflect.StructField, key string, omitEmpty, asString, pretty, sen, embedded bool) *Field {
 	fi := Field{
 		Type:   f.Type,
 		Key:    key,
 		Kind:   f.Type.Kind(),
 		Index:  f.Index,
 		offset: f.Offset,
+	}
+	if embedded {
+		// TBD might have to move the embedded check into each
+		fi.Append = appendJustKey
+		fi.Value = valStruct
+		if sen {
+			fi.jkey = AppendSENString(fi.jkey, fi.Key, false)
+		} else {
+			fi.jkey = AppendJSONString(fi.jkey, fi.Key, false)
+		}
+		fi.jkey = append(fi.jkey, ':')
+		if pretty {
+			fi.jkey = append(fi.jkey, ' ')
+		}
+		return &fi
 	}
 	switch fi.Kind {
 	case reflect.Bool:
@@ -1143,25 +1183,31 @@ func newField(f reflect.StructField, key string, omitEmpty, asString, pretty, se
 		}
 	case reflect.String:
 		if omitEmpty {
-			fi.Append = appendStringNotEmpty
 			fi.Value = valStringNotEmpty
+			if sen {
+				fi.Append = appendSENStringNotEmpty
+			} else {
+				fi.Append = appendStringNotEmpty
+			}
 		} else {
-			fi.Append = appendString
 			fi.Value = valString
+			if sen {
+				fi.Append = appendSENString
+			} else {
+				fi.Append = appendString
+			}
 		}
 	case reflect.Struct:
-		fi.Elem = getTypeStruct(fi.Type)
+		fi.Elem = getTypeStruct(fi.Type, true)
 		fi.Append = appendJustKey
 		fi.Value = valStruct
-		// TBD put back in
-		// fi.Value = valJustVal
 	case reflect.Ptr:
 		et := fi.Type.Elem()
 		if et.Kind() == reflect.Ptr {
 			et = et.Elem()
 		}
 		if et.Kind() == reflect.Struct {
-			fi.Elem = getTypeStruct(et)
+			fi.Elem = getTypeStruct(et, false)
 		}
 		if omitEmpty {
 			fi.Append = appendPtrNotEmpty
@@ -1180,11 +1226,13 @@ func newField(f reflect.StructField, key string, omitEmpty, asString, pretty, se
 		}
 	case reflect.Slice, reflect.Array, reflect.Map:
 		et := fi.Type.Elem()
+		embedded := true
 		if et.Kind() == reflect.Ptr {
+			embedded = false
 			et = et.Elem()
 		}
 		if et.Kind() == reflect.Struct {
-			fi.Elem = getTypeStruct(et)
+			fi.Elem = getTypeStruct(et, embedded)
 		}
 		if omitEmpty {
 			fi.Append = appendSliceNotEmpty

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/sen"
 	"github.com/ohler55/ojg/tt"
@@ -232,4 +233,20 @@ func TestColorObject(t *testing.T) {
 	err = sen.Write(&b, gen.Object{"a": gen.True, "b": gen.False}, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, 32, len(b.String()))
+}
+
+func TestColorMustSen(t *testing.T) {
+	wr := sen.Writer{Options: ojg.Options{
+		Color: true,
+		// use visible character to make it easier to verify
+		SyntaxColor: "s",
+		KeyColor:    "k",
+		NullColor:   "n",
+		BoolColor:   "b",
+		NumberColor: "0",
+		StringColor: "q",
+		TimeColor:   "t",
+		NoColor:     "x",
+	}}
+	tt.Equal(t, "btruex", string(wr.MustSEN(true)))
 }
