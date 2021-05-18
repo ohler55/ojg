@@ -1,7 +1,9 @@
 
-- field addressable rules?
- - arbitrary? bool sometimes?
- - how about make same type and check value and or if offsets are correct
+- pass non ptr to decompose, need to use field lookup instead of direct
+ - for field, have value and by-index-value
+ - if canAddr then direct (fi.Value) else fi.IndexValue
+  - fi.Append and fi.IndexAppend
+  - can a flag be passed down to avoid multiple checks or
 
 - alt unit test
 - oj unit tests

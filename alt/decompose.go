@@ -188,6 +188,9 @@ func reflectStruct(rv reflect.Value, val interface{}, opt *Options) interface{} 
 			obj[opt.CreateKey] = t.Name()
 		}
 	}
+
+	// TBD rv.CanAddr() then call fi.Value else fi.IndexValue
+
 	fields := st.Fields[opt.FieldsIndex()&ojg.MaskIndex]
 	for _, fi := range fields {
 		if v, fv, omit := fi.Value(fi, rv); !omit {
