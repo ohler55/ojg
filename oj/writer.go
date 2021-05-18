@@ -122,11 +122,19 @@ func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
 		wr.appendString = ojg.AppendJSONString
 		if wr.Tab || 0 < wr.Indent {
 			wr.appendArray = appendArray
-			wr.appendObject = appendObject
+			if wr.Sort {
+				wr.appendObject = appendSortObject
+			} else {
+				wr.appendObject = appendObject
+			}
 			wr.appendDefault = appendDefault
 		} else {
 			wr.appendArray = tightArray
-			wr.appendObject = tightObject
+			if wr.Sort {
+				wr.appendObject = tightSortObject
+			} else {
+				wr.appendObject = tightObject
+			}
 			wr.appendDefault = tightDefault
 		}
 		wr.appendJSON(data, 0)
