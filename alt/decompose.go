@@ -163,8 +163,16 @@ func reflectValue(rv reflect.Value, val interface{}, opt *Options) (v interface{
 		v = reflectArray(rv, opt)
 	case reflect.Struct:
 		v = reflectStruct(rv, val, opt)
-	default:
-		v = val
+	case reflect.String:
+		v = rv.String()
+	case reflect.Bool:
+		v = rv.Bool()
+	case reflect.Float32, reflect.Float64:
+		v = rv.Float()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		v = rv.Int()
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		v = rv.Uint()
 	}
 	return
 }
