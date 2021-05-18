@@ -77,6 +77,9 @@ func buildStruct(rt reflect.Type, x uintptr, embedded bool) (st *Struct) {
 	st = &Struct{Type: rt}
 	structMap[x] = st
 
+	// TBD create value of type rt to use for addressable and same offset
+	//
+	//rv := reflect.New(rt)
 	for u := byte(0); u < MaskSet; u++ {
 		if (MaskByTag&u) != 0 && (MaskExact&u) != 0 { // reuse previously built
 			st.Fields[u] = st.Fields[u & ^MaskExact]
@@ -139,6 +142,8 @@ func buildTagFields(rt reflect.Type, out, pretty, sen, embedded bool) (fa []*Fie
 					}
 				}
 			}
+			// TBD check field lookup vs offset (maybe vs can address)
+			//  change arg from embedded to canAddr or direct+
 			fa = append(fa, newField(f, key, omitEmpty, asString, pretty, sen, embedded))
 		}
 	}

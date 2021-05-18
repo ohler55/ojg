@@ -1,16 +1,16 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
-package oj_test
+package alt_test
 
 import (
 	"testing"
 
-	"github.com/ohler55/ojg/oj"
+	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/tt"
 )
 
 func TestBuilderArray(t *testing.T) {
-	var b oj.Builder
+	var b alt.Builder
 
 	err := b.Array()
 	tt.Nil(t, err, "b.Array()")
@@ -36,7 +36,7 @@ func TestBuilderArray(t *testing.T) {
 }
 
 func TestBuilderObject(t *testing.T) {
-	var b oj.Builder
+	var b alt.Builder
 
 	err := b.Object()
 	tt.Nil(t, err, "b.Object()")
@@ -63,7 +63,7 @@ func TestBuilderObject(t *testing.T) {
 }
 
 func TestBuilderMixed(t *testing.T) {
-	var b oj.Builder
+	var b alt.Builder
 
 	b.Reset() // not needed, just making sure there are not issues
 
@@ -87,7 +87,7 @@ func TestBuilderMixed(t *testing.T) {
 }
 
 func TestBuilderErrors(t *testing.T) {
-	var b oj.Builder
+	var b alt.Builder
 
 	err := b.Object("bad")
 	tt.Equal(t, "can not use a key when pushing to an array", err.Error())

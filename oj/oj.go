@@ -13,6 +13,9 @@ import (
 // Options is an alias for ojg.Options
 type Options = ojg.Options
 
+// Builder is an aliase for alt.Builder.
+type Builder = alt.Builder
+
 var (
 	// DefaultOptions are the default options for the this package.
 	DefaultOptions = ojg.DefaultOptions

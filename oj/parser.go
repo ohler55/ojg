@@ -19,6 +19,8 @@ const (
 	readBufSize   = 4096
 )
 
+var emptySlice = []interface{}{}
+
 // Parser is a reusable JSON parser. It can be reused for multiple parsings
 // which allows buffer reuse for a performance advantage.
 type Parser struct {

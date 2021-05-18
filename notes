@@ -1,6 +1,9 @@
 
-- move oj.Builder to alt and then alias
+- field addressable rules?
+ - arbitrary? bool sometimes?
+ - how about make same type and check value and or if offsets are correct
 
+- alt unit test
 - oj unit tests
 - ojg unit tests
 - ojg.Field embedded fields
