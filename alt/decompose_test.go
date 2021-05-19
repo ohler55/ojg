@@ -312,6 +312,8 @@ func BenchmarkDecompose(b *testing.B) {
 		Dash:  5,
 		Buf:   []byte("abcd"),
 	}
+	_ = alt.Decompose(&a, &alt.Options{UseTags: true})
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = alt.Decompose(&a, &alt.Options{UseTags: true})
 	}

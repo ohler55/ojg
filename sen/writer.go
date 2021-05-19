@@ -474,7 +474,6 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 			}
 			wr.appendMap(fv, d2, fi.Elem)
 		default:
-			fmt.Printf("*** struct field %s\n", fi.Key)
 			wr.appendSEN(v, d2)
 		}
 	}

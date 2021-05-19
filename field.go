@@ -18,6 +18,7 @@ type Field struct {
 	Elem   *Struct
 	Append func(fi *Field, buf []byte, rv reflect.Value, safe bool) ([]byte, interface{}, bool, bool)
 	Value  func(fi *Field, rv reflect.Value) (v interface{}, fv reflect.Value, omit bool)
+	IValue func(fi *Field, rv reflect.Value) (v interface{}, fv reflect.Value, omit bool)
 	jkey   []byte
 	Index  []int
 	offset uintptr
@@ -27,50 +28,6 @@ type Field struct {
 // _key_ would become "key": with a KeyLen of 6.
 func (f *Field) KeyLen() int {
 	return len(f.jkey)
-}
-
-func valBool(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
-	return *(*bool)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
-}
-
-func valBoolAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
-	if *(*bool)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)) {
-		return "true", nilValue, false
-	}
-	return "false", nilValue, false
-}
-
-func valBoolNotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
-	v := *(*bool)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nilValue, !v
-}
-
-func valBoolNotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
-	if *(*bool)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)) {
-		return "true", nilValue, false
-	}
-	return "false", nilValue, true
-}
-
-func valInt(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
-	return *(*int)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset)), nilValue, false
-}
-
-func valIntAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
-	return strconv.FormatInt(int64(*(*int)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))), 10), nilValue, false
-}
-
-func valIntNotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
-	v := *(*int)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	return v, nilValue, v == 0
-}
-
-func valIntNotEmptyAsString(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
-	v := *(*int)(unsafe.Pointer(rv.UnsafeAddr() + fi.offset))
-	if v == 0 {
-		return nil, nilValue, true
-	}
-	return strconv.FormatInt(int64(v), 10), nilValue, false
 }
 
 func valInt8(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
@@ -317,11 +274,6 @@ func valStringNotEmpty(fi *Field, rv reflect.Value) (interface{}, reflect.Value,
 }
 
 func valJustVal(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
-	fv := rv.FieldByIndex(fi.Index)
-	return fv.Interface(), fv, false
-}
-
-func valStruct(fi *Field, rv reflect.Value) (interface{}, reflect.Value, bool) {
 	fv := rv.FieldByIndex(fi.Index)
 	return fv.Interface(), fv, false
 }
@@ -929,12 +881,14 @@ func newField(f reflect.StructField, key string, omitEmpty, asString, pretty, se
 		Key:    key,
 		Kind:   f.Type.Kind(),
 		Index:  f.Index,
+		Value:  valJustVal, // replace as necessary later
+		IValue: valJustVal, // replace as necessary later
 		offset: f.Offset,
 	}
 	if embedded {
 		// TBD might have to move the embedded check into each
 		fi.Append = appendJustKey
-		fi.Value = valStruct
+		fi.Value = valJustVal
 		if sen {
 			fi.jkey = AppendSENString(fi.jkey, fi.Key, false)
 		} else {
@@ -945,6 +899,17 @@ func newField(f reflect.StructField, key string, omitEmpty, asString, pretty, se
 			fi.jkey = append(fi.jkey, ' ')
 		}
 		return &fi
+	}
+	// TBD calc fx in struct.go
+	var fx byte
+	if omitEmpty {
+		fx |= omitMask
+	}
+	if asString {
+		fx |= strMask
+	}
+	if embedded {
+		fx |= embedMask
 	}
 	switch fi.Kind {
 	case reflect.Bool:
@@ -965,6 +930,8 @@ func newField(f reflect.StructField, key string, omitEmpty, asString, pretty, se
 				fi.Value = valBool
 			}
 		}
+		fi.Value = boolValFuncs[fx]
+
 	case reflect.Int:
 		if asString {
 			if omitEmpty {
@@ -983,6 +950,7 @@ func newField(f reflect.StructField, key string, omitEmpty, asString, pretty, se
 				fi.Value = valInt
 			}
 		}
+		fi.Value = intValFuncs[fx]
 	case reflect.Int8:
 		if asString {
 			if omitEmpty {
@@ -1200,7 +1168,7 @@ func newField(f reflect.StructField, key string, omitEmpty, asString, pretty, se
 	case reflect.Struct:
 		fi.Elem = getTypeStruct(fi.Type, true)
 		fi.Append = appendJustKey
-		fi.Value = valStruct
+		fi.Value = valJustVal
 	case reflect.Ptr:
 		et := fi.Type.Elem()
 		if et.Kind() == reflect.Ptr {

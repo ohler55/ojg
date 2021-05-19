@@ -178,9 +178,12 @@ func reflectValue(rv reflect.Value, val interface{}, opt *Options) (v interface{
 }
 
 func reflectStruct(rv reflect.Value, val interface{}, opt *Options) interface{} {
+	if !rv.CanAddr() {
+		return reflectEmbed(rv, val, opt)
+	}
 	obj := map[string]interface{}{}
-	st := ojg.GetStruct(val)
-	t := st.Type
+	si := getSinfo(val)
+	t := si.rt
 	if 0 < len(opt.CreateKey) {
 		if opt.FullTypePath {
 			obj[opt.CreateKey] = t.PkgPath() + "/" + t.Name()
@@ -188,12 +191,10 @@ func reflectStruct(rv reflect.Value, val interface{}, opt *Options) interface{} 
 			obj[opt.CreateKey] = t.Name()
 		}
 	}
-
-	// TBD rv.CanAddr() then call fi.Value else fi.IndexValue
-
-	fields := st.Fields[opt.FieldsIndex()&ojg.MaskIndex]
+	fields := si.getFields(opt)
+	addr := rv.UnsafeAddr()
 	for _, fi := range fields {
-		if v, fv, omit := fi.Value(fi, rv); !omit {
+		if v, fv, omit := fi.value(fi, rv, addr); !omit {
 			if fv.IsValid() {
 				if simp, _ := v.(Simplifier); simp != nil {
 					v = simp.Simplify()
@@ -205,11 +206,11 @@ func reflectStruct(rv reflect.Value, val interface{}, opt *Options) interface{} 
 					v = decompose(v, opt)
 				}
 				if !opt.OmitNil || v != nil {
-					obj[fi.Key] = v
+					obj[fi.key] = v
 				}
 			} else {
 				if !opt.OmitNil || v != nil {
-					obj[fi.Key] = v
+					obj[fi.key] = v
 				}
 			}
 		}
@@ -219,8 +220,8 @@ func reflectStruct(rv reflect.Value, val interface{}, opt *Options) interface{} 
 
 func reflectEmbed(rv reflect.Value, val interface{}, opt *Options) interface{} {
 	obj := map[string]interface{}{}
-	st := ojg.GetStruct(val)
-	t := st.Type
+	si := getSinfo(val)
+	t := si.rt
 	if 0 < len(opt.CreateKey) {
 		if opt.FullTypePath {
 			obj[opt.CreateKey] = t.PkgPath() + "/" + t.Name()
@@ -228,17 +229,27 @@ func reflectEmbed(rv reflect.Value, val interface{}, opt *Options) interface{} {
 			obj[opt.CreateKey] = t.Name()
 		}
 	}
-	fields := st.Fields[opt.FieldsIndex()&ojg.MaskIndex]
+	fields := si.getFields(opt)
 	for _, fi := range fields {
-		fv := rv.FieldByIndex(fi.Index)
-		var v interface{}
-		if fv.Kind() == reflect.Struct {
-			v = reflectEmbed(fv, fv.Interface(), opt)
-		} else {
-			v = decompose(fv.Interface(), opt)
-		}
-		if !opt.OmitNil || v != nil {
-			obj[fi.Key] = v
+		if v, fv, omit := fi.ivalue(fi, rv, 0); !omit {
+			if fv.IsValid() {
+				if simp, _ := v.(Simplifier); simp != nil {
+					v = simp.Simplify()
+				} else if _, ok := v.([]byte); ok {
+					v = decompose(v, opt)
+				} else if opt.NestEmbed && fv.Kind() == reflect.Struct {
+					v = reflectEmbed(fv, v, opt)
+				} else {
+					v = decompose(v, opt)
+				}
+				if !opt.OmitNil || v != nil {
+					obj[fi.key] = v
+				}
+			} else {
+				if !opt.OmitNil || v != nil {
+					obj[fi.key] = v
+				}
+			}
 		}
 	}
 	return obj

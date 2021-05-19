@@ -11,23 +11,6 @@ import (
 	"unsafe"
 )
 
-const (
-	// MaskByTag is the mask for byTag fields.
-	MaskByTag = byte(0x10)
-	// MaskExact is the mask for Exact fields.
-	MaskExact = byte(0x08) // exact key vs lowwer case first letter
-	// MaskPretty is the mask for Pretty fields.
-	MaskPretty = byte(0x04)
-	// MaskNested is the mask for Nested fields.
-	MaskNested = byte(0x02)
-	// MaskSen is the mask for Sen fields.
-	MaskSen = byte(0x01)
-	// MaskSet is the mask for Set fields.
-	MaskSet = byte(0x20)
-	// MaskIndex is the mask for an index that has been set up.
-	MaskIndex = byte(0x1f)
-)
-
 // Struct holds reflect information about a struct.
 type Struct struct {
 	Type   reflect.Type
