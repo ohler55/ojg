@@ -344,6 +344,9 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 		if !ok {
 			if c := r.composers[rv.Type().Name()]; c != nil && c.any != nil {
 				if val, err := c.any(v); err == nil {
+					if val == nil {
+						break
+					}
 					vv := reflect.ValueOf(val)
 					if vv.Type().Kind() == reflect.Ptr {
 						vv = vv.Elem()

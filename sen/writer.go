@@ -58,7 +58,7 @@ func (wr *Writer) MustSEN(data interface{}) []byte {
 		wr.buf = wr.buf[:0]
 	}
 	if wr.findex == 0 {
-		wr.findex = wr.FieldsIndex() | ojg.MaskSen
+		wr.calcFieldsIndex()
 	}
 	if wr.Color {
 		wr.colorSEN(data, 0)
@@ -114,7 +114,7 @@ func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
 		wr.buf = wr.buf[:0]
 	}
 	if wr.findex == 0 {
-		wr.findex = wr.FieldsIndex() | ojg.MaskSen
+		wr.calcFieldsIndex()
 	}
 	if wr.Color {
 		wr.colorSEN(data, 0)
@@ -143,6 +143,21 @@ func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
 		if _, err := wr.w.Write(wr.buf); err != nil {
 			panic(err)
 		}
+	}
+}
+
+func (wr *Writer) calcFieldsIndex() {
+	wr.findex = 0
+	if wr.NestEmbed {
+		wr.findex |= maskNested
+	}
+	if 0 < wr.Indent {
+		wr.findex |= maskPretty
+	}
+	if wr.UseTags {
+		wr.findex |= maskByTag
+	} else if wr.KeyExact {
+		wr.findex |= maskExact
 	}
 }
 
@@ -381,12 +396,12 @@ func appendSortObject(wr *Writer, n map[string]interface{}, depth int) {
 	wr.buf = append(wr.buf, '}')
 }
 
-func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
-	if st == nil {
-		st = ojg.GetStruct(rv.Interface())
+func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
+	if si == nil {
+		si = getSinfo(rv.Interface())
 	}
 	d2 := depth + 1
-	fields := st.Fields[wr.findex&ojg.MaskIndex]
+	fields := si.fields[wr.findex&ojg.MaskIndex]
 	wr.buf = append(wr.buf, '{')
 	var v interface{}
 	var has bool
@@ -422,20 +437,28 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 		wr.buf = wr.appendString(wr.buf, wr.CreateKey, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, `: "`...)
 		if wr.FullTypePath {
-			wr.buf = append(wr.buf, st.Type.PkgPath()...)
+			wr.buf = append(wr.buf, si.rt.PkgPath()...)
 			wr.buf = append(wr.buf, '/')
-			wr.buf = append(wr.buf, st.Type.Name()...)
+			wr.buf = append(wr.buf, si.rt.Name()...)
 		} else {
-			wr.buf = append(wr.buf, st.Type.Name()...)
+			wr.buf = append(wr.buf, si.rt.Name()...)
 		}
 		wr.buf = append(wr.buf, '"')
+	}
+	var addr uintptr
+	if rv.CanAddr() {
+		addr = rv.UnsafeAddr()
 	}
 	for _, fi := range fields {
 		if !indented {
 			wr.buf = append(wr.buf, cs...)
 			indented = true
 		}
-		wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, !wr.HTMLUnsafe)
+		if 0 < addr {
+			wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+		} else {
+			wr.buf, v, wrote, has = fi.iAppend(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+		}
 		if wrote {
 			indented = false
 			continue
@@ -445,7 +468,7 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 		}
 		indented = false
 		var fv reflect.Value
-		kind := fi.Kind
+		kind := fi.kind
 		if kind == reflect.Ptr {
 			if (*[2]uintptr)(unsafe.Pointer(&v))[1] != 0 { // Check for nil of any type
 				fv = reflect.ValueOf(v).Elem()
@@ -462,17 +485,17 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 			if !fv.IsValid() {
 				fv = reflect.ValueOf(v)
 			}
-			wr.appendStruct(fv, d2, fi.Elem)
+			wr.appendStruct(fv, d2, fi.elem)
 		case reflect.Slice, reflect.Array:
 			if !fv.IsValid() {
 				fv = reflect.ValueOf(v)
 			}
-			wr.appendSlice(fv, d2, fi.Elem)
+			wr.appendSlice(fv, d2, fi.elem)
 		case reflect.Map:
 			if !fv.IsValid() {
 				fv = reflect.ValueOf(v)
 			}
-			wr.appendMap(fv, d2, fi.Elem)
+			wr.appendMap(fv, d2, fi.elem)
 		default:
 			wr.appendSEN(v, d2)
 		}
@@ -484,7 +507,7 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 	wr.buf = append(wr.buf, '}')
 }
 
-func (wr *Writer) appendSlice(rv reflect.Value, depth int, st *ojg.Struct) {
+func (wr *Writer) appendSlice(rv reflect.Value, depth int, si *sinfo) {
 	d2 := depth + 1
 	end := rv.Len()
 	var is string
@@ -518,11 +541,11 @@ func (wr *Writer) appendSlice(rv reflect.Value, depth int, st *ojg.Struct) {
 		rm := rv.Index(j)
 		switch rm.Kind() {
 		case reflect.Struct:
-			wr.appendStruct(rm, d2, st)
+			wr.appendStruct(rm, d2, si)
 		case reflect.Slice, reflect.Array:
-			wr.appendSlice(rm, d2, st)
+			wr.appendSlice(rm, d2, si)
 		case reflect.Map:
-			wr.appendMap(rm, d2, st)
+			wr.appendMap(rm, d2, si)
 		default:
 			wr.appendSEN(rm.Interface(), d2)
 		}
@@ -531,7 +554,7 @@ func (wr *Writer) appendSlice(rv reflect.Value, depth int, st *ojg.Struct) {
 	wr.buf = append(wr.buf, ']')
 }
 
-func (wr *Writer) appendMap(rv reflect.Value, depth int, st *ojg.Struct) {
+func (wr *Writer) appendMap(rv reflect.Value, depth int, si *sinfo) {
 	d2 := depth + 1
 	var is string
 	var cs string
@@ -579,7 +602,7 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, st *ojg.Struct) {
 			wr.buf = append(wr.buf, cs...)
 			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
-			wr.appendStruct(rm, d2, st)
+			wr.appendStruct(rm, d2, si)
 		case reflect.Slice, reflect.Array:
 			if wr.OmitNil && rm.Len() == 0 {
 				continue
@@ -587,7 +610,7 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, st *ojg.Struct) {
 			wr.buf = append(wr.buf, cs...)
 			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
-			wr.appendSlice(rm, d2, st)
+			wr.appendSlice(rm, d2, si)
 		case reflect.Map:
 			if wr.OmitNil && rm.Len() == 0 {
 				continue
@@ -595,7 +618,7 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, st *ojg.Struct) {
 			wr.buf = append(wr.buf, cs...)
 			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
-			wr.appendMap(rm, d2, st)
+			wr.appendMap(rm, d2, si)
 		default:
 			wr.buf = append(wr.buf, cs...)
 			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)

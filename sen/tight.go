@@ -118,11 +118,11 @@ func tightSortObject(wr *Writer, n map[string]interface{}, _ int) {
 	}
 }
 
-func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
-	if st == nil {
-		st = ojg.GetStruct(rv.Interface())
+func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
+	if si == nil {
+		si = getSinfo(rv.Interface())
 	}
-	fields := st.Fields[wr.findex&ojg.MaskIndex]
+	fields := si.fields[wr.findex&ojg.MaskIndex]
 	wr.buf = append(wr.buf, '{')
 	var v interface{}
 	var has bool
@@ -133,18 +133,26 @@ func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
 		wr.buf = append(wr.buf, ':')
 		if wr.FullTypePath {
 			wr.buf = append(wr.buf, '"')
-			wr.buf = append(wr.buf, st.Type.PkgPath()...)
+			wr.buf = append(wr.buf, si.rt.PkgPath()...)
 			wr.buf = append(wr.buf, '/')
-			wr.buf = append(wr.buf, st.Type.Name()...)
+			wr.buf = append(wr.buf, si.rt.Name()...)
 			wr.buf = append(wr.buf, '"')
 		} else {
-			wr.buf = wr.appendString(wr.buf, st.Type.Name(), !wr.HTMLUnsafe)
+			wr.buf = wr.appendString(wr.buf, si.rt.Name(), !wr.HTMLUnsafe)
 		}
 		wr.buf = append(wr.buf, ' ')
 		comma = true
 	}
+	var addr uintptr
+	if rv.CanAddr() {
+		addr = rv.UnsafeAddr()
+	}
 	for _, fi := range fields {
-		wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, !wr.HTMLUnsafe)
+		if 0 < addr {
+			wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+		} else {
+			wr.buf, v, wrote, has = fi.iAppend(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+		}
 		if wrote {
 			wr.buf = append(wr.buf, ' ')
 			comma = true
@@ -154,7 +162,7 @@ func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
 			continue
 		}
 		var fv reflect.Value
-		kind := fi.Kind
+		kind := fi.kind
 		if kind == reflect.Ptr {
 			if (*[2]uintptr)(unsafe.Pointer(&v))[1] != 0 { // Check for nil of any type
 				fv = reflect.ValueOf(v).Elem()
@@ -170,17 +178,17 @@ func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
 			if !fv.IsValid() {
 				fv = reflect.ValueOf(v)
 			}
-			wr.tightStruct(fv, fi.Elem)
+			wr.tightStruct(fv, fi.elem)
 		case reflect.Slice, reflect.Array:
 			if !fv.IsValid() {
 				fv = reflect.ValueOf(v)
 			}
-			wr.tightSlice(fv, fi.Elem)
+			wr.tightSlice(fv, fi.elem)
 		case reflect.Map:
 			if !fv.IsValid() {
 				fv = reflect.ValueOf(v)
 			}
-			wr.tightMap(fv, fi.Elem)
+			wr.tightMap(fv, fi.elem)
 		default:
 			wr.appendSEN(v, 0)
 		}
@@ -194,7 +202,7 @@ func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
 	}
 }
 
-func (wr *Writer) tightSlice(rv reflect.Value, st *ojg.Struct) {
+func (wr *Writer) tightSlice(rv reflect.Value, si *sinfo) {
 	end := rv.Len()
 	comma := false
 	wr.buf = append(wr.buf, '[')
@@ -202,11 +210,11 @@ func (wr *Writer) tightSlice(rv reflect.Value, st *ojg.Struct) {
 		rm := rv.Index(j)
 		switch rm.Kind() {
 		case reflect.Struct:
-			wr.tightStruct(rm, st)
+			wr.tightStruct(rm, si)
 		case reflect.Slice, reflect.Array:
-			wr.tightSlice(rm, st)
+			wr.tightSlice(rm, si)
 		case reflect.Map:
-			wr.tightMap(rm, st)
+			wr.tightMap(rm, si)
 		default:
 			wr.appendSEN(rm.Interface(), 0)
 		}
@@ -220,7 +228,7 @@ func (wr *Writer) tightSlice(rv reflect.Value, st *ojg.Struct) {
 	}
 }
 
-func (wr *Writer) tightMap(rv reflect.Value, st *ojg.Struct) {
+func (wr *Writer) tightMap(rv reflect.Value, si *sinfo) {
 	wr.buf = append(wr.buf, '{')
 	keys := rv.MapKeys()
 	if wr.Sort {
@@ -242,21 +250,21 @@ func (wr *Writer) tightMap(rv reflect.Value, st *ojg.Struct) {
 		case reflect.Struct:
 			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
-			wr.tightStruct(rm, st)
+			wr.tightStruct(rm, si)
 		case reflect.Slice, reflect.Array:
 			if wr.OmitNil && rm.Len() == 0 {
 				continue
 			}
 			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
-			wr.tightSlice(rm, st)
+			wr.tightSlice(rm, si)
 		case reflect.Map:
 			if wr.OmitNil && rm.Len() == 0 {
 				continue
 			}
 			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
-			wr.tightMap(rm, st)
+			wr.tightMap(rm, si)
 		default:
 			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')

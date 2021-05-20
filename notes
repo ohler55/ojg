@@ -1,9 +1,5 @@
 
-- pass non ptr to decompose, need to use field lookup instead of direct
- - for field, have value and by-index-value
- - if canAddr then direct (fi.Value) else fi.IndexValue
-  - fi.Append and fi.IndexAppend
-  - can a flag be passed down to avoid multiple checks or
+- copy struct and field to sen and oj changing to sinfo and finfo
 
 - alt unit test
 - oj unit tests

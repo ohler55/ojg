@@ -447,12 +447,18 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, st *ojg.Struct) {
 		wr.buf = append(wr.buf, `",`...)
 		empty = false
 	}
+
+	// TBD check rv.CanAddr
+	var addr uintptr
+	if rv.CanAddr() {
+		addr = rv.UnsafeAddr()
+	}
 	for _, fi := range fields {
 		if !indented {
 			wr.buf = append(wr.buf, cs...)
 			indented = true
 		}
-		wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, !wr.HTMLUnsafe)
+		wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
 		if wrote {
 			wr.buf = append(wr.buf, ',')
 			empty = false

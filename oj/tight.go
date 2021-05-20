@@ -130,8 +130,14 @@ func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
 		wr.buf = append(wr.buf, `",`...)
 		comma = true
 	}
+
+	// TBD check rv.CanAddr
+	var addr uintptr
+	if rv.CanAddr() {
+		addr = rv.UnsafeAddr()
+	}
 	for _, fi := range fields {
-		wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, !wr.HTMLUnsafe)
+		wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
 		if wrote {
 			wr.buf = append(wr.buf, ',')
 			comma = true

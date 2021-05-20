@@ -1,6 +1,6 @@
 // Copyright (c) 2021, Peter Ohler, All rights reserved.
 
-package alt
+package sen
 
 import (
 	"bytes"
@@ -9,21 +9,19 @@ import (
 	"strings"
 	"sync"
 	"unsafe"
-
-	"github.com/ohler55/ojg"
 )
 
 const (
 	maskByTag  = byte(0x01)
 	maskExact  = byte(0x02) // exact key vs lowwer case first letter
 	maskNested = byte(0x04)
-	maskSet    = byte(0x08)
+	maskPretty = byte(0x08)
+	maskSet    = byte(0x10)
 )
 
-// sinfo holds reflect information about a struct.
 type sinfo struct {
 	rt     reflect.Type
-	fields [8][]*finfo
+	fields [16][]*finfo
 }
 
 var (
@@ -32,21 +30,15 @@ var (
 	structMap = map[uintptr]*sinfo{}
 )
 
-func (si *sinfo) getFields(o *ojg.Options) []*finfo {
-	var index byte
-	if o.NestEmbed {
-		index |= maskNested
+// Non-locking version used in field creation.
+func getTypeStruct(rt reflect.Type, embedded bool) (st *sinfo) {
+	x := (*[2]uintptr)(unsafe.Pointer(&rt))[1]
+	if st = structMap[x]; st != nil {
+		return
 	}
-	if o.UseTags {
-		index |= maskByTag
-	} else if o.KeyExact {
-		index |= maskExact
-	}
-	return si.fields[index]
+	return buildStruct(rt, x, embedded)
 }
 
-// getSinfo gets the struct information for the provided value. This is use
-// internally and is not expected to be used externally.
 func getSinfo(v interface{}) (st *sinfo) {
 	x := (*[2]uintptr)(unsafe.Pointer(&v))[0]
 	structMut.Lock()
@@ -73,34 +65,32 @@ func buildStruct(rt reflect.Type, x uintptr, embedded bool) (st *sinfo) {
 
 func buildFields(rt reflect.Type, u byte, embedded bool) (fa []*finfo) {
 	if (maskByTag & u) != 0 {
-		fa = buildTagFields(rt, (maskNested&u) == 0, embedded)
+		fa = buildTagFields(rt, (maskNested&u) != 0, (maskPretty&u) != 0, embedded)
 	} else if (maskExact & u) != 0 {
-		fa = buildExactFields(rt, (maskNested&u) == 0, embedded)
+		fa = buildExactFields(rt, (maskNested&u) != 0, (maskPretty&u) != 0, embedded)
 	} else {
-		fa = buildLowFields(rt, (maskNested&u) == 0, embedded)
+		fa = buildLowFields(rt, (maskNested&u) != 0, (maskPretty&u) != 0, embedded)
 	}
 	sort.Slice(fa, func(i, j int) bool { return 0 > strings.Compare(fa[i].key, fa[j].key) })
 	return
 }
 
-func buildTagFields(rt reflect.Type, nested, embedded bool) (fa []*finfo) {
+func buildTagFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
 		if len(name) == 0 || 'a' <= name[0] {
 			continue
 		}
-		var fx byte
-		if embedded {
-			fx |= embedMask
-		}
-		if f.Anonymous && nested {
-			for _, fi := range buildTagFields(f.Type, nested, embedded) {
+		if f.Anonymous && !out {
+			for _, fi := range buildTagFields(f.Type, out, pretty, embedded) {
 				fi.index = append([]int{i}, fi.index...)
 				fi.offset += f.Offset
 				fa = append(fa, fi)
 			}
 		} else {
+			omitEmpty := false
+			asString := false
 			key := f.Name
 			if tag, ok := f.Tag.Lookup("json"); ok && 0 < len(tag) {
 				parts := strings.Split(tag, ",")
@@ -119,55 +109,47 @@ func buildTagFields(rt reflect.Type, nested, embedded bool) (fa []*finfo) {
 				for _, p := range parts[1:] {
 					switch p {
 					case "omitempty":
-						fx |= omitMask
+						omitEmpty = true
 					case "string":
-						fx |= strMask
+						asString = true
 					}
 				}
 			}
-			fa = append(fa, newFinfo(f, key, fx))
+			fa = append(fa, newFinfo(f, key, omitEmpty, asString, pretty, embedded))
 		}
 	}
 	return
 }
 
-func buildExactFields(rt reflect.Type, nested, embedded bool) (fa []*finfo) {
+func buildExactFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
 		if len(name) == 0 || 'a' <= name[0] {
 			continue
 		}
-		var fx byte
-		if embedded {
-			fx |= embedMask
-		}
-		if f.Anonymous && nested {
-			for _, fi := range buildExactFields(f.Type, nested, embedded) {
+		if f.Anonymous && !out {
+			for _, fi := range buildExactFields(f.Type, out, pretty, embedded) {
 				fi.index = append([]int{i}, fi.index...)
 				fi.offset += f.Offset
 				fa = append(fa, fi)
 			}
 		} else {
-			fa = append(fa, newFinfo(f, f.Name, fx))
+			fa = append(fa, newFinfo(f, f.Name, false, false, pretty, embedded))
 		}
 	}
 	return
 }
 
-func buildLowFields(rt reflect.Type, nested, embedded bool) (fa []*finfo) {
+func buildLowFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
 		if len(name) == 0 || 'a' <= name[0] {
 			continue
 		}
-		var fx byte
-		if embedded {
-			fx |= embedMask
-		}
-		if f.Anonymous && nested {
-			for _, fi := range buildLowFields(f.Type, nested, embedded) {
+		if f.Anonymous && !out {
+			for _, fi := range buildLowFields(f.Type, out, pretty, embedded) {
 				fi.index = append([]int{i}, fi.index...)
 				fi.offset += f.Offset
 				fa = append(fa, fi)
@@ -180,7 +162,7 @@ func buildLowFields(rt reflect.Type, nested, embedded bool) (fa []*finfo) {
 			} else {
 				name = bytes.ToLower(name)
 			}
-			fa = append(fa, newFinfo(f, string(name), fx))
+			fa = append(fa, newFinfo(f, string(name), false, false, pretty, embedded))
 		}
 	}
 	return
