@@ -17,6 +17,7 @@ const (
 	maskNested = byte(0x04)
 	maskPretty = byte(0x08)
 	maskSet    = byte(0x10)
+	maskIndex  = byte(0x0F)
 )
 
 type sinfo struct {

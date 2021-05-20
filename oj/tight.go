@@ -109,11 +109,11 @@ func tightSortObject(wr *Writer, n map[string]interface{}, _ int) {
 	}
 }
 
-func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
-	if st == nil {
-		st = ojg.GetStruct(rv.Interface())
+func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
+	if si == nil {
+		si = getSinfo(rv.Interface())
 	}
-	fields := st.Fields[wr.findex&ojg.MaskIndex]
+	fields := si.fields[wr.findex&maskIndex]
 	wr.buf = append(wr.buf, '{')
 	var v interface{}
 	var has bool
@@ -123,9 +123,11 @@ func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
 		wr.buf = wr.appendString(wr.buf, wr.CreateKey, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, `:"`...)
 		if wr.FullTypePath {
-			wr.buf = append(wr.buf, (st.Type.PkgPath() + "/" + st.Type.Name())...)
+			wr.buf = append(wr.buf, si.rt.PkgPath()...)
+			wr.buf = append(wr.buf, '/')
+			wr.buf = append(wr.buf, si.rt.Name()...)
 		} else {
-			wr.buf = append(wr.buf, st.Type.Name()...)
+			wr.buf = append(wr.buf, si.rt.Name()...)
 		}
 		wr.buf = append(wr.buf, `",`...)
 		comma = true
@@ -147,7 +149,7 @@ func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
 			continue
 		}
 		var fv reflect.Value
-		kind := fi.Kind
+		kind := fi.kind
 		if kind == reflect.Ptr {
 			fv = reflect.ValueOf(v).Elem()
 			if !fv.IsValid() {
@@ -161,17 +163,17 @@ func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
 			if !fv.IsValid() {
 				fv = reflect.ValueOf(v)
 			}
-			wr.tightStruct(fv, fi.Elem)
+			wr.tightStruct(fv, fi.elem)
 		case reflect.Slice, reflect.Array:
 			if !fv.IsValid() {
 				fv = reflect.ValueOf(v)
 			}
-			wr.tightSlice(fv, fi.Elem)
+			wr.tightSlice(fv, fi.elem)
 		case reflect.Map:
 			if !fv.IsValid() {
 				fv = reflect.ValueOf(v)
 			}
-			wr.tightMap(fv, fi.Elem)
+			wr.tightMap(fv, fi.elem)
 		default:
 			wr.appendJSON(v, 0)
 		}
@@ -185,7 +187,7 @@ func (wr *Writer) tightStruct(rv reflect.Value, st *ojg.Struct) {
 	}
 }
 
-func (wr *Writer) tightSlice(rv reflect.Value, st *ojg.Struct) {
+func (wr *Writer) tightSlice(rv reflect.Value, si *sinfo) {
 	end := rv.Len()
 	comma := false
 	wr.buf = append(wr.buf, '[')
@@ -196,11 +198,11 @@ func (wr *Writer) tightSlice(rv reflect.Value, st *ojg.Struct) {
 		}
 		switch rm.Kind() {
 		case reflect.Struct:
-			wr.tightStruct(rm, st)
+			wr.tightStruct(rm, si)
 		case reflect.Slice, reflect.Array:
-			wr.tightSlice(rm, st)
+			wr.tightSlice(rm, si)
 		case reflect.Map:
-			wr.tightMap(rm, st)
+			wr.tightMap(rm, si)
 		default:
 			wr.appendJSON(rm.Interface(), 0)
 		}
@@ -214,7 +216,7 @@ func (wr *Writer) tightSlice(rv reflect.Value, st *ojg.Struct) {
 	}
 }
 
-func (wr *Writer) tightMap(rv reflect.Value, st *ojg.Struct) {
+func (wr *Writer) tightMap(rv reflect.Value, si *sinfo) {
 	wr.buf = append(wr.buf, '{')
 	keys := rv.MapKeys()
 	if wr.Sort {
@@ -233,21 +235,21 @@ func (wr *Writer) tightMap(rv reflect.Value, st *ojg.Struct) {
 		case reflect.Struct:
 			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
-			wr.tightStruct(rm, st)
+			wr.tightStruct(rm, si)
 		case reflect.Slice, reflect.Array:
 			if wr.OmitNil && rm.IsNil() {
 				continue
 			}
 			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
-			wr.tightSlice(rm, st)
+			wr.tightSlice(rm, si)
 		case reflect.Map:
 			if wr.OmitNil && rm.IsNil() {
 				continue
 			}
 			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
-			wr.tightMap(rm, st)
+			wr.tightMap(rm, si)
 		default:
 			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')

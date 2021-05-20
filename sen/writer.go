@@ -401,7 +401,7 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 		si = getSinfo(rv.Interface())
 	}
 	d2 := depth + 1
-	fields := si.fields[wr.findex&ojg.MaskIndex]
+	fields := si.fields[wr.findex&maskIndex]
 	wr.buf = append(wr.buf, '{')
 	var v interface{}
 	var has bool

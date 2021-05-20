@@ -122,7 +122,7 @@ func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
 	if si == nil {
 		si = getSinfo(rv.Interface())
 	}
-	fields := si.fields[wr.findex&ojg.MaskIndex]
+	fields := si.fields[wr.findex&maskIndex]
 	wr.buf = append(wr.buf, '{')
 	var v interface{}
 	var has bool
