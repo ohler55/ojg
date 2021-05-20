@@ -1,5 +1,6 @@
 
-- copy struct and field to sen and oj changing to sinfo and finfo
+- oj sinfo
+
 
 - alt unit test
 - oj unit tests
