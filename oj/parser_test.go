@@ -310,8 +310,8 @@ func TestParserParseBadQuotes(t *testing.T) {
 	tt.NotNil(t, err)
 }
 
-func TestParserParseFoo(t *testing.T) {
-	p := oj.Parser{}
-	_, err := p.Parse([]byte(`2e-7`))
-	tt.Nil(t, err)
+func TestMustPanic(t *testing.T) {
+	tt.Panic(t, func() { _ = oj.MustParse([]byte("[true}")) })
+	tt.Panic(t, func() { _ = oj.MustParseString("[true}") })
+	tt.Panic(t, func() { _ = oj.MustLoad(strings.NewReader("[true}")) })
 }

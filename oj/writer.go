@@ -57,9 +57,7 @@ func (wr *Writer) MustJSON(data interface{}) []byte {
 	} else {
 		wr.buf = wr.buf[:0]
 	}
-	if wr.findex == 0 {
-		wr.calcFieldsIndex()
-	}
+	wr.calcFieldsIndex()
 	if wr.Color {
 		wr.colorJSON(data, 0)
 	} else {
@@ -113,9 +111,7 @@ func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
 	} else {
 		wr.buf = wr.buf[:0]
 	}
-	if wr.findex == 0 {
-		wr.calcFieldsIndex()
-	}
+	wr.calcFieldsIndex()
 	if wr.Color {
 		wr.colorJSON(data, 0)
 	} else {
@@ -462,8 +458,6 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 		wr.buf = append(wr.buf, `",`...)
 		empty = false
 	}
-
-	// TBD check rv.CanAddr
 	var addr uintptr
 	if rv.CanAddr() {
 		addr = rv.UnsafeAddr()
@@ -473,7 +467,11 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 			wr.buf = append(wr.buf, cs...)
 			indented = true
 		}
-		wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+		if 0 < addr {
+			wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+		} else {
+			wr.buf, v, wrote, has = fi.iAppend(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+		}
 		if wrote {
 			wr.buf = append(wr.buf, ',')
 			empty = false
@@ -486,18 +484,28 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 		indented = false
 		var fv reflect.Value
 		kind := fi.kind
-		if kind == reflect.Ptr {
+	Retry:
+		switch kind {
+		case reflect.Ptr:
 			if (*[2]uintptr)(unsafe.Pointer(&v))[1] != 0 { // Check for nil of any type
 				fv = reflect.ValueOf(v).Elem()
 				kind = fv.Kind()
 				v = fv.Interface()
-			} else if wr.OmitNil {
-				wr.buf = wr.buf[:len(wr.buf)-fi.KeyLen()]
+				goto Retry
+			}
+			if wr.OmitNil {
+				wr.buf = wr.buf[:len(wr.buf)-fi.keyLen()]
 				indented = true
 				continue
 			}
-		}
-		switch kind {
+			wr.buf = append(wr.buf, "null"...)
+		case reflect.Interface:
+			if wr.OmitNil && (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 {
+				wr.buf = wr.buf[:len(wr.buf)-fi.keyLen()]
+				indented = true
+				continue
+			}
+			wr.appendJSON(v, 0)
 		case reflect.Struct:
 			if !fv.IsValid() {
 				fv = reflect.ValueOf(v)

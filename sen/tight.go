@@ -122,7 +122,7 @@ func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
 	if si == nil {
 		si = getSinfo(rv.Interface())
 	}
-	fields := si.fields[wr.findex&maskIndex]
+	fields := si.fields[wr.findex]
 	wr.buf = append(wr.buf, '{')
 	var v interface{}
 	var has bool
@@ -163,17 +163,26 @@ func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
 		}
 		var fv reflect.Value
 		kind := fi.kind
-		if kind == reflect.Ptr {
+	Retry:
+		switch kind {
+		case reflect.Ptr:
 			if (*[2]uintptr)(unsafe.Pointer(&v))[1] != 0 { // Check for nil of any type
 				fv = reflect.ValueOf(v).Elem()
 				kind = fv.Kind()
 				v = fv.Interface()
-			} else if wr.OmitNil {
-				wr.buf = wr.buf[:len(wr.buf)-fi.KeyLen()]
+				goto Retry
+			}
+			if wr.OmitNil {
+				wr.buf = wr.buf[:len(wr.buf)-fi.keyLen()]
 				continue
 			}
-		}
-		switch kind {
+			wr.buf = append(wr.buf, "null"...)
+		case reflect.Interface:
+			if wr.OmitNil && (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 {
+				wr.buf = wr.buf[:len(wr.buf)-fi.keyLen()]
+				continue
+			}
+			wr.appendSEN(v, 0)
 		case reflect.Struct:
 			if !fv.IsValid() {
 				fv = reflect.ValueOf(v)

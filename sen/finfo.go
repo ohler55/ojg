@@ -4,6 +4,7 @@ package sen
 
 import (
 	"reflect"
+	"unsafe"
 
 	"github.com/ohler55/ojg"
 )
@@ -29,9 +30,7 @@ type finfo struct {
 	offset  uintptr
 }
 
-// KeyLen returns the length of the key plus syntax. For example a JSON key of
-// _key_ would become "key": with a KeyLen of 6.
-func (f *finfo) KeyLen() int {
+func (f *finfo) keyLen() int {
 	return len(f.jkey)
 }
 
@@ -62,7 +61,7 @@ func appendJustKey(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe b
 
 func appendPtrNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
 	v := rv.FieldByIndex(fi.index).Interface()
-	if v == nil {
+	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 { // real nil check
 		return buf, nil, false, false
 	}
 	buf = append(buf, fi.jkey...)
@@ -143,12 +142,15 @@ func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, em
 	case reflect.String:
 		if omitEmpty {
 			fi.Append = appendSENStringNotEmpty
+			fi.iAppend = appendSENStringNotEmpty
 		} else {
 			fi.Append = appendSENString
+			fi.iAppend = appendSENString
 		}
 	case reflect.Struct:
 		fi.elem = getTypeStruct(fi.rt, true)
 		fi.Append = appendJustKey
+		fi.iAppend = appendJustKey
 	case reflect.Ptr:
 		et := fi.rt.Elem()
 		if et.Kind() == reflect.Ptr {
@@ -159,14 +161,18 @@ func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, em
 		}
 		if omitEmpty {
 			fi.Append = appendPtrNotEmpty
+			fi.iAppend = appendPtrNotEmpty
 		} else {
 			fi.Append = appendJustKey
+			fi.iAppend = appendJustKey
 		}
 	case reflect.Interface:
 		if omitEmpty {
 			fi.Append = appendPtrNotEmpty
+			fi.iAppend = appendPtrNotEmpty
 		} else {
 			fi.Append = appendJustKey
+			fi.iAppend = appendJustKey
 		}
 	case reflect.Slice, reflect.Array, reflect.Map:
 		et := fi.rt.Elem()
@@ -180,8 +186,10 @@ func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, em
 		}
 		if omitEmpty {
 			fi.Append = appendSliceNotEmpty
+			fi.iAppend = appendSliceNotEmpty
 		} else {
 			fi.Append = appendJustKey
+			fi.iAppend = appendJustKey
 		}
 	}
 	fi.jkey = ojg.AppendSENString(fi.jkey, fi.key, false)

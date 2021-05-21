@@ -30,14 +30,11 @@ func appendBool(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool
 
 func appendBoolAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
 	buf = append(buf, fi.jkey...)
-	buf = append(buf, '"')
 	if *(*bool)(unsafe.Pointer(addr + fi.offset)) {
 		buf = append(buf, `"true"`...)
 	} else {
 		buf = append(buf, `"false"`...)
 	}
-	buf = append(buf, '"')
-
 	return buf, nil, true, false
 }
 
@@ -71,14 +68,11 @@ func iappendBool(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe boo
 
 func iappendBoolAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
 	buf = append(buf, fi.jkey...)
-	buf = append(buf, '"')
 	if rv.FieldByIndex(fi.index).Interface().(bool) {
 		buf = append(buf, `"true"`...)
 	} else {
 		buf = append(buf, `"false"`...)
 	}
-	buf = append(buf, '"')
-
 	return buf, nil, true, false
 }
 

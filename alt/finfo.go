@@ -4,6 +4,7 @@ package alt
 
 import (
 	"reflect"
+	"unsafe"
 )
 
 const (
@@ -45,7 +46,7 @@ func valJustVal(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect
 func valPtrNotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
 	fv := rv.FieldByIndex(fi.index)
 	v := fv.Interface()
-	return v, fv, v == nil
+	return v, fv, (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0
 }
 
 func valSliceNotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {

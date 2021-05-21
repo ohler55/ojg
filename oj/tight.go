@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"unsafe"
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
@@ -113,7 +114,7 @@ func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
 	if si == nil {
 		si = getSinfo(rv.Interface())
 	}
-	fields := si.fields[wr.findex&maskIndex]
+	fields := si.fields[wr.findex]
 	wr.buf = append(wr.buf, '{')
 	var v interface{}
 	var has bool
@@ -132,14 +133,16 @@ func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
 		wr.buf = append(wr.buf, `",`...)
 		comma = true
 	}
-
-	// TBD check rv.CanAddr
 	var addr uintptr
 	if rv.CanAddr() {
 		addr = rv.UnsafeAddr()
 	}
 	for _, fi := range fields {
-		wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+		if 0 < addr {
+			wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+		} else {
+			wr.buf, v, wrote, has = fi.iAppend(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+		}
 		if wrote {
 			wr.buf = append(wr.buf, ',')
 			comma = true
@@ -150,15 +153,26 @@ func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
 		}
 		var fv reflect.Value
 		kind := fi.kind
-		if kind == reflect.Ptr {
-			fv = reflect.ValueOf(v).Elem()
-			if !fv.IsValid() {
+	Retry:
+		switch kind {
+		case reflect.Ptr:
+			if (*[2]uintptr)(unsafe.Pointer(&v))[1] != 0 { // Check for nil of any type
+				fv = reflect.ValueOf(v).Elem()
+				kind = fv.Kind()
+				v = fv.Interface()
+				goto Retry
+			}
+			if wr.OmitNil {
+				wr.buf = wr.buf[:len(wr.buf)-fi.keyLen()]
 				continue
 			}
-			kind = fv.Kind()
-			v = fv.Interface()
-		}
-		switch kind {
+			wr.buf = append(wr.buf, "null"...)
+		case reflect.Interface:
+			if wr.OmitNil && (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 {
+				wr.buf = wr.buf[:len(wr.buf)-fi.keyLen()]
+				continue
+			}
+			wr.appendJSON(v, 0)
 		case reflect.Struct:
 			if !fv.IsValid() {
 				fv = reflect.ValueOf(v)

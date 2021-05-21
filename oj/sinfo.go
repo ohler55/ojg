@@ -16,8 +16,7 @@ const (
 	maskExact  = byte(0x02) // exact key vs lowwer case first letter
 	maskNested = byte(0x04)
 	maskPretty = byte(0x08)
-	maskSet    = byte(0x10)
-	maskIndex  = byte(0x0F)
+	maskMax    = byte(0x10)
 )
 
 type sinfo struct {
@@ -54,7 +53,7 @@ func buildStruct(rt reflect.Type, x uintptr, embedded bool) (st *sinfo) {
 	st = &sinfo{rt: rt}
 	structMap[x] = st
 
-	for u := byte(0); u < maskSet; u++ {
+	for u := byte(0); u < maskMax; u++ {
 		if (maskByTag&u) != 0 && (maskExact&u) != 0 { // reuse previously built
 			st.fields[u] = st.fields[u & ^maskExact]
 			continue
