@@ -36,13 +36,15 @@ func tightDefault(wr *Writer, data interface{}, _ int) {
 		case reflect.Slice, reflect.Array:
 			wr.tightSlice(rv, nil)
 		case reflect.Map:
-			wr.tightSlice(rv, nil)
+			wr.tightMap(rv, nil)
+		case reflect.Chan, reflect.Func, reflect.UnsafePointer:
+			if wr.strict {
+				panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
+			}
+			wr.buf = append(wr.buf, "null"...)
 		default:
-			// Not much should get here except Map, Complex and un-decomposable
-			// values.
 			dec := alt.Decompose(data, &wr.Options)
 			wr.appendJSON(dec, 0)
-			return
 		}
 	} else if wr.strict {
 		panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
@@ -251,14 +253,14 @@ func (wr *Writer) tightMap(rv reflect.Value, si *sinfo) {
 			wr.buf = append(wr.buf, ':')
 			wr.tightStruct(rm, si)
 		case reflect.Slice, reflect.Array:
-			if wr.OmitNil && rm.IsNil() {
+			if wr.OmitNil && rm.Len() == 0 {
 				continue
 			}
 			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
 			wr.tightSlice(rm, si)
 		case reflect.Map:
-			if wr.OmitNil && rm.IsNil() {
+			if wr.OmitNil && rm.Len() == 0 {
 				continue
 			}
 			wr.buf = ojg.AppendJSONString(wr.buf, kv.String(), !wr.HTMLUnsafe)

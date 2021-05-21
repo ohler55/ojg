@@ -95,6 +95,10 @@ func TestString(t *testing.T) {
 		{value: gen.Array{gen.Bool(true), nil}, expect: "[true,null]"},
 		{value: []interface{}{true, false}, indent: 2, expect: "[\n  true,\n  false\n]"},
 		{value: []interface{}{true, false}, expect: "[\n\ttrue,\n\tfalse\n]", options: &oj.Options{Tab: true}},
+		{value: []interface{}{[]interface{}{}, []interface{}{}}, expect: "[[],[]]"},
+		{value: []interface{}{map[string]interface{}{}, map[string]interface{}{}}, expect: "[{},{}]"},
+		{value: []interface{}{[]interface{}{}, []interface{}{}}, expect: "[\n  [],\n  []\n]", options: &ojg.Options{Indent: 2}},
+		{value: []interface{}{map[string]interface{}{}, map[string]interface{}{}}, expect: "[{},{}]", options: &ojg.Options{Sort: true}},
 		{value: gen.Array{gen.True, gen.False}, indent: 2, expect: "[\n  true,\n  false\n]"},
 		{value: gen.Object{"t": gen.True, "f": gen.False}, expect: `{"f":false,"t":true}`, options: &oj.Options{Sort: true}},
 		{value: map[string]interface{}{"t": true, "f": false}, expect: `{"f":false,"t":true}`, options: &oj.Options{Sort: true}},
@@ -153,10 +157,26 @@ func TestString(t *testing.T) {
 
 		{value: &simon{x: 3}, expect: `{"type":"simon","x":3}`, options: &oj.Options{Sort: true}},
 		{value: &genny{val: 3}, expect: `{"type":"genny","val":3}`, options: &oj.Options{Sort: true}},
+		{value: &genny{val: 3}, expect: `{
+  "type": "genny",
+  "val": 3
+}`, options: &oj.Options{Sort: true, Indent: 2}},
 		{value: &Dummy{Val: 3}, expect: `{"val":3}`},
 		{value: Stew{3}, expect: `"[3]"`, options: &oj.Options{NoReflect: true}},
 		{value: &Dummy{Val: 3}, expect: `{"^":"Dummy","val":3}`, options: &oj.Options{Sort: true, CreateKey: "^"}},
 		{value: &Dummy{Val: 3}, expect: `{"Val":3}`, options: &oj.Options{KeyExact: true}},
+		{value: complex(1, 7), expect: `{
+  "imag": 7,
+  "real": 1
+}`, options: &ojg.Options{Indent: 2, Sort: true}},
+		{value: complex(1, 7), expect: `{"imag":7,"real":1}`, options: &ojg.Options{Sort: true}},
+		{value: complex(1, 7), expect: `"(1+7i)"`, options: &ojg.Options{Indent: 2, NoReflect: true}},
+		{value: complex(1, 7), expect: `"(1+7i)"`, options: &ojg.Options{Indent: 0, NoReflect: true}},
+		{value: []int{1, 2}, expect: "[1,2]", options: &ojg.Options{Indent: 0}},
+		{value: []int{1, 2}, expect: `[
+  1,
+  2
+]`, options: &ojg.Options{Indent: 2}},
 	} {
 		var s string
 		if d.options == nil {
@@ -265,6 +285,19 @@ func TestWriteDeep(t *testing.T) {
 	err = oj.Write(&b, g, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, 1797, len(b.String()))
+
+	opt.Sort = true
+	b.Reset()
+	err = oj.Write(&b, g, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 1797, len(b.String()))
+
+	opt.Tab = false
+	opt.Indent = 4
+	b.Reset()
+	err = oj.Write(&b, g, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, 6833, len(b.String()))
 }
 
 func TestWriteShort(t *testing.T) {
@@ -319,9 +352,8 @@ func TestMarshal(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Equal(t, "[true,false]", string(b))
 
-	b, err = oj.Marshal([]interface{}{true, TestMarshal})
-	tt.Nil(t, err)
-	tt.Equal(t, "[true,null]", string(b))
+	_, err = oj.Marshal([]interface{}{true, TestMarshal})
+	tt.NotNil(t, err)
 
 	_, err = oj.Marshal([]interface{}{true, &Panik{}})
 	tt.NotNil(t, err)
@@ -336,6 +368,20 @@ func TestMarshal(t *testing.T) {
 
 	_, err = oj.Marshal([]interface{}{true, &Dummy{Val: 3}}, &oj.Options{NoReflect: true})
 	tt.NotNil(t, err)
+
+	_, err = oj.Marshal([]interface{}{true, &Dummy{Val: 3}}, &oj.Options{NoReflect: true, Indent: 2})
+	tt.NotNil(t, err)
+
+	wr := oj.Writer{}
+	s := wr.JSON([]interface{}{true, TestMarshal})
+	tt.Equal(t, `[true,null]`, s)
+
+	wr.Indent = 2
+	s = wr.JSON([]interface{}{true, TestMarshal})
+	tt.Equal(t, `[
+  true,
+  null
+]`, s)
 }
 
 func TestWriteBad(t *testing.T) {
@@ -345,6 +391,7 @@ func TestWriteBad(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Equal(t, `[true,null]`, b.String())
 
+	b.Reset()
 	err = oj.Write(&b, []interface{}{true, &Panik{}})
 	tt.NotNil(t, err)
 }
@@ -556,20 +603,20 @@ func TestWriteSliceWide(t *testing.T) {
 	}
 	opt := oj.Options{Tab: true}
 	n := &Nest{}
-	for i := 16; 0 < i; i-- {
+	for i := 20; 0 < i; i-- {
 		n = &Nest{Dig: []Nest{*n}}
 	}
 	s := oj.JSON(n, &opt)
-	tt.Equal(t, 1316, len(s))
+	tt.Equal(t, 1852, len(s))
 
 	opt.Tab = false
 	opt.Indent = 4
 	s = oj.JSON(n, &opt)
-	tt.Equal(t, 4605, len(s))
+	tt.Equal(t, 6713, len(s))
 
 	opt.Indent = 0
 	s = oj.JSON(n, &opt)
-	tt.Equal(t, 170, len(s))
+	tt.Equal(t, 210, len(s))
 }
 
 func TestWriteSliceArray(t *testing.T) {
@@ -593,6 +640,10 @@ func TestWriteSliceArray(t *testing.T) {
 	opt.Indent = 0
 	s = oj.JSON(m, &opt)
 	tt.Equal(t, `{"rows":[[1,2,3,4]]}`, s)
+
+	opt.OmitNil = false
+	s = oj.JSON(&Matrix{}, &opt)
+	tt.Equal(t, `{"rows":[]}`, s)
 }
 
 func TestWriteSliceMap(t *testing.T) {
@@ -661,8 +712,6 @@ func TestWriteMapSlice(t *testing.T) {
   "y": []
 }`, s)
 
-	/* TBD
-	opt.OmitNil = false
 	opt.Indent = 0
 	s = oj.JSON(m, &opt)
 	tt.Equal(t, `{"x":[1,2,3],"y":[]}`, s)
@@ -670,7 +719,6 @@ func TestWriteMapSlice(t *testing.T) {
 	opt.OmitNil = true
 	s = oj.JSON(m, &opt)
 	tt.Equal(t, `{"x":[1,2,3]}`, s)
-	*/
 }
 
 func TestWriteMapMap(t *testing.T) {
@@ -683,11 +731,9 @@ func TestWriteMapMap(t *testing.T) {
   }
 }`, s)
 
-	/* TBD
 	opt.Indent = 0
 	s = oj.JSON(m, &opt)
 	tt.Equal(t, `{"x":{"y":3}}`, s)
-	*/
 }
 
 func TestWriteStructOther(t *testing.T) {
@@ -750,6 +796,51 @@ func TestWriteStructEmbed(t *testing.T) {
 	b, err = oj.Marshal(&o, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, `{"in":{"x":1},"y":2}`, string(b))
+}
+
+func TestWriteStructAnonymous(t *testing.T) {
+	type In struct {
+		X int
+	}
+	type Out struct {
+		In
+		Y int
+	}
+	o := Out{In: In{X: 1}, Y: 2}
+	opt := oj.Options{Indent: 2, NestEmbed: true}
+	b, err := oj.Marshal(&o, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, `{
+  "in": {
+    "x": 1
+  },
+  "y": 2
+}`, string(b))
+
+	opt.Indent = 0
+	b, err = oj.Marshal(&o, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"in":{"x":1},"y":2}`, string(b))
+}
+
+func TestWriteSliceNil(t *testing.T) {
+	var a []interface{}
+	b, err := oj.Marshal(a)
+	tt.Nil(t, err)
+	tt.Equal(t, "null", string(b))
+
+	a = []interface{}{}
+	b, err = oj.Marshal(a)
+	tt.Nil(t, err)
+	tt.Equal(t, "[]", string(b))
+}
+
+func TestWriteStrictPanic(t *testing.T) {
+	_, err := oj.Marshal(func() {}, 2)
+	tt.NotNil(t, err)
+
+	_, err = oj.Marshal(func() {})
+	tt.NotNil(t, err)
 }
 
 func BenchmarkMarshalFlat(b *testing.B) {

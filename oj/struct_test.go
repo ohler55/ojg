@@ -258,6 +258,17 @@ func TestJSONTagPtrOmitEmpty(t *testing.T) {
 
 	out = wr.MustJSON(sample)
 	tt.Equal(t, `{"a":{},"bar":null,"p":{},"s":[true]}`, string(out))
+
+	wr.Indent = 2
+	out = wr.MustJSON(&sample)
+	tt.Equal(t, `{
+  "a": {},
+  "bar": null,
+  "p": {},
+  "s": [
+    true
+  ]
+}`, string(out))
 }
 
 func TestJSONTagPtr(t *testing.T) {

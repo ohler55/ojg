@@ -258,6 +258,17 @@ func TestSENTagPtrOmitEmpty(t *testing.T) {
 
 	out = wr.MustSEN(sample)
 	tt.Equal(t, `{a:{} bar:null p:{} s:[true]}`, string(out))
+
+	wr.Indent = 2
+	out = wr.MustSEN(sample)
+	tt.Equal(t, `{
+  a: {}
+  bar: null
+  p: {}
+  s: [
+    true
+  ]
+}`, string(out))
 }
 
 func TestSENTagPtr(t *testing.T) {

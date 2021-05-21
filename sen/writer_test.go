@@ -105,15 +105,15 @@ func TestString(t *testing.T) {
 		{value: gen.Array{gen.Int(1), gen.Float(1.2)}, expect: "[1 1.2]"},
 		{value: []interface{}{float32(1.2), float64(2.1)}, expect: "[1.2 2.1]"},
 		{value: []interface{}{tm}, expect: "[1588879759123456789]"},
-		{value: []interface{}{tm}, expect: `[{"^":Time value:"2020-05-07T19:29:19.123456789Z"}]`,
+		{value: []interface{}{tm}, expect: `[{^:Time value:"2020-05-07T19:29:19.123456789Z"}]`,
 			options: &sen.Options{TimeMap: true, CreateKey: "^", TimeFormat: time.RFC3339Nano}},
-		{value: []interface{}{tm}, expect: `[{"^":"time/Time" value:"2020-05-07T19:29:19.123456789Z"}]`,
+		{value: []interface{}{tm}, expect: `[{^:"time/Time" value:"2020-05-07T19:29:19.123456789Z"}]`,
 			options: &sen.Options{TimeMap: true, CreateKey: "^", TimeFormat: time.RFC3339Nano, FullTypePath: true}},
 		{value: tm2, expect: "-10.100000000", options: &sen.Options{TimeFormat: "second"}},
 		{value: gen.Array{gen.Time(tm)}, expect: "[1588879759123456789]"},
 		{value: gen.Array{gen.Time(tm)}, expect: `["2020-05-07T19:29:19.123456789Z"]`, options: &sen.Options{TimeFormat: time.RFC3339Nano}},
 		{value: gen.Array{gen.Time(tm)}, expect: "[1588879759.123456789]", options: &sen.Options{TimeFormat: "second"}},
-		{value: gen.Array{gen.Time(tm)}, expect: `[{"@":1588879759123456789}]`, options: &sen.Options{TimeWrap: "@"}},
+		{value: gen.Array{gen.Time(tm)}, expect: `[{@:1588879759123456789}]`, options: &sen.Options{TimeWrap: "@"}},
 		{value: map[string]interface{}{"t": true, "x": nil}, expect: "{t:true}", options: &sen.Options{OmitNil: true}},
 		{value: map[string]interface{}{"t": true, "f": false}, expect: "{\n  f: false\n  t: true\n}", options: &sen.Options{Sort: true, Indent: 2}},
 
@@ -462,20 +462,20 @@ func TestWriteSliceWide(t *testing.T) {
 	}
 	opt := sen.Options{Tab: true}
 	n := &Nest{}
-	for i := 16; 0 < i; i-- {
+	for i := 20; 0 < i; i-- {
 		n = &Nest{Dig: []Nest{*n}}
 	}
 	s := sen.String(n, &opt)
-	tt.Equal(t, 1313, len(s))
+	tt.Equal(t, 1810, len(s))
 
 	opt.Tab = false
 	opt.Indent = 4
 	s = sen.String(n, &opt)
-	tt.Equal(t, 4700, len(s))
+	tt.Equal(t, 6671, len(s))
 
 	opt.Indent = 0
 	s = sen.String(n, &opt)
-	tt.Equal(t, 136, len(s))
+	tt.Equal(t, 168, len(s))
 }
 
 func TestWriteSliceArray(t *testing.T) {
@@ -532,12 +532,12 @@ func TestWriteMapWide(t *testing.T) {
 		n = &Nest{Dig: map[string]*Nest{"x": n}}
 	}
 	s := sen.String(n, &opt)
-	tt.Equal(t, 1361, len(s))
+	tt.Equal(t, 1330, len(s))
 
 	opt.Tab = false
 	opt.Indent = 4
 	s = sen.String(n, &opt)
-	tt.Equal(t, 4748, len(s))
+	tt.Equal(t, 4619, len(s))
 
 	opt.Indent = 0
 	s = sen.String(n, &opt)
@@ -564,8 +564,7 @@ func TestWriteMapSlice(t *testing.T) {
     2
     3
   ]
-  y: [
-  ]
+  y: []
 }`, s)
 
 	opt.OmitNil = false
@@ -619,8 +618,7 @@ func TestWriteStructOmit(t *testing.T) {
 	sample := Sample{X: nil}
 	opt := sen.Options{Indent: 2, OmitNil: true}
 	b := sen.Bytes(&sample, &opt)
-	tt.Equal(t, `{
-}`, string(b))
+	tt.Equal(t, `{}`, string(b))
 
 	opt.Indent = 0
 	b = sen.Bytes(&sample, &opt)

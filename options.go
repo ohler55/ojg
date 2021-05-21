@@ -244,9 +244,13 @@ type Options struct {
 // AppendTime appends a time string to the buffer.
 func (o *Options) AppendTime(buf []byte, t time.Time, sen bool) []byte {
 	if o.TimeMap {
-		buf = append(buf, `{"`...)
-		buf = append(buf, o.CreateKey...)
-		buf = append(buf, `":`...)
+		buf = append(buf, '{')
+		if sen {
+			buf = AppendSENString(buf, o.CreateKey, o.HTMLUnsafe)
+		} else {
+			buf = AppendJSONString(buf, o.CreateKey, o.HTMLUnsafe)
+		}
+		buf = append(buf, ':')
 		if sen {
 			if o.FullTypePath {
 				buf = append(buf, `"time/Time" value:`...)
@@ -261,9 +265,13 @@ func (o *Options) AppendTime(buf []byte, t time.Time, sen bool) []byte {
 			}
 		}
 	} else if 0 < len(o.TimeWrap) {
-		buf = append(buf, `{"`...)
-		buf = append(buf, o.TimeWrap...)
-		buf = append(buf, `":`...)
+		buf = append(buf, '{')
+		if sen {
+			buf = AppendSENString(buf, o.TimeWrap, o.HTMLUnsafe)
+		} else {
+			buf = AppendJSONString(buf, o.TimeWrap, o.HTMLUnsafe)
+		}
+		buf = append(buf, ':')
 	}
 	switch o.TimeFormat {
 	case "", "nano":
@@ -294,7 +302,7 @@ func (o *Options) AppendTime(buf []byte, t time.Time, sen bool) []byte {
 func (o *Options) DecomposeTime(t time.Time) (v interface{}) {
 	switch o.TimeFormat {
 	case "time":
-		// no change
+		v = t
 	case "", "nano":
 		v = t.UnixNano()
 	case "second":
@@ -311,23 +319,5 @@ func (o *Options) DecomposeTime(t time.Time) (v interface{}) {
 	} else if 0 < len(o.TimeWrap) {
 		v = map[string]interface{}{o.TimeWrap: v}
 	}
-	return
-}
-
-// FieldsIndex calculates the fields index in the Struct. Used internally by
-// several of the OjG packages.
-func (o *Options) FieldsIndex() (index byte) {
-	if o.NestEmbed {
-		index |= MaskNested
-	}
-	if o.UseTags {
-		index |= MaskByTag
-	} else if o.KeyExact {
-		index |= MaskExact
-	}
-	if 0 < o.Indent {
-		index |= MaskPretty
-	}
-	index |= MaskSet
 	return
 }

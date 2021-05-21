@@ -399,6 +399,7 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 	d2 := depth + 1
 	fields := si.fields[wr.findex]
 	wr.buf = append(wr.buf, '{')
+	empty := true
 	var v interface{}
 	var has bool
 	var wrote bool
@@ -440,6 +441,7 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 			wr.buf = append(wr.buf, si.rt.Name()...)
 		}
 		wr.buf = append(wr.buf, '"')
+		empty = false
 	}
 	var addr uintptr
 	if rv.CanAddr() {
@@ -457,6 +459,7 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 		}
 		if wrote {
 			indented = false
+			empty = false
 			continue
 		}
 		if !has {
@@ -505,17 +508,24 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 		default:
 			wr.appendSEN(v, d2)
 		}
+		empty = false
 	}
 	if indented {
 		wr.buf = wr.buf[:len(wr.buf)-len(cs)]
 	}
-	wr.buf = append(wr.buf, is...)
+	if !empty {
+		wr.buf = append(wr.buf, is...)
+	}
 	wr.buf = append(wr.buf, '}')
 }
 
 func (wr *Writer) appendSlice(rv reflect.Value, depth int, si *sinfo) {
-	d2 := depth + 1
 	end := rv.Len()
+	if end == 0 {
+		wr.buf = append(wr.buf, "[]"...)
+		return
+	}
+	d2 := depth + 1
 	var is string
 	var cs string
 	if wr.Tab {
@@ -591,6 +601,7 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, si *sinfo) {
 	if wr.Sort {
 		sort.Slice(keys, func(i, j int) bool { return 0 > strings.Compare(keys[i].String(), keys[j].String()) })
 	}
+	empty := true
 	wr.buf = append(wr.buf, '{')
 	for _, kv := range keys {
 		rm := rv.MapIndex(kv)
@@ -631,7 +642,10 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, si *sinfo) {
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendSEN(rm.Interface(), d2)
 		}
+		empty = false
 	}
-	wr.buf = append(wr.buf, is...)
+	if !empty {
+		wr.buf = append(wr.buf, is...)
+	}
 	wr.buf = append(wr.buf, '}')
 }

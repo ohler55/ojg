@@ -248,12 +248,14 @@ func appendDefault(wr *Writer, data interface{}, depth int) {
 			wr.appendSlice(rv, depth, nil)
 		case reflect.Map:
 			wr.appendMap(rv, depth, nil)
+		case reflect.Chan, reflect.Func, reflect.UnsafePointer:
+			if wr.strict {
+				panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
+			}
+			wr.buf = append(wr.buf, "null"...)
 		default:
-			// Not much should get here except Complex and non-decomposable
-			// values.
 			dec := alt.Decompose(data, &wr.Options)
 			wr.appendJSON(dec, depth)
-			return
 		}
 	} else if wr.strict {
 		panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
@@ -538,8 +540,12 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 }
 
 func (wr *Writer) appendSlice(rv reflect.Value, depth int, si *sinfo) {
-	d2 := depth + 1
 	end := rv.Len()
+	if end == 0 {
+		wr.buf = append(wr.buf, "[]"...)
+		return
+	}
+	d2 := depth + 1
 	var is string
 	var cs string
 	if wr.Tab {
@@ -565,7 +571,6 @@ func (wr *Writer) appendSlice(rv reflect.Value, depth int, si *sinfo) {
 		}
 		cs = spaces[0:x]
 	}
-	empty := true
 	wr.buf = append(wr.buf, '[')
 	for j := 0; j < end; j++ {
 		wr.buf = append(wr.buf, cs...)
@@ -581,12 +586,9 @@ func (wr *Writer) appendSlice(rv reflect.Value, depth int, si *sinfo) {
 			wr.appendJSON(rm.Interface(), d2)
 		}
 		wr.buf = append(wr.buf, ',')
-		empty = false
 	}
-	if !empty {
-		wr.buf[len(wr.buf)-1] = '\n'
-		wr.buf = append(wr.buf, is...)
-	}
+	wr.buf[len(wr.buf)-1] = '\n'
+	wr.buf = append(wr.buf, is...)
 	wr.buf = append(wr.buf, ']')
 }
 

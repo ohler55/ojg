@@ -33,7 +33,7 @@ var (
 	}
 	marshalPool = sync.Pool{
 		New: func() interface{} {
-			return &Writer{Options: goOptions, buf: make([]byte, 0, 1024)}
+			return &Writer{Options: goOptions, buf: make([]byte, 0, 1024), strict: true}
 		},
 	}
 	parserPool = sync.Pool{
@@ -163,7 +163,7 @@ func Unmarshal(data []byte, vp interface{}, recomposer ...*alt.Recomposer) (err 
 func JSON(data interface{}, args ...interface{}) string {
 	var wr *Writer
 	if 0 < len(args) {
-		wr = pickWriter(args[0])
+		wr = pickWriter(args[0], false)
 	}
 	if wr == nil {
 		wr, _ = writerPool.Get().(*Writer)
@@ -181,7 +181,7 @@ func JSON(data interface{}, args ...interface{}) string {
 func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
 	var wr *Writer
 	if 0 < len(args) {
-		wr = pickWriter(args[0])
+		wr = pickWriter(args[0], true)
 	}
 	if wr == nil {
 		wr, _ = marshalPool.Get().(*Writer)
@@ -208,7 +208,7 @@ func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
 func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	var wr *Writer
 	if 0 < len(args) {
-		wr = pickWriter(args[0])
+		wr = pickWriter(args[0], false)
 	}
 	if wr == nil {
 		wr, _ = writerPool.Get().(*Writer)
@@ -217,18 +217,20 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	return wr.Write(w, data)
 }
 
-func pickWriter(arg interface{}) (wr *Writer) {
+func pickWriter(arg interface{}, strict bool) (wr *Writer) {
 	switch ta := arg.(type) {
 	case int:
 		wr = &Writer{
 			Options: ojg.GoOptions,
 			buf:     make([]byte, 0, 1024),
+			strict:  strict,
 		}
 		wr.Indent = ta
 	case *ojg.Options:
 		wr = &Writer{
 			Options: *ta,
 			buf:     make([]byte, 0, 1024),
+			strict:  strict,
 		}
 	case *Writer:
 		wr = ta

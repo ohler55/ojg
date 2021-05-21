@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
@@ -233,4 +234,20 @@ func TestColorMarshal(t *testing.T) {
 	err := oj.Write(&b, []interface{}{true, &Dummy{Val: 3}}, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, `s[xbtruexs,x"\u0026{3}"xs]x`, b.String())
+}
+
+func TestColorMustJSON(t *testing.T) {
+	wr := oj.Writer{Options: ojg.Options{
+		Color: true,
+		// use visible character to make it easier to verify
+		SyntaxColor: "s",
+		KeyColor:    "k",
+		NullColor:   "n",
+		BoolColor:   "b",
+		NumberColor: "0",
+		StringColor: "q",
+		TimeColor:   "t",
+		NoColor:     "x",
+	}}
+	tt.Equal(t, "btruex", string(wr.MustJSON(true)))
 }

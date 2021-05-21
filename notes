@@ -1,14 +1,8 @@
 
-- oj tests
- - look for TBDs in writer_test.go
-
-
 - alt unit test
 - oj unit tests
+- sen unit test
 - ojg unit tests
-- ojg.Field embedded fields
-  - merge all int together, same with uint and float
-  - handle omit and as-string
 
 - unit tests and example for cmd/oj
 ----------------

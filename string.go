@@ -88,13 +88,12 @@ func AppendJSONString(buf []byte, s string, htmlSafe bool) []byte {
 				start = i + cnt
 				skip = start
 			case utf8.RuneError:
-				if cnt == 1 && r == utf8.RuneError {
-					if start < i {
-						buf = append(buf, s[start:i]...)
-					}
-					buf = append(buf, `\ufffd`...)
-					start = i + 1
+				if start < i {
+					buf = append(buf, s[start:i]...)
 				}
+				buf = append(buf, `\ufffd`...)
+				start = i + cnt
+				skip = start
 			default:
 				skip = i + cnt
 			}
@@ -176,13 +175,12 @@ func AppendSENString(buf []byte, s string, htmlSafe bool) []byte {
 				skip = start
 			case utf8.RuneError:
 				quote = true
-				if cnt == 1 && r == utf8.RuneError {
-					if start < i {
-						buf = append(buf, s[start:i]...)
-					}
-					buf = append(buf, `\ufffd`...)
-					start = i + 1
+				if start < i {
+					buf = append(buf, s[start:i]...)
 				}
+				buf = append(buf, `\ufffd`...)
+				start = i + cnt
+				skip = start
 			default:
 				skip = i + cnt
 			}
@@ -193,6 +191,7 @@ func AppendSENString(buf []byte, s string, htmlSafe bool) []byte {
 			buf = append(buf, '\\')
 			buf = append(buf, c)
 			start = i + 1
+			quote = true
 		}
 	}
 	if start < len(s) {

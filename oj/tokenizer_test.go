@@ -82,6 +82,7 @@ func TestTokenizerParseBasic(t *testing.T) {
 	err = toker.Parse([]byte("[1, 2, 3]  "), &h)
 	tt.Nil(t, err)
 	tt.Equal(t, "[ 1 2 3 ] ", string(h.buf))
+
 }
 
 func TestTokenizerLoad(t *testing.T) {
