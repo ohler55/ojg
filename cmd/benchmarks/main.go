@@ -226,7 +226,7 @@ func benchSuite(title string, suite []*bench) {
 		b.ns = b.res.NsPerOp()
 		b.bytes = b.res.AllocedBytesPerOp()
 		b.allocs = b.res.AllocsPerOp()
-		fmt.Printf(" %10s.%-16s %6d ns/op  %6d B/op  %6d allocs/op\n",
+		fmt.Printf(" %10s.%-16s %8d ns/op %8d B/op %6d allocs/op\n",
 			b.pkg, b.name, b.ns, b.bytes, b.allocs)
 	}
 	fmt.Println()

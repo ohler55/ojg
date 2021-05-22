@@ -664,3 +664,19 @@ func TestRecomposerAnyComposePtr(t *testing.T) {
 		_ = r.MustRecompose(data, &sample)
 	})
 }
+
+func TestRecomposeEmbeddedMap(t *testing.T) {
+	type Sample struct {
+		Ss map[string]string
+		Sb map[string]bool
+	}
+	r := alt.MustNewRecomposer("^", nil)
+	src := map[string]interface{}{
+		"ss": map[string]interface{}{"one": "two"},
+		"sb": map[string]interface{}{"yes": true},
+	}
+	var sample Sample
+	_ = r.MustRecompose(src, &sample)
+	tt.Equal(t, "two", sample.Ss["one"])
+	tt.Equal(t, true, sample.Sb["yes"])
+}

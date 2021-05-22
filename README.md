@@ -85,33 +85,33 @@ Higher numbers (longer bars) are better.
 
 ```
 Parse string/[]byte
-     json.Unmarshal         47204 ns/op   17777 B/op     334 allocs/op
-       oj.Parse             27983 ns/op   18489 B/op     429 allocs/op
- oj-reuse.Parse             18573 ns/op    5691 B/op     364 allocs/op
+     json.Unmarshal       11364753 ns/op  5122778 B/op   95372 allocs/op
+       oj.Parse            7597726 ns/op  5343960 B/op  112400 allocs/op
+ oj-reuse.Parse            4573241 ns/op  1512773 B/op   90348 allocs/op
 
- oj-reuse.Parse        █████████████████████████▍ 2.54
-       oj.Parse        ████████████████▊ 1.69
-     json.Unmarshal    ▓▓▓▓▓▓▓▓▓▓ 1.00
+ oj-reuse.Parse        ██████████████▉ 2.49
+       oj.Parse        ████████▉ 1.50
+     json.Unmarshal    ▓▓▓▓▓▓ 1.00
 
 Parse io.Reader
-     json.Decode            68799 ns/op   32448 B/op     344 allocs/op
-       oj.ParseReader       37805 ns/op   22584 B/op     430 allocs/op
- oj-reuse.ParseReader       23222 ns/op    9788 B/op     365 allocs/op
-       oj.TokenizeLoad      11804 ns/op    6072 B/op     157 allocs/op
+     json.Decode          19287966 ns/op  9315221 B/op   95390 allocs/op
+       oj.ParseReader      6833773 ns/op  5348105 B/op  112401 allocs/op
+ oj-reuse.ParseReader      4896066 ns/op  1517777 B/op   90354 allocs/op
+       oj.TokenizeLoad     2267153 ns/op  381105 B/op   40997 allocs/op
 
-       oj.TokenizeLoad ██████████████████████████████████████████████▋ 5.83
- oj-reuse.ParseReader  ███████████████████████▋ 2.96
-       oj.ParseReader  ██████████████▌ 1.82
-     json.Decode       ▓▓▓▓▓▓▓▓ 1.00
+       oj.TokenizeLoad ███████████████████████████████████████████████████  8.51
+ oj-reuse.ParseReader  ███████████████████████▋ 3.94
+       oj.ParseReader  ████████████████▉ 2.82
+     json.Decode       ▓▓▓▓▓▓ 1.00
 
 to JSON with indentation
-     json.Marshal           73578 ns/op   26983 B/op     352 allocs/op
-       oj.JSON               7532 ns/op       0 B/op       0 allocs/op
-      sen.Bytes              8982 ns/op       0 B/op       0 allocs/op
+     json.Marshal         17593380 ns/op  10105276 B/op  117377 allocs/op
+       oj.JSON             1823519 ns/op    9104 B/op       0 allocs/op
+      sen.Bytes            2022058 ns/op   10377 B/op       0 allocs/op
 
-       oj.JSON         ██████████████████████████████████████████████████████████████████████████████▏ 9.77
-      sen.Bytes        █████████████████████████████████████████████████████████████████▌ 8.19
-     json.Marshal      ▓▓▓▓▓▓▓▓ 1.00
+       oj.JSON         █████████████████████████████████████████████████████████▉ 9.65
+      sen.Bytes        ████████████████████████████████████████████████████▏ 8.70
+     json.Marshal      ▓▓▓▓▓▓ 1.00
 ```
 
 See [all benchmarks](benchmarks.md)
