@@ -298,3 +298,30 @@ func TestSENTagPtr(t *testing.T) {
 	out = wr.MustSEN(sample)
 	tt.Equal(t, `{a:{} e:[] na:null np:null p:{} s:[true]}`, string(out))
 }
+
+func TestSENTagOther(t *testing.T) {
+	type Sample struct {
+		AsIs int         `json:",omitempty"`
+		Dash int         `json:"-,"`
+		Skip int         `json:"-"`
+		Nil  interface{} `json:"nil"`
+		x    int
+	}
+	sample := Sample{
+		AsIs: 1,
+		Dash: 2,
+		Skip: 3,
+		x:    4,
+	}
+	wr := sen.Writer{Options: ojg.Options{UseTags: true, OmitNil: true, Indent: 2}}
+
+	out := wr.MustSEN(&sample)
+	tt.Equal(t, `{
+  -: 2
+  AsIs: 1
+}`, string(out))
+
+	wr.Indent = 0
+	out = wr.MustSEN(&sample)
+	tt.Equal(t, `{-:2 AsIs:1}`, string(out))
+}

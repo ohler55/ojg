@@ -94,23 +94,23 @@ Parse string/[]byte
      json.Unmarshal    ▓▓▓▓▓▓▓▓▓▓ 1.00
 
 Parse io.Reader
-     json.Decode            65334 ns/op   32449 B/op     344 allocs/op
-       oj.ParseReader       38374 ns/op   22582 B/op     430 allocs/op
- oj-reuse.ParseReader       23578 ns/op    9787 B/op     365 allocs/op
-       oj.TokenizeLoad      12790 ns/op    6072 B/op     157 allocs/op
+     json.Decode            68799 ns/op   32448 B/op     344 allocs/op
+       oj.ParseReader       37805 ns/op   22584 B/op     430 allocs/op
+ oj-reuse.ParseReader       23222 ns/op    9788 B/op     365 allocs/op
+       oj.TokenizeLoad      11804 ns/op    6072 B/op     157 allocs/op
 
-       oj.TokenizeLoad ███████████████████████████████████████████████████  5.11
- oj-reuse.ParseReader  ███████████████████████████▋ 2.77
-       oj.ParseReader  █████████████████  1.70
-     json.Decode       ▓▓▓▓▓▓▓▓▓▓ 1.00
+       oj.TokenizeLoad ██████████████████████████████████████████████▋ 5.83
+ oj-reuse.ParseReader  ███████████████████████▋ 2.96
+       oj.ParseReader  ██████████████▌ 1.82
+     json.Decode       ▓▓▓▓▓▓▓▓ 1.00
 
 to JSON with indentation
-     json.Marshal           80889 ns/op   26979 B/op     352 allocs/op
-       oj.JSON              11201 ns/op    4096 B/op       1 allocs/op
-      sen.String            11512 ns/op    3456 B/op       1 allocs/op
+     json.Marshal           73578 ns/op   26983 B/op     352 allocs/op
+       oj.JSON               7532 ns/op       0 B/op       0 allocs/op
+      sen.Bytes              8982 ns/op       0 B/op       0 allocs/op
 
-       oj.JSON         █████████████████████████████████████████████████████████▊ 7.22
-      sen.String       ████████████████████████████████████████████████████████▏ 7.03
+       oj.JSON         ██████████████████████████████████████████████████████████████████████████████▏ 9.77
+      sen.Bytes        █████████████████████████████████████████████████████████████████▌ 8.19
      json.Marshal      ▓▓▓▓▓▓▓▓ 1.00
 ```
 

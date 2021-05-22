@@ -303,3 +303,26 @@ func TestJSONTagPtr(t *testing.T) {
 	out = wr.MustJSON(&sample)
 	tt.Equal(t, `{"any":{},"empty":[],"ptr":{},"slice":[true]}`, string(out))
 }
+
+func TestJSONTagOther(t *testing.T) {
+	type Sample struct {
+		AsIs int         `json:",omitempty"`
+		Dash int         `json:"-,"`
+		Skip int         `json:"-"`
+		Nil  interface{} `json:"nil"`
+		x    int
+	}
+	sample := Sample{
+		AsIs: 1,
+		Dash: 2,
+		Skip: 3,
+		x:    4,
+	}
+	wr := oj.Writer{Options: ojg.Options{UseTags: true, OmitNil: true, Indent: 2}}
+
+	out := wr.MustJSON(&sample)
+	tt.Equal(t, `{
+  "-": 2,
+  "AsIs": 1
+}`, string(out))
+}

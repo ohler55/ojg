@@ -4,11 +4,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.10.1] - unreleased
+## [1.11.0] - 2021-05-23
 ### Fixed
 - Struct with pointers to base types such as *float64 are fixed.
-- Stack overflow when converting values to JSON which are a type alias of a
-  builtin.
+- Stack overflow when converting values to JSON which are a type alias
+  of a builtin.
 ### Added
 - Added `[]byte` converation option for decompose.
 - Added MustXxx versions of multiple functions to allow a panic and recover code pattern.

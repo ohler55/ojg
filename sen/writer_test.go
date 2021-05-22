@@ -647,3 +647,26 @@ func TestWriteStructEmbed(t *testing.T) {
 	b = sen.Bytes(&o, &opt)
 	tt.Equal(t, `{in:{x:1} y:2}`, string(b))
 }
+
+func TestWriteStructAnonymous(t *testing.T) {
+	type In struct {
+		X int
+	}
+	type Out struct {
+		In
+		Y int
+	}
+	o := Out{In: In{X: 1}, Y: 2}
+	opt := ojg.Options{Indent: 2, NestEmbed: true}
+	b := sen.Bytes(&o, &opt)
+	tt.Equal(t, `{
+  in: {
+    x: 1
+  }
+  y: 2
+}`, string(b))
+
+	opt.Indent = 0
+	b = sen.Bytes(&o, &opt)
+	tt.Equal(t, `{in:{x:1} y:2}`, string(b))
+}
