@@ -591,6 +591,42 @@ func TestRecomposerRegister(t *testing.T) {
 	tt.NotNil(t, sample)
 	tt.Equal(t, 3, sample.Int)
 	tt.Equal(t, int64(1612872722), sample.When.Unix())
+
+	// Register two composers for time.
+	r = alt.MustNewRecomposer("^", nil)
+	err = r.RegisterComposer(&Sample{}, nil)
+	tt.Nil(t, err)
+	err = r.RegisterAnyComposer(time.Time{},
+		func(v interface{}) (interface{}, error) {
+			if secs, ok := v.(int); ok {
+				return time.Unix(int64(secs), 0), nil
+			}
+			return nil, nil
+		})
+	tt.Nil(t, err)
+	err = r.RegisterComposer(time.Time{},
+		func(v map[string]interface{}) (interface{}, error) {
+			for _, m := range v {
+				if secs, ok := m.(int); ok {
+					return time.Unix(int64(secs), 0), nil
+				}
+				break
+			}
+			return nil, fmt.Errorf("can not convert a %T to a time.Time", v)
+		})
+	tt.Nil(t, err)
+	data = map[string]interface{}{"^": "Sample", "int": 3, "when": map[string]interface{}{"@": 1612872722}}
+	v = r.MustRecompose(data)
+	sample, _ = v.(*Sample)
+	tt.NotNil(t, sample)
+	tt.Equal(t, 3, sample.Int)
+	tt.Equal(t, int64(1612872722), sample.When.Unix())
+
+	data = map[string]interface{}{"^": "Sample", "int": 3, "when": true}
+	v = r.MustRecompose(data)
+	sample, _ = v.(*Sample)
+	tt.NotNil(t, sample)
+	tt.Equal(t, time.Time{}.Unix(), sample.When.Unix())
 }
 
 func TestRecomposeReflectBool(t *testing.T) {

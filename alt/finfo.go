@@ -132,14 +132,18 @@ func newFinfo(f reflect.StructField, key string, fx byte) *finfo {
 	case reflect.Interface:
 		if (fx & omitMask) != 0 {
 			fi.value = valPtrNotEmpty
+			fi.ivalue = valPtrNotEmpty
 		} else {
 			fi.value = valJustVal
+			fi.ivalue = valJustVal
 		}
 	case reflect.Slice, reflect.Array, reflect.Map:
 		if (fx & omitMask) != 0 {
 			fi.value = valSliceNotEmpty
+			fi.ivalue = valSliceNotEmpty
 		} else {
 			fi.value = valJustVal
+			fi.ivalue = valJustVal
 		}
 	}
 	return &fi

@@ -196,11 +196,7 @@ func reflectStruct(rv reflect.Value, val interface{}, opt *Options) interface{} 
 	for _, fi := range fields {
 		if v, fv, omit := fi.value(fi, rv, addr); !omit {
 			if fv.IsValid() {
-				if simp, _ := v.(Simplifier); simp != nil {
-					v = simp.Simplify()
-				} else if _, ok := v.([]byte); ok {
-					v = decompose(v, opt)
-				} else if opt.NestEmbed && fv.Kind() == reflect.Struct {
+				if opt.NestEmbed && fv.Kind() == reflect.Struct {
 					v = reflectEmbed(fv, v, opt)
 				} else {
 					v = decompose(v, opt)
@@ -233,11 +229,7 @@ func reflectEmbed(rv reflect.Value, val interface{}, opt *Options) interface{} {
 	for _, fi := range fields {
 		if v, fv, omit := fi.ivalue(fi, rv, 0); !omit {
 			if fv.IsValid() {
-				if simp, _ := v.(Simplifier); simp != nil {
-					v = simp.Simplify()
-				} else if _, ok := v.([]byte); ok {
-					v = decompose(v, opt)
-				} else if opt.NestEmbed && fv.Kind() == reflect.Struct {
+				if opt.NestEmbed && fv.Kind() == reflect.Struct {
 					v = reflectEmbed(fv, v, opt)
 				} else {
 					v = decompose(v, opt)
