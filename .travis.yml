@@ -19,5 +19,6 @@ script:
   - set -e
   - go test ./...
   - go test -covermode=count -coverprofile=cov.out  ./...
+  - go tool cover -func=cov.out
   - $HOME/gopath/bin/goveralls -repotoken t2TmOT2IIY7dLqAxhiyOoManIEpVx3z5m -coverprofile=cov.out -service travis-ci
   - set +e
