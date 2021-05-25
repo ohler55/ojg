@@ -3,6 +3,8 @@
 package sen
 
 import (
+	"encoding"
+	"encoding/json"
 	"fmt"
 	"io"
 	"reflect"
@@ -236,6 +238,22 @@ func appendDefault(wr *Writer, data interface{}, depth int) {
 	}
 	if g, _ := data.(alt.Genericer); g != nil {
 		wr.appendSEN(g.Generic().Simplify(), depth)
+		return
+	}
+	if m, _ := data.(json.Marshaler); m != nil {
+		out, err := m.MarshalJSON()
+		if err != nil {
+			panic(err)
+		}
+		wr.buf = append(wr.buf, out...)
+		return
+	}
+	if m, _ := data.(encoding.TextMarshaler); m != nil {
+		out, err := m.MarshalText()
+		if err != nil {
+			panic(err)
+		}
+		wr.buf = wr.appendString(wr.buf, string(out), !wr.HTMLUnsafe)
 		return
 	}
 	if !wr.NoReflect {
