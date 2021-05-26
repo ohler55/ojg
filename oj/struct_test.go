@@ -3,6 +3,9 @@
 package oj_test
 
 import (
+	"fmt"
+	"math/big"
+	"strings"
 	"testing"
 
 	"github.com/ohler55/ojg"
@@ -325,4 +328,39 @@ func TestJSONTagOther(t *testing.T) {
   "-": 2,
   "AsIs": 1
 }`, string(out))
+}
+
+type Decimal struct {
+	value *big.Int
+	exp   int32
+	fail  bool
+}
+
+func (d Decimal) MarshalJSON() ([]byte, error) {
+	if d.fail {
+		return nil, fmt.Errorf("don't like this one")
+	}
+	return []byte(fmt.Sprintf(`"%d,%d"`, d.value, d.exp)), nil
+}
+
+type TestStruct struct {
+	Outer   bool    `json:"outer"`
+	Decimal Decimal `json:"decimal"`
+}
+
+func TestMarshalStructMarshaler(t *testing.T) {
+	tsa := []TestStruct{{
+		Outer:   true,
+		Decimal: Decimal{value: big.NewInt(5), exp: 2},
+	}}
+	out, err := oj.Marshal(tsa)
+	tt.Nil(t, err)
+	tt.Equal(t, true, strings.Contains(string(out), `"decimal":"5,2"`))
+
+	tsa = []TestStruct{{
+		Outer:   true,
+		Decimal: Decimal{value: big.NewInt(5), exp: 2, fail: true},
+	}}
+	_, err = oj.Marshal(tsa)
+	tt.NotNil(t, err)
 }

@@ -3,10 +3,13 @@
 package oj
 
 import (
+	"encoding"
+	"encoding/json"
 	"reflect"
 	"unsafe"
 
 	"github.com/ohler55/ojg"
+	"github.com/ohler55/ojg/alt"
 )
 
 const (
@@ -77,6 +80,50 @@ func appendSliceNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, 
 	return buf, fv.Interface(), false, true
 }
 
+func appendJSONMarshaler(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+	v := rv.FieldByIndex(fi.index).Interface()
+	buf = append(buf, fi.jkey...)
+	m := v.(json.Marshaler)
+	j, err := m.MarshalJSON()
+	if err != nil {
+		panic(err)
+	}
+	buf = append(buf, j...)
+	return buf, nil, true, false
+}
+
+func appendTextMarshaler(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+	v := rv.FieldByIndex(fi.index).Interface()
+	buf = append(buf, fi.jkey...)
+	m := v.(encoding.TextMarshaler)
+	j, err := m.MarshalText()
+	if err != nil {
+		panic(err)
+	}
+	buf = append(buf, j...)
+	return buf, nil, true, false
+}
+
+func appendSimplifier(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+	v := rv.FieldByIndex(fi.index).Interface()
+	buf = append(buf, fi.jkey...)
+	if s, ok := v.(alt.Simplifier); ok {
+		v = s.Simplify()
+	}
+	return buf, v, false, true
+}
+
+func appendGenericer(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+	v := rv.FieldByIndex(fi.index).Interface()
+	buf = append(buf, fi.jkey...)
+	if g, ok := v.(alt.Genericer); ok {
+		if n := g.Generic(); n != nil {
+			v = n.Simplify()
+		}
+	}
+	return buf, v, false, true
+}
+
 func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, embedded bool) *finfo {
 	fi := finfo{
 		rt:     f.Type,
@@ -94,6 +141,29 @@ func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, em
 	}
 	if embedded {
 		fx |= embedMask
+	}
+	// Check for interfaces first since almost any type can implement one of
+	// the supported interfaces.
+	v := reflect.New(fi.rt).Elem().Interface()
+	if _, ok := v.(json.Marshaler); ok {
+		fi.Append = appendJSONMarshaler
+		fi.iAppend = appendJSONMarshaler
+		goto Key
+	}
+	if _, ok := v.(encoding.TextMarshaler); ok {
+		fi.Append = appendJSONMarshaler
+		fi.iAppend = appendJSONMarshaler
+		goto Key
+	}
+	if _, ok := v.(alt.Simplifier); ok {
+		fi.Append = appendSimplifier
+		fi.iAppend = appendSimplifier
+		goto Key
+	}
+	if _, ok := v.(alt.Genericer); ok {
+		fi.Append = appendGenericer
+		fi.iAppend = appendGenericer
+		goto Key
 	}
 	switch fi.kind {
 	case reflect.Bool:
@@ -192,6 +262,7 @@ func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, em
 			fi.iAppend = appendJustKey
 		}
 	}
+Key:
 	fi.jkey = ojg.AppendJSONString(fi.jkey, fi.key, false)
 	fi.jkey = append(fi.jkey, ':')
 	if pretty {
