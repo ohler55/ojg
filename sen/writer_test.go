@@ -670,3 +670,39 @@ func TestWriteStructAnonymous(t *testing.T) {
 	b = sen.Bytes(&o, &opt)
 	tt.Equal(t, `{in:{x:1} y:2}`, string(b))
 }
+
+type Marsha struct {
+	val int
+}
+
+func (m *Marsha) MarshalJSON() ([]byte, error) {
+	if m.val == 5 {
+		return nil, fmt.Errorf("oops")
+	}
+	return []byte(fmt.Sprintf(`{"v":%d}`, m.val)), nil
+}
+
+func TestMarshalMarshaler(t *testing.T) {
+	j := sen.Bytes(&Marsha{val: 3})
+	tt.Equal(t, `{"v":3}`, string(j))
+
+	tt.Panic(t, func() { _ = sen.Bytes(&Marsha{val: 5}) })
+}
+
+type TM struct {
+	val int
+}
+
+func (tm *TM) MarshalText() ([]byte, error) {
+	if tm.val == 5 {
+		return nil, fmt.Errorf("oops")
+	}
+	return []byte(fmt.Sprintf("-- %d --", tm.val)), nil
+}
+
+func TestMarshalTextMarshaler(t *testing.T) {
+	j := sen.Bytes(&TM{val: 3})
+	tt.Equal(t, `"-- 3 --"`, string(j))
+
+	tt.Panic(t, func() { _ = sen.Bytes(&TM{val: 5}) })
+}

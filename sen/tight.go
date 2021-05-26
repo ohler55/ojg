@@ -14,15 +14,6 @@ import (
 )
 
 func tightDefault(wr *Writer, data interface{}, _ int) {
-	if simp, _ := data.(alt.Simplifier); simp != nil {
-		data = simp.Simplify()
-		wr.appendSEN(data, 0)
-		return
-	}
-	if g, _ := data.(alt.Genericer); g != nil {
-		wr.appendSEN(g.Generic().Simplify(), 0)
-		return
-	}
 	if !wr.NoReflect {
 		rv := reflect.ValueOf(data)
 		kind := rv.Kind()

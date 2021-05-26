@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.11.1] - unreleased
+### Fixed
+- Missing support for json.Marshaler and encoding.TextMarshaler added.
+
 ## [1.11.0] - 2021-05-23
 ### Fixed
 - Struct with pointers to base types such as *float64 are fixed.

@@ -215,6 +215,23 @@ func (wr *Writer) appendJSON(data interface{}, depth int) {
 	case map[string]interface{}:
 		wr.appendObject(wr, td, depth)
 
+	case alt.Simplifier:
+		wr.appendJSON(td.Simplify(), depth)
+	case alt.Genericer:
+		wr.appendJSON(td.Generic().Simplify(), depth)
+	case json.Marshaler:
+		out, err := td.MarshalJSON()
+		if err != nil {
+			panic(err)
+		}
+		wr.buf = append(wr.buf, out...)
+	case encoding.TextMarshaler:
+		out, err := td.MarshalText()
+		if err != nil {
+			panic(err)
+		}
+		wr.buf = wr.appendString(wr.buf, string(out), !wr.HTMLUnsafe)
+
 	default:
 		wr.appendDefault(wr, data, depth)
 	}
@@ -227,31 +244,6 @@ func (wr *Writer) appendJSON(data interface{}, depth int) {
 }
 
 func appendDefault(wr *Writer, data interface{}, depth int) {
-	if simp, _ := data.(alt.Simplifier); simp != nil {
-		data = simp.Simplify()
-		wr.appendJSON(data, depth)
-		return
-	}
-	if g, _ := data.(alt.Genericer); g != nil {
-		wr.appendJSON(g.Generic().Simplify(), depth)
-		return
-	}
-	if m, _ := data.(json.Marshaler); m != nil {
-		out, err := m.MarshalJSON()
-		if err != nil {
-			panic(err)
-		}
-		wr.buf = append(wr.buf, out...)
-		return
-	}
-	if m, _ := data.(encoding.TextMarshaler); m != nil {
-		out, err := m.MarshalText()
-		if err != nil {
-			panic(err)
-		}
-		wr.buf = wr.appendString(wr.buf, string(out), !wr.HTMLUnsafe)
-		return
-	}
 	if !wr.NoReflect {
 		rv := reflect.ValueOf(data)
 		kind := rv.Kind()

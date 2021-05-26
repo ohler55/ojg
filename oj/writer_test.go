@@ -843,6 +843,46 @@ func TestWriteStrictPanic(t *testing.T) {
 	tt.NotNil(t, err)
 }
 
+type Marsha struct {
+	val int
+}
+
+func (m *Marsha) MarshalJSON() ([]byte, error) {
+	if m.val == 5 {
+		return nil, fmt.Errorf("oops")
+	}
+	return []byte(fmt.Sprintf(`{"v":%d}`, m.val)), nil
+}
+
+func TestMarshalMarshaler(t *testing.T) {
+	j, err := oj.Marshal(&Marsha{val: 3})
+	tt.Nil(t, err)
+	tt.Equal(t, `{"v":3}`, string(j))
+
+	j, err = oj.Marshal(&Marsha{val: 5})
+	tt.NotNil(t, err)
+}
+
+type TM struct {
+	val int
+}
+
+func (tm *TM) MarshalText() ([]byte, error) {
+	if tm.val == 5 {
+		return nil, fmt.Errorf("oops")
+	}
+	return []byte(fmt.Sprintf("-- %d --", tm.val)), nil
+}
+
+func TestMarshalTextMarshaler(t *testing.T) {
+	j, err := oj.Marshal(&TM{val: 3})
+	tt.Nil(t, err)
+	tt.Equal(t, `"-- 3 --"`, string(j))
+
+	j, err = oj.Marshal(&Marsha{val: 5})
+	tt.NotNil(t, err)
+}
+
 func BenchmarkMarshalFlat(b *testing.B) {
 	m := Mix{
 		Val:   1,
