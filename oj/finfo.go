@@ -80,32 +80,83 @@ func appendSliceNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, 
 	return buf, fv.Interface(), false, true
 }
 
+// TBD are 4 funcs needed? empty check and also ptr vs embedded?
+
 func appendJSONMarshaler(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
 	v := rv.FieldByIndex(fi.index).Interface()
 	buf = append(buf, fi.jkey...)
+	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 { // real nil check
+		return buf, nil, false, true
+	}
+	return appendJSONMarshalerVal(buf, v)
+}
+
+func appendJSONMarshalerNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+	v := rv.FieldByIndex(fi.index).Interface()
+	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 { // real nil check
+		return buf, nil, false, false
+	}
+	buf = append(buf, fi.jkey...)
+	return appendJSONMarshalerVal(buf, v)
+}
+
+func appendJSONMarshalerVal(buf []byte, v interface{}) ([]byte, interface{}, bool, bool) {
 	m := v.(json.Marshaler)
 	j, err := m.MarshalJSON()
 	if err != nil {
 		panic(err)
 	}
 	buf = append(buf, j...)
+
 	return buf, nil, true, false
 }
 
 func appendTextMarshaler(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
 	v := rv.FieldByIndex(fi.index).Interface()
 	buf = append(buf, fi.jkey...)
+	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 { // real nil check
+		return buf, nil, false, true
+	}
+	return appendTextMarshalerVal(buf, v)
+}
+
+func appendTextMarshalerNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+	v := rv.FieldByIndex(fi.index).Interface()
+	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 { // real nil check
+		return buf, nil, false, false
+	}
+	buf = append(buf, fi.jkey...)
+	return appendTextMarshalerVal(buf, v)
+}
+
+func appendTextMarshalerVal(buf []byte, v interface{}) ([]byte, interface{}, bool, bool) {
 	m := v.(encoding.TextMarshaler)
 	j, err := m.MarshalText()
 	if err != nil {
 		panic(err)
 	}
 	buf = append(buf, j...)
+
 	return buf, nil, true, false
 }
 
 func appendSimplifier(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
 	v := rv.FieldByIndex(fi.index).Interface()
+	buf = append(buf, fi.jkey...)
+	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 { // real nil check
+		return buf, nil, false, true
+	}
+	if s, ok := v.(alt.Simplifier); ok {
+		v = s.Simplify()
+	}
+	return buf, v, false, true
+}
+
+func appendSimplifierNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+	v := rv.FieldByIndex(fi.index).Interface()
+	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 { // real nil check
+		return buf, nil, false, false
+	}
 	buf = append(buf, fi.jkey...)
 	if s, ok := v.(alt.Simplifier); ok {
 		v = s.Simplify()
@@ -115,6 +166,23 @@ func appendSimplifier(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, saf
 
 func appendGenericer(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
 	v := rv.FieldByIndex(fi.index).Interface()
+	buf = append(buf, fi.jkey...)
+	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 { // real nil check
+		return buf, nil, false, true
+	}
+	if g, ok := v.(alt.Genericer); ok {
+		if n := g.Generic(); n != nil {
+			v = n.Simplify()
+		}
+	}
+	return buf, v, false, true
+}
+
+func appendGenericerNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+	v := rv.FieldByIndex(fi.index).Interface()
+	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 { // real nil check
+		return buf, nil, false, false
+	}
 	buf = append(buf, fi.jkey...)
 	if g, ok := v.(alt.Genericer); ok {
 		if n := g.Generic(); n != nil {
@@ -133,6 +201,49 @@ func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, em
 		offset: f.Offset,
 	}
 	var fx byte
+	// Check for interfaces first since almost any type can implement one of
+	// the supported interfaces.
+	v := reflect.New(fi.rt).Elem().Interface()
+	if _, ok := v.(json.Marshaler); ok {
+		if omitEmpty {
+			fi.Append = appendJSONMarshalerNotEmpty
+			fi.iAppend = appendJSONMarshalerNotEmpty
+		} else {
+			fi.Append = appendJSONMarshaler
+			fi.iAppend = appendJSONMarshaler
+		}
+		goto Key
+	}
+	if _, ok := v.(encoding.TextMarshaler); ok {
+		if omitEmpty {
+			fi.Append = appendJSONMarshalerNotEmpty
+			fi.iAppend = appendJSONMarshalerNotEmpty
+		} else {
+			fi.Append = appendJSONMarshaler
+			fi.iAppend = appendJSONMarshaler
+		}
+		goto Key
+	}
+	if _, ok := v.(alt.Simplifier); ok {
+		if omitEmpty {
+			fi.Append = appendSimplifierNotEmpty
+			fi.iAppend = appendSimplifierNotEmpty
+		} else {
+			fi.Append = appendSimplifier
+			fi.iAppend = appendSimplifier
+		}
+		goto Key
+	}
+	if _, ok := v.(alt.Genericer); ok {
+		if omitEmpty {
+			fi.Append = appendGenericerNotEmpty
+			fi.iAppend = appendGenericerNotEmpty
+		} else {
+			fi.Append = appendGenericer
+			fi.iAppend = appendGenericer
+		}
+		goto Key
+	}
 	if omitEmpty {
 		fx |= omitMask
 	}
@@ -141,29 +252,6 @@ func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, em
 	}
 	if embedded {
 		fx |= embedMask
-	}
-	// Check for interfaces first since almost any type can implement one of
-	// the supported interfaces.
-	v := reflect.New(fi.rt).Elem().Interface()
-	if _, ok := v.(json.Marshaler); ok {
-		fi.Append = appendJSONMarshaler
-		fi.iAppend = appendJSONMarshaler
-		goto Key
-	}
-	if _, ok := v.(encoding.TextMarshaler); ok {
-		fi.Append = appendJSONMarshaler
-		fi.iAppend = appendJSONMarshaler
-		goto Key
-	}
-	if _, ok := v.(alt.Simplifier); ok {
-		fi.Append = appendSimplifier
-		fi.iAppend = appendSimplifier
-		goto Key
-	}
-	if _, ok := v.(alt.Genericer); ok {
-		fi.Append = appendGenericer
-		fi.iAppend = appendGenericer
-		goto Key
 	}
 	switch fi.kind {
 	case reflect.Bool:

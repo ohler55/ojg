@@ -5,7 +5,6 @@ package oj_test
 import (
 	"fmt"
 	"math/big"
-	"strings"
 	"testing"
 
 	"github.com/ohler55/ojg"
@@ -344,18 +343,21 @@ func (d Decimal) MarshalJSON() ([]byte, error) {
 }
 
 type TestStruct struct {
-	Outer   bool    `json:"outer"`
-	Decimal Decimal `json:"decimal"`
+	Outer   bool     `json:"outer"`
+	Decimal Decimal  `json:"decimal"`
+	Ptr     *Decimal `json:"ptr,omitempty"`
 }
 
 func TestMarshalStructMarshaler(t *testing.T) {
 	tsa := []TestStruct{{
 		Outer:   true,
 		Decimal: Decimal{value: big.NewInt(5), exp: 2},
+		Ptr:     &Decimal{value: big.NewInt(3), exp: 7},
 	}}
 	out, err := oj.Marshal(tsa)
 	tt.Nil(t, err)
-	tt.Equal(t, true, strings.Contains(string(out), `"decimal":"5,2"`))
+	// Oj always keeps struct members in order based on keys.
+	tt.Equal(t, `[{"decimal":"5,2","outer":true,"ptr":"3,7"}]`, string(out))
 
 	tsa = []TestStruct{{
 		Outer:   true,
@@ -363,4 +365,13 @@ func TestMarshalStructMarshaler(t *testing.T) {
 	}}
 	_, err = oj.Marshal(tsa)
 	tt.NotNil(t, err)
+
+	tsa = []TestStruct{{
+		Outer:   true,
+		Decimal: Decimal{value: big.NewInt(5), exp: 2},
+		Ptr:     nil,
+	}}
+	out, err = oj.Marshal(tsa)
+	tt.Nil(t, err)
+	tt.Equal(t, `[{"decimal":"5,2","outer":true}]`, string(out))
 }
