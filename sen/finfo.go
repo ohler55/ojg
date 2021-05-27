@@ -123,6 +123,7 @@ func appendGenericer(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe
 	}
 	return buf, v, false, true
 }
+
 func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, embedded bool) *finfo {
 	fi := finfo{
 		rt:     f.Type,
