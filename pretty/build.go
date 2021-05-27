@@ -65,11 +65,11 @@ func (w *Writer) build(data interface{}) (n *node) {
 	case gen.Object:
 		n = w.buildGenMapNode(td)
 	default:
-		if g, _ := data.(alt.Genericer); g != nil {
-			return w.build(g.Generic())
-		}
 		if simp, _ := data.(alt.Simplifier); simp != nil {
 			return w.build(simp.Simplify())
+		}
+		if g, _ := data.(alt.Genericer); g != nil {
+			return w.build(g.Generic().Simplify())
 		}
 		n = w.build(alt.Decompose(data, &w.Options))
 	}

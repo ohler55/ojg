@@ -57,6 +57,22 @@ func valSliceNotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, r
 	return fv.Interface(), fv, false
 }
 
+func valSimplifier(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+	fv := rv.FieldByIndex(fi.index)
+	return fv.Interface().(Simplifier).Simplify(), nilValue, false
+}
+
+func valGenericer(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+	fv := rv.FieldByIndex(fi.index)
+	v := fv.Interface()
+	if g, _ := v.(Genericer); g != nil {
+		if n := g.Generic(); n != nil {
+			v = n.Simplify()
+		}
+	}
+	return v, nilValue, false
+}
+
 func newFinfo(f reflect.StructField, key string, fx byte) *finfo {
 	fi := finfo{
 		rt:     f.Type,
@@ -66,6 +82,20 @@ func newFinfo(f reflect.StructField, key string, fx byte) *finfo {
 		ivalue: valJustVal, // replace as necessary later
 		offset: f.Offset,
 	}
+	// Check for interfaces first since almost any type can implement one of
+	// the supported interfaces.
+	v := reflect.New(fi.rt).Elem().Interface()
+	if _, ok := v.(Simplifier); ok {
+		fi.value = valSimplifier
+		fi.ivalue = valSimplifier
+		return &fi
+	}
+	if _, ok := v.(Genericer); ok {
+		fi.value = valGenericer
+		fi.ivalue = valGenericer
+		return &fi
+	}
+
 	switch f.Type.Kind() {
 	case reflect.Bool:
 		fi.value = boolValFuncs[fx]

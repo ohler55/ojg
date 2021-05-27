@@ -1,15 +1,8 @@
 
-- Marshal and parse
- - Support json.Marshaler
-   type Marshaler interface {
-      MarshalJSON() ([]byte, error)
-   }
-   - accept result as valid text even if it isn't
- - Support encoding.TextMarshaler
-   type TextMarshaler interface {
-       MarshalText() (text []byte, err error)
-   }
-   - encode result as string
+- Marshal
+ - add to sen finfo.go
+ - add to alt finfo.go
+  - for simplier and genicer
 
 - unit tests and example for cmd/oj
 ----------------
