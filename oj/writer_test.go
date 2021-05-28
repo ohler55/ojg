@@ -859,7 +859,7 @@ func TestMarshalMarshaler(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Equal(t, `{"v":3}`, string(j))
 
-	j, err = oj.Marshal(&Marsha{val: 5})
+	_, err = oj.Marshal(&Marsha{val: 5})
 	tt.NotNil(t, err)
 }
 
@@ -879,7 +879,7 @@ func TestMarshalTextMarshaler(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Equal(t, `"-- 3 --"`, string(j))
 
-	j, err = oj.Marshal(&Marsha{val: 5})
+	_, err = oj.Marshal(&Marsha{val: 5})
 	tt.NotNil(t, err)
 }
 

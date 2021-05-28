@@ -87,18 +87,6 @@ func main() {
 		}
 		defer pprof.StopCPUProfile()
 	}
-	if *useCat {
-		benchSuite("Marshal Struct", []*bench{
-			{pkg: "json", name: "Marshal", fun: goMarshalCatalog},
-			{pkg: "oj", name: "Marshal", fun: ojMarshalCatalog},
-		})
-	} else {
-		benchSuite("Marshal Struct", []*bench{
-			{pkg: "json", name: "Marshal", fun: goMarshalPatient},
-			{pkg: "oj", name: "Marshal", fun: ojMarshalPatient},
-		})
-	}
-	return
 	benchSuite("Parse string/[]byte", []*bench{
 		{pkg: "json", name: "Unmarshal", fun: goParse},
 		{pkg: "oj", name: "Parse", fun: ojParse},

@@ -427,8 +427,6 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 	wr.buf = append(wr.buf, '{')
 	empty := true
 	var v interface{}
-	var has bool
-	var wrote bool
 	indented := false
 	var is string
 	var cs string
@@ -474,23 +472,31 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 	if rv.CanAddr() {
 		addr = rv.UnsafeAddr()
 	}
+	var stat appendStatus
 	for _, fi := range fields {
 		if !indented {
 			wr.buf = append(wr.buf, cs...)
 			indented = true
 		}
 		if 0 < addr {
-			wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+			wr.buf, v, stat = fi.Append(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
 		} else {
-			wr.buf, v, wrote, has = fi.iAppend(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+			wr.buf, v, stat = fi.iAppend(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
 		}
-		if wrote {
+		switch stat {
+		case aWrote:
 			wr.buf = append(wr.buf, ',')
 			empty = false
 			indented = false
 			continue
-		}
-		if !has {
+		case aSkip:
+			continue
+		case aChanged:
+			wr.appendJSON(v, 0)
+			wr.buf = append(wr.buf, ',')
+			indented = false
+			wr.buf = append(wr.buf, ',')
+			empty = false
 			continue
 		}
 		indented = false

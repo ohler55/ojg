@@ -214,11 +214,11 @@ func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, em
 	}
 	if _, ok := v.(encoding.TextMarshaler); ok {
 		if omitEmpty {
-			fi.Append = appendJSONMarshalerNotEmpty
-			fi.iAppend = appendJSONMarshalerNotEmpty
+			fi.Append = appendTextMarshalerNotEmpty
+			fi.iAppend = appendTextMarshalerNotEmpty
 		} else {
-			fi.Append = appendJSONMarshaler
-			fi.iAppend = appendJSONMarshaler
+			fi.Append = appendTextMarshaler
+			fi.iAppend = appendTextMarshaler
 		}
 		goto Key
 	}

@@ -58,8 +58,7 @@ func valSliceNotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, r
 }
 
 func valSimplifier(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
-	fv := rv.FieldByIndex(fi.index)
-	v := fv.Interface()
+	v := rv.FieldByIndex(fi.index).Interface()
 	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 {
 		return nil, nilValue, false
 	}
@@ -67,14 +66,12 @@ func valSimplifier(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, refl
 }
 
 func valSimplifierAddr(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
-	fv := rv.FieldByIndex(fi.index)
-	v := fv.Addr().Interface()
+	v := rv.FieldByIndex(fi.index).Addr().Interface()
 	return v.(Simplifier).Simplify(), nilValue, false
 }
 
 func valGenericer(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
-	fv := rv.FieldByIndex(fi.index)
-	v := fv.Interface()
+	v := rv.FieldByIndex(fi.index).Interface()
 	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 {
 		return nil, nilValue, false
 	}
@@ -87,8 +84,7 @@ func valGenericer(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, refle
 }
 
 func valGenericerAddr(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
-	fv := rv.FieldByIndex(fi.index)
-	v := fv.Addr().Interface()
+	v := rv.FieldByIndex(fi.index).Addr().Interface()
 	if g, _ := v.(Genericer); g != nil {
 		if n := g.Generic(); n != nil {
 			return n.Simplify(), nilValue, false
