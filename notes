@@ -1,10 +1,10 @@
 
-- Marshal
- - add to sen finfo.go
- - add to alt finfo.go
-  - for simplier and genicer
 
 - unit tests and example for cmd/oj
+
+- optimize unmarshal
+ - direct parse to struct
+
 ----------------
 
 - option to detect duplicate keys or make part of validator
