@@ -7,6 +7,7 @@ import (
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
+	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -466,4 +467,63 @@ func TestDecomposeEmbedded(t *testing.T) {
 	sample := Sample{In: In{X: 3}}
 	out := alt.Decompose(&sample, &ojg.Options{CreateKey: ""})
 	tt.Equal(t, map[string]interface{}{"in": map[string]interface{}{"x": 3}}, out)
+}
+
+func TestDecomposeStructSimplifier(t *testing.T) {
+	type SillyWrap struct {
+		Sill silly
+		Ptr  *silly
+	}
+	sw := SillyWrap{Sill: silly{val: 3}, Ptr: &silly{val: 4}}
+	out := alt.Decompose(&sw, &ojg.Options{CreateKey: ""})
+	tt.Equal(t,
+		map[string]interface{}{
+			"ptr":  map[string]interface{}{"type": "silly", "val": 4},
+			"sill": map[string]interface{}{"type": "silly", "val": 3},
+		}, out)
+
+	sw = SillyWrap{Sill: silly{val: 3}, Ptr: nil}
+	out = alt.Decompose(&sw, &ojg.Options{CreateKey: ""})
+	tt.Equal(t,
+		map[string]interface{}{
+			"ptr":  nil,
+			"sill": map[string]interface{}{"type": "silly", "val": 3},
+		}, out)
+}
+
+type geni struct {
+	val int
+}
+
+func (g *geni) Generic() gen.Node {
+	if g.val == 0 {
+		return nil
+	}
+	return gen.Object{"type": gen.String("geni"), "val": gen.Int(g.val)}
+}
+
+func TestDecomposeStructGenericer(t *testing.T) {
+	type GenWrap struct {
+		Gen geni
+		Ptr *geni
+	}
+	gw := GenWrap{Gen: geni{val: 3}, Ptr: &geni{val: 4}}
+	out := alt.Decompose(&gw, &ojg.Options{CreateKey: ""})
+	tt.Equal(t,
+		map[string]interface{}{
+			"ptr": map[string]interface{}{"type": "geni", "val": 4},
+			"gen": map[string]interface{}{"type": "geni", "val": 3},
+		}, out)
+
+	gw = GenWrap{Gen: geni{val: 3}, Ptr: nil}
+	out = alt.Decompose(&gw, &ojg.Options{CreateKey: ""})
+	tt.Equal(t,
+		map[string]interface{}{
+			"ptr": nil,
+			"gen": map[string]interface{}{"type": "geni", "val": 3},
+		}, out)
+
+	gw = GenWrap{Gen: geni{val: 0}, Ptr: &geni{val: 0}}
+	out = alt.Decompose(&gw, &ojg.Options{CreateKey: ""})
+	tt.Equal(t, map[string]interface{}{"ptr": nil, "gen": nil}, out)
 }

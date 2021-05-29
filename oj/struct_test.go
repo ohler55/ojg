@@ -3,9 +3,12 @@
 package oj_test
 
 import (
+	"fmt"
+	"math/big"
 	"testing"
 
 	"github.com/ohler55/ojg"
+	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
 )
@@ -325,4 +328,157 @@ func TestJSONTagOther(t *testing.T) {
   "-": 2,
   "AsIs": 1
 }`, string(out))
+}
+
+type Decimal struct {
+	value *big.Int
+	exp   int32
+	fail  bool
+}
+
+func (d Decimal) MarshalJSON() ([]byte, error) {
+	if d.fail {
+		return nil, fmt.Errorf("don't like this one")
+	}
+	return []byte(fmt.Sprintf(`"%d,%d"`, d.value, d.exp)), nil
+}
+
+type TestStruct struct {
+	Outer   bool     `json:"outer"`
+	Decimal Decimal  `json:"decimal"`
+	Ptr     *Decimal `json:"ptr,omitempty"`
+	Nptr    *Decimal `json:"nptr"`
+}
+
+func TestMarshalStructMarshaler(t *testing.T) {
+	tsa := []TestStruct{{
+		Outer:   true,
+		Decimal: Decimal{value: big.NewInt(5), exp: 2},
+		Ptr:     &Decimal{value: big.NewInt(3), exp: 7},
+		Nptr:    &Decimal{value: big.NewInt(1), exp: 9},
+	}}
+	out, err := oj.Marshal(tsa)
+	tt.Nil(t, err)
+	// Oj always keeps struct members in order based on keys.
+	tt.Equal(t, `[{"decimal":"5,2","nptr":"1,9","outer":true,"ptr":"3,7"}]`, string(out))
+
+	tsa = []TestStruct{{
+		Outer:   true,
+		Decimal: Decimal{value: big.NewInt(5), exp: 2},
+		Ptr:     nil,
+		Nptr:    nil,
+	}}
+	out, err = oj.Marshal(tsa)
+	tt.Nil(t, err)
+	tt.Equal(t, `[{"decimal":"5,2","nptr":null,"outer":true}]`, string(out))
+
+	tsa = []TestStruct{{
+		Outer:   true,
+		Decimal: Decimal{value: big.NewInt(5), exp: 2, fail: true},
+	}}
+	_, err = oj.Marshal(tsa)
+	tt.NotNil(t, err)
+}
+
+type Tex struct {
+	val int
+}
+
+func (t *Tex) MarshalText() ([]byte, error) {
+	if t.val == 0 {
+		return nil, fmt.Errorf("don't like this one")
+	}
+	return []byte(fmt.Sprintf("%02d", t.val)), nil
+}
+
+func TestMarshalStructTextMarshaler(t *testing.T) {
+	type TexWrap struct {
+		Bed  Tex  `json:"bed"`
+		Ptr  *Tex `json:"ptr,omitempty"`
+		Nptr *Tex `json:"nptr"`
+	}
+	tw := TexWrap{Bed: Tex{val: 1}, Ptr: &Tex{val: 2}, Nptr: &Tex{val: 3}}
+	out, err := oj.Marshal(&tw)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"bed":"01","nptr":"03","ptr":"02"}`, string(out))
+
+	tw = TexWrap{Bed: Tex{val: 1}, Ptr: nil, Nptr: nil}
+	out, err = oj.Marshal(&tw)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"bed":"01","nptr":null}`, string(out))
+
+	tw = TexWrap{Bed: Tex{val: 0}}
+	_, err = oj.Marshal(&tw)
+	tt.NotNil(t, err)
+}
+
+type Silly struct {
+	val int
+}
+
+func (s *Silly) Simplify() interface{} {
+	return map[string]interface{}{"val": s.val}
+}
+
+func TestMarshalStructSimplifier(t *testing.T) {
+	ojg.ErrorWithStack = true
+	type SillyWrap struct {
+		Bed  Silly  `json:"bed"`
+		Ptr  *Silly `json:"ptr,omitempty"`
+		Nptr *Silly `json:"nptr"`
+	}
+	sim := SillyWrap{Bed: Silly{val: 1}, Ptr: &Silly{val: 2}, Nptr: &Silly{val: 3}}
+	out, err := oj.Marshal(&sim)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"bed":{"val":1},"nptr":{"val":3},"ptr":{"val":2}}`, string(out))
+
+	sim = SillyWrap{Bed: Silly{val: 1}, Ptr: nil, Nptr: nil}
+	out, err = oj.Marshal(&sim)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"bed":{"val":1},"nptr":null}`, string(out))
+
+	sim = SillyWrap{Bed: Silly{val: 1}, Ptr: &Silly{val: 2}, Nptr: nil}
+	opt := ojg.GoOptions
+	opt.OmitNil = true
+	out, err = oj.Marshal(&sim, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"bed":{"val":1},"ptr":{"val":2}}`, string(out))
+
+	opt.Indent = 2
+	out, err = oj.Marshal(&sim, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, `{
+  "bed": {
+    "val": 1
+  },
+  "ptr": {
+    "val": 2
+  }
+}`, string(out))
+}
+
+type Genny struct {
+	val int
+}
+
+func (g *Genny) Generic() gen.Node {
+	return gen.Object{"val": gen.Int(g.val)}
+}
+
+func TestMarshalStructGenericer(t *testing.T) {
+	ojg.ErrorWithStack = true
+	type GennyWrap struct {
+		Bed  Genny  `json:"bed"`
+		Ptr  *Genny `json:"ptr,omitempty"`
+		Nptr *Genny `json:"nptr"`
+	}
+	tw := GennyWrap{Bed: Genny{val: 1}, Ptr: &Genny{val: 2}, Nptr: &Genny{val: 3}}
+	out, err := oj.Marshal(&tw)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"bed":{"val":1},"nptr":{"val":3},"ptr":{"val":2}}`, string(out))
+
+	tw = GennyWrap{Bed: Genny{val: 1}, Ptr: nil, Nptr: nil}
+	out, err = oj.Marshal(&tw)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"bed":{"val":1},"nptr":null}`, string(out))
 }

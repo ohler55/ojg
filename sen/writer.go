@@ -3,6 +3,8 @@
 package sen
 
 import (
+	"encoding"
+	"encoding/json"
 	"fmt"
 	"io"
 	"reflect"
@@ -210,6 +212,23 @@ func (wr *Writer) appendSEN(data interface{}, depth int) {
 		wr.appendObject(wr, td, depth)
 		wr.needSep = false
 
+	case alt.Simplifier:
+		wr.appendSEN(td.Simplify(), depth)
+	case alt.Genericer:
+		wr.appendSEN(td.Generic().Simplify(), depth)
+	case json.Marshaler:
+		out, err := td.MarshalJSON()
+		if err != nil {
+			panic(err)
+		}
+		wr.buf = append(wr.buf, out...)
+	case encoding.TextMarshaler:
+		out, err := td.MarshalText()
+		if err != nil {
+			panic(err)
+		}
+		wr.buf = wr.appendString(wr.buf, string(out), !wr.HTMLUnsafe)
+
 	default:
 		wr.appendDefault(wr, data, depth)
 		if 0 < len(wr.buf) {
@@ -229,15 +248,6 @@ func (wr *Writer) appendSEN(data interface{}, depth int) {
 }
 
 func appendDefault(wr *Writer, data interface{}, depth int) {
-	if simp, _ := data.(alt.Simplifier); simp != nil {
-		data = simp.Simplify()
-		wr.appendSEN(data, depth)
-		return
-	}
-	if g, _ := data.(alt.Genericer); g != nil {
-		wr.appendSEN(g.Generic().Simplify(), depth)
-		return
-	}
 	if !wr.NoReflect {
 		rv := reflect.ValueOf(data)
 		kind := rv.Kind()
@@ -401,8 +411,6 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 	wr.buf = append(wr.buf, '{')
 	empty := true
 	var v interface{}
-	var has bool
-	var wrote bool
 	indented := false
 	var is string
 	var cs string
@@ -447,22 +455,32 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 	if rv.CanAddr() {
 		addr = rv.UnsafeAddr()
 	}
+	var stat appendStatus
 	for _, fi := range fields {
 		if !indented {
 			wr.buf = append(wr.buf, cs...)
 			indented = true
 		}
 		if 0 < addr {
-			wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+			wr.buf, v, stat = fi.Append(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
 		} else {
-			wr.buf, v, wrote, has = fi.iAppend(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+			wr.buf, v, stat = fi.iAppend(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
 		}
-		if wrote {
+		switch stat {
+		case aWrote:
+			empty = false
+			indented = false
+			continue
+		case aSkip:
+			continue
+		case aChanged:
+			if wr.OmitNil && (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 {
+				wr.buf = wr.buf[:len(wr.buf)-fi.keyLen()]
+				continue
+			}
+			wr.appendSEN(v, d2)
 			indented = false
 			empty = false
-			continue
-		}
-		if !has {
 			continue
 		}
 		indented = false

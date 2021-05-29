@@ -14,15 +14,6 @@ import (
 )
 
 func tightDefault(wr *Writer, data interface{}, _ int) {
-	if simp, _ := data.(alt.Simplifier); simp != nil {
-		data = simp.Simplify()
-		wr.appendJSON(data, 0)
-		return
-	}
-	if g, _ := data.(alt.Genericer); g != nil {
-		wr.appendJSON(g.Generic().Simplify(), 0)
-		return
-	}
 	if !wr.NoReflect {
 		rv := reflect.ValueOf(data)
 		kind := rv.Kind()
@@ -119,8 +110,6 @@ func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
 	fields := si.fields[wr.findex]
 	wr.buf = append(wr.buf, '{')
 	var v interface{}
-	var has bool
-	var wrote bool
 	comma := false
 	if 0 < len(wr.CreateKey) {
 		wr.buf = wr.appendString(wr.buf, wr.CreateKey, !wr.HTMLUnsafe)
@@ -139,18 +128,28 @@ func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
 	if rv.CanAddr() {
 		addr = rv.UnsafeAddr()
 	}
+	var stat appendStatus
 	for _, fi := range fields {
 		if 0 < addr {
-			wr.buf, v, wrote, has = fi.Append(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+			wr.buf, v, stat = fi.Append(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
 		} else {
-			wr.buf, v, wrote, has = fi.iAppend(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
+			wr.buf, v, stat = fi.iAppend(fi, wr.buf, rv, addr, !wr.HTMLUnsafe)
 		}
-		if wrote {
+		switch stat {
+		case aWrote:
 			wr.buf = append(wr.buf, ',')
 			comma = true
 			continue
-		}
-		if !has {
+		case aSkip:
+			continue
+		case aChanged:
+			if wr.OmitNil && (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 {
+				wr.buf = wr.buf[:len(wr.buf)-fi.keyLen()]
+				continue
+			}
+			wr.appendJSON(v, 0)
+			wr.buf = append(wr.buf, ',')
+			comma = true
 			continue
 		}
 		var fv reflect.Value

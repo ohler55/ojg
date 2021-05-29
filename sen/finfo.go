@@ -3,19 +3,29 @@
 package sen
 
 import (
+	"encoding"
+	"encoding/json"
 	"reflect"
 	"unsafe"
 
 	"github.com/ohler55/ojg"
+	"github.com/ohler55/ojg/alt"
 )
 
 const (
 	strMask   = byte(0x01)
 	omitMask  = byte(0x02)
 	embedMask = byte(0x04)
+
+	aJustKey appendStatus = iota
+	aWrote
+	aSkip
+	aChanged
 )
 
-type appendFunc func(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool)
+type appendStatus byte
+
+type appendFunc func(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus)
 
 // Field hold information about a struct field.
 type finfo struct {
@@ -34,47 +44,89 @@ func (f *finfo) keyLen() int {
 	return len(f.jkey)
 }
 
-func appendSENString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func appendJustKey(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+	v := rv.FieldByIndex(fi.index).Interface()
+	buf = append(buf, fi.jkey...)
+	return buf, v, aJustKey
+}
+
+func appendPtrNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+	v := rv.FieldByIndex(fi.index).Interface()
+	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 { // real nil check
+		return buf, nil, aSkip
+	}
+	buf = append(buf, fi.jkey...)
+	return buf, v, aJustKey
+}
+
+func appendSliceNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+	fv := rv.FieldByIndex(fi.index)
+	if fv.Len() == 0 {
+		return buf, nil, aSkip
+	}
+	buf = append(buf, fi.jkey...)
+	return buf, fv.Interface(), aJustKey
+}
+
+func appendSENString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	v := rv.FieldByIndex(fi.index).String()
 	buf = append(buf, fi.jkey...)
 	buf = ojg.AppendSENString(buf, v, safe)
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func appendSENStringNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func appendSENStringNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	s := rv.FieldByIndex(fi.index).String()
 	if len(s) == 0 {
-		return buf, nil, false, false
+		return buf, nil, aSkip
 	}
 	buf = append(buf, fi.jkey...)
 	buf = ojg.AppendSENString(buf, s, safe)
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func appendJustKey(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
-	v := rv.FieldByIndex(fi.index).Interface()
-	buf = append(buf, fi.jkey...)
-	return buf, v, false, true
-}
-
-func appendPtrNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
-	v := rv.FieldByIndex(fi.index).Interface()
-	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 { // real nil check
-		return buf, nil, false, false
+func whichAppend(rt reflect.Type, omitEmpty bool) (f appendFunc) {
+	v := reflect.New(rt).Elem().Interface()
+	switch v.(type) {
+	case json.Marshaler:
+		if omitEmpty {
+			f = appendJSONMarshalerNotEmpty
+		} else {
+			f = appendJSONMarshaler
+		}
+	case encoding.TextMarshaler:
+		if omitEmpty {
+			f = appendTextMarshalerNotEmpty
+		} else {
+			f = appendTextMarshaler
+		}
+	case alt.Simplifier:
+		if omitEmpty {
+			f = appendSimplifierNotEmpty
+		} else {
+			f = appendSimplifier
+		}
+	case alt.Genericer:
+		if omitEmpty {
+			f = appendGenericerNotEmpty
+		} else {
+			f = appendGenericer
+		}
 	}
-	buf = append(buf, fi.jkey...)
-	return buf, v, false, true
-}
-
-func appendSliceNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
-	fv := rv.FieldByIndex(fi.index)
-	if fv.Len() == 0 {
-		return buf, nil, false, false
+	vp := reflect.New(rt).Interface()
+	switch vp.(type) {
+	case json.Marshaler:
+		f = appendJSONMarshalerAddr
+	case encoding.TextMarshaler:
+		f = appendTextMarshalerAddr
+	case alt.Simplifier:
+		f = appendSimplifierAddr
+	case alt.Genericer:
+		f = appendGenericerAddr
 	}
-	buf = append(buf, fi.jkey...)
-	return buf, fv.Interface(), false, true
+	return
 }
 
 func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, embedded bool) *finfo {
@@ -86,6 +138,14 @@ func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, em
 		offset: f.Offset,
 	}
 	var fx byte
+	// Check for interfaces first since almost any type can implement one of
+	// the supported interfaces.
+	af := whichAppend(fi.rt, omitEmpty)
+	if af != nil {
+		fi.Append = af
+		fi.iAppend = af
+		goto Key
+	}
 	if omitEmpty {
 		fx |= omitMask
 	}
@@ -192,6 +252,7 @@ func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, em
 			fi.iAppend = appendJustKey
 		}
 	}
+Key:
 	fi.jkey = ojg.AppendSENString(fi.jkey, fi.key, false)
 	fi.jkey = append(fi.jkey, ':')
 	if pretty {

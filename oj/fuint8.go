@@ -19,82 +19,82 @@ var uint8AppendFuncs = [8]appendFunc{
 	iappendUint8NotEmptyAsString,
 }
 
-func appendUint8(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func appendUint8(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = strconv.AppendUint(buf, uint64(*(*uint8)(unsafe.Pointer(addr + fi.offset))), 10)
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func appendUint8AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func appendUint8AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = append(buf, '"')
 	buf = strconv.AppendUint(buf, uint64(*(*uint8)(unsafe.Pointer(addr + fi.offset))), 10)
 	buf = append(buf, '"')
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func appendUint8NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func appendUint8NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	v := *(*uint8)(unsafe.Pointer(addr + fi.offset))
 	if v == 0 {
-		return buf, nil, false, false
+		return buf, nil, aSkip
 	}
 	buf = append(buf, fi.jkey...)
 	buf = strconv.AppendUint(buf, uint64(v), 10)
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func appendUint8NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func appendUint8NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	v := *(*uint8)(unsafe.Pointer(addr + fi.offset))
 	if v == 0 {
-		return buf, nil, false, false
+		return buf, nil, aSkip
 	}
 	buf = append(buf, fi.jkey...)
 	buf = append(buf, '"')
 	buf = strconv.AppendUint(buf, uint64(v), 10)
 	buf = append(buf, '"')
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func iappendUint8(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func iappendUint8(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = strconv.AppendUint(buf, uint64(rv.FieldByIndex(fi.index).Interface().(uint8)), 10)
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func iappendUint8AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func iappendUint8AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = append(buf, '"')
 	buf = strconv.AppendUint(buf, uint64(rv.FieldByIndex(fi.index).Interface().(uint8)), 10)
 	buf = append(buf, '"')
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func iappendUint8NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func iappendUint8NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	v := rv.FieldByIndex(fi.index).Interface().(uint8)
 	if v == 0 {
-		return buf, nil, false, false
+		return buf, nil, aSkip
 	}
 	buf = append(buf, fi.jkey...)
 	buf = strconv.AppendUint(buf, uint64(v), 10)
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func iappendUint8NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func iappendUint8NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	v := rv.FieldByIndex(fi.index).Interface().(uint8)
 	if v == 0 {
-		return buf, nil, false, false
+		return buf, nil, aSkip
 	}
 	buf = append(buf, fi.jkey...)
 	buf = append(buf, '"')
 	buf = strconv.AppendUint(buf, uint64(v), 10)
 	buf = append(buf, '"')
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }

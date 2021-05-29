@@ -57,6 +57,42 @@ func valSliceNotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, r
 	return fv.Interface(), fv, false
 }
 
+func valSimplifier(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+	v := rv.FieldByIndex(fi.index).Interface()
+	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 {
+		return nil, nilValue, false
+	}
+	return v.(Simplifier).Simplify(), nilValue, false
+}
+
+func valSimplifierAddr(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+	v := rv.FieldByIndex(fi.index).Addr().Interface()
+	return v.(Simplifier).Simplify(), nilValue, false
+}
+
+func valGenericer(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+	v := rv.FieldByIndex(fi.index).Interface()
+	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 {
+		return nil, nilValue, false
+	}
+	if g, _ := v.(Genericer); g != nil {
+		if n := g.Generic(); n != nil {
+			return n.Simplify(), nilValue, false
+		}
+	}
+	return nil, nilValue, false
+}
+
+func valGenericerAddr(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+	v := rv.FieldByIndex(fi.index).Addr().Interface()
+	if g, _ := v.(Genericer); g != nil {
+		if n := g.Generic(); n != nil {
+			return n.Simplify(), nilValue, false
+		}
+	}
+	return nil, nilValue, false
+}
+
 func newFinfo(f reflect.StructField, key string, fx byte) *finfo {
 	fi := finfo{
 		rt:     f.Type,
@@ -65,6 +101,30 @@ func newFinfo(f reflect.StructField, key string, fx byte) *finfo {
 		value:  valJustVal, // replace as necessary later
 		ivalue: valJustVal, // replace as necessary later
 		offset: f.Offset,
+	}
+	// Check for interfaces first since almost any type can implement one of
+	// the supported interfaces.
+	vp := reflect.New(fi.rt).Interface()
+	v := reflect.New(fi.rt).Elem().Interface()
+	if _, ok := v.(Simplifier); ok {
+		fi.value = valSimplifier
+		fi.ivalue = valSimplifier
+		return &fi
+	}
+	if _, ok := vp.(Simplifier); ok {
+		fi.value = valSimplifierAddr
+		fi.ivalue = valSimplifierAddr
+		return &fi
+	}
+	if _, ok := v.(Genericer); ok {
+		fi.value = valGenericer
+		fi.ivalue = valGenericer
+		return &fi
+	}
+	if _, ok := vp.(Genericer); ok {
+		fi.value = valGenericerAddr
+		fi.ivalue = valGenericerAddr
+		return &fi
 	}
 	switch f.Type.Kind() {
 	case reflect.Bool:

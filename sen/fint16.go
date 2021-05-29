@@ -19,82 +19,82 @@ var int16AppendFuncs = [8]appendFunc{
 	iappendInt16NotEmptyAsString,
 }
 
-func appendInt16(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func appendInt16(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = strconv.AppendInt(buf, int64(*(*int16)(unsafe.Pointer(addr + fi.offset))), 10)
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func appendInt16AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func appendInt16AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = append(buf, '"')
 	buf = strconv.AppendInt(buf, int64(*(*int16)(unsafe.Pointer(addr + fi.offset))), 10)
 	buf = append(buf, '"')
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func appendInt16NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func appendInt16NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	v := *(*int16)(unsafe.Pointer(addr + fi.offset))
 	if v == 0 {
-		return buf, nil, false, false
+		return buf, nil, aSkip
 	}
 	buf = append(buf, fi.jkey...)
 	buf = strconv.AppendInt(buf, int64(v), 10)
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func appendInt16NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func appendInt16NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	v := *(*int16)(unsafe.Pointer(addr + fi.offset))
 	if v == 0 {
-		return buf, nil, false, false
+		return buf, nil, aSkip
 	}
 	buf = append(buf, fi.jkey...)
 	buf = append(buf, '"')
 	buf = strconv.AppendInt(buf, int64(v), 10)
 	buf = append(buf, '"')
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func iappendInt16(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func iappendInt16(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = strconv.AppendInt(buf, int64(rv.FieldByIndex(fi.index).Interface().(int16)), 10)
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func iappendInt16AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func iappendInt16AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = append(buf, '"')
 	buf = strconv.AppendInt(buf, int64(rv.FieldByIndex(fi.index).Interface().(int16)), 10)
 	buf = append(buf, '"')
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func iappendInt16NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func iappendInt16NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	v := rv.FieldByIndex(fi.index).Interface().(int16)
 	if v == 0 {
-		return buf, nil, false, false
+		return buf, nil, aSkip
 	}
 	buf = append(buf, fi.jkey...)
 	buf = strconv.AppendInt(buf, int64(v), 10)
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
 
-func iappendInt16NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, bool, bool) {
+func iappendInt16NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
 	v := rv.FieldByIndex(fi.index).Interface().(int16)
 	if v == 0 {
-		return buf, nil, false, false
+		return buf, nil, aSkip
 	}
 	buf = append(buf, fi.jkey...)
 	buf = append(buf, '"')
 	buf = strconv.AppendInt(buf, int64(v), 10)
 	buf = append(buf, '"')
 
-	return buf, nil, true, false
+	return buf, nil, aWrote
 }
