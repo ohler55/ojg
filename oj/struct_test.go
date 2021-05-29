@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/ohler55/ojg"
+	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
 )
@@ -426,12 +427,57 @@ func TestMarshalStructSimplifier(t *testing.T) {
 		Ptr  *Silly `json:"ptr,omitempty"`
 		Nptr *Silly `json:"nptr"`
 	}
-	tw := SillyWrap{Bed: Silly{val: 1}, Ptr: &Silly{val: 2}, Nptr: &Silly{val: 3}}
+	sim := SillyWrap{Bed: Silly{val: 1}, Ptr: &Silly{val: 2}, Nptr: &Silly{val: 3}}
+	out, err := oj.Marshal(&sim)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"bed":{"val":1},"nptr":{"val":3},"ptr":{"val":2}}`, string(out))
+
+	sim = SillyWrap{Bed: Silly{val: 1}, Ptr: nil, Nptr: nil}
+	out, err = oj.Marshal(&sim)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"bed":{"val":1},"nptr":null}`, string(out))
+
+	sim = SillyWrap{Bed: Silly{val: 1}, Ptr: &Silly{val: 2}, Nptr: nil}
+	opt := ojg.GoOptions
+	opt.OmitNil = true
+	out, err = oj.Marshal(&sim, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"bed":{"val":1},"ptr":{"val":2}}`, string(out))
+
+	opt.Indent = 2
+	out, err = oj.Marshal(&sim, &opt)
+	tt.Nil(t, err)
+	tt.Equal(t, `{
+  "bed": {
+    "val": 1
+  },
+  "ptr": {
+    "val": 2
+  }
+}`, string(out))
+}
+
+type Genny struct {
+	val int
+}
+
+func (g *Genny) Generic() gen.Node {
+	return gen.Object{"val": gen.Int(g.val)}
+}
+
+func TestMarshalStructGenericer(t *testing.T) {
+	ojg.ErrorWithStack = true
+	type GennyWrap struct {
+		Bed  Genny  `json:"bed"`
+		Ptr  *Genny `json:"ptr,omitempty"`
+		Nptr *Genny `json:"nptr"`
+	}
+	tw := GennyWrap{Bed: Genny{val: 1}, Ptr: &Genny{val: 2}, Nptr: &Genny{val: 3}}
 	out, err := oj.Marshal(&tw)
 	tt.Nil(t, err)
 	tt.Equal(t, `{"bed":{"val":1},"nptr":{"val":3},"ptr":{"val":2}}`, string(out))
 
-	tw = SillyWrap{Bed: Silly{val: 1}, Ptr: nil, Nptr: nil}
+	tw = GennyWrap{Bed: Genny{val: 1}, Ptr: nil, Nptr: nil}
 	out, err = oj.Marshal(&tw)
 	tt.Nil(t, err)
 	tt.Equal(t, `{"bed":{"val":1},"nptr":null}`, string(out))

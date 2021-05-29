@@ -143,16 +143,15 @@ func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
 		case aSkip:
 			continue
 		case aChanged:
+			if wr.OmitNil && (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 {
+				wr.buf = wr.buf[:len(wr.buf)-fi.keyLen()]
+				continue
+			}
 			wr.appendJSON(v, 0)
 			wr.buf = append(wr.buf, ',')
 			comma = true
 			continue
 		}
-
-		// TBD if converted (simplifier or genericer) then wr.appendJSON with new value
-		//   what is the condition?
-		//   maybe change return to be an enum for wrote/has/converted/continue
-
 		var fv reflect.Value
 		kind := fi.kind
 	Retry:

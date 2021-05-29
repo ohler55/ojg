@@ -492,10 +492,13 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 		case aSkip:
 			continue
 		case aChanged:
-			wr.appendJSON(v, 0)
+			if wr.OmitNil && (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 {
+				wr.buf = wr.buf[:len(wr.buf)-fi.keyLen()]
+				continue
+			}
+			wr.appendJSON(v, d2)
 			wr.buf = append(wr.buf, ',')
 			indented = false
-			wr.buf = append(wr.buf, ',')
 			empty = false
 			continue
 		}

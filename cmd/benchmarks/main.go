@@ -230,7 +230,7 @@ func benchSuite(title string, suite []*bench) {
 	}
 	fmt.Println()
 
-	scale := 8 // TBD adjust to fit screen better?
+	scale := 7 // TBD adjust to fit screen better?
 	ss := make([]*bench, len(suite))
 	copy(ss, suite)
 	sort.Slice(ss, func(i, j int) bool { return ss[i].ns < ss[j].ns })
