@@ -18,11 +18,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2
         with:
           version: v1.39
-          go-version: 1.16
 
   test:
     strategy:
