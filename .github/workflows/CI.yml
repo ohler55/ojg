@@ -43,3 +43,8 @@ jobs:
 
     - name: Test
       run: go test -covermode=count -coverprofile=cov.out  ./...
+
+    - name: Coverage
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
