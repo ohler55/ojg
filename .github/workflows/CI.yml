@@ -2,7 +2,7 @@ name: Go
 
 on:
   push:
-    branches: [ develop ]
+    branches: [ develop, master ]
   pull_request:
     branches: [ develop ]
 
@@ -15,7 +15,7 @@ jobs:
           - ubuntu
           - macos
     name: lint
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v2
 
