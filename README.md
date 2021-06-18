@@ -1,6 +1,8 @@
 # [![{}j](assets/ojg_comet.svg)](https://github.com/ohler55/ojg)
 
-[![Build Status](https://img.shields.io/travis/ohler55/ojg/master.svg?logo=travis)](http://travis-ci.org/ohler55/ojg?branch=master)[![Coverage Status](https://coveralls.io/repos/github/ohler55/ojg/badge.svg?branch=master)](https://coveralls.io/github/ohler55/ojg?branch=master)
+[![Build Status](https://img.shields.io/travis/ohler55/ojg/master.svg?logo=travis)](http://travis-ci.org/ohler55/ojg?branch=master)
+[![Build Status](https://github.com/ohler55/ojg/actions/workflows/CI.yml/badge.svg)](http://travis-ci.org/ohler55/ojg?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/ohler55/ojg/badge.svg?branch=master)](https://coveralls.io/github/ohler55/ojg?branch=master)
 
 Optimized JSON for Go is a high performance parser with a variety of
 additional JSON tools. OjG is optimized to processing huge data sets
