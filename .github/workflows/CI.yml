@@ -8,7 +8,23 @@ on:
 
 jobs:
 
-  build:
+  golangci:
+    strategy:
+      matrix:
+        os:
+          - ubuntu
+          - macos
+    name: lint
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.39
+          go-version: 1.16
+
+  test:
     strategy:
       fail-fast: true
       matrix:
@@ -24,9 +40,6 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.16
-
-    - name: Build
-      run: go build -v ./...
 
     - name: Test
       run: go test -covermode=count -coverprofile=cov.out  ./...
