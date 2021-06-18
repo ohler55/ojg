@@ -50,3 +50,13 @@ jobs:
       uses: shogo82148/actions-goveralls@v1
       with:
         path-to-profile: cov.out
+
+    - name: Install goveralls
+      env:
+        GO111MODULE: off
+      run: go get github.com/mattn/goveralls
+
+    - name: Send coverage
+      env:
+        COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: goveralls -coverprofile=cov.out -service=github
