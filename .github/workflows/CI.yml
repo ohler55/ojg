@@ -9,13 +9,8 @@ on:
 jobs:
 
   golangci:
-    strategy:
-      matrix:
-        os:
-          - ubuntu
-          - macos
     name: lint
-    runs-on: ${{ matrix.os }}-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
@@ -47,16 +42,9 @@ jobs:
         go tool cover -func=cov.out
 
     - name: Coverage
-      uses: shogo82148/actions-goveralls@v1
-      with:
-        path-to-profile: cov.out
-
-    - name: Install goveralls
       env:
         GO111MODULE: off
-      run: go get github.com/mattn/goveralls
-
-    - name: Send coverage
-      env:
         COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: goveralls -coverprofile=cov.out -service=github
+      run: |
+        go get github.com/mattn/goveralls
+        goveralls -coverprofile=cov.out -service=github
