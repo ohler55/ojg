@@ -34,7 +34,7 @@ func Compare(v0, v1 interface{}, ignores ...Path) Path {
 }
 
 // Match returns true if all elements in the fingerprint match those in
-// target. Fields in target but not in the fingerprint are not ignored. An
+// target. Fields in target but not in the fingerprint are ignored. An
 // explicit nil in the fingerprint will match either a nil in the target or a
 // missing value in the target.
 func Match(fingerprint, target interface{}) bool {
