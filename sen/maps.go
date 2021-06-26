@@ -43,7 +43,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	valueMap = "" +
 		".........ab..a.................." + // 0x00
-		"a.i.j.....jjafjcghhhhhhhhh..j.jj" + // 0x20
+		"a.i.j..i..jjafjcghhhhhhhhh..j.jj" + // 0x20
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjk.mjj" + // 0x40
 		".jjjjjjjjjjjjjjjjjjjjjjjjjjl.nj." + // 0x60
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" + // 0x80
@@ -153,7 +153,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	stringMap = "" +
 		".........RR..R.................." + // 0x00
-		"RRzRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" + // 0x20
+		"RRzRRRRzRRRRRRRRRRRRRRRRRRRRRRRR" + // 0x20
 		"RRRRRRRRRRRRRRRRRRRRRRRRRRRRARRR" + // 0x40
 		"RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" + // 0x60
 		"RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR" + // 0x80

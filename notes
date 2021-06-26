@@ -1,4 +1,30 @@
 
+- SEN
+ - allow single quote for string delimiters
+  - add map entries for single quote and maps for handling
+  - or just keep track of starting quote char
+
+ - allow use of + to join strings like mongosh uses
+  - add mode after closing quote (strQuote)
+   - skip spaces and then just like value and also +
+   - could value just be updated to handle + or rather + to be more than just for numbers?
+    - plusMap
+     - spaces ok
+     - waiting for " (or ')
+      - look at stack
+       - string, append and replace
+       - array, append to last in array and replace
+       - map
+        - need to know last key - how??
+         - keep lastKey and lastStrKey on parser
+          - set lastKey on addString()
+          - on valueMap +
+           - set lastStrKey to lastKey
+          - on addString()
+           - use lastStrKey then set to empty
+
+- pretty
+ - align maps as well as arrays
 
 - unit tests and example for cmd/oj
 
