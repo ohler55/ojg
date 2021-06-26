@@ -737,12 +737,12 @@ The file format (SEN with comments) is:
   //format: {indent: 2 tab: false width: 80 depth: 3 align: false}
   html: {
     syntax: "<span>"
-    key: "<span style=\"color:#44f\">"
-    null: "<span style=\"color:red\">"
-    bool: "<span style=\"color:#a40\">"
-    number: "<span style=\"color:#04a\">"
-    string: "<span style=\"color:green\">"
-    time: "<span style=\"color:#f0f\">"
+    key: '<span style="color:#44f">'
+    null: '<span style="color:red">'
+    bool: '<span style="color:#a40">"
+    number: '<span style="color:#04a">'
+    string: '<span style="color:green">'
+    time: '<span style="color:#f0f">'
     no-color: "</span>"
   }
   html-safe: false

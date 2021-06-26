@@ -37,6 +37,8 @@ func TestParserParseString(t *testing.T) {
 		{src: "hello", value: "hello"},
 		{src: "hello ", value: "hello"},
 		{src: `"hello"`, value: "hello"},
+		{src: `'ab"cd'`, value: `ab"cd`},
+		{src: `"ab'cd"`, value: `ab'cd`},
 		{src: "[one two]", value: []interface{}{"one", "two"}},
 		{src: "123", value: 123},
 		{src: "-12.3", value: -12.3},

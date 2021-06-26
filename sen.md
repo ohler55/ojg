@@ -20,6 +20,9 @@ UTF-8. A UTF-8 BOM at the start of a sequence is allowed.
 C style comments that start with a `//` sequence are allowed and
 ignored.
 
+Strings can also be delimited with a single quote character which
+allows for a string to be either `"abc"` or `'abc'`.
+
 In all other aspects SEN is as described by the
 [json.org](https://www.json.org/json-en.html) description.
 

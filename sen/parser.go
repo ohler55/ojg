@@ -42,6 +42,7 @@ type Parser struct {
 	rn         rune
 	result     interface{}
 	mode       string
+	quoteDelim byte
 
 	// Reuse maps. Previously returned maps will no longer be valid or rather
 	// could be modified during parsing.
@@ -326,6 +327,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			}
 			off += i
 		case valQuote:
+			p.quoteDelim = b
 			start := off + 1
 			if len(buf) <= start {
 				p.tmp = p.tmp[:0]
@@ -338,7 +340,8 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 				}
 			}
 			off += i
-			if b == '"' {
+			// TBD or single
+			if b == p.quoteDelim {
 				off++
 				p.addString(string(buf[start:off]), off)
 			} else {
@@ -460,7 +463,11 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			}
 			off += i
 		case strQuote:
-			p.addString(string(p.tmp), off)
+			if b == p.quoteDelim {
+				p.addString(string(p.tmp), off)
+			} else {
+				p.tmp = append(p.tmp, b)
+			}
 		case numZero:
 			p.mode = zeroMap
 		case numDigit:

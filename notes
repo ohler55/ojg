@@ -1,5 +1,9 @@
 
 - SEN
+ - allow single quote for string delimiters
+  - add map entries for single quote and maps for handling
+  - or just keep track of starting quote char
+
  - allow use of + to join strings like mongosh uses
   - add mode after closing quote (strQuote)
    - skip spaces and then just like value and also +
@@ -18,8 +22,6 @@
            - set lastStrKey to lastKey
           - on addString()
            - use lastStrKey then set to empty
- - allow single quote for string delimiters
-  - add map entries for single quote and maps for handling
 
 - pretty
  - align maps as well as arrays
