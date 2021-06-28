@@ -7,6 +7,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.11.2] - unreleased
 ### Added
 - SEN format parsing now allows string to be delimited with the single quote character.
+- SEN format parsing now allows strings to be concatenated with syntax like `["abc" + "def"]`.
 
 ## [1.11.1] - 2021-05-29
 ### Fixed

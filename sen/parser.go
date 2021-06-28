@@ -18,6 +18,7 @@ const (
 	tmpInitSize   = 32 // for tokens and numbers
 	mapInitSize   = 8
 	readBufSize   = 4096
+	emptyKey      = gen.Key("")
 )
 
 var (
@@ -42,6 +43,8 @@ type Parser struct {
 	rn         rune
 	result     interface{}
 	mode       string
+	lastKey    gen.Key
+	lastStrKey gen.Key
 	quoteDelim byte
 
 	// Reuse maps. Previously returned maps will no longer be valid or rather
@@ -50,6 +53,8 @@ type Parser struct {
 
 	// OnlyOne returns an error if more than one JSON is in the string or stream.
 	OnlyOne bool
+
+	plus bool
 }
 
 // Unmarshal parses the provided JSON and stores the result in the value
@@ -340,7 +345,6 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 				}
 			}
 			off += i
-			// TBD or single
 			if b == p.quoteDelim {
 				off++
 				p.addString(string(buf[start:off]), off)
@@ -462,6 +466,13 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 				}
 			}
 			off += i
+		case valPlus:
+			p.mode = plusMap
+			// Store additional state (plus) to be used later in addString()
+			// instead of creating another set of modes for this semi-rare
+			// case (mongo or javascript only).
+			p.plus = true
+			p.lastStrKey = p.lastKey
 		case strQuote:
 			if b == p.quoteDelim {
 				p.addString(string(p.tmp), off)
@@ -632,7 +643,8 @@ func (p *Parser) addToken(off int) {
 				}
 				p.stack = p.stack[0 : len(p.stack)-1]
 			} else {
-				p.stack = append(p.stack, gen.Key(s))
+				p.lastKey = gen.Key(s)
+				p.stack = append(p.stack, p.lastKey)
 				p.mode = colonMap
 			}
 			return
@@ -669,7 +681,8 @@ func (p *Parser) addTokenWith(s string, off int) {
 				}
 				p.stack = p.stack[0 : len(p.stack)-1]
 			} else {
-				p.stack = append(p.stack, gen.Key(s))
+				p.lastKey = gen.Key(s)
+				p.stack = append(p.stack, p.lastKey)
 				p.mode = colonMap
 			}
 			return
@@ -690,18 +703,30 @@ func (p *Parser) addTokenWith(s string, off int) {
 
 func (p *Parser) addString(s string, off int) {
 	p.mode = valueMap
-	if 0 < len(p.starts) {
-		if p.starts[len(p.starts)-1] == -1 { // object
-			if k, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
-				obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
-				obj[string(k)] = s
-				p.stack = p.stack[0 : len(p.stack)-1]
-			} else {
-				p.stack = append(p.stack, gen.Key(s))
-				p.mode = colonMap
-			}
+	if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 { // object
+		if p.plus {
+			obj := p.stack[len(p.stack)-1].(map[string]interface{})
+			prev := obj[string(p.lastStrKey)].(string)
+			obj[string(p.lastStrKey)] = prev + s
+			p.lastStrKey = emptyKey
 			return
 		}
+		if k, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
+			obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
+			obj[string(k)] = s
+			p.stack = p.stack[0 : len(p.stack)-1]
+			return
+		}
+		p.lastKey = gen.Key(s)
+		p.stack = append(p.stack, p.lastKey)
+		p.mode = colonMap
+
+		return
+	}
+	if p.plus && 0 < len(p.stack) {
+		prev := p.stack[len(p.stack)-1].(string)
+		p.stack[len(p.stack)-1] = prev + s
+		return
 	}
 	// Array or just a value
 	p.stack = append(p.stack, s)

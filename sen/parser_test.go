@@ -398,3 +398,13 @@ func TestParserMustParseReader(t *testing.T) {
 	var p sen.Parser
 	tt.Panic(t, func() { _ = p.MustParseReader(iotest.DataErrReader(strings.NewReader("[1 2}"))) })
 }
+
+func TestParserPlus(t *testing.T) {
+	src := `['abc' + "def" + 'ghi']`
+	v := sen.MustParse([]byte(src))
+	tt.Equal(t, []interface{}{"abcdefghi"}, v)
+
+	src = `{a: abc + "def" + 'ghi'}`
+	v = sen.MustParse([]byte(src))
+	tt.Equal(t, map[string]interface{}{"a": "abcdefghi"}, v)
+}
