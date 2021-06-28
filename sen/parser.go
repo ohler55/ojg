@@ -611,6 +611,7 @@ func (p *Parser) add(n interface{}, off int) error {
 			if k, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
 				obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
 				obj[string(k)] = n
+				p.lastKey = k
 				p.stack = p.stack[0 : len(p.stack)-1]
 			} else {
 				return p.newError(off, "expected a key")
@@ -641,10 +642,10 @@ func (p *Parser) addToken(off int) {
 				default:
 					obj[string(k)] = s
 				}
+				p.lastKey = k
 				p.stack = p.stack[0 : len(p.stack)-1]
 			} else {
-				p.lastKey = gen.Key(s)
-				p.stack = append(p.stack, p.lastKey)
+				p.stack = append(p.stack, gen.Key(s))
 				p.mode = colonMap
 			}
 			return
@@ -679,10 +680,10 @@ func (p *Parser) addTokenWith(s string, off int) {
 				default:
 					obj[string(k)] = s
 				}
+				p.lastKey = k
 				p.stack = p.stack[0 : len(p.stack)-1]
 			} else {
-				p.lastKey = gen.Key(s)
-				p.stack = append(p.stack, p.lastKey)
+				p.stack = append(p.stack, gen.Key(s))
 				p.mode = colonMap
 			}
 			return
@@ -705,27 +706,31 @@ func (p *Parser) addString(s string, off int) {
 	p.mode = valueMap
 	if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 { // object
 		if p.plus {
-			obj := p.stack[len(p.stack)-1].(map[string]interface{})
+			obj, _ := p.stack[len(p.stack)-1].(map[string]interface{})
 			prev := obj[string(p.lastStrKey)].(string)
 			obj[string(p.lastStrKey)] = prev + s
 			p.lastStrKey = emptyKey
+			p.plus = false
 			return
 		}
 		if k, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
 			obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
 			obj[string(k)] = s
+			p.lastKey = k
 			p.stack = p.stack[0 : len(p.stack)-1]
 			return
 		}
-		p.lastKey = gen.Key(s)
-		p.stack = append(p.stack, p.lastKey)
+		p.stack = append(p.stack, gen.Key(s))
 		p.mode = colonMap
 
 		return
 	}
-	if p.plus && 0 < len(p.stack) {
-		prev := p.stack[len(p.stack)-1].(string)
-		p.stack[len(p.stack)-1] = prev + s
+	if p.plus {
+		if 0 < len(p.stack) {
+			prev := p.stack[len(p.stack)-1].(string)
+			p.stack[len(p.stack)-1] = prev + s
+		}
+		p.plus = false
 		return
 	}
 	// Array or just a value
