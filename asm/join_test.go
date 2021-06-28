@@ -13,7 +13,7 @@ import (
 func TestJoin(t *testing.T) {
 	root := testPlan(t,
 		`[
-           [set $.asm.a [join [a b c] +]]
+           [set $.asm.a [join [a b c] '+']]
            [set $.asm.b [join [a b c]]]
          ]`,
 		"{src: []}",

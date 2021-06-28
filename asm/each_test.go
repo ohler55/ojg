@@ -13,7 +13,7 @@ import (
 func TestEachNumbers(t *testing.T) {
 	root := testPlan(t,
 		`[
-           [set $.asm [each [1 2 3] [set @.asm [+ 1 @.src]]]]
+           [set $.asm [each [1 2 3] [set @.asm [sum 1 @.src]]]]
          ]`,
 		"{src: []}",
 	)
@@ -23,7 +23,7 @@ func TestEachNumbers(t *testing.T) {
 func TestEachFromRoot(t *testing.T) {
 	root := testPlan(t,
 		`[
-           [set $.asm [each [getall "$.src.*"] [set @.xyz [+ 1 @.src.x]] xyz]]
+           [set $.asm [each [getall "$.src.*"] [set @.xyz [sum 1 @.src.x]] xyz]]
          ]`,
 		"{src: {a:{x:1}}}",
 	)

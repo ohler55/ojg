@@ -14,8 +14,8 @@ func TestSum(t *testing.T) {
 	root := testPlan(t,
 		`[
            [set $.asm.a [sum 1 2 3]]
-           [set $.asm.b [+ 2.2 1]]
-           [set $.asm.c [+ x 1]]
+           [set $.asm.b ['+' 2.2 1]]
+           [set $.asm.c ['+' x 1]]
            [set $.asm.d [sum x y]]
            [set $.asm.e [sum 1.1 x 2.2]]
            [set $.asm.f [sum]]
