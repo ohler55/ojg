@@ -1,33 +1,9 @@
 
 - SEN
- - allow use of + to join strings like mongosh uses
-  - add plusChar to valueMap
-   - drop into plusMap
-   - indicator for join with previous - plus bool
-   - if last in stack is map then lastStrKey = lastKey
-   - if string or array then no other action
-  - addString()
-   - if plus
-    - look at last on stack
-    - reset plus and valueMap
-
-  - add mode after closing quote (strQuote)
-   - skip spaces and then just like value and also +
-   - could value just be updated to handle + or rather + to be more than just for numbers?
-    - plusMap
-     - spaces ok
-     - waiting for " (or ')
-      - look at stack
-       - string, append and replace
-       - array, append to last in array and replace
-       - map
-        - need to know last key - how??
-         - keep lastKey and lastStrKey on parser
-          - set lastKey on addString()
-          - on valueMap +
-           - set lastStrKey to lastKey
-          - on addString()
-           - use lastStrKey then set to empty
+ - handle function(xxx)
+  - register funcs
+  - if not registered then just return first arg as is
+  - when token ends in ( walk until ) with no parsing
 
 - pretty
  - align maps as well as arrays
