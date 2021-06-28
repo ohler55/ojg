@@ -406,5 +406,5 @@ func TestParserPlus(t *testing.T) {
 
 	src = `{a: abc + "def" + 'ghi'}`
 	v = sen.MustParse([]byte(src))
-	fmt.Printf("*** %v\n", v)
+	tt.Equal(t, map[string]interface{}{"a": "abcdefghi"}, v)
 }
