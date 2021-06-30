@@ -25,6 +25,10 @@ var (
 	emptySlice = []interface{}{}
 )
 
+// TokenFunc is a function that can be used to evaluate functions embedded in
+// a SEN file.
+type TokenFunc func(args ...interface{}) interface{}
+
 // Parser is a reusable JSON parser. It can be reused for multiple parsings
 // which allows buffer reuse for a performance advantage.
 type Parser struct {
@@ -45,6 +49,7 @@ type Parser struct {
 	mode       string
 	lastKey    gen.Key
 	lastStrKey gen.Key
+	tokenFuncs map[string]TokenFunc
 	quoteDelim byte
 
 	// Reuse maps. Previously returned maps will no longer be valid or rather
@@ -55,6 +60,16 @@ type Parser struct {
 	OnlyOne bool
 
 	plus bool
+}
+
+// AddTokenFunc add a token function that can appear in the data being
+// parsed. As an example `[ISODate("2021-06-28T10:11:12Z")]` could be parsed
+// to a time.Time.
+func (p *Parser) AddTokenFunc(name string, tf TokenFunc) {
+	if p.tokenFuncs == nil {
+		p.tokenFuncs = map[string]TokenFunc{}
+	}
+	p.tokenFuncs[name] = tf
 }
 
 // Unmarshal parses the provided JSON and stores the result in the value
@@ -251,6 +266,19 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 				p.tmp = p.tmp[:0]
 				p.tmp = append(p.tmp, buf[start:off+1]...)
 				p.mode = tokenMap
+				continue
+			}
+			if b == '(' {
+				tf := TokenFunc(defaultTokenFunc)
+				if p.tokenFuncs != nil {
+					if f := p.tokenFuncs[string(buf[start:off])]; f != nil {
+						tf = f
+					}
+				}
+				p.starts = append(p.starts, len(p.stack))
+				p.stack = append(p.stack, tf)
+				depth++
+				p.mode = valueMap
 				continue
 			}
 			p.addTokenWith(string(buf[start:off]), off)
@@ -543,6 +571,42 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			p.mode = commentMap
 		case commentEnd:
 			p.mode = valueMap
+		case openParen:
+			tf := TokenFunc(defaultTokenFunc)
+			if p.tokenFuncs != nil {
+				if f := p.tokenFuncs[string(p.tmp)]; f != nil {
+					tf = f
+				}
+			}
+			p.starts = append(p.starts, len(p.stack))
+			p.stack = append(p.stack, tf)
+			p.mode = valueMap
+			depth++
+			continue
+		case closeParen:
+			depth--
+			if depth < 0 || p.starts[depth] < 0 {
+				return p.newError(off, "unexpected function close")
+			}
+			// Only modes with a close paren are value, token, and numbers
+			// which are all over 256 long.
+			switch p.mode[256] {
+			case 'n':
+				// can not fail appending to a function argument set
+				_ = p.add(p.num.AsNum(), off)
+			case 't':
+				p.addToken(off)
+			}
+			start := p.starts[len(p.starts)-1] + 1
+			p.starts = p.starts[:len(p.starts)-1]
+			tf, _ := p.stack[start-1].(TokenFunc)
+			if tf == nil {
+				return p.newError(off, "unexpected character '%c'", b)
+			}
+			v := tf(p.stack[start:]...)
+			p.stack = p.stack[0 : start-1]
+			_ = p.add(v, off)
+			p.mode = valueMap
 		case charErr:
 			return p.byteError(off, p.mode, b)
 		}
@@ -767,4 +831,11 @@ func (p *Parser) byteError(off int, mode string, b byte) error {
 		err.Message = fmt.Sprintf("unexpected character '%c'", b)
 	}
 	return err
+}
+
+func defaultTokenFunc(args ...interface{}) (result interface{}) {
+	if 0 < len(args) {
+		result = args[0]
+	}
+	return
 }

@@ -408,3 +408,37 @@ func TestParserPlus(t *testing.T) {
 	v = sen.MustParse([]byte(src))
 	tt.Equal(t, map[string]interface{}{"a": "abcdefghi"}, v)
 }
+
+func TestParserTokenFunc(t *testing.T) {
+	v := sen.MustParse([]byte("fun(123)"))
+	tt.Equal(t, 123, v)
+
+	v = sen.MustParse([]byte(`[fun("xyz")]`))
+	tt.Equal(t, []interface{}{"xyz"}, v)
+
+	p := sen.Parser{}
+	p.AddTokenFunc("fun", func(args ...interface{}) interface{} {
+		var sum int64
+		for _, a := range args {
+			i, _ := a.(int64)
+			sum += i
+		}
+		return sum
+	})
+	v = p.MustParse([]byte("fun(1,2,3)"))
+	tt.Equal(t, 6, v)
+
+	_, err := sen.Parse([]byte("[1,2,3)"))
+	tt.NotNil(t, err)
+
+	_, err = sen.Parse([]byte("3)"))
+	tt.NotNil(t, err)
+
+	src := strings.Repeat(" ", 4094) + "fun(1,3,5)"
+	v = p.MustParseReader(strings.NewReader(src))
+	tt.Equal(t, 9, v)
+
+	src = strings.Repeat(" ", 4090) + "fun(abc)"
+	v = sen.MustParseReader(strings.NewReader(src))
+	tt.Equal(t, "abc", v)
+}

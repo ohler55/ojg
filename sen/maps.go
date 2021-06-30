@@ -6,6 +6,7 @@ const (
 	skipChar     = 'a'
 	skipNewline  = 'b'
 	valSlash     = 'c'
+	openParen    = 'd'
 	valPlus      = 'e'
 	valNeg       = 'f'
 	val0         = 'g'
@@ -16,6 +17,7 @@ const (
 	openObject   = 'l'
 	closeArray   = 'm'
 	closeObject  = 'n'
+	closeParen   = 'p'
 	colonColon   = 'q'
 	numSpc       = 'r'
 	numNewline   = 's'
@@ -44,7 +46,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	valueMap = "" +
 		".........ab..a.................." + // 0x00
-		"a.i.j..i..jeafjcghhhhhhhhh..j.jj" + // 0x20
+		"a.i.j..i.pjeafjcghhhhhhhhh..j.jj" + // 0x20
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjk.mjj" + // 0x40
 		".jjjjjjjjjjjjjjjjjjjjjjjjjjl.nj." + // 0x60
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" + // 0x80
@@ -54,7 +56,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	tokenMap = "" +
 		".........GJ..G.................." + // 0x00
-		"G...u.....uuGuucuuuuuuuuuuI.u.uu" + // 0x20
+		"G...u...dpuuGuucuuuuuuuuuuI.u.uu" + // 0x20
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuk.muu" + // 0x40
 		".uuuuuuuuuuuuuuuuuuuuuuuuuul.nu." + // 0x60
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0x80
@@ -84,7 +86,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	zeroMap = "" +
 		".........rs..r.................." + // 0x00
-		"r...........r.tc................" + // 0x20
+		"r........p..r.tc................" + // 0x20
 		"...........................k.m.." + // 0x40
 		"...........................l.n.." + // 0x60
 		"................................" + // 0x80
@@ -94,7 +96,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	digitMap = "" +
 		".........rs..r.................." + // 0x00
-		"r...........r.tcNNNNNNNNNN......" + // 0x20
+		"r........p..r.tcNNNNNNNNNN......" + // 0x20
 		".....w.....................k.m.." + // 0x40
 		".....w.....................l.n.." + // 0x60
 		"................................" + // 0x80
@@ -114,7 +116,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	fracMap = "" +
 		".........rs..r.................." + // 0x00
-		"r...........r..cvvvvvvvvvv......" + // 0x20
+		"r........p..r..cvvvvvvvvvv......" + // 0x20
 		".....w.....................k.m.." + // 0x40
 		".....w.....................l.n.." + // 0x60
 		"................................" + // 0x80
@@ -144,7 +146,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	expMap = "" +
 		".........rs..r.................." + // 0x00
-		"r...........r..cyyyyyyyyyy......" + // 0x20
+		"r........p..r..cyyyyyyyyyy......" + // 0x20
 		"...........................k.m.." + // 0x40
 		"...........................l.n.." + // 0x60
 		"................................" + // 0x80
