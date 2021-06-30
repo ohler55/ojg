@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// AddMongoFuncs adds TokenFuncs for the common mongo JavaScript functions
+// AddMongoFuncs adds TokenFuncs for the common mongo Javascript functions
 // that appear in the output from mongosh for some types. They functions
 // included are:
 //  ISODate(arg) returns time.Time when given either a RFC3339 string or milliseconds
