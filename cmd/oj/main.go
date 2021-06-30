@@ -552,6 +552,7 @@ func applyConf(conf interface{}) {
 	lazy, _ = jp.C("lazy").First(conf).(bool)
 	senOut, _ = jp.C("sen").First(conf).(bool)
 	convName, _ = jp.C("conv").First(conf).(string)
+	mongo, _ = jp.C("mongo").First(conf).(bool)
 
 	setOptionsColor(conf, "bool", setBoolColor)
 	setOptionsColor(conf, "key", setKeyColor)
@@ -759,6 +760,7 @@ The file format (SEN with comments) is:
   lazy: true // -z option, lazy read for SEN format
   sen: true
   conv: rfc3339
+  mongo: false
 }
 `)
 }
