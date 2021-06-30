@@ -35,6 +35,7 @@ var (
 	showFnDocs = false
 	showConf   = false
 	safe       = false
+	mongo      = false
 
 	// If true wrap extracts with an array.
 	wrapExtract = false
@@ -79,6 +80,7 @@ func init() {
 	flag.BoolVar(&showFnDocs, "fn", showFnDocs, "describe assembly plan functions")
 	flag.BoolVar(&showFnDocs, "help-fn", showFnDocs, "describe assembly plan functions")
 	flag.BoolVar(&showConf, "help-config", showConf, "describe .oj-config.sen format")
+	flag.BoolVar(&mongo, "mongo", mongo, "parse mongo Javascript output")
 	flag.StringVar(&convName, "conv", convName, `apply converter before writing. Supported values are:
   nano - converts integers over 946684800000000000 (2000-01-01) to time
   rcf3339 - converts string in RFC3339 or RFC3339Nano to time
@@ -236,9 +238,17 @@ func run() (err error) {
 		}
 	}
 	var p oj.SimpleParser
-	if lazy {
+	switch {
+	case mongo:
+		sp := &sen.Parser{}
+		sp.AddMongoFuncs()
+		p = sp
+		if conv == nil {
+			conv = &alt.MongoConverter
+		}
+	case lazy:
 		p = &sen.Parser{}
-	} else {
+	default:
 		p = &oj.Parser{Reuse: true}
 	}
 	planDef = strings.TrimSpace(planDef)
