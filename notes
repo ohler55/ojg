@@ -1,14 +1,4 @@
 
-- SEN
- - handle function(xxx)
-  - add to oj cmd
-   - -mongo option
-    - ObjectId("") - convert from hex or leave as is?
-    - ISODate("") - RFC3339 with milliseconds or just msecs as a number
-    - NumberLong("") - convert to int64 if possible
-    - NumberInt("") - convert to int64 if possible
-    - NumberDecimal("") - convert to float64 or bigdecimal so output is a number
-
 - pretty
  - align maps as well as arrays
 

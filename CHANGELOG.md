@@ -4,11 +4,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.12.0] - unreleased
+## [1.12.0] - 2021-07-03
 ### Added
 - SEN format parsing now allows string to be delimited with the single quote character.
 - SEN format parsing now allows strings to be concatenated with syntax like `["abc" + "def"]`.
 - SEN format parsing now allows functions such as `ISODate("2021-06-28T10:11:12Z")` in SEN data.
+### Changed
+- When Pretty Align is true map members are now aligned.
 
 ## [1.11.1] - 2021-05-29
 ### Fixed

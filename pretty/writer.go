@@ -226,6 +226,14 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 				is = []byte(spaces[0:x])
 			}
 		}
+		keyWidth := 1
+		if w.Align {
+			for _, m := range n.members {
+				if keyWidth < len(m.key) {
+					keyWidth = len(m.key)
+				}
+			}
+		}
 		for i, m := range n.members {
 			if 0 < i {
 				w.buf = append(w.buf, comma...)
@@ -241,6 +249,9 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 				w.buf = append(w.buf, ' ')
 			} else {
 				w.buf = append(w.buf, ": "...)
+			}
+			for i := keyWidth - len(m.key); 0 < i; i-- {
+				w.buf = append(w.buf, ' ')
 			}
 			w.fill(m, d2, flat)
 		}

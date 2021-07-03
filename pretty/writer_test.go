@@ -439,3 +439,16 @@ func TestAlignArg(t *testing.T) {
   [100 200 300]
 ]`, out)
 }
+
+func TestAlignMap(t *testing.T) {
+	out := pretty.JSON(map[string]interface{}{
+		"longer key": 1,
+		"medium":     2,
+		"short":      3,
+	}, true, 20.3)
+	tt.Equal(t, `{
+  "longer key": 1,
+  "medium":     2,
+  "short":      3
+}`, out)
+}
