@@ -199,12 +199,12 @@ var (
 		{
 			path:   "$.x[?(@.b=='sample2')].a",
 			expect: []interface{}{3},
-			data:   Any{X: []interface{}{&Sample{A: 3, B: "sample2"}}},
+			data:   Any{X: []*Sample{&Sample{A: 3, B: "sample2"}}},
 		},
 		{
 			path:   "$.x[?(@.a==4)].b",
 			expect: []interface{}{"sample2"},
-			data:   Any{X: []interface{}{&Sample{A: 4, B: "sample2"}}},
+			data:   Any{X: []*Sample{&Sample{A: 4, B: "sample2"}}},
 		},
 	}
 )
