@@ -184,6 +184,28 @@ var (
 		{path: "$[-10:]", expect: []interface{}{1, 2, 3}, data: []int{1, 2, 3}},
 		{path: "$[1:-10:-1]", expect: []interface{}{1, 2}, data: []int{1, 2, 3}},
 		{path: "$[2:10]", expect: []interface{}{3}, data: []int{1, 2, 3}},
+		// filter with map
+		{
+			path:   "$.x[?(@.b=='sample1')].a",
+			expect: []interface{}{3},
+			data:   map[string]interface{}{"x": []interface{}{map[string]interface{}{"a": 3, "b": "sample1"}}},
+		},
+		{
+			path:   "$.x[?(@.a==3)].b",
+			expect: []interface{}{"sample1"},
+			data:   map[string]interface{}{"x": []interface{}{map[string]interface{}{"a": 3, "b": "sample1"}}},
+		},
+		// filter with struct
+		{
+			path:   "$.x[?(@.b=='sample2')].a",
+			expect: []interface{}{3},
+			data:   Any{X: []*Sample{&Sample{A: 3, B: "sample2"}}},
+		},
+		{
+			path:   "$.x[?(@.a==4)].b",
+			expect: []interface{}{"sample2"},
+			data:   Any{X: []*Sample{&Sample{A: 4, B: "sample2"}}},
+		},
 	}
 )
 

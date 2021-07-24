@@ -4,6 +4,7 @@ package jp
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 
 	"github.com/ohler55/ojg"
@@ -163,7 +164,16 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 		}
 		data = da
 	default:
-		return stack
+		rv := reflect.ValueOf(td)
+		if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
+			return stack
+		}
+		dlen = rv.Len()
+		da := make([]interface{}, 0, dlen)
+		for i := 0; i < dlen; i++ {
+			da = append(da, rv.Index(i).Interface())
+		}
+		data = da
 	}
 	var v interface{}
 	for vi := 0; vi < dlen; vi++ {
