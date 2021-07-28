@@ -75,7 +75,11 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*comp
 		r.composers[c.short] = c
 		r.composers[c.full] = c
 	} else {
-		c.fun = fun
+		if fun != nil {
+			c.fun = fun
+		}
+		// If already registered then there is no reason to walk the fields again.
+		return c, nil
 	}
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
