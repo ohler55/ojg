@@ -115,6 +115,9 @@ func whichAppend(rt reflect.Type, omitEmpty bool) (f appendFunc) {
 			f = appendGenericer
 		}
 	}
+	if f != nil {
+		return
+	}
 	vp := reflect.New(rt).Interface()
 	switch vp.(type) {
 	case json.Marshaler:
