@@ -625,3 +625,22 @@ func TestExprGetBadPath(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Equal(t, []interface{}{}, expr.Get(items))
 }
+
+func TestFilterAt(t *testing.T) {
+	jsondoc := `{
+			"item1": {
+				"id": "item1",
+				"type": "type1",
+				"@type": "attype1"
+			},
+			"item2": {
+				"id": "item2",
+				"type": "type2",
+				"@type": "attype2"
+			}
+		}`
+	store := oj.MustParseString(jsondoc)
+	x := jp.MustParseString(`$[?(@['@type']=="attype1")]`)
+	result := x.Get(store)
+	tt.Equal(t, 1, len(result))
+}
