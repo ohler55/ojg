@@ -129,7 +129,7 @@ func (r *Recomposer) registerAnyComposer(rt reflect.Type, fun RecomposeAnyFunc) 
 func (r *Recomposer) Recompose(v interface{}, tv ...interface{}) (out interface{}, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
-			err = ojg.NewError(r)
+			err = ojg.NewError(rec)
 			out = nil
 		}
 	}()

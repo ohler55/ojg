@@ -3,6 +3,7 @@
 package oj_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/ohler55/ojg/alt"
@@ -28,4 +29,24 @@ func TestUnmarshal(t *testing.T) {
 	err = oj.Unmarshal([]byte(src), &obj, &alt.Recomposer{})
 	tt.Nil(t, err)
 	tt.Equal(t, src, oj.JSON(obj))
+}
+
+func TestUnmarshalError(t *testing.T) {
+	type Query struct {
+		Level  string
+		Query  map[string]interface{}
+		Expand bool
+		Limit  int
+	}
+
+	queryJSON := `{
+	"Level": "Series",
+	"Query": {},
+	"Expand": false,
+	"Limit": true
+}`
+
+	var query Query
+	err := oj.Unmarshal([]byte(queryJSON), &query)
+	tt.Equal(t, true, strings.Contains(err.Error(), "value of type bool cannot be converted to type int"))
 }

@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.12.3] - unreleased
+### Fixed
+- Error message on failed recompose was fixed to display the correct error message.
+
 ## [1.12.2] - 2021-07-28
 ### Fixed
 - Structs with recursive lists no longer fail.
