@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.12.3] - unreleased
+## [1.12.3] - 2021-08-01
 ### Fixed
 - Error message on failed recompose was fixed to display the correct error message.
 - Marshal of a non-pointer that contains a json.Marshaller that is not a pointer no longer fails.
