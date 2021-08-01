@@ -7,6 +7,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.12.3] - unreleased
 ### Fixed
 - Error message on failed recompose was fixed to display the correct error message.
+- Marshal of a non-pointer that contains a json.Marshaller that is not a pointer no longer fails.
 
 ## [1.12.2] - 2021-07-28
 ### Fixed

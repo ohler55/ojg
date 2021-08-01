@@ -886,10 +886,11 @@ func TestMarshalTextMarshaler(t *testing.T) {
 func TestMarshalNoAddr(t *testing.T) {
 	type Sample struct {
 		When time.Time
+		Mars Marsha
 	}
-
 	testCase := Sample{
 		When: time.Unix(0, 0),
+		Mars: Marsha{val: 3},
 	}
 	ojg.ErrorWithStack = true
 	_, err := oj.Marshal(testCase)
