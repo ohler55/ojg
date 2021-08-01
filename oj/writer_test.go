@@ -883,6 +883,20 @@ func TestMarshalTextMarshaler(t *testing.T) {
 	tt.NotNil(t, err)
 }
 
+func TestMarshalNoAddr(t *testing.T) {
+	type Sample struct {
+		When time.Time
+		Mars Marsha
+	}
+	testCase := Sample{
+		When: time.Unix(0, 0),
+		Mars: Marsha{val: 3},
+	}
+	ojg.ErrorWithStack = true
+	_, err := oj.Marshal(testCase)
+	tt.Nil(t, err)
+}
+
 func BenchmarkMarshalFlat(b *testing.B) {
 	m := Mix{
 		Val:   1,

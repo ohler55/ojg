@@ -87,7 +87,7 @@ func appendSliceNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, 
 	return buf, fv.Interface(), aJustKey
 }
 
-func whichAppend(rt reflect.Type, omitEmpty bool) (f appendFunc) {
+func whichAppend(rt reflect.Type, omitEmpty bool) (f appendFunc, af appendFunc) {
 	v := reflect.New(rt).Elem().Interface()
 	switch v.(type) {
 	case json.Marshaler:
@@ -118,13 +118,13 @@ func whichAppend(rt reflect.Type, omitEmpty bool) (f appendFunc) {
 	vp := reflect.New(rt).Interface()
 	switch vp.(type) {
 	case json.Marshaler:
-		f = appendJSONMarshalerAddr
+		af = appendJSONMarshalerAddr
 	case encoding.TextMarshaler:
-		f = appendTextMarshalerAddr
+		af = appendTextMarshalerAddr
 	case alt.Simplifier:
-		f = appendSimplifierAddr
+		af = appendSimplifierAddr
 	case alt.Genericer:
-		f = appendGenericerAddr
+		af = appendGenericerAddr
 	}
 	return
 }
@@ -140,10 +140,10 @@ func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, em
 	var fx byte
 	// Check for interfaces first since almost any type can implement one of
 	// the supported interfaces.
-	af := whichAppend(fi.rt, omitEmpty)
-	if af != nil {
-		fi.Append = af
-		fi.iAppend = af
+	ff, af := whichAppend(fi.rt, omitEmpty)
+	if ff != nil && af != nil {
+		fi.Append = ff
+		fi.iAppend = ff
 		goto Key
 	}
 	if omitEmpty {
@@ -251,6 +251,13 @@ func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, em
 			fi.Append = appendJustKey
 			fi.iAppend = appendJustKey
 		}
+	}
+	if ff != nil { // override
+		fi.iAppend = ff
+		fi.Append = ff
+	}
+	if af != nil { // override
+		fi.Append = af
 	}
 Key:
 	fi.jkey = ojg.AppendJSONString(fi.jkey, fi.key, false)

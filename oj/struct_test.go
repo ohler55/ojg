@@ -336,7 +336,7 @@ type Decimal struct {
 	fail  bool
 }
 
-func (d Decimal) MarshalJSON() ([]byte, error) {
+func (d *Decimal) MarshalJSON() ([]byte, error) {
 	if d.fail {
 		return nil, fmt.Errorf("don't like this one")
 	}
@@ -396,16 +396,18 @@ func TestMarshalStructTextMarshaler(t *testing.T) {
 		Bed  Tex  `json:"bed"`
 		Ptr  *Tex `json:"ptr,omitempty"`
 		Nptr *Tex `json:"nptr"`
+		Num  int  `json:"num,string"`
 	}
+	ojg.ErrorWithStack = true
 	tw := TexWrap{Bed: Tex{val: 1}, Ptr: &Tex{val: 2}, Nptr: &Tex{val: 3}}
 	out, err := oj.Marshal(&tw)
 	tt.Nil(t, err)
-	tt.Equal(t, `{"bed":"01","nptr":"03","ptr":"02"}`, string(out))
+	tt.Equal(t, `{"bed":"01","nptr":"03","num":"0","ptr":"02"}`, string(out))
 
 	tw = TexWrap{Bed: Tex{val: 1}, Ptr: nil, Nptr: nil}
 	out, err = oj.Marshal(&tw)
 	tt.Nil(t, err)
-	tt.Equal(t, `{"bed":"01","nptr":null}`, string(out))
+	tt.Equal(t, `{"bed":"01","nptr":null,"num":"0"}`, string(out))
 
 	tw = TexWrap{Bed: Tex{val: 0}}
 	_, err = oj.Marshal(&tw)
