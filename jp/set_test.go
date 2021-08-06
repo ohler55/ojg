@@ -50,6 +50,7 @@ var (
 		{path: "[-1:0:-2].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":5}]`},
 		{path: "[:5].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":1,"b":2},{"a":2},{"a":3}]`},
 		{path: "[?(@.b == 2)].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":3}]`},
+		{path: "a[0]", data: `{}`, value: 3, expect: `{"a":[3]}`},
 
 		{path: "", data: `{}`, value: 3, err: "can not set with an empty expression"},
 		{path: "$", data: `{}`, value: 3, err: "can not set the root"},
@@ -57,7 +58,8 @@ var (
 		{path: "a[1,2]", data: `{}`, value: 3, err: "can not set with an expression ending with a Union"},
 		{path: "a", data: `{}`, value: func() {}, err: "can not set a func() in a gen.Object", noSimple: true},
 		{path: "a.b", data: `{"a":4}`, value: 3, err: "/can not follow a .+ at 'a'/"},
-		{path: "a[0]", data: `{}`, value: 3, err: "can not deduce what element to add at 'a'"},
+		{path: "a[-1]", data: `{}`, value: 3, err: "can not deduce the length of the array to add at 'a'"},
+		{path: "a[1,2].x", data: `{}`, value: 3, err: "can not deduce what element to add at 'a'"},
 		{path: "[0].1", data: `[1]`, value: 3, err: "/can not follow a .+ at '\\[0\\]'/"},
 		{path: "[1]", data: `[1]`, value: 3, err: "can not follow out of bounds array index at '[1]'"},
 	}
@@ -83,6 +85,7 @@ var (
 		{path: "[:5].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":3}]`},
 		{path: "[?(@.b == 2)].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":3}]`},
 		{path: "[-5:3].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":1,"b":2},{"a":2},{"a":3}]`},
+		{path: "a[0]", data: `{}`, value: 3, expect: `{"a":[3]}`},
 
 		{path: "", data: `{}`, value: 3, err: "can not set with an empty expression"},
 		{path: "$", data: `{}`, value: 3, err: "can not set the root"},
@@ -90,7 +93,8 @@ var (
 		{path: "a[1,2]", data: `{}`, value: 3, err: "can not set with an expression ending with a Union"},
 		{path: "a", data: `{}`, value: func() {}, err: "can not set a func() in a gen.Object", noSimple: true},
 		{path: "a.b", data: `{"a":4}`, value: 3, err: "/can not follow a .+ at 'a'/"},
-		{path: "a[0]", data: `{}`, value: 3, err: "can not deduce what element to add at 'a'"},
+		{path: "a[-1]", data: `{}`, value: 3, err: "can not deduce the length of the array to add at 'a'"},
+		{path: "a[1,2].x", data: `{}`, value: 3, err: "can not deduce what element to add at 'a'"},
 		{path: "[0].1", data: `[1]`, value: 3, err: "/can not follow a .+ at '\\[0\\]'/"},
 		{path: "[1]", data: `[1]`, value: 3, err: "can not follow out of bounds array index at '[1]'"},
 	}

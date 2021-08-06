@@ -114,10 +114,17 @@ func (x Expr) Set(data, value interface{}) error {
 							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 						}
 					}
-				} else {
-					switch x[fi+1].(type) {
+				} else if value != delFlag {
+					switch tc := x[fi+1].(type) {
 					case Child:
 						v = map[string]interface{}{}
+						tv[string(tf)] = v
+						stack = append(stack, v)
+					case Nth:
+						if int(tc) < 0 {
+							return fmt.Errorf("can not deduce the length of the array to add at '%s'", x[:fi+1])
+						}
+						v = make([]interface{}, int(tc)+1)
 						tv[string(tf)] = v
 						stack = append(stack, v)
 					default:
@@ -138,10 +145,17 @@ func (x Expr) Set(data, value interface{}) error {
 					default:
 						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 					}
-				} else {
-					switch x[fi+1].(type) {
+				} else if value != delFlag {
+					switch tc := x[fi+1].(type) {
 					case Child:
 						nv = gen.Object{}
+						tv[string(tf)] = nv
+						stack = append(stack, nv)
+					case Nth:
+						if int(tc) < 0 {
+							return fmt.Errorf("can not deduce the length of the array to add at '%s'", x[:fi+1])
+						}
+						nv = make(gen.Array, int(tc)+1)
 						tv[string(tf)] = nv
 						stack = append(stack, nv)
 					default:
@@ -699,10 +713,17 @@ func (x Expr) SetOne(data, value interface{}) error {
 							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 						}
 					}
-				} else {
-					switch x[fi+1].(type) {
+				} else if value != delFlag {
+					switch tc := x[fi+1].(type) {
 					case Child:
 						v = map[string]interface{}{}
+						tv[string(tf)] = v
+						stack = append(stack, v)
+					case Nth:
+						if int(tc) < 0 {
+							return fmt.Errorf("can not deduce the length of the array to add at '%s'", x[:fi+1])
+						}
+						v = make([]interface{}, int(tc)+1)
 						tv[string(tf)] = v
 						stack = append(stack, v)
 					default:
@@ -724,10 +745,17 @@ func (x Expr) SetOne(data, value interface{}) error {
 					default:
 						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 					}
-				} else {
-					switch x[fi+1].(type) {
+				} else if value != delFlag {
+					switch tc := x[fi+1].(type) {
 					case Child:
 						nv = gen.Object{}
+						tv[string(tf)] = nv
+						stack = append(stack, nv)
+					case Nth:
+						if int(tc) < 0 {
+							return fmt.Errorf("can not deduce the length of the array to add at '%s'", x[:fi+1])
+						}
+						nv = make(gen.Array, int(tc)+1)
 						tv[string(tf)] = nv
 						stack = append(stack, nv)
 					default:

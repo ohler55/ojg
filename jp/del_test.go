@@ -28,13 +28,13 @@ var (
 		{path: "[1]", data: `[1,2,3]`, expect: `[1,null,3]`},
 		{path: "a.*", data: `{"a":{"x":1,"y":2}}`, expect: `{"a":{}}`},
 		{path: "[*]", data: `[1,2,3]`, expect: `[null,null,null]`},
+		{path: "a[0]", data: `{}`, expect: `{}`},
 
 		{path: "", data: `{}`, err: "can not delete with an empty expression"},
 		{path: "$", data: `{}`, err: "can not delete the root"},
 		{path: "@", data: `{}`, err: "can not delete an empty expression"},
 		{path: "a[1,2]", data: `{}`, err: "can not delete with an expression ending with a Union"},
 		{path: "a.b", data: `{"a":4}`, err: "/can not follow a .+ at 'a'/"},
-		{path: "a[0]", data: `{}`, err: "can not deduce what element to add at 'a'"},
 		{path: "[0].1", data: `[1]`, err: "/can not follow a .+ at '\\[0\\]'/"},
 		{path: "[1]", data: `[1]`, err: "can not follow out of bounds array index at '[1]'"},
 	}
@@ -45,13 +45,13 @@ var (
 		{path: "a.*", data: `{"a":{"x":1}}`, expect: `{"a":{}}`},
 		{path: "[*]", data: `[1,2,3]`, expect: `[null,2,3]`},
 		{path: "..a", data: `{"x":{"a":1,"b":2}}`, expect: `{"x":{"b":2}}`},
+		{path: "a[0]", data: `{}`, expect: `{}`},
 
 		{path: "", data: `{}`, err: "can not delete with an empty expression"},
 		{path: "$", data: `{}`, err: "can not delete the root"},
 		{path: "@", data: `{}`, err: "can not delete an empty expression"},
 		{path: "a[1,2]", data: `{}`, err: "can not delete with an expression ending with a Union"},
 		{path: "a.b", data: `{"a":4}`, err: "/can not follow a .+ at 'a'/"},
-		{path: "a[0]", data: `{}`, err: "can not deduce what element to add at 'a'"},
 		{path: "[0].1", data: `[1]`, err: "/can not follow a .+ at '\\[0\\]'/"},
 		{path: "[1]", data: `[1]`, err: "can not follow out of bounds array index at '[1]'"},
 	}
