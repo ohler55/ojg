@@ -131,8 +131,9 @@ See [CHANGELOG.md](CHANGELOG.md)
 
 - *JSONPath* description: https://goessner.net/articles/JsonPath
 
-- *JSONPath Comparisons* https://cburgmer.github.io/json-path-comparison
+- *JSONPath Comparisons*: https://cburgmer.github.io/json-path-comparison
 
+- *Go Report Card*: https://goreportcard.com/report/github.com/ohler55/ojg
 
 #### Links of Interest
 
