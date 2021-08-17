@@ -1,3 +1,3 @@
 module github.com/ohler55/ojg
 
-go 1.16
+go 1.17
