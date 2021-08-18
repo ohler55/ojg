@@ -91,9 +91,8 @@ func (wr *Writer) colorSEN(data interface{}, depth int) {
 			ao := alt.Options{CreateKey: wr.CreateKey, OmitNil: wr.OmitNil, FullTypePath: wr.FullTypePath}
 			wr.colorSEN(alt.Decompose(data, &ao), depth)
 			return
-		} else {
-			wr.colorSEN(alt.Decompose(data, &alt.Options{OmitNil: wr.OmitNil}), depth)
 		}
+		wr.colorSEN(alt.Decompose(data, &alt.Options{OmitNil: wr.OmitNil}), depth)
 	}
 	wr.buf = append(wr.buf, wr.NoColor...)
 

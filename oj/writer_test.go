@@ -624,7 +624,7 @@ func TestWriteSliceArray(t *testing.T) {
 		Rows [][4]int
 	}
 	opt := oj.Options{Indent: 2}
-	m := &Matrix{Rows: [][4]int{[4]int{1, 2, 3, 4}}}
+	m := &Matrix{Rows: [][4]int{{1, 2, 3, 4}}}
 	s := oj.JSON(m, &opt)
 	tt.Equal(t, `{
   "rows": [
@@ -651,7 +651,7 @@ func TestWriteSliceMap(t *testing.T) {
 		Maps []map[string]int
 	}
 	opt := oj.Options{Indent: 2, Sort: true}
-	m := &SMS{Maps: []map[string]int{map[string]int{"x": 1, "y": 2}}}
+	m := &SMS{Maps: []map[string]int{{"x": 1, "y": 2}}}
 	s := oj.JSON(m, &opt)
 	tt.Equal(t, `{
   "maps": [
@@ -690,7 +690,7 @@ func TestWriteMapWide(t *testing.T) {
 }
 
 func TestWriteMapSlice(t *testing.T) {
-	m := map[string][]int{"x": []int{1, 2, 3}, "y": []int{}}
+	m := map[string][]int{"x": {1, 2, 3}, "y": {}}
 	opt := oj.Options{Indent: 2, OmitNil: true, Sort: true}
 	s := oj.JSON(m, &opt)
 	tt.Equal(t, `{
@@ -722,7 +722,7 @@ func TestWriteMapSlice(t *testing.T) {
 }
 
 func TestWriteMapMap(t *testing.T) {
-	m := map[string]map[string]int{"x": map[string]int{"y": 3}, "z": map[string]int{}}
+	m := map[string]map[string]int{"x": {"y": 3}, "z": {}}
 	opt := oj.Options{Indent: 2, OmitNil: true, Sort: true}
 	s := oj.JSON(m, &opt)
 	tt.Equal(t, `{

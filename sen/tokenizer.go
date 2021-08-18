@@ -46,7 +46,7 @@ func TokenizeString(data string, handler oj.TokenHandler) error {
 	return t.Parse([]byte(data), handler)
 }
 
-// Parse a JSON string in to simple types. An error is returned if not valid JSON.
+// Tokenize a JSON string in to simple types. An error is returned if not valid JSON.
 func Tokenize(data []byte, handler oj.TokenHandler) error {
 	t := Tokenizer{}
 	return t.Parse(data, handler)

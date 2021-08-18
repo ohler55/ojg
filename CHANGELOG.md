@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.12.5] - 2021-08-17
+# Changed
+- Updated to use go 1.17.
+
 ## [1.12.4] - 2021-08-06
 ### Fixed
 - Setting an element in an array that does not exist now creates the array is the Nth value is not negative.
