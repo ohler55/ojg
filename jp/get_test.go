@@ -650,10 +650,16 @@ func TestAncesterFilter(t *testing.T) {
   "list": {
     "x": "a",
     "y": "b",
-    "subs": [
+    "sublist": [
       {
         "x": "a",
-        "y": "c"
+        "y": "d",
+        "subs": [
+          {
+            "x": "a",
+            "y": "c"
+          }
+        ]
       }
     ]
   }
