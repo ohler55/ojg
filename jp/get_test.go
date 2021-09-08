@@ -644,3 +644,22 @@ func TestFilterAt(t *testing.T) {
 	result := x.Get(store)
 	tt.Equal(t, 1, len(result))
 }
+
+func TestAncesterFilter(t *testing.T) {
+	json := `{
+  "list": {
+    "x": "a",
+    "y": "b",
+    "subs": [
+      {
+        "x": "a",
+        "y": "c"
+      }
+    ]
+  }
+}`
+	doc := oj.MustParseString(json)
+	x := jp.MustParseString(`$..subs[?(@.x == 'a')].y`)
+	result := x.Get(doc)
+	tt.Equal(t, []interface{}{"c"}, result)
+}
