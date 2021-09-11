@@ -4,6 +4,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.12.6] - unreleased
+### Fixed
+- Due to limitation (a bug most likely) in the stardard math package
+  math.MaxInt64 can not be used on 32 bit architectures. Changes were
+  made to work around this limitation.
+
 ## [1.12.5] - 2021-08-17
 # Changed
 - Updated to use go 1.17.

@@ -3,7 +3,6 @@
 package jp
 
 import (
-	"math"
 	"reflect"
 	"strings"
 
@@ -14,6 +13,13 @@ const (
 	fragIndexMask    = 0x0000ffff
 	descentFlag      = 0x00010000
 	descentChildFlag = 0x00020000
+
+	// The standard math package fails to compile on 32bit architectures (ARM)
+	// with an int overflow. Most likley due to math.MaxInt64 being defined as
+	// 1<<63 - 1 which default to integer values. Since arrays are not likely
+	// to be over 21474836487 on a 32 bit system that is set as the max end
+	// specifier for a array range.
+	maxEnd = 21474836487
 )
 
 type fragIndex int
@@ -411,7 +417,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			}
 		case Slice:
 			start := 0
-			end := math.MaxInt64
+			end := maxEnd
 			step := 1
 			if 0 < len(tf) {
 				start = tf[0]
@@ -972,7 +978,7 @@ func (x Expr) First(data interface{}) interface{} {
 			}
 		case Slice:
 			start := 0
-			end := math.MaxInt64
+			end := maxEnd
 			step := 1
 			if 0 < len(tf) {
 				start = tf[0]

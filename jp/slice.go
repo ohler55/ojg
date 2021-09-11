@@ -3,7 +3,6 @@
 package jp
 
 import (
-	"math"
 	"strconv"
 )
 
@@ -25,7 +24,7 @@ func (f Slice) Append(buf []byte, _, _ bool) []byte {
 					buf = append(buf, strconv.FormatInt(int64(n), 10)...)
 				}
 			case 1:
-				if n != math.MaxInt64 {
+				if n != maxEnd {
 					buf = append(buf, strconv.FormatInt(int64(n), 10)...)
 				}
 			default:

@@ -4,7 +4,6 @@ package jp
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 
 	"github.com/ohler55/ojg"
@@ -353,14 +352,14 @@ func (p *parser) readSlice(i int) Frag {
 	f := Slice{i}
 	b := p.buf[p.pos]
 	if b == ']' {
-		f = append(f, math.MaxInt64)
+		f = append(f, maxEnd)
 		p.pos++
 		return f
 	}
 	b = p.skipSpace()
 	// read the end
 	if b == ':' {
-		f = append(f, math.MaxInt64)
+		f = append(f, maxEnd)
 		if len(p.buf) <= p.pos {
 			p.raise("not terminated")
 		}

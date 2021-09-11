@@ -3,7 +3,6 @@
 package jp
 
 import (
-	"math"
 	"strconv"
 
 	"github.com/ohler55/ojg/gen"
@@ -260,7 +259,7 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 			}
 		case Slice:
 			start := 0
-			end := math.MaxInt64
+			end := maxEnd
 			step := 1
 			if 0 < len(tf) {
 				start = tf[0]
@@ -535,7 +534,7 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 			}
 		case Slice:
 			start := 0
-			end := math.MaxInt64
+			end := maxEnd
 			step := 1
 			if 0 < len(tf) {
 				start = tf[0]
