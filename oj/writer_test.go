@@ -462,6 +462,19 @@ func TestMarshalNestedStruct(t *testing.T) {
 	tt.Equal(t, `{"X":1,"Y":2,"Z":3}`, string(j))
 }
 
+func TestMarshalNestedPtr(t *testing.T) {
+	type Inner struct {
+		X int
+	}
+	type Wrap struct {
+		*Inner
+	}
+	obj := &Wrap{Inner: &Inner{X: 3}}
+	j, err := oj.Marshal(obj)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"X":3}`, string(j))
+}
+
 func TestMarshalMap(t *testing.T) {
 	type Dap struct {
 		M map[string]*Dummy
@@ -879,7 +892,7 @@ func TestMarshalTextMarshaler(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Equal(t, `"-- 3 --"`, string(j))
 
-	_, err = oj.Marshal(&Marsha{val: 5})
+	_, err = oj.Marshal(&TM{val: 5})
 	tt.NotNil(t, err)
 }
 

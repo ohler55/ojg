@@ -671,6 +671,19 @@ func TestWriteStructAnonymous(t *testing.T) {
 	tt.Equal(t, `{in:{x:1} y:2}`, string(b))
 }
 
+func TestWriteNestedPtr(t *testing.T) {
+	type Inner struct {
+		X int
+	}
+	type Wrap struct {
+		*Inner
+	}
+	ojg.ErrorWithStack = true
+	obj := &Wrap{Inner: &Inner{X: 3}}
+	b := sen.Bytes(obj)
+	tt.Equal(t, `{x:3}`, string(b))
+}
+
 type Marsha struct {
 	val int
 }

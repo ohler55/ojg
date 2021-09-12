@@ -83,10 +83,18 @@ func buildTagFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo) {
 			continue
 		}
 		if f.Anonymous && !out {
-			for _, fi := range buildTagFields(f.Type, out, pretty, embedded) {
-				fi.index = append([]int{i}, fi.index...)
-				fi.offset += f.Offset
-				fa = append(fa, fi)
+			if f.Type.Kind() == reflect.Ptr {
+				for _, fi := range buildTagFields(f.Type.Elem(), out, pretty, embedded) {
+					fi.index = append([]int{i}, fi.index...)
+					fi.Append = fi.iAppend
+					fa = append(fa, fi)
+				}
+			} else {
+				for _, fi := range buildTagFields(f.Type, out, pretty, embedded) {
+					fi.index = append([]int{i}, fi.index...)
+					fi.offset += f.Offset
+					fa = append(fa, fi)
+				}
 			}
 		} else {
 			omitEmpty := false
@@ -129,10 +137,18 @@ func buildExactFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo)
 			continue
 		}
 		if f.Anonymous && !out {
-			for _, fi := range buildExactFields(f.Type, out, pretty, embedded) {
-				fi.index = append([]int{i}, fi.index...)
-				fi.offset += f.Offset
-				fa = append(fa, fi)
+			if f.Type.Kind() == reflect.Ptr {
+				for _, fi := range buildExactFields(f.Type.Elem(), out, pretty, embedded) {
+					fi.index = append([]int{i}, fi.index...)
+					fi.Append = fi.iAppend
+					fa = append(fa, fi)
+				}
+			} else {
+				for _, fi := range buildExactFields(f.Type, out, pretty, embedded) {
+					fi.index = append([]int{i}, fi.index...)
+					fi.offset += f.Offset
+					fa = append(fa, fi)
+				}
 			}
 		} else {
 			fa = append(fa, newFinfo(f, f.Name, false, false, pretty, embedded))
@@ -149,10 +165,18 @@ func buildLowFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo) {
 			continue
 		}
 		if f.Anonymous && !out {
-			for _, fi := range buildLowFields(f.Type, out, pretty, embedded) {
-				fi.index = append([]int{i}, fi.index...)
-				fi.offset += f.Offset
-				fa = append(fa, fi)
+			if f.Type.Kind() == reflect.Ptr {
+				for _, fi := range buildLowFields(f.Type.Elem(), out, pretty, embedded) {
+					fi.index = append([]int{i}, fi.index...)
+					fi.Append = fi.iAppend
+					fa = append(fa, fi)
+				}
+			} else {
+				for _, fi := range buildLowFields(f.Type, out, pretty, embedded) {
+					fi.index = append([]int{i}, fi.index...)
+					fi.offset += f.Offset
+					fa = append(fa, fi)
+				}
 			}
 		} else {
 			if 3 < len(name) {

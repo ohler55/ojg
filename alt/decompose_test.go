@@ -146,6 +146,19 @@ func TestDecomposeEmbeddedStruct(t *testing.T) {
 	tt.Equal(t, map[string]interface{}{"nest": map[string]interface{}{"type": "silly", "val": 3}, "val": 0}, v)
 }
 
+func TestDecomposeNestedPtr(t *testing.T) {
+	type Inner struct {
+		X int
+	}
+	type Wrap struct {
+		*Inner
+	}
+	ojg.ErrorWithStack = true
+	obj := &Wrap{Inner: &Inner{X: 3}}
+	v := alt.Decompose(obj, &alt.Options{CreateKey: ""})
+	tt.Equal(t, map[string]interface{}{"x": 3}, v)
+}
+
 func TestDecomposeComplex(t *testing.T) {
 	c := complex(1.2, 3.4)
 	v := alt.Decompose(c)

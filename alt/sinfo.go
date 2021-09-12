@@ -92,10 +92,18 @@ func buildTagFields(rt reflect.Type, nested bool) (fa []*finfo) {
 		}
 		var fx byte
 		if f.Anonymous && nested {
-			for _, fi := range buildTagFields(f.Type, nested) {
-				fi.index = append([]int{i}, fi.index...)
-				fi.offset += f.Offset
-				fa = append(fa, fi)
+			if f.Type.Kind() == reflect.Ptr {
+				for _, fi := range buildTagFields(f.Type.Elem(), nested) {
+					fi.index = append([]int{i}, fi.index...)
+					fi.value = fi.ivalue
+					fa = append(fa, fi)
+				}
+			} else {
+				for _, fi := range buildTagFields(f.Type, nested) {
+					fi.index = append([]int{i}, fi.index...)
+					fi.offset += f.Offset
+					fa = append(fa, fi)
+				}
 			}
 		} else {
 			key := f.Name
@@ -137,10 +145,18 @@ func buildExactFields(rt reflect.Type, nested bool) (fa []*finfo) {
 		}
 		var fx byte
 		if f.Anonymous && nested {
-			for _, fi := range buildExactFields(f.Type, nested) {
-				fi.index = append([]int{i}, fi.index...)
-				fi.offset += f.Offset
-				fa = append(fa, fi)
+			if f.Type.Kind() == reflect.Ptr {
+				for _, fi := range buildExactFields(f.Type.Elem(), nested) {
+					fi.index = append([]int{i}, fi.index...)
+					fi.value = fi.ivalue
+					fa = append(fa, fi)
+				}
+			} else {
+				for _, fi := range buildExactFields(f.Type, nested) {
+					fi.index = append([]int{i}, fi.index...)
+					fi.offset += f.Offset
+					fa = append(fa, fi)
+				}
 			}
 		} else {
 			fa = append(fa, newFinfo(f, f.Name, fx))
@@ -158,10 +174,18 @@ func buildLowFields(rt reflect.Type, nested bool) (fa []*finfo) {
 		}
 		var fx byte
 		if f.Anonymous && nested {
-			for _, fi := range buildLowFields(f.Type, nested) {
-				fi.index = append([]int{i}, fi.index...)
-				fi.offset += f.Offset
-				fa = append(fa, fi)
+			if f.Type.Kind() == reflect.Ptr {
+				for _, fi := range buildLowFields(f.Type.Elem(), nested) {
+					fi.index = append([]int{i}, fi.index...)
+					fi.value = fi.ivalue
+					fa = append(fa, fi)
+				}
+			} else {
+				for _, fi := range buildLowFields(f.Type, nested) {
+					fi.index = append([]int{i}, fi.index...)
+					fi.offset += f.Offset
+					fa = append(fa, fi)
+				}
 			}
 		} else {
 			if 3 < len(name) {

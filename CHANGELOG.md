@@ -10,6 +10,9 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
   math.MaxInt64 can not be used on 32 bit architectures. Changes were
   made to work around this limitation.
 
+- Embedded (Anonymous) pointers types now encode correctly.
+
+
 ## [1.12.5] - 2021-08-17
 # Changed
 - Updated to use go 1.17.
