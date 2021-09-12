@@ -153,7 +153,6 @@ func TestDecomposeNestedPtr(t *testing.T) {
 	type Wrap struct {
 		*Inner
 	}
-	ojg.ErrorWithStack = true
 	obj := &Wrap{Inner: &Inner{X: 3}}
 	v := alt.Decompose(obj, &alt.Options{CreateKey: ""})
 	tt.Equal(t, map[string]interface{}{"x": 3}, v)

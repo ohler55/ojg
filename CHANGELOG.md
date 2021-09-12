@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.12.6] - unreleased
+## [1.12.6] - 2021-09-12
 ### Fixed
 - Due to limitation (a bug most likely) in the stardard math package
   math.MaxInt64 can not be used on 32 bit architectures. Changes were
@@ -12,6 +12,8 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 
 - Embedded (Anonymous) pointers types now encode correctly.
 
+### Added
+- Support for json.Unmarshaler interface added.
 
 ## [1.12.5] - 2021-08-17
 # Changed

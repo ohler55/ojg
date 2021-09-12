@@ -10,6 +10,7 @@ import (
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/jp"
+	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -679,4 +680,43 @@ func TestRecomposeEmbeddedMap(t *testing.T) {
 	_ = r.MustRecompose(src, &sample)
 	tt.Equal(t, "two", sample.Ss["one"])
 	tt.Equal(t, true, sample.Sb["yes"])
+}
+
+type TagMap map[string]interface{}
+
+func (tm *TagMap) UnmarshalJSON(data []byte) error {
+	*tm = map[string]interface{}{}
+	simple, err := oj.Parse(data)
+	if err != nil {
+		return err
+	}
+	for _, kv := range simple.([]interface{}) {
+		k := jp.C("key").First(kv).(string)
+		if k == "fail" {
+			return fmt.Errorf("intentional fail")
+		}
+		(*tm)[k] = jp.C("value").First(kv)
+	}
+	return nil
+}
+
+func recomposeToJSON(v interface{}) (interface{}, error) {
+	return []byte(oj.JSON(v)), nil
+}
+
+func TestRecomposeUnmarshaller(t *testing.T) {
+	src := []interface{}{map[string]interface{}{"key": "k1", "value": 1}}
+
+	r := alt.MustNewRecomposer("^", nil)
+	r.RegisterUnmarshalerComposer(recomposeToJSON)
+
+	var tags TagMap
+	_ = alt.MustRecompose(src, &tags)
+	tt.Equal(t, 1, len(tags))
+	tt.Equal(t, 1, tags["k1"])
+
+	src = []interface{}{map[string]interface{}{"key": "fail", "value": 1}}
+
+	_, err := alt.Recompose(src, &tags)
+	tt.NotNil(t, err)
 }

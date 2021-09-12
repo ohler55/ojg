@@ -678,7 +678,6 @@ func TestWriteNestedPtr(t *testing.T) {
 	type Wrap struct {
 		*Inner
 	}
-	ojg.ErrorWithStack = true
 	obj := &Wrap{Inner: &Inner{X: 3}}
 	b := sen.Bytes(obj)
 	tt.Equal(t, `{x:3}`, string(b))

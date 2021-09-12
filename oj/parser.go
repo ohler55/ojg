@@ -45,6 +45,14 @@ type Parser struct {
 	Reuse bool
 }
 
+func recomposeToJSON(v interface{}) (interface{}, error) {
+	return []byte(JSON(v)), nil
+}
+
+func init() {
+	alt.DefaultRecomposer.RegisterUnmarshalerComposer(recomposeToJSON)
+}
+
 // Unmarshal parses the provided JSON and stores the result in the value
 // pointed to by vp.
 func (p *Parser) Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomposer) (err error) {

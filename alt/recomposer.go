@@ -3,6 +3,7 @@
 package alt
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"reflect"
@@ -52,6 +53,18 @@ func (r *Recomposer) RegisterAnyComposer(val interface{}, fun RecomposeAnyFunc) 
 	_, err := r.registerAnyComposer(reflect.TypeOf(val), fun)
 
 	return err
+}
+
+// RegisterUnmarshalerComposer regsiters a composer function for a named
+// value. This is only used to register cross package json.Unmarshaler
+// composer which returns []byte.
+func (r *Recomposer) RegisterUnmarshalerComposer(fun RecomposeAnyFunc) {
+	name := "json.Unmarshaler"
+	r.composers[name] = &composer{
+		any:   fun,
+		short: name,
+		full:  name,
+	}
 }
 
 func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*composer, error) {
@@ -140,6 +153,15 @@ func (r *Recomposer) Recompose(v interface{}, tv ...interface{}) (out interface{
 // MustRecompose simple data into more complex go types.
 func (r *Recomposer) MustRecompose(v interface{}, tv ...interface{}) (out interface{}) {
 	if 0 < len(tv) {
+		if um, ok := tv[0].(json.Unmarshaler); ok {
+			if comp := r.composers["json.Unmarshaler"]; comp != nil {
+				b, _ := comp.any(v) // Special case. Must return []byte.
+				if err := um.UnmarshalJSON(b.([]byte)); err != nil {
+					panic(err)
+				}
+				return um
+			}
+		}
 		out = tv[0]
 		rv := reflect.ValueOf(tv[0])
 		switch rv.Kind() {

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/ohler55/ojg/alt"
+	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
 )
@@ -49,4 +50,27 @@ func TestUnmarshalError(t *testing.T) {
 	var query Query
 	err := oj.Unmarshal([]byte(queryJSON), &query)
 	tt.Equal(t, true, strings.Contains(err.Error(), "value of type bool cannot be converted to type int"))
+}
+
+type TagMap map[string]interface{}
+
+func (tm *TagMap) UnmarshalJSON(data []byte) error {
+	*tm = map[string]interface{}{}
+	simple, err := oj.Parse(data)
+	if err != nil {
+		return err
+	}
+	for _, kv := range simple.([]interface{}) {
+		(*tm)[jp.C("key").First(kv).(string)] = jp.C("value").First(kv)
+	}
+	return nil
+}
+
+func TestUnmarshaler(t *testing.T) {
+	var tags TagMap
+	src := []byte(`[{"key": "k1", "value": 1}]`)
+	err := oj.Unmarshal(src, &tags)
+	tt.Nil(t, err)
+	tt.Equal(t, 1, len(tags))
+	tt.Equal(t, 1, tags["k1"])
 }
