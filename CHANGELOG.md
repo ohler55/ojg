@@ -7,6 +7,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.12.7] - unreleased
 ### Fixed
 - Typo in maxEnd for 32 bit architecture fixed.
+- json.Unmarshaler fields in a struct correctly unmarshal.
 
 ## [1.12.6] - 2021-09-12
 ### Fixed

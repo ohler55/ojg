@@ -39,6 +39,13 @@ type Recomposer struct {
 	composers map[string]*composer
 }
 
+var jsonUnmarshalerType reflect.Type
+
+func init() {
+	jsonUnmarshalerType = reflect.TypeOf((*json.Unmarshaler)(nil)).Elem()
+
+}
+
 // RegisterComposer regsiters a composer function for a value type. A nil
 // function will still register the default composer which uses reflection.
 func (r *Recomposer) RegisterComposer(val interface{}, fun RecomposeFunc) error {
@@ -502,6 +509,16 @@ func (r *Recomposer) setValue(v interface{}, rv reflect.Value, sf *reflect.Struc
 		r.recomp(v, ev)
 		rv.Set(ev)
 	default:
+		if reflect.PtrTo(rv.Type()).Implements(jsonUnmarshalerType) {
+			ev := rv.Addr().Interface().(json.Unmarshaler)
+			if comp := r.composers["json.Unmarshaler"]; comp != nil {
+				b, _ := comp.any(v) // Special case. Must return []byte.
+				if err := ev.UnmarshalJSON(b.([]byte)); err != nil {
+					panic(err)
+				}
+				return
+			}
+		}
 		r.recomp(v, rv)
 	}
 }

@@ -720,3 +720,36 @@ func TestRecomposeUnmarshaller(t *testing.T) {
 	_, err := alt.Recompose(src, &tags)
 	tt.NotNil(t, err)
 }
+
+func TestRecomposeUnmarshallerField(t *testing.T) {
+	type Wrap struct {
+		X TagMap
+	}
+	src := map[string]interface{}{"X": []interface{}{map[string]interface{}{"key": "k1", "value": 1}}}
+
+	r := alt.MustNewRecomposer("^", nil)
+	r.RegisterUnmarshalerComposer(recomposeToJSON)
+
+	var wrap Wrap
+	_ = alt.MustRecompose(src, &wrap)
+
+	tt.Equal(t, 1, len(wrap.X))
+	tt.Equal(t, 1, wrap.X["k1"])
+
+	src = map[string]interface{}{"X": []interface{}{map[string]interface{}{"key": "fail", "value": 1}}}
+	_, err := alt.Recompose(src, &wrap)
+	tt.NotNil(t, err)
+}
+
+func TestRecomposeUnmarshallerList(t *testing.T) {
+	src := []interface{}{[]interface{}{map[string]interface{}{"key": "k1", "value": 1}}}
+
+	r := alt.MustNewRecomposer("^", nil)
+	r.RegisterUnmarshalerComposer(recomposeToJSON)
+
+	var list []TagMap
+	_ = alt.MustRecompose(src, &list)
+	tt.Equal(t, 1, len(list))
+	tt.Equal(t, 1, len(list[0]))
+	tt.Equal(t, 1, list[0]["k1"])
+}
