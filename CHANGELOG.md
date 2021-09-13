@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.12.7] - unreleased
+### Fixed
+- Typo in maxEnd for 32 bit architecture fixed.
+
 ## [1.12.6] - 2021-09-12
 ### Fixed
 - Due to limitation (a bug most likely) in the stardard math package
