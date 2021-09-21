@@ -3,6 +3,7 @@
 package oj
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"math"
@@ -533,7 +534,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				}
 			}
 		case charErr:
-			return p.byteError(off, p.mode, b)
+			return p.byteError(off, p.mode, b, bytes.Runes(buf[off:])[0])
 		}
 		if depth == 0 && 256 < len(p.mode) && p.mode[256] == 'a' {
 			if p.cb == nil && p.resultChan == nil {

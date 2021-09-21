@@ -1,4 +1,8 @@
 
+- embedded struct pointer encoding issue
+- json.Unmarshaler
+ - use alt.Recompose and convert simple to bytes and pass to unmarshaller
+
 - pretty
  - align maps as well as arrays
 

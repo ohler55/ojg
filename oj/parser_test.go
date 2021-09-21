@@ -139,6 +139,7 @@ func TestParserParseString(t *testing.T) {
 		{src: `"x\u004z"`, expect: "invalid JSON unicode character 'z' at 1:8"},
 		{src: "\xef\xbb[]", expect: "expected BOM at 1:3"},
 		{src: "[ // a comment\n  true\n]", expect: "unexpected character '/' at 1:3"},
+		{src: `→`, expect: "unexpected character '→' at 1:1"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.src)
