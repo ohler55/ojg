@@ -823,7 +823,7 @@ func (p *Parser) byteError(off int, mode string, b byte, r rune) error {
 	case stringMap:
 		err.Message = fmt.Sprintf("invalid JSON character 0x%02x", b)
 	case escMap:
-		err.Message = fmt.Sprintf("invalid JSON escape character '\\%c'", b)
+		err.Message = fmt.Sprintf("invalid JSON escape character '\\%c'", r)
 	case uMap:
 		err.Message = fmt.Sprintf("invalid JSON unicode character '%c'", r)
 	case spaceMap:
