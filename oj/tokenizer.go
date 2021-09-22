@@ -3,6 +3,7 @@
 package oj
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -445,7 +446,7 @@ func (t *Tokenizer) tokenizeBuffer(buf []byte, last bool) error {
 				}
 			}
 		case charErr:
-			return t.byteError(off, t.mode, b)
+			return t.byteError(off, t.mode, b, bytes.Runes(buf[off:])[0])
 		}
 		if depth == 0 && 256 < len(t.mode) && t.mode[256] == 'a' {
 			t.mi = 0
