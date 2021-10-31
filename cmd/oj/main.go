@@ -149,6 +149,8 @@ are integers and align is a boolean.
 		displayFnDocs()
 		os.Exit(0)
 	}
+	extracts = extracts[:0]
+	matches = matches[:0]
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "*-*-* %s\n", err)
 		os.Exit(1)

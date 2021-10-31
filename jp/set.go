@@ -51,7 +51,7 @@ func (x Expr) Set(data, value interface{}) error {
 		return fmt.Errorf("can not %s with an empty expression", fun)
 	}
 	switch x[len(x)-1].(type) {
-	case Descent, Union, Slice, *Filter:
+	case Descent, Union, Slice, *Filter: // TBD filter is okay
 		ta := strings.Split(fmt.Sprintf("%T", x[len(x)-1]), ".")
 		return fmt.Errorf("can not %s with an expression ending with a %s", fun, ta[len(ta)-1])
 	}
@@ -622,6 +622,7 @@ func (x Expr) Set(data, value interface{}) error {
 				}
 			}
 		case *Filter:
+			// TBD if last one then set or remove
 			stack, _ = tf.Eval(stack, prev).([]interface{})
 		case Root:
 			if int(fi) == len(x)-1 { // last one
@@ -656,7 +657,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 		return fmt.Errorf("can not %s with an empty expression", fun)
 	}
 	switch x[len(x)-1].(type) {
-	case Descent, Union, Slice, *Filter:
+	case Descent, Union, Slice, *Filter: // TBD allow filter
 		ta := strings.Split(fmt.Sprintf("%T", x[len(x)-1]), ".")
 		return fmt.Errorf("can not %s with an expression ending with a %s", fun, ta[len(ta)-1])
 	}

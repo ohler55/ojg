@@ -1,4 +1,19 @@
 
+- jp
+ - delete and set with filter, union, and slice
+
+- parse
+ - add discover option
+  - 3 states
+   - DiscoverOff
+   - DiscoverAny
+   - DiscoverSets - only discover {} and []
+  - starting map/mode is like value but no errors on invalid
+   - same as value but replace errChar with a skip or skip and drop to drop current
+    - if number then cb and drop
+  - errors don't panic but close off current (if whole) and then back to discover maps
+ - implement on all parsers
+
 - embedded struct pointer encoding issue
 - json.Unmarshaler
  - use alt.Recompose and convert simple to bytes and pass to unmarshaller
