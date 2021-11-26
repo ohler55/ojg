@@ -237,7 +237,8 @@ type Options struct {
 	// BytesAsArray.
 	BytesAs int
 
-	// Converter to use when decomposing or altering if non nil.
+	// Converter to use when decomposing or altering if non nil. The Converter
+	// type includes more details.
 	Converter *Converter
 }
 
