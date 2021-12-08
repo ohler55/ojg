@@ -41,6 +41,7 @@ var (
 	wrapExtract = false
 	extracts    = []jp.Expr{}
 	matches     = []*jp.Script{}
+	dels        = []jp.Expr{}
 	planDef     = ""
 	showVersion bool
 	plan        *asm.Plan
@@ -70,6 +71,7 @@ func init() {
 	flag.BoolVar(&tab, "t", tab, "indent with tabs")
 	flag.Var(&exValue{}, "x", "extract path")
 	flag.Var(&matchValue{}, "m", "match equation/script")
+	flag.Var(&delValue{}, "d", "delete path")
 	flag.BoolVar(&showVersion, "version", showVersion, "display version and exit")
 	flag.StringVar(&planDef, "a", planDef, "assembly plan or plan file using @<plan>")
 	flag.BoolVar(&showRoot, "r", showRoot, "print root if an assemble plan provided")
@@ -123,6 +125,9 @@ then used as the input.
   oj -i 0 -z {a:1, b:two}
   => {"a":1,"b":"two"}
 
+Elements can be deleted from the JSON using the -d option. Multiple occurances
+of -d are supported.
+
 Oj can also be used to assemble new JSON output from input data. An assembly
 plan that describes how to assemble the new JSON if specified by the -a
 option. The -fn option will display the documentation for assembly.
@@ -151,6 +156,7 @@ are integers and align is a boolean.
 	}
 	extracts = extracts[:0]
 	matches = matches[:0]
+	dels = dels[:0]
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "*-*-* %s\n", err)
 		os.Exit(1)
@@ -319,6 +325,9 @@ func write(v interface{}) bool {
 		if !match {
 			return false
 		}
+	}
+	for _, x := range dels {
+		_ = x.Del(v)
 	}
 	if 0 < len(extracts) {
 		if wrapExtract {
@@ -489,6 +498,21 @@ func (mv matchValue) Set(s string) error {
 	script, err := jp.NewScript(s)
 	if err == nil {
 		matches = append(matches, script)
+	}
+	return err
+}
+
+type delValue struct {
+}
+
+func (dv delValue) String() string {
+	return ""
+}
+
+func (dv delValue) Set(s string) error {
+	x, err := jp.ParseString(s)
+	if err == nil {
+		dels = append(dels, x)
 	}
 	return err
 }
