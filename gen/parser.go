@@ -47,6 +47,9 @@ type Parser struct {
 
 // Parse a JSON string in to simple types. An error is returned if not valid JSON.
 func (p *Parser) Parse(buf []byte, args ...interface{}) (Node, error) {
+	p.cb = nil
+	p.resultChan = nil
+	p.OnlyOne = true
 	for _, a := range args {
 		switch ta := a.(type) {
 		case func(Node) bool:
@@ -59,9 +62,6 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (Node, error) {
 		default:
 			return nil, fmt.Errorf("a %T is not a valid option type", a)
 		}
-	}
-	if p.cb == nil && p.resultChan == nil {
-		p.OnlyOne = true
 	}
 	if p.stack == nil {
 		p.stack = make([]Node, 0, stackInitSize)
@@ -100,6 +100,9 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (Node, error) {
 
 // ParseReader a JSON io.Reader. An error is returned if not valid JSON.
 func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data Node, err error) {
+	p.cb = nil
+	p.resultChan = nil
+	p.OnlyOne = true
 	for _, a := range args {
 		switch ta := a.(type) {
 		case func(Node) bool:
@@ -112,9 +115,6 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data Node, err e
 		default:
 			return nil, fmt.Errorf("a %T is not a valid option type", a)
 		}
-	}
-	if p.cb == nil && p.resultChan == nil {
-		p.OnlyOne = true
 	}
 	if p.stack == nil {
 		p.stack = make([]Node, 0, stackInitSize)

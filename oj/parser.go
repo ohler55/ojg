@@ -69,6 +69,9 @@ func (p *Parser) Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomp
 
 // Parse a JSON string in to simple types. An error is returned if not valid JSON.
 func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
+	p.cb = nil
+	p.resultChan = nil
+	p.OnlyOne = true
 	for _, a := range args {
 		switch ta := a.(type) {
 		case func(interface{}) bool:
@@ -81,9 +84,6 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 		default:
 			return nil, fmt.Errorf("a %T is not a valid option type", a)
 		}
-	}
-	if p.cb == nil && p.resultChan == nil {
-		p.OnlyOne = true
 	}
 	if p.stack == nil {
 		p.stack = make([]interface{}, 0, stackInitSize)
@@ -123,6 +123,9 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 // ParseReader reads JSON from an io.Reader. An error is returned if not valid
 // JSON.
 func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}, err error) {
+	p.cb = nil
+	p.resultChan = nil
+	p.OnlyOne = true
 	for _, a := range args {
 		switch ta := a.(type) {
 		case func(interface{}) bool:
@@ -135,9 +138,6 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}
 		default:
 			return nil, fmt.Errorf("a %T is not a valid option type", a)
 		}
-	}
-	if p.cb == nil && p.resultChan == nil {
-		p.OnlyOne = true
 	}
 	if p.stack == nil {
 		p.stack = make([]interface{}, 0, stackInitSize)
