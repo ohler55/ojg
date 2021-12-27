@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.12.12] - 2021-12-27
+### Fixed
+- JSONPath scripts (jp.Script or [?(@.foo == 123)]) is now thread safe.
+
 ## [1.12.11] - 2021-12-10
 ### Fixed
 - Parser reuse was no resetting callback and channels. It does now.

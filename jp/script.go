@@ -60,7 +60,6 @@ type precBuf struct {
 // Script represents JSON Path script used in filters as well.
 type Script struct {
 	template []interface{}
-	stack    []interface{}
 }
 
 // NewScript parses the string argument and returns a script or an error.
@@ -175,6 +174,7 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 		}
 		data = da
 	}
+	sstack := make([]interface{}, len(s.template))
 	var v interface{}
 	for vi := 0; vi < dlen; vi++ {
 		switch td := data.(type) {
@@ -184,9 +184,9 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 			v = td[vi]
 		}
 		// Eval script for each member of the list.
-		copy(s.stack, s.template)
+		copy(sstack, s.template)
 		// resolve all expr members
-		for i, ev := range s.stack {
+		for i, ev := range sstack {
 			// Normalize into nil, bool, int64, float64, and string early so
 			// that each comparison doen't have to.
 		Normalize:
@@ -202,260 +202,260 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 						var c Child
 						if c, ok = x[1].(Child); ok {
 							ev = m[string(c)]
-							s.stack[i] = ev
+							sstack[i] = ev
 							goto Normalize
 						}
 					}
 				}
 				ev = x.First(v)
-				s.stack[i] = ev
+				sstack[i] = ev
 				goto Normalize
 			case int:
-				s.stack[i] = int64(x)
+				sstack[i] = int64(x)
 			case int8:
-				s.stack[i] = int64(x)
+				sstack[i] = int64(x)
 			case int16:
-				s.stack[i] = int64(x)
+				sstack[i] = int64(x)
 			case int32:
-				s.stack[i] = int64(x)
+				sstack[i] = int64(x)
 			case uint:
-				s.stack[i] = int64(x)
+				sstack[i] = int64(x)
 			case uint8:
-				s.stack[i] = int64(x)
+				sstack[i] = int64(x)
 			case uint16:
-				s.stack[i] = int64(x)
+				sstack[i] = int64(x)
 			case uint32:
-				s.stack[i] = int64(x)
+				sstack[i] = int64(x)
 			case uint64:
-				s.stack[i] = int64(x)
+				sstack[i] = int64(x)
 			case float32:
-				s.stack[i] = float64(x)
+				sstack[i] = float64(x)
 			case gen.Bool:
-				s.stack[i] = bool(x)
+				sstack[i] = bool(x)
 			case gen.String:
-				s.stack[i] = string(x)
+				sstack[i] = string(x)
 			case gen.Int:
-				s.stack[i] = int64(x)
+				sstack[i] = int64(x)
 			case gen.Float:
-				s.stack[i] = float64(x)
+				sstack[i] = float64(x)
 
 			default:
 				// Any other type are already simplified or are not
 				// handled and will fail later.
 			}
 		}
-		for i := len(s.stack) - 1; 0 <= i; i-- {
-			o, _ := s.stack[i].(*op)
+		for i := len(sstack) - 1; 0 <= i; i-- {
+			o, _ := sstack[i].(*op)
 			if o == nil {
 				// a value, not an op
 				continue
 			}
 			var left interface{}
 			var right interface{}
-			if 1 < len(s.stack)-i {
-				left = s.stack[i+1]
+			if 1 < len(sstack)-i {
+				left = sstack[i+1]
 			}
-			if 2 < len(s.stack)-i {
-				right = s.stack[i+2]
+			if 2 < len(sstack)-i {
+				right = sstack[i+2]
 			}
 			switch o.code {
 			case eq.code:
 				if left == right {
-					s.stack[i] = true
+					sstack[i] = true
 				} else {
-					s.stack[i] = false
+					sstack[i] = false
 					switch tl := left.(type) {
 					case int64:
 						if tr, ok := right.(float64); ok {
-							s.stack[i] = ok && float64(tl) == tr
+							sstack[i] = ok && float64(tl) == tr
 						}
 					case float64:
 						tr, ok := right.(int64)
-						s.stack[i] = ok && tl == float64(tr)
+						sstack[i] = ok && tl == float64(tr)
 					}
 				}
 			case neq.code:
 				if left == right {
-					s.stack[i] = false
+					sstack[i] = false
 				} else {
-					s.stack[i] = true
+					sstack[i] = true
 					switch tl := left.(type) {
 					case int64:
 						if tr, ok := right.(float64); ok {
-							s.stack[i] = ok && float64(tl) != tr
+							sstack[i] = ok && float64(tl) != tr
 						}
 					case float64:
 						tr, ok := right.(int64)
-						s.stack[i] = ok && tl != float64(tr)
+						sstack[i] = ok && tl != float64(tr)
 					}
 				}
 			case lt.code:
-				s.stack[i] = false
+				sstack[i] = false
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
 					case int64:
-						s.stack[i] = tl < tr
+						sstack[i] = tl < tr
 					case float64:
-						s.stack[i] = float64(tl) < tr
+						sstack[i] = float64(tl) < tr
 					}
 				case float64:
 					switch tr := right.(type) {
 					case int64:
-						s.stack[i] = tl < float64(tr)
+						sstack[i] = tl < float64(tr)
 					case float64:
-						s.stack[i] = tl < tr
+						sstack[i] = tl < tr
 					}
 				case string:
 					tr, ok := right.(string)
-					s.stack[i] = ok && tl < tr
+					sstack[i] = ok && tl < tr
 				}
 			case gt.code:
-				s.stack[i] = false
+				sstack[i] = false
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
 					case int64:
-						s.stack[i] = tl > tr
+						sstack[i] = tl > tr
 					case float64:
-						s.stack[i] = float64(tl) > tr
+						sstack[i] = float64(tl) > tr
 					}
 				case float64:
 					switch tr := right.(type) {
 					case int64:
-						s.stack[i] = tl > float64(tr)
+						sstack[i] = tl > float64(tr)
 					case float64:
-						s.stack[i] = tl > tr
+						sstack[i] = tl > tr
 					}
 				case string:
 					tr, ok := right.(string)
-					s.stack[i] = ok && tl > tr
+					sstack[i] = ok && tl > tr
 				}
 			case lte.code:
-				s.stack[i] = false
+				sstack[i] = false
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
 					case int64:
-						s.stack[i] = tl <= tr
+						sstack[i] = tl <= tr
 					case float64:
-						s.stack[i] = float64(tl) <= tr
+						sstack[i] = float64(tl) <= tr
 					}
 				case float64:
 					switch tr := right.(type) {
 					case int64:
-						s.stack[i] = tl <= float64(tr)
+						sstack[i] = tl <= float64(tr)
 					case float64:
-						s.stack[i] = tl <= tr
+						sstack[i] = tl <= tr
 					}
 				case string:
 					tr, ok := right.(string)
-					s.stack[i] = ok && tl <= tr
+					sstack[i] = ok && tl <= tr
 				}
 			case gte.code:
-				s.stack[i] = false
+				sstack[i] = false
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
 					case int64:
-						s.stack[i] = tl >= tr
+						sstack[i] = tl >= tr
 					case float64:
-						s.stack[i] = float64(tl) >= tr
+						sstack[i] = float64(tl) >= tr
 					}
 				case float64:
 					switch tr := right.(type) {
 					case int64:
-						s.stack[i] = tl >= float64(tr)
+						sstack[i] = tl >= float64(tr)
 					case float64:
-						s.stack[i] = tl >= tr
+						sstack[i] = tl >= tr
 					}
 				case string:
 					tr, ok := right.(string)
-					s.stack[i] = ok && tl >= tr
+					sstack[i] = ok && tl >= tr
 				}
 			case or.code:
 				// If one is a boolean true then true.
 				lb, _ := left.(bool)
 				rb, _ := right.(bool)
-				s.stack[i] = lb || rb
+				sstack[i] = lb || rb
 			case and.code:
 				// If both are a boolean true then true else false.
 				lb, _ := left.(bool)
 				rb, _ := right.(bool)
-				s.stack[i] = lb && rb
+				sstack[i] = lb && rb
 			case not.code:
 				lb, _ := left.(bool)
-				s.stack[i] = !lb
+				sstack[i] = !lb
 			case add.code:
-				s.stack[i] = nil
+				sstack[i] = nil
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
 					case int64:
-						s.stack[i] = tl + tr
+						sstack[i] = tl + tr
 					case float64:
-						s.stack[i] = float64(tl) + tr
+						sstack[i] = float64(tl) + tr
 					}
 				case float64:
 					switch tr := right.(type) {
 					case int64:
-						s.stack[i] = tl + float64(tr)
+						sstack[i] = tl + float64(tr)
 					case float64:
-						s.stack[i] = tl + tr
+						sstack[i] = tl + tr
 					}
 				case string:
 					if tr, ok := right.(string); ok {
-						s.stack[i] = tl + tr
+						sstack[i] = tl + tr
 					}
 				}
 			case sub.code:
-				s.stack[i] = nil
+				sstack[i] = nil
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
 					case int64:
-						s.stack[i] = tl - tr
+						sstack[i] = tl - tr
 					case float64:
-						s.stack[i] = float64(tl) - tr
+						sstack[i] = float64(tl) - tr
 					}
 				case float64:
 					switch tr := right.(type) {
 					case int64:
-						s.stack[i] = tl - float64(tr)
+						sstack[i] = tl - float64(tr)
 					case float64:
-						s.stack[i] = tl - tr
+						sstack[i] = tl - tr
 					}
 				}
 			case mult.code:
-				s.stack[i] = nil
+				sstack[i] = nil
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
 					case int64:
-						s.stack[i] = tl * tr
+						sstack[i] = tl * tr
 					case float64:
-						s.stack[i] = float64(tl) * tr
+						sstack[i] = float64(tl) * tr
 					}
 				case float64:
 					switch tr := right.(type) {
 					case int64:
-						s.stack[i] = tl * float64(tr)
+						sstack[i] = tl * float64(tr)
 					case float64:
-						s.stack[i] = tl * tr
+						sstack[i] = tl * tr
 					}
 				}
 			case divide.code:
-				s.stack[i] = nil
+				sstack[i] = nil
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
 					case int64:
 						if tr != 0 {
-							s.stack[i] = tl / tr
+							sstack[i] = tl / tr
 						}
 					case float64:
 						if tr != 0.0 {
-							s.stack[i] = float64(tl) / tr
+							sstack[i] = float64(tl) / tr
 
 						}
 					}
@@ -463,20 +463,20 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 					switch tr := right.(type) {
 					case int64:
 						if tr != 0 {
-							s.stack[i] = tl / float64(tr)
+							sstack[i] = tl / float64(tr)
 						}
 					case float64:
 						if tr != 0.0 {
-							s.stack[i] = tl / tr
+							sstack[i] = tl / tr
 						}
 					}
 				}
 			}
-			if i+int(o.cnt)+1 <= len(s.stack) {
-				copy(s.stack[i+1:], s.stack[i+int(o.cnt)+1:])
+			if i+int(o.cnt)+1 <= len(sstack) {
+				copy(sstack[i+1:], sstack[i+int(o.cnt)+1:])
 			}
 		}
-		if b, _ := s.stack[0].(bool); b {
+		if b, _ := sstack[0].(bool); b {
 			switch tstack := stack.(type) {
 			case []interface{}:
 				stack = append(tstack, v)
@@ -487,8 +487,8 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 			}
 		}
 	}
-	for i := range s.stack {
-		s.stack[i] = nil
+	for i := range sstack {
+		sstack[i] = nil
 	}
 	return stack
 }

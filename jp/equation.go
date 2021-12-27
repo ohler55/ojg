@@ -20,14 +20,12 @@ type Equation struct {
 // Script creates and returns a Script that implements the equation.
 func (e *Equation) Script() (s *Script) {
 	s = &Script{template: e.buildScript([]interface{}{})}
-	s.stack = make([]interface{}, len(s.template))
 	return
 }
 
 // Filter creates and returns a Script that implements the equation.
 func (e *Equation) Filter() (f *Filter) {
 	f = &Filter{Script: Script{template: e.buildScript([]interface{}{})}}
-	f.stack = make([]interface{}, len(f.template))
 	return
 }
 
