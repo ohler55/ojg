@@ -1148,7 +1148,7 @@ func (x Expr) reflectGetChild(data interface{}, key string) (v interface{}, has 
 	rv := rd.FieldByNameFunc(func(k string) bool { return strings.EqualFold(k, key) })
 	if rv.IsValid() && rv.CanInterface() {
 		v = rv.Interface()
-		has = !rv.IsZero()
+		has = true
 	}
 	return
 }
@@ -1166,7 +1166,7 @@ func (x Expr) reflectGetNth(data interface{}, i int) (v interface{}, has bool) {
 			rv := rd.Index(i)
 			if rv.CanInterface() {
 				v = rv.Interface()
-				has = !rv.IsZero()
+				has = true
 			}
 		}
 	}
@@ -1220,7 +1220,7 @@ func (x Expr) reflectGetWildOne(data interface{}) (interface{}, bool) {
 		if 0 < size {
 			rv := rd.Index(0)
 			if rv.CanInterface() {
-				return rv.Interface(), !rv.IsZero()
+				return rv.Interface(), true
 			}
 		}
 	}
