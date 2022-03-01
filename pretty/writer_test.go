@@ -234,6 +234,16 @@ func TestQuotedString(t *testing.T) {
 	tt.Equal(t, `["\\\t\n\r\b\f\"&<>\u2028\u2029\u0007𝄢 ぴーたー"]`, s)
 }
 
+func TestByteSlice(t *testing.T) {
+	val := []byte{'a', 'b', 'c'}
+	s := pretty.JSON(val, &ojg.Options{BytesAs: ojg.BytesAsString})
+	tt.Equal(t, `"abc"`, s)
+	s = pretty.JSON(val, &ojg.Options{BytesAs: ojg.BytesAsBase64})
+	tt.Equal(t, `"YWJj"`, s)
+	s = pretty.JSON(val, &ojg.Options{BytesAs: ojg.BytesAsArray})
+	tt.Equal(t, "[97, 98, 99]", s)
+}
+
 func TestIntTypes(t *testing.T) {
 	val := []interface{}{
 		[]interface{}{int8(-8), int16(-16), int32(-32), int64(-64), int(-1)},

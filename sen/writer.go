@@ -4,6 +4,7 @@ package sen
 
 import (
 	"encoding"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -200,6 +201,20 @@ func (wr *Writer) appendSEN(data interface{}, depth int) {
 
 	case string:
 		wr.buf = wr.appendString(wr.buf, td, !wr.HTMLUnsafe)
+
+	case []byte:
+		switch wr.BytesAs {
+		case ojg.BytesAsBase64:
+			wr.buf = wr.appendString(wr.buf, base64.StdEncoding.EncodeToString(td), !wr.HTMLUnsafe)
+		case ojg.BytesAsArray:
+			a := make([]interface{}, len(td))
+			for i, m := range td {
+				a[i] = int64(m)
+			}
+			wr.appendArray(wr, a, depth)
+		default:
+			wr.buf = wr.appendString(wr.buf, string(td), !wr.HTMLUnsafe)
+		}
 
 	case time.Time:
 		wr.buf = wr.AppendTime(wr.buf, td, true)

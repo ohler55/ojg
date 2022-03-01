@@ -3,6 +3,7 @@
 package pretty
 
 import (
+	"encoding/base64"
 	"sort"
 	"strconv"
 	"time"
@@ -52,6 +53,19 @@ func (w *Writer) build(data interface{}) (n *node) {
 		n = w.buildStringNode(td)
 	case gen.String:
 		n = w.buildStringNode(string(td))
+	case []byte:
+		switch w.BytesAs {
+		case ojg.BytesAsBase64:
+			n = w.buildStringNode(string(base64.StdEncoding.EncodeToString(td)))
+		case ojg.BytesAsArray:
+			a := make([]interface{}, len(td))
+			for i, m := range td {
+				a[i] = int64(m)
+			}
+			n = w.buildArrayNode(a)
+		default:
+			n = w.buildStringNode(string(td))
+		}
 	case time.Time:
 		n = w.buildTimeNode(td)
 	case gen.Time:

@@ -84,6 +84,9 @@ func TestString(t *testing.T) {
 		{value: "\\\tx\n\r\b\f\"&<>\u2028\u2029\x07\U0001D122",
 			expect: `"\\	x
 \r\b\f\"&<>\u2028\u2029\u0007𝄢"`, options: &sen.Options{HTMLUnsafe: true}},
+		{value: []byte{'a', 'b', 'c'}, expect: "abc", options: &oj.Options{BytesAs: ojg.BytesAsString}},
+		{value: []byte{'a', 'b', 'c'}, expect: "YWJj", options: &oj.Options{BytesAs: ojg.BytesAsBase64}},
+		{value: []byte{'a', 'b', 'c'}, expect: "[97 98 99]", options: &oj.Options{BytesAs: ojg.BytesAsArray}},
 		{value: "<x>", expect: `<x>`, options: &sen.Options{HTMLUnsafe: true}},
 		{value: "<x>", expect: `"\u003cx\u003e"`, options: &sen.Options{HTMLUnsafe: false}},
 		{value: "ぴーたー", expect: "ぴーたー", options: &sen.Options{}},
