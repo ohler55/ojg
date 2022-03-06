@@ -7,6 +7,8 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.13.0] - <unreleased>
 ### Added
 - Added jp.Expr.Has() function.
+- Added jp.Walk to walk data and provide a the path and value for each
+  element.
 
 ## [1.12.14] - 2022-02-28
 ### Fixed

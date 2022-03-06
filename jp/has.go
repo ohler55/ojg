@@ -112,7 +112,7 @@ func (x Expr) Has(data interface{}) bool {
 			case nil:
 			case map[string]interface{}:
 				if int(fi) == len(x)-1 { // last one
-					for _, v = range tv {
+					if 0 < len(tv) {
 						return true
 					}
 				} else {
@@ -153,7 +153,7 @@ func (x Expr) Has(data interface{}) bool {
 				}
 			case gen.Object:
 				if int(fi) == len(x)-1 { // last one
-					for _, v = range tv {
+					if 0 < len(tv) {
 						return true
 					}
 				} else {
@@ -166,7 +166,7 @@ func (x Expr) Has(data interface{}) bool {
 				}
 			case gen.Array:
 				if int(fi) == len(x)-1 { // last one
-					for _, v = range tv {
+					if 0 < len(tv) {
 						return true
 					}
 				} else {
@@ -206,7 +206,7 @@ func (x Expr) Has(data interface{}) bool {
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
 					if int(fi) == len(x)-1 { // last one
-						for _, v = range tv {
+						if 0 < len(tv) {
 							return true
 						}
 					}
@@ -253,7 +253,7 @@ func (x Expr) Has(data interface{}) bool {
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
 					if int(fi) == len(x)-1 { // last one
-						for _, v = range tv {
+						if 0 < len(tv) {
 							return true
 						}
 					}

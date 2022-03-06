@@ -375,7 +375,6 @@ func TestExprGetNodes(t *testing.T) {
 		} else {
 			results = x.GetNodes(alt.Generify(d.data))
 		}
-		//fmt.Printf("*** result: %s\n", results)
 		sort.Slice(results, func(i, j int) bool {
 			iv, _ := results[i].(gen.Int)
 			jv, _ := results[j].(gen.Int)

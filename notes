@@ -1,8 +1,5 @@
 
 - jp
- - Has()
- - Walk(func(path Expr, value interface{}))
-  - path can be $, C, or N
 
  - delete and set with filter, union, and slice
 
