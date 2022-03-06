@@ -4,6 +4,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.13.0] - <unreleased>
+### Added
+- Added jp.Expr.Has() function.
+- Added jp.Walk to walk data and provide a the path and value for each
+  element.
+
 ## [1.12.14] - 2022-02-28
 ### Fixed
 - `[]byte` are encoded according to the ojg.Options.
