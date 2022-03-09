@@ -3,6 +3,7 @@
 package jp
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/ohler55/ojg/gen"
@@ -44,21 +45,23 @@ func (x Expr) Has(data interface{}) bool {
 		switch tf := f.(type) {
 		case Child:
 			switch tv := prev.(type) {
-			case nil:
 			case map[string]interface{}:
 				v, has = tv[string(tf)]
 			case gen.Object:
 				v, has = tv[string(tf)]
 			default:
-				v, has = x.reflectGetChild(tv, string(tf))
+				if !isNil(tv) {
+					v, has = x.reflectGetChild(tv, string(tf))
+				}
 			}
 			if has {
 				if int(fi) == len(x)-1 { // last one
 					return true
 				}
 				switch v.(type) {
-				case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-				case nil, gen.Bool, gen.Int, gen.Float, gen.String:
+				case nil, bool, string, float64, float32,
+					int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+					gen.Bool, gen.Int, gen.Float, gen.String:
 				case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 					stack = append(stack, v)
 				default:
@@ -71,7 +74,6 @@ func (x Expr) Has(data interface{}) bool {
 		case Nth:
 			i := int(tf)
 			switch tv := prev.(type) {
-			case nil:
 			case []interface{}:
 				if i < 0 {
 					i = len(tv) + i
@@ -89,15 +91,18 @@ func (x Expr) Has(data interface{}) bool {
 					has = true
 				}
 			default:
-				v, has = x.reflectGetNth(tv, i)
+				if !isNil(tv) {
+					v, has = x.reflectGetNth(tv, i)
+				}
 			}
 			if has {
 				if int(fi) == len(x)-1 { // last one
 					return true
 				}
 				switch v.(type) {
-				case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-				case nil, gen.Bool, gen.Int, gen.Float, gen.String:
+				case nil, bool, string, float64, float32,
+					int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+					gen.Bool, gen.Int, gen.Float, gen.String:
 				case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 					stack = append(stack, v)
 				default:
@@ -118,8 +123,9 @@ func (x Expr) Has(data interface{}) bool {
 				} else {
 					for _, v = range tv {
 						switch v.(type) {
-						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
+						case nil, bool, string, float64, float32,
+							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+							gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -139,8 +145,9 @@ func (x Expr) Has(data interface{}) bool {
 					for i := len(tv) - 1; 0 <= i; i-- {
 						v = tv[i]
 						switch v.(type) {
-						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
+						case nil, bool, string, float64, float32,
+							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+							gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -184,8 +191,9 @@ func (x Expr) Has(data interface{}) bool {
 						return true
 					}
 					switch v.(type) {
-					case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-					case nil, gen.Bool, gen.Int, gen.Float, gen.String:
+					case nil, bool, string, float64, float32,
+						int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+						gen.Bool, gen.Int, gen.Float, gen.String:
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
@@ -212,8 +220,9 @@ func (x Expr) Has(data interface{}) bool {
 					}
 					for _, v = range tv {
 						switch v.(type) {
-						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
+						case nil, bool, string, float64, float32,
+							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+							gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
@@ -236,8 +245,9 @@ func (x Expr) Has(data interface{}) bool {
 					for i := len(tv) - 1; 0 <= i; i-- {
 						v = tv[i]
 						switch v.(type) {
-						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
+						case nil, bool, string, float64, float32,
+							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+							gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
@@ -302,7 +312,6 @@ func (x Expr) Has(data interface{}) bool {
 					switch tu := u.(type) {
 					case string:
 						switch tv := prev.(type) {
-						case nil:
 						case map[string]interface{}:
 							v, has = tv[string(tu)]
 						case gen.Object:
@@ -313,7 +322,6 @@ func (x Expr) Has(data interface{}) bool {
 					case int64:
 						i := int(tu)
 						switch tv := prev.(type) {
-						case nil:
 						case []interface{}:
 							if i < 0 {
 								i = len(tv) + i
@@ -345,7 +353,6 @@ func (x Expr) Has(data interface{}) bool {
 					switch tu := u.(type) {
 					case string:
 						switch tv := prev.(type) {
-						case nil:
 						case map[string]interface{}:
 							v, has = tv[string(tu)]
 						case gen.Object:
@@ -379,8 +386,9 @@ func (x Expr) Has(data interface{}) bool {
 					}
 					if has {
 						switch v.(type) {
-						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
+						case nil, bool, string, float64, float32,
+							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+							gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -433,8 +441,9 @@ func (x Expr) Has(data interface{}) bool {
 					for i := end; start <= i; i -= step {
 						v = tv[i]
 						switch v.(type) {
-						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
+						case nil, bool, string, float64, float32,
+							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+							gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -455,8 +464,9 @@ func (x Expr) Has(data interface{}) bool {
 					for i := end; i <= start; i -= step {
 						v = tv[i]
 						switch v.(type) {
-						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String:
+						case nil, bool, string, float64, float32,
+							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+							gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -517,8 +527,12 @@ func (x Expr) Has(data interface{}) bool {
 						return true
 					}
 					switch v.(type) {
-					case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-					case nil, gen.Bool, gen.Int, gen.Float, gen.String:
+					case nil, bool, string, float64, float32,
+						int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+						gen.Bool, gen.Int, gen.Float, gen.String:
+
+						fmt.Printf("*** primitive\n")
+
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:

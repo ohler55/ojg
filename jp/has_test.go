@@ -22,7 +22,6 @@ var (
 	hasTestData = []*hasData{
 		{path: "", expect: false},
 		{path: "$.a.*.b", expect: true},
-
 		{path: "$", expect: true, data: map[string]interface{}{"x": 1}},
 		{path: "@", expect: true, data: map[string]interface{}{"x": 1}},
 		{path: "$.a.*.b", expect: true, data: firstData1},
@@ -58,6 +57,11 @@ var (
 			map[string]interface{}{"x": 1},
 			map[string]interface{}{"x": 2},
 		}},
+		{path: "a.b", expect: false, data: map[string]interface{}{"a": nil}},
+		{path: "*.*", expect: false, data: map[string]interface{}{"a": nil}},
+		{path: "*.*", expect: false, data: []interface{}{nil}},
+		{path: "['a','b'].c", expect: false, data: map[string]interface{}{"a": nil}},
+		{path: "[1:0:-1].c", expect: false, data: []interface{}{nil, nil}},
 	}
 	hasTestReflectData = []*hasData{
 		{path: "$.a", expect: true, data: &Sample{A: 3, B: "sample"}},
@@ -81,6 +85,9 @@ var (
 		{path: "$.*", expect: false, data: &one},
 		{path: "['a',-1]", expect: true, data: []interface{}{1, 2, 3}},
 		{path: "['a','b']", expect: false, data: []interface{}{1, 2, 3}},
+		{path: "$.*.x", expect: false, data: &Any{X: 5}},
+		{path: "$.*.x", expect: false, data: &Any{X: 5}},
+		{path: "[0:1].z", expect: false, data: []*Any{nil, &Any{X: 5}}},
 	}
 )
 

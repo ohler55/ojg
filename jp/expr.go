@@ -2,6 +2,8 @@
 
 package jp
 
+import "unsafe"
+
 // Expr is a JSON path expression composed of fragments. An Expr implements
 // JSONPath as described by https://goessner.net/articles/JsonPath. Where the
 // definition is unclear Oj has implemented the description based on the best
@@ -30,4 +32,8 @@ func (x Expr) Append(buf []byte) []byte {
 		}
 	}
 	return buf
+}
+
+func isNil(v interface{}) bool {
+	return (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0
 }
