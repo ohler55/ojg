@@ -3,7 +3,6 @@
 package jp
 
 import (
-	"fmt"
 	"reflect"
 
 	"github.com/ohler55/ojg/gen"
@@ -118,7 +117,6 @@ func (x Expr) Has(data interface{}) bool {
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
-			case nil:
 			case map[string]interface{}:
 				if int(fi) == len(x)-1 { // last one
 					if 0 < len(tv) {
@@ -377,7 +375,6 @@ func (x Expr) Has(data interface{}) bool {
 					case int64:
 						i := int(tu)
 						switch tv := prev.(type) {
-						case nil:
 						case []interface{}:
 							if i < 0 {
 								i = len(tv) + i
@@ -550,9 +547,6 @@ func (x Expr) Has(data interface{}) bool {
 					case nil, bool, string, float64, float32,
 						int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
 						gen.Bool, gen.Int, gen.Float, gen.String:
-
-						fmt.Printf("*** primitive\n")
-
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
