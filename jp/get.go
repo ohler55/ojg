@@ -1136,37 +1136,41 @@ func (x Expr) First(data interface{}) interface{} {
 }
 
 func (x Expr) reflectGetChild(data interface{}, key string) (v interface{}, has bool) {
-	rd := reflect.ValueOf(data)
-	rt := rd.Type()
-	if rt.Kind() == reflect.Ptr {
-		rt = rt.Elem()
-		rd = rd.Elem()
-	}
-	if rt.Kind() != reflect.Struct {
-		return
-	}
-	rv := rd.FieldByNameFunc(func(k string) bool { return strings.EqualFold(k, key) })
-	if rv.IsValid() && rv.CanInterface() {
-		v = rv.Interface()
-		has = true
+	if !isNil(data) {
+		rd := reflect.ValueOf(data)
+		rt := rd.Type()
+		if rt.Kind() == reflect.Ptr {
+			rt = rt.Elem()
+			rd = rd.Elem()
+		}
+		if rt.Kind() != reflect.Struct {
+			return
+		}
+		rv := rd.FieldByNameFunc(func(k string) bool { return strings.EqualFold(k, key) })
+		if rv.IsValid() && rv.CanInterface() {
+			v = rv.Interface()
+			has = true
+		}
 	}
 	return
 }
 
 func (x Expr) reflectGetNth(data interface{}, i int) (v interface{}, has bool) {
-	rd := reflect.ValueOf(data)
-	rt := rd.Type()
-	switch rt.Kind() {
-	case reflect.Slice, reflect.Array:
-		size := rd.Len()
-		if i < 0 {
-			i = size + i
-		}
-		if 0 <= i && i < size {
-			rv := rd.Index(i)
-			if rv.CanInterface() {
-				v = rv.Interface()
-				has = true
+	if !isNil(data) {
+		rd := reflect.ValueOf(data)
+		rt := rd.Type()
+		switch rt.Kind() {
+		case reflect.Slice, reflect.Array:
+			size := rd.Len()
+			if i < 0 {
+				i = size + i
+			}
+			if 0 <= i && i < size {
+				rv := rd.Index(i)
+				if rv.CanInterface() {
+					v = rv.Interface()
+					has = true
+				}
 			}
 		}
 	}
@@ -1174,26 +1178,28 @@ func (x Expr) reflectGetNth(data interface{}, i int) (v interface{}, has bool) {
 }
 
 func (x Expr) reflectGetWild(data interface{}) (va []interface{}) {
-	rd := reflect.ValueOf(data)
-	rt := rd.Type()
-	if rt.Kind() == reflect.Ptr {
-		rt = rt.Elem()
-		rd = rd.Elem()
-	}
-	switch rt.Kind() {
-	case reflect.Struct:
-		for i := rd.NumField() - 1; 0 <= i; i-- {
-			rv := rd.Field(i)
-			if rv.CanInterface() {
-				va = append(va, rv.Interface())
-			}
+	if !isNil(data) {
+		rd := reflect.ValueOf(data)
+		rt := rd.Type()
+		if rt.Kind() == reflect.Ptr {
+			rt = rt.Elem()
+			rd = rd.Elem()
 		}
-	case reflect.Slice, reflect.Array:
-		// Iterate in reverse order as that puts values on the stack in reverse.
-		for i := rd.Len() - 1; 0 <= i; i-- {
-			rv := rd.Index(i)
-			if rv.CanInterface() {
-				va = append(va, rv.Interface())
+		switch rt.Kind() {
+		case reflect.Struct:
+			for i := rd.NumField() - 1; 0 <= i; i-- {
+				rv := rd.Field(i)
+				if rv.CanInterface() {
+					va = append(va, rv.Interface())
+				}
+			}
+		case reflect.Slice, reflect.Array:
+			// Iterate in reverse order as that puts values on the stack in reverse.
+			for i := rd.Len() - 1; 0 <= i; i-- {
+				rv := rd.Index(i)
+				if rv.CanInterface() {
+					va = append(va, rv.Interface())
+				}
 			}
 		}
 	}
@@ -1201,26 +1207,28 @@ func (x Expr) reflectGetWild(data interface{}) (va []interface{}) {
 }
 
 func (x Expr) reflectGetWildOne(data interface{}) (interface{}, bool) {
-	rd := reflect.ValueOf(data)
-	rt := rd.Type()
-	if rt.Kind() == reflect.Ptr {
-		rt = rt.Elem()
-		rd = rd.Elem()
-	}
-	switch rt.Kind() {
-	case reflect.Struct:
-		for i := rd.NumField() - 1; 0 <= i; i-- {
-			rv := rd.Field(i)
-			if rv.CanInterface() {
-				return rv.Interface(), true
-			}
+	if !isNil(data) {
+		rd := reflect.ValueOf(data)
+		rt := rd.Type()
+		if rt.Kind() == reflect.Ptr {
+			rt = rt.Elem()
+			rd = rd.Elem()
 		}
-	case reflect.Slice, reflect.Array:
-		size := rd.Len()
-		if 0 < size {
-			rv := rd.Index(0)
-			if rv.CanInterface() {
-				return rv.Interface(), true
+		switch rt.Kind() {
+		case reflect.Struct:
+			for i := rd.NumField() - 1; 0 <= i; i-- {
+				rv := rd.Field(i)
+				if rv.CanInterface() {
+					return rv.Interface(), true
+				}
+			}
+		case reflect.Slice, reflect.Array:
+			size := rd.Len()
+			if 0 < size {
+				rv := rd.Index(0)
+				if rv.CanInterface() {
+					return rv.Interface(), true
+				}
 			}
 		}
 	}
@@ -1228,39 +1236,41 @@ func (x Expr) reflectGetWildOne(data interface{}) (interface{}, bool) {
 }
 
 func (x Expr) reflectGetSlice(data interface{}, start, end, step int) (va []interface{}) {
-	rd := reflect.ValueOf(data)
-	rt := rd.Type()
-	switch rt.Kind() {
-	case reflect.Slice, reflect.Array:
-		size := rd.Len()
-		if start < 0 {
-			start = size + start
+	if !isNil(data) {
+		rd := reflect.ValueOf(data)
+		rt := rd.Type()
+		switch rt.Kind() {
+		case reflect.Slice, reflect.Array:
+			size := rd.Len()
 			if start < 0 {
-				start = 0
-			}
-		}
-		if end < 0 {
-			end = size + end
-			if end < -1 {
-				end = -1
-			}
-		}
-		if size < end {
-			end = size
-		}
-		if 0 <= start && start < size {
-			if 0 < step {
-				for i := start; i < end; i += step {
-					rv := rd.Index(i)
-					if rv.CanInterface() {
-						va = append([]interface{}{rv.Interface()}, va...)
-					}
+				start = size + start
+				if start < 0 {
+					start = 0
 				}
-			} else {
-				for i := start; end < i; i += step {
-					rv := rd.Index(i)
-					if rv.CanInterface() {
-						va = append([]interface{}{rv.Interface()}, va...)
+			}
+			if end < 0 {
+				end = size + end
+				if end < -1 {
+					end = -1
+				}
+			}
+			if size < end {
+				end = size
+			}
+			if 0 <= start && start < size {
+				if 0 < step {
+					for i := start; i < end; i += step {
+						rv := rd.Index(i)
+						if rv.CanInterface() {
+							va = append([]interface{}{rv.Interface()}, va...)
+						}
+					}
+				} else {
+					for i := start; end < i; i += step {
+						rv := rd.Index(i)
+						if rv.CanInterface() {
+							va = append([]interface{}{rv.Interface()}, va...)
+						}
 					}
 				}
 			}

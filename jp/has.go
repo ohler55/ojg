@@ -65,9 +65,11 @@ func (x Expr) Has(data interface{}) bool {
 				case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 					stack = append(stack, v)
 				default:
-					switch reflect.TypeOf(v).Kind() {
-					case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-						stack = append(stack, v)
+					if rt := reflect.TypeOf(v); rt != nil {
+						switch rt.Kind() {
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							stack = append(stack, v)
+						}
 					}
 				}
 			}
@@ -106,9 +108,11 @@ func (x Expr) Has(data interface{}) bool {
 				case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 					stack = append(stack, v)
 				default:
-					switch reflect.TypeOf(v).Kind() {
-					case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-						stack = append(stack, v)
+					if rt := reflect.TypeOf(v); rt != nil {
+						switch rt.Kind() {
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							stack = append(stack, v)
+						}
 					}
 				}
 			}
@@ -129,9 +133,11 @@ func (x Expr) Has(data interface{}) bool {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-								stack = append(stack, v)
+							if rt := reflect.TypeOf(v); rt != nil {
+								switch rt.Kind() {
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+									stack = append(stack, v)
+								}
 							}
 						}
 					}
@@ -151,9 +157,11 @@ func (x Expr) Has(data interface{}) bool {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-								stack = append(stack, v)
+							if rt := reflect.TypeOf(v); rt != nil {
+								switch rt.Kind() {
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+									stack = append(stack, v)
+								}
 							}
 						}
 					}
@@ -197,9 +205,11 @@ func (x Expr) Has(data interface{}) bool {
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
-						switch reflect.TypeOf(v).Kind() {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-							stack = append(stack, v)
+						if rt := reflect.TypeOf(v); rt != nil {
+							switch rt.Kind() {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								stack = append(stack, v)
+							}
 						}
 					}
 				}
@@ -227,9 +237,11 @@ func (x Expr) Has(data interface{}) bool {
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						default:
-							switch reflect.TypeOf(v).Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-								stack = append(stack, v)
+							if rt := reflect.TypeOf(v); rt != nil {
+								switch rt.Kind() {
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+									stack = append(stack, v)
+								}
 							}
 						}
 					}
@@ -252,9 +264,11 @@ func (x Expr) Has(data interface{}) bool {
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						default:
-							switch reflect.TypeOf(v).Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-								stack = append(stack, v)
+							if rt := reflect.TypeOf(v); rt != nil {
+								switch rt.Kind() {
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+									stack = append(stack, v)
+								}
 							}
 						}
 					}
@@ -392,9 +406,11 @@ func (x Expr) Has(data interface{}) bool {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-								stack = append(stack, v)
+							if rt := reflect.TypeOf(v); rt != nil {
+								switch rt.Kind() {
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+									stack = append(stack, v)
+								}
 							}
 						}
 					}
@@ -447,9 +463,11 @@ func (x Expr) Has(data interface{}) bool {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-								stack = append(stack, v)
+							if rt := reflect.TypeOf(v); rt != nil {
+								switch rt.Kind() {
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+									stack = append(stack, v)
+								}
 							}
 						}
 					}
@@ -470,9 +488,11 @@ func (x Expr) Has(data interface{}) bool {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-								stack = append(stack, v)
+							if rt := reflect.TypeOf(v); rt != nil {
+								switch rt.Kind() {
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+									stack = append(stack, v)
+								}
 							}
 						}
 					}
@@ -536,9 +556,11 @@ func (x Expr) Has(data interface{}) bool {
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
-						switch reflect.TypeOf(v).Kind() {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
-							stack = append(stack, v)
+						if rt := reflect.TypeOf(v); rt != nil {
+							switch rt.Kind() {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								stack = append(stack, v)
+							}
 						}
 					}
 				}
