@@ -159,6 +159,13 @@ var (
 				map[string]interface{}{"x": 4, "y": 5, "z": 6},
 			},
 		},
+		{path: "a.b", expect: []interface{}{}, data: map[string]interface{}{"a": nil}},
+		{path: "*.*", expect: []interface{}{}, data: map[string]interface{}{"a": nil}},
+		{path: "*.*", expect: []interface{}{}, data: []interface{}{nil}},
+		{path: "[0][0]", expect: []interface{}{}, data: []interface{}{nil}},
+		{path: "['a','b'].c", expect: []interface{}{}, data: map[string]interface{}{"a": nil}},
+		{path: "[1:0:-1].c", expect: []interface{}{}, data: []interface{}{nil, nil}},
+		{path: "[0:1][0]", expect: []interface{}{}, data: []interface{}{nil}},
 	}
 	getTestReflectData = []*getData{
 		{path: "['a','b']", expect: []interface{}{"sample", 3}, data: &Sample{A: 3, B: "sample"}},
@@ -206,6 +213,13 @@ var (
 			expect: []interface{}{"sample2"},
 			data:   Any{X: []*Sample{{A: 4, B: "sample2"}}},
 		},
+		{path: "$.*", expect: []interface{}{}, data: &one},
+		{path: "['a',-1]", expect: []interface{}{3}, data: []interface{}{1, 2, 3}},
+		{path: "['a','b']", expect: []interface{}{}, data: []interface{}{1, 2, 3}},
+		{path: "$.*.x", expect: []interface{}{}, data: &Any{X: 5}},
+		{path: "$.*.x", expect: []interface{}{}, data: &Any{X: 5}},
+		{path: "[0:1].z", expect: []interface{}{}, data: []*Any{nil, &Any{X: 5}}},
+		{path: "[0:1].z", expect: []interface{}{}, data: []int{1}},
 	}
 )
 
@@ -249,6 +263,13 @@ var (
 			map[string]interface{}{"x": 1},
 			map[string]interface{}{"x": 2},
 		}},
+		{path: "a.b", expect: []interface{}{nil}, data: map[string]interface{}{"a": nil}},
+		{path: "*.*", expect: []interface{}{nil}, data: map[string]interface{}{"a": nil}},
+		{path: "*.*", expect: []interface{}{nil}, data: []interface{}{nil}},
+		{path: "[0][0]", expect: []interface{}{nil}, data: []interface{}{nil}},
+		{path: "['a','b'].c", expect: []interface{}{nil}, data: map[string]interface{}{"a": nil}},
+		{path: "[1:0:-1].c", expect: []interface{}{nil}, data: []interface{}{nil, nil}},
+		{path: "[0:1][0]", expect: []interface{}{nil}, data: []interface{}{nil}},
 	}
 	firstTestReflectData = []*getData{
 		{path: "$.a", expect: []interface{}{3}, data: &Sample{A: 3, B: "sample"}},
@@ -272,6 +293,13 @@ var (
 			data: []gen.Array{{gen.Int(1)}, {gen.Int(2)}, {gen.Int(3)}}},
 		{path: "$.*", expect: []interface{}{nil}, data: &one},
 		{path: "['a',-1]", expect: []interface{}{3}, data: []interface{}{1, 2, 3}},
+		{path: "$.*", expect: []interface{}{nil}, data: &one},
+		{path: "['a',-1]", expect: []interface{}{3}, data: []interface{}{1, 2, 3}},
+		{path: "['a','b']", expect: []interface{}{nil}, data: []interface{}{1, 2, 3}},
+		{path: "$.*.x", expect: []interface{}{nil}, data: &Any{X: 5}},
+		{path: "$.*.x", expect: []interface{}{nil}, data: &Any{X: 5}},
+		{path: "[0:1].z", expect: []interface{}{nil}, data: []*Any{nil, &Any{X: 5}}},
+		{path: "[0:1].z", expect: []interface{}{nil}, data: []int{1}},
 	}
 )
 

@@ -91,7 +91,6 @@ func (x Expr) Set(data, value interface{}) error {
 		case Child:
 			var has bool
 			switch tv := prev.(type) {
-			case nil:
 			case map[string]interface{}:
 				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
@@ -107,7 +106,11 @@ func (x Expr) Set(data, value interface{}) error {
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
-						switch reflect.TypeOf(v).Kind() {
+						kind := reflect.Invalid
+						if rt := reflect.TypeOf(v); rt != nil {
+							kind = rt.Kind()
+						}
+						switch kind {
 						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 							stack = append(stack, v)
 						default:
@@ -175,7 +178,11 @@ func (x Expr) Set(data, value interface{}) error {
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
-						switch reflect.TypeOf(v).Kind() {
+						kind := reflect.Invalid
+						if rt := reflect.TypeOf(v); rt != nil {
+							kind = rt.Kind()
+						}
+						switch kind {
 						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 							stack = append(stack, v)
 						default:
@@ -187,7 +194,6 @@ func (x Expr) Set(data, value interface{}) error {
 		case Nth:
 			i := int(tf)
 			switch tv := prev.(type) {
-			case nil:
 			case []interface{}:
 				if i < 0 {
 					i = len(tv) + i
@@ -208,7 +214,11 @@ func (x Expr) Set(data, value interface{}) error {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							default:
@@ -256,7 +266,11 @@ func (x Expr) Set(data, value interface{}) error {
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
-						switch reflect.TypeOf(v).Kind() {
+						kind := reflect.Invalid
+						if rt := reflect.TypeOf(v); rt != nil {
+							kind = rt.Kind()
+						}
+						switch kind {
 						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 							stack = append(stack, v)
 						default:
@@ -267,7 +281,6 @@ func (x Expr) Set(data, value interface{}) error {
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
-			case nil:
 			case map[string]interface{}:
 				var k string
 				if int(fi) == len(x)-1 { // last one
@@ -288,7 +301,11 @@ func (x Expr) Set(data, value interface{}) error {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -312,7 +329,11 @@ func (x Expr) Set(data, value interface{}) error {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -365,7 +386,11 @@ func (x Expr) Set(data, value interface{}) error {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -390,7 +415,11 @@ func (x Expr) Set(data, value interface{}) error {
 							stack = append(stack, v)
 							stack = append(stack, fragIndex(fi|descentChildFlag))
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -408,7 +437,11 @@ func (x Expr) Set(data, value interface{}) error {
 							stack = append(stack, v)
 							stack = append(stack, fragIndex(fi|descentChildFlag))
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -446,7 +479,6 @@ func (x Expr) Set(data, value interface{}) error {
 				case string:
 					var has bool
 					switch tv := prev.(type) {
-					case nil:
 					case map[string]interface{}:
 						if v, has = tv[string(tu)]; has {
 							switch v.(type) {
@@ -455,7 +487,11 @@ func (x Expr) Set(data, value interface{}) error {
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
-								switch reflect.TypeOf(v).Kind() {
+								kind := reflect.Invalid
+								if rt := reflect.TypeOf(v); rt != nil {
+									kind = rt.Kind()
+								}
+								switch kind {
 								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
@@ -477,7 +513,11 @@ func (x Expr) Set(data, value interface{}) error {
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
-								switch reflect.TypeOf(v).Kind() {
+								kind := reflect.Invalid
+								if rt := reflect.TypeOf(v); rt != nil {
+									kind = rt.Kind()
+								}
+								switch kind {
 								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
@@ -487,7 +527,6 @@ func (x Expr) Set(data, value interface{}) error {
 				case int64:
 					i := int(tu)
 					switch tv := prev.(type) {
-					case nil:
 					case []interface{}:
 						if i < 0 {
 							i = len(tv) + i
@@ -500,7 +539,11 @@ func (x Expr) Set(data, value interface{}) error {
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
-								switch reflect.TypeOf(v).Kind() {
+								kind := reflect.Invalid
+								if rt := reflect.TypeOf(v); rt != nil {
+									kind = rt.Kind()
+								}
+								switch kind {
 								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
@@ -526,7 +569,11 @@ func (x Expr) Set(data, value interface{}) error {
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
-								switch reflect.TypeOf(v).Kind() {
+								kind := reflect.Invalid
+								if rt := reflect.TypeOf(v); rt != nil {
+									kind = rt.Kind()
+								}
+								switch kind {
 								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
@@ -549,7 +596,6 @@ func (x Expr) Set(data, value interface{}) error {
 				step = tf[2]
 			}
 			switch tv := prev.(type) {
-			case nil:
 			case []interface{}:
 				if start < 0 {
 					start = len(tv) + start
@@ -613,7 +659,11 @@ func (x Expr) Set(data, value interface{}) error {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -690,7 +740,6 @@ func (x Expr) SetOne(data, value interface{}) error {
 		case Child:
 			var has bool
 			switch tv := prev.(type) {
-			case nil:
 			case map[string]interface{}:
 				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
@@ -707,7 +756,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
-						switch reflect.TypeOf(v).Kind() {
+						kind := reflect.Invalid
+						if rt := reflect.TypeOf(v); rt != nil {
+							kind = rt.Kind()
+						}
+						switch kind {
 						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 							stack = append(stack, v)
 						default:
@@ -778,7 +831,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
-						switch reflect.TypeOf(v).Kind() {
+						kind := reflect.Invalid
+						if rt := reflect.TypeOf(v); rt != nil {
+							kind = rt.Kind()
+						}
+						switch kind {
 						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 							stack = append(stack, v)
 						default:
@@ -790,7 +847,6 @@ func (x Expr) SetOne(data, value interface{}) error {
 		case Nth:
 			i := int(tf)
 			switch tv := prev.(type) {
-			case nil:
 			case []interface{}:
 				if i < 0 {
 					i = len(tv) + i
@@ -812,7 +868,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
-						switch reflect.TypeOf(v).Kind() {
+						kind := reflect.Invalid
+						if rt := reflect.TypeOf(v); rt != nil {
+							kind = rt.Kind()
+						}
+						switch kind {
 						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 							stack = append(stack, v)
 						default:
@@ -861,7 +921,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
-						switch reflect.TypeOf(v).Kind() {
+						kind := reflect.Invalid
+						if rt := reflect.TypeOf(v); rt != nil {
+							kind = rt.Kind()
+						}
+						switch kind {
 						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 							stack = append(stack, v)
 						default:
@@ -872,7 +936,6 @@ func (x Expr) SetOne(data, value interface{}) error {
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
-			case nil:
 			case map[string]interface{}:
 				var k string
 				if int(fi) == len(x)-1 { // last one
@@ -895,7 +958,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -921,7 +988,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -978,7 +1049,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -991,7 +1066,6 @@ func (x Expr) SetOne(data, value interface{}) error {
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
 				switch tv := prev.(type) {
-				case nil:
 				case map[string]interface{}:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
@@ -1004,7 +1078,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 							stack = append(stack, v)
 							stack = append(stack, fragIndex(fi|descentChildFlag))
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -1023,7 +1101,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 							stack = append(stack, v)
 							stack = append(stack, fragIndex(fi|descentChildFlag))
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -1062,7 +1144,6 @@ func (x Expr) SetOne(data, value interface{}) error {
 				case string:
 					var has bool
 					switch tv := prev.(type) {
-					case nil:
 					case map[string]interface{}:
 						if v, has = tv[string(tu)]; has {
 							switch v.(type) {
@@ -1071,7 +1152,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
-								switch reflect.TypeOf(v).Kind() {
+								kind := reflect.Invalid
+								if rt := reflect.TypeOf(v); rt != nil {
+									kind = rt.Kind()
+								}
+								switch kind {
 								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
@@ -1093,7 +1178,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
-								switch reflect.TypeOf(v).Kind() {
+								kind := reflect.Invalid
+								if rt := reflect.TypeOf(v); rt != nil {
+									kind = rt.Kind()
+								}
+								switch kind {
 								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
@@ -1103,7 +1192,6 @@ func (x Expr) SetOne(data, value interface{}) error {
 				case int64:
 					i := int(tu)
 					switch tv := prev.(type) {
-					case nil:
 					case []interface{}:
 						if i < 0 {
 							i = len(tv) + i
@@ -1117,7 +1205,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -1142,7 +1234,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
-								switch reflect.TypeOf(v).Kind() {
+								kind := reflect.Invalid
+								if rt := reflect.TypeOf(v); rt != nil {
+									kind = rt.Kind()
+								}
+								switch kind {
 								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
@@ -1165,7 +1261,6 @@ func (x Expr) SetOne(data, value interface{}) error {
 				step = tf[2]
 			}
 			switch tv := prev.(type) {
-			case nil:
 			case []interface{}:
 				if start < 0 {
 					start = len(tv) + start
@@ -1189,7 +1284,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -1204,7 +1303,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -1251,7 +1354,11 @@ func (x Expr) SetOne(data, value interface{}) error {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
-							switch reflect.TypeOf(v).Kind() {
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
 							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
@@ -1284,38 +1391,42 @@ func (x Expr) SetOne(data, value interface{}) error {
 }
 
 func (x Expr) reflectSetChild(data interface{}, key string, v interface{}) {
-	rd := reflect.ValueOf(data)
-	rt := rd.Type()
-	if rt.Kind() == reflect.Ptr {
-		rt = rt.Elem()
-		rd = rd.Elem()
-	}
-	if rt.Kind() != reflect.Struct {
-		return
-	}
-	rv := rd.FieldByNameFunc(func(k string) bool { return strings.EqualFold(k, key) })
-	vv := reflect.ValueOf(v)
-	vt := vv.Type()
-	if rv.CanSet() && vt.AssignableTo(rv.Type()) {
-		rv.Set(vv)
+	if !isNil(data) {
+		rd := reflect.ValueOf(data)
+		rt := rd.Type()
+		if rt.Kind() == reflect.Ptr {
+			rt = rt.Elem()
+			rd = rd.Elem()
+		}
+		if rt.Kind() != reflect.Struct {
+			return
+		}
+		rv := rd.FieldByNameFunc(func(k string) bool { return strings.EqualFold(k, key) })
+		vv := reflect.ValueOf(v)
+		vt := vv.Type()
+		if rv.CanSet() && vt.AssignableTo(rv.Type()) {
+			rv.Set(vv)
+		}
 	}
 }
 
 func (x Expr) reflectSetNth(data interface{}, i int, v interface{}) {
-	rd := reflect.ValueOf(data)
-	rt := rd.Type()
-	switch rt.Kind() {
-	case reflect.Slice, reflect.Array:
-		size := rd.Len()
-		if i < 0 {
-			i = size + i
-		}
-		if 0 <= i && i < size {
-			rv := rd.Index(i)
-			vv := reflect.ValueOf(v)
-			vt := vv.Type()
-			if rv.CanSet() && vt.AssignableTo(rv.Type()) {
-				rv.Set(vv)
+	if !isNil(data) {
+		rd := reflect.ValueOf(data)
+		rt := rd.Type()
+		switch rt.Kind() {
+		case reflect.Slice, reflect.Array:
+			size := rd.Len()
+			if i < 0 {
+				i = size + i
+			}
+			if 0 <= i && i < size {
+				rv := rd.Index(i)
+				vv := reflect.ValueOf(v)
+				vt := vv.Type()
+				if rv.CanSet() && vt.AssignableTo(rv.Type()) {
+					rv.Set(vv)
+				}
 			}
 		}
 	}
