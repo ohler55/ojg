@@ -60,8 +60,10 @@ var (
 		{path: "a.b", expect: false, data: map[string]interface{}{"a": nil}},
 		{path: "*.*", expect: false, data: map[string]interface{}{"a": nil}},
 		{path: "*.*", expect: false, data: []interface{}{nil}},
+		{path: "[0][0]", expect: false, data: []interface{}{nil}},
 		{path: "['a','b'].c", expect: false, data: map[string]interface{}{"a": nil}},
 		{path: "[1:0:-1].c", expect: false, data: []interface{}{nil, nil}},
+		{path: "[0:1][0]", expect: false, data: []interface{}{nil}},
 	}
 	hasTestReflectData = []*hasData{
 		{path: "$.a", expect: true, data: &Sample{A: 3, B: "sample"}},
