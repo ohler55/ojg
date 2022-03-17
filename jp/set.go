@@ -298,6 +298,9 @@ func (x Expr) Set(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+							fmt.Println("*** primitive 302")
+
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -326,6 +329,9 @@ func (x Expr) Set(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+							fmt.Println("*** primitive 333")
+
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -383,6 +389,9 @@ func (x Expr) Set(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+							fmt.Println("*** primitive 393")
+
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -433,6 +442,9 @@ func (x Expr) Set(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+							fmt.Println("*** primitive 446")
+
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fragIndex(fi|descentChildFlag))
@@ -484,6 +496,9 @@ func (x Expr) Set(data, value interface{}) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+								fmt.Println("*** primitive 500")
+
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
@@ -510,6 +525,9 @@ func (x Expr) Set(data, value interface{}) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+								fmt.Println("*** primitive 529")
+
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
@@ -536,6 +554,9 @@ func (x Expr) Set(data, value interface{}) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+								fmt.Println("*** primitive 529")
+
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
@@ -566,6 +587,9 @@ func (x Expr) Set(data, value interface{}) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+								fmt.Println("*** primitive 591")
+
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
@@ -656,6 +680,9 @@ func (x Expr) Set(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+							fmt.Println("*** primitive 684")
+
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -955,6 +982,9 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+							fmt.Println("*** primitive 986")
+
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -985,6 +1015,9 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+							fmt.Println("*** primitive 1019")
+
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -1046,6 +1079,9 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+							fmt.Println("*** primitive 1083")
+
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -1097,6 +1133,9 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+							fmt.Println("*** primitive 1137")
+
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fragIndex(fi|descentChildFlag))
@@ -1149,6 +1188,9 @@ func (x Expr) SetOne(data, value interface{}) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+								fmt.Println("*** primitive 1192")
+
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
@@ -1175,6 +1217,9 @@ func (x Expr) SetOne(data, value interface{}) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+								fmt.Println("*** primitive 1221")
+
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
@@ -1202,6 +1247,9 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+							fmt.Println("*** primitive 1251")
+
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -1231,6 +1279,9 @@ func (x Expr) SetOne(data, value interface{}) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+								fmt.Println("*** primitive 1283")
+
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
@@ -1281,6 +1332,9 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+							fmt.Println("*** primitive 1336")
+
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -1300,6 +1354,9 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+							fmt.Println("*** primitive 1358")
+
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -1351,6 +1408,9 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+
+							fmt.Println("*** primitive 1412")
+
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:

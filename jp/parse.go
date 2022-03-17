@@ -116,6 +116,7 @@ func (p *parser) nextFrag(first, lastDescent bool) (f Frag) {
 		case '[':
 			f = p.afterBracket()
 		case ']':
+			p.pos--
 			// done
 		default:
 			p.pos--

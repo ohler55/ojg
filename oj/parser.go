@@ -557,6 +557,9 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		}
 	}
 	if last {
+		if 0 < len(p.starts) {
+			return p.newError(off, "not closed")
+		}
 		if len(p.mode) == 256 { // valid finishing maps are one byte longer
 			return p.newError(off, "incomplete JSON")
 		}

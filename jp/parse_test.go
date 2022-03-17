@@ -68,6 +68,7 @@ func TestParse(t *testing.T) {
 		{src: "abc.+", err: "an expression fragment can not start with a '+' at 6 in abc.+"},
 		{src: "abc..+", err: "parse error at 6 in abc..+"},
 		{src: "[", err: "not terminated at 2 in ["},
+		{src: "]", err: "parse error at 1 in ]"},
 		{src: "[]", err: "parse error at 2 in []"},
 		{src: "[**", err: "not terminated at 4 in [**"},
 		{src: "['x'z]", err: "invalid bracket fragment at 6 in ['x'z]"},
