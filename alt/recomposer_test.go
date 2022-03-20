@@ -448,6 +448,16 @@ func TestRecomposeOtherMap(t *testing.T) {
 	tt.Equal(t, 3, vo["x"].(int64))
 }
 
+func TestRecomposeOtherMap2(t *testing.T) {
+	src := map[string]int64{"x": 3}
+	var out map[string]interface{}
+	v, err := alt.Recompose(src, &out)
+	tt.Nil(t, err, "Recompose")
+	vo, _ := v.(map[string]interface{})
+	tt.NotNil(t, vo)
+	tt.Equal(t, 3, vo["x"].(int64))
+}
+
 func TestRecomposeSimpleMap(t *testing.T) {
 	src := map[string]interface{}{"x": map[string]interface{}{"val": 3}}
 	var out map[string]Dummy

@@ -98,7 +98,7 @@ func TestParserParseString(t *testing.T) {
 			}},
 		{src: "{}}", expect: "extra characters after close, '}' at 1:3"},
 		{src: "{}\n }", expect: "extra characters after close, '}' at 2:2"},
-		{src: "{ \n", expect: "incomplete JSON at 2:1"},
+		{src: "{ \n", expect: "not closed at 2:1"},
 		{src: "{]}", expect: "expected a string start or object close, not ']' at 1:2"},
 		{src: "[}]", expect: "unexpected object close at 1:2"},
 		{src: "{\"a\" \n : 1]}", expect: "unexpected array close at 2:5"},
@@ -140,6 +140,7 @@ func TestParserParseString(t *testing.T) {
 		{src: "\xef\xbb[]", expect: "expected BOM at 1:3"},
 		{src: "[ // a comment\n  true\n]", expect: "unexpected character '/' at 1:3"},
 		{src: `→`, expect: "unexpected character '→' at 1:1"},
+		{src: `{"a":"1"`, expect: "not closed at 1:9"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.src)
