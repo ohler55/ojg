@@ -177,6 +177,7 @@ var (
 		{path: "*.a", data: &Any{X: 1}, value: 3, expect: `{"^":"Any","x":1}`},
 		{path: "[0,1].x", data: []int{1}, value: 3, expect: `[1]`},
 		{path: "[0:1].x", data: []int{1}, value: 3, expect: `[1]`},
+		{path: "['x','y'].a", data: &Any{X: 1}, value: 3, expect: `{"^":"Any","x":1}`},
 
 		{path: "x.a", data: map[string]interface{}{"x": func() {}}, value: 3, err: "can not follow a func() at 'x'"},
 		{path: "x.a", data: &Any{X: 1}, value: 3, err: "can not follow a int at 'x'"},
