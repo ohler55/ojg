@@ -1,5 +1,13 @@
 
 - jp
+ - add filter operators
+  - in
+  - nin
+  - empty <bool>
+  - size <num>
+  - contains
+  - =~ regexp
+  - subset
 
  - delete and set with filter, union, and slice
 
