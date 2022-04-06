@@ -27,6 +27,7 @@ var (
 	divide = &op{prec: 1, code: '/', name: "/", cnt: 2}
 	get    = &op{prec: 0, code: 'G', name: "get", cnt: 1}
 	in     = &op{prec: 3, code: 'i', name: "in", cnt: 2}
+	empty  = &op{prec: 3, code: 'e', name: "empty", cnt: 2}
 	//rx     = &op{prec: 0, code: '~', name: "=~", cnt: 2}
 
 	opMap = map[string]*op{
@@ -44,6 +45,7 @@ var (
 		mult.name:   mult,
 		divide.name: divide,
 		in.name:     in,
+		empty.name:  empty,
 	}
 )
 
@@ -481,6 +483,18 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 							sstack[i] = true
 							break
 						}
+					}
+				}
+			case empty.code:
+				sstack[i] = false
+				if boo, ok := right.(bool); ok {
+					switch tl := left.(type) {
+					case string:
+						sstack[i] = boo == (len(tl) == 0)
+					case []interface{}:
+						sstack[i] = boo == (len(tl) == 0)
+					case map[string]interface{}:
+						sstack[i] = boo == (len(tl) == 0)
 					}
 				}
 			}

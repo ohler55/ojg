@@ -1,13 +1,11 @@
 
 - jp
  - add filter operators
-  - in
-  - nin
+  + in
   - empty <bool>
-  - size <num>
-  - contains
   - =~ regexp
-  - subset
+- cmd/oj
+ - add docs for filter options
 
  - delete and set with filter, union, and slice
 
