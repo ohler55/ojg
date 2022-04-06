@@ -51,6 +51,9 @@ func TestEquation(t *testing.T) {
 
 	eq = jp.Divide(jp.ConstInt(3), jp.ConstInt(4))
 	tt.Equal(t, "(3 / 4)", eq.String())
+
+	eq = jp.In(jp.ConstInt(3), jp.ConstList([]interface{}{int64(1), int64(2), int64(3)}))
+	tt.Equal(t, "(3 in [1,2,3])", eq.String())
 }
 
 func TestEquationScript(t *testing.T) {

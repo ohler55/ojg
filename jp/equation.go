@@ -54,6 +54,11 @@ func ConstString(s string) *Equation {
 	return &Equation{result: s}
 }
 
+// ConstList creates and returns an Equation for an []interface{} constant.
+func ConstList(list []interface{}) *Equation {
+	return &Equation{result: list}
+}
+
 // Get creates and returns an Equation for an expression get of the form
 // @.child.
 func Get(x Expr) *Equation {
@@ -125,6 +130,11 @@ func Divide(left, right *Equation) *Equation {
 	return &Equation{o: divide, left: left, right: right}
 }
 
+// In creates and returns an Equation for an in operator.
+func In(left, right *Equation) *Equation {
+	return &Equation{o: in, left: left, right: right}
+}
+
 // Append a fragment string representation of the fragment to the buffer
 // then returning the expanded buffer.
 func (e *Equation) Append(buf []byte, parens bool) []byte {
@@ -180,6 +190,15 @@ func (e *Equation) appendValue(buf []byte, v interface{}) []byte {
 		} else {
 			buf = append(buf, "false"...)
 		}
+	case []interface{}:
+		buf = append(buf, '[')
+		for i, ev := range tv {
+			if 0 < i {
+				buf = append(buf, ',')
+			}
+			buf = e.appendValue(buf, ev)
+		}
+		buf = append(buf, ']')
 	case Expr:
 		buf = tv.Append(buf)
 	}

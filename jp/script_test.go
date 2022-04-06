@@ -49,7 +49,6 @@ func TestScriptBasicEval(t *testing.T) {
 	f := e.Filter()
 	tt.Equal(t, "[?(@.a < 52 || @.x == 'cool')]", f.String())
 
-	//fmt.Printf("*** data: %s\n", jp.JSON(data))
 	stack := s.Eval([]interface{}{}, data)
 	tt.Equal(t, `[{"a":1,"b":2,"c":3}]`, oj.JSON(stack, &oj.Options{Sort: true}))
 }
@@ -77,6 +76,7 @@ func TestScriptParse(t *testing.T) {
 		{src: "((@.x == 3) || (@.y > 5))", expect: "(@.x == 3 || @.y > 5)"},
 		{src: "(@.x < 3 && @.x > 1 || @.z == 3)", expect: "(@.x < 3 && @.x > 1 || @.z == 3)"},
 		{src: "(!(3 == @.x))", expect: "(!(3 == @.x))"},
+		{src: "(@.x in [1,2,3])", expect: "(@.x in [1,2,3])"},
 
 		{src: "@.x == 4", err: "a script must start with a '('"},
 		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 8 in (@.x ++ 4)"},
@@ -184,6 +184,8 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@ >= 3.0)", value: int64(4)},
 		{src: "(@ >= 3.0)", value: 3.1},
 		{src: "(@ >= 'abc')", value: "abd"},
+
+		{src: "(@ in [1,2,3])", value: int64(2)},
 
 		{src: "(@.x || @.y)", value: map[string]interface{}{"x": false, "y": false}, noMatch: true},
 		{src: "(@.x || @.y)", value: map[string]interface{}{"x": false, "y": true}},

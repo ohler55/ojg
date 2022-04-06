@@ -3,6 +3,7 @@
 package jp
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 
@@ -28,7 +29,7 @@ const (
 		"................................" + // 0x00
 		".ov.v.ovv.oo.o.ovvvvvvvvvv..ooo." + // 0x20
 		"v..............................." + // 0x40
-		"......v.......v.....v.......o.o." + // 0x60
+		"......v..o....v.....v.......o.o." + // 0x60
 		"................................" + // 0x80
 		"................................" + // 0xa0
 		"................................" + // 0xc0
@@ -325,7 +326,7 @@ func (p *parser) readNum(b byte) interface{} {
 		if err != nil {
 			p.raise(err.Error())
 		}
-		return int(i)
+		return i
 	}
 	if b == '+' || b == '-' {
 		num = append(num, b)
@@ -528,6 +529,8 @@ func (p *parser) readEqValue() (eq *Equation) {
 	case '(':
 		p.pos++
 		eq = p.readEquation()
+	case '[':
+		eq = &Equation{result: p.readEqList()}
 	default:
 		p.raise("expected a value")
 	}
@@ -543,12 +546,41 @@ func (p *parser) readEqToken(token []byte) {
 	}
 }
 
+func (p *parser) readEqList() (list []interface{}) {
+	p.pos++
+List:
+	for p.pos < len(p.buf) {
+		eq := p.readEqValue()
+		list = append(list, eq.result)
+		b := p.skipSpace()
+		switch b {
+		case ',':
+		case ']':
+			break List
+		default:
+			p.raise("expected a comma")
+		}
+	}
+	return
+}
+
+func partialOp(token []byte, b byte) bool {
+	for k := range opMap {
+		if len(token) < len(k) && bytes.HasPrefix([]byte(k), token) && b == k[len(token)] {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *parser) readEqOp() (o *op) {
 	var token []byte
 	b := p.nextNonSpace()
 	for {
 		if eqMap[b] != 'o' {
-			break
+			if len(token) == 0 || !partialOp(token, b) {
+				break
+			}
 		}
 		token = append(token, b)
 		if b == '-' && 1 < len(token) {

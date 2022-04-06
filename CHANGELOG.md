@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.14.0] - <unreleased>
+### Added
+- Added the JSONPath filter operation `in`.
+
 ## [1.13.1] - 2022-03-19
 ### Fixed
 - Fixed a case where a un-terminated JSON did not return an error.
