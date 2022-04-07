@@ -7,6 +7,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.14.0] - <unreleased>
 ### Added
 - Added the JSONPath filter operation `in`.
+- Added the JSONPath filter operation `empty`.
 
 ## [1.13.1] - 2022-03-19
 ### Fixed

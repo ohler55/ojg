@@ -4,7 +4,7 @@ package asm
 
 import (
 	"fmt"
-	"strings"
+	"unicode"
 )
 
 func init() {
@@ -25,5 +25,9 @@ func title(root map[string]interface{}, at interface{}, args ...interface{}) int
 	if !ok {
 		panic(fmt.Errorf("title expected a string argument, not a %T", v))
 	}
-	return strings.Title(s)
+	ra := []rune(s)
+	if 0 < len(ra) {
+		ra[0] = unicode.ToUpper(ra[0])
+	}
+	return string(ra)
 }

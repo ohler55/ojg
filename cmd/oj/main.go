@@ -25,17 +25,18 @@ import (
 const version = "1.9.4"
 
 var (
-	indent     = 2
-	color      = false
-	bright     = false
-	sortKeys   = false
-	lazy       = false
-	senOut     = false
-	tab        = false
-	showFnDocs = false
-	showConf   = false
-	safe       = false
-	mongo      = false
+	indent         = 2
+	color          = false
+	bright         = false
+	sortKeys       = false
+	lazy           = false
+	senOut         = false
+	tab            = false
+	showFnDocs     = false
+	showFilterDocs = false
+	showConf       = false
+	safe           = false
+	mongo          = false
 
 	// If true wrap extracts with an array.
 	wrapExtract = false
@@ -81,6 +82,7 @@ func init() {
 	flag.StringVar(&confFile, "f", confFile, "configuration file (see -help-config), - indicates no file")
 	flag.BoolVar(&showFnDocs, "fn", showFnDocs, "describe assembly plan functions")
 	flag.BoolVar(&showFnDocs, "help-fn", showFnDocs, "describe assembly plan functions")
+	flag.BoolVar(&showFilterDocs, "help-filter", showFilterDocs, "describe filter operators like [?(@.x == 3)]")
 	flag.BoolVar(&showConf, "help-config", showConf, "describe .oj-config.sen format")
 	flag.BoolVar(&mongo, "mongo", mongo, "parse mongo Javascript output")
 	flag.StringVar(&convName, "conv", convName, `apply converter before writing. Supported values are:
@@ -152,6 +154,10 @@ are integers and align is a boolean.
 	}
 	if showFnDocs {
 		displayFnDocs()
+		os.Exit(0)
+	}
+	if showFilterDocs {
+		displayFilterDocs()
 		os.Exit(0)
 	}
 	extracts = extracts[:0]
@@ -722,6 +728,51 @@ The functions available are:
 		b = append(b, fmt.Sprintf("  %10s: %s\n\n", k, strings.ReplaceAll(docs[k], "\n", "\n              "))...)
 	}
 	fmt.Println(string(b))
+}
+
+func displayFilterDocs() {
+	fmt.Printf(`
+
+JSONPaths can include filters such as $.x[?(@.y == 'z')].value. As with other
+square bracket operators it applies to arrays. The general form of a filter is
+[?(left operator right)]. Both left and right can be constants or JSONPaths
+where @ is each array element. Nested filter are supported. Operators
+supported are:
+
+ ==    returns true if left is equal to right.
+
+ !=    returns true if left is not equal to right.
+
+ <     returns true if left is less than right.
+
+ <=    returns true if left is less than or equal to right.
+
+ >     returns true if left is greater than right.
+
+ >=    returns true if left is greater than or equal to right.
+
+ ||    returns true if either left or right is true
+
+ &&    returns true if both left and right are true.
+
+ !     inverts the boolean value of the right. No left should be
+       present. Examples are !@.x or !(@.x == 2).
+
+ empty returns true if the left empty condition (length is zero) matches the
+       right which must be a boolean.
+
+ +     returns the sum of left and right.
+
+ -     returns the difference of left and right. (left - right)
+
+ *     returns the product of left and right.
+
+ /     returns left divided by right.
+
+ in    returns true if left is in right. Right must be an array either as a
+       constant of the form [1,'a'] or as a path that evaluates to an array.
+
+`)
 }
 
 func displayConf() {

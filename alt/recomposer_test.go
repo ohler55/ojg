@@ -270,7 +270,8 @@ func TestRecomposeNested(t *testing.T) {
 	v, err = r.Recompose(simple, &Parent{})
 	tt.Nil(t, err, "Recompose")
 	p, _ := v.(*Parent)
-	tt.NotNil(t, p, "check type - %"+"T", v)
+	format := "check type - %T"
+	tt.NotNil(t, p, format, v)
 
 	diff := alt.Compare(&src, p)
 	tt.Equal(t, 0, len(diff), "compare diff - ", diff)
