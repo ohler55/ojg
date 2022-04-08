@@ -1,11 +1,4 @@
 
-- jp
- - add filter operators
-  + in
-  - empty <bool>
-  - =~ regexp
-- cmd/oj
- - add docs for filter options
 
  - delete and set with filter, union, and slice
 

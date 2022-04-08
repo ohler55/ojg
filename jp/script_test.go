@@ -79,10 +79,13 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@.x in [1,2,3])", expect: "(@.x in [1,2,3])"},
 		{src: "(@.x in ['a' , 'b', 'c'])", expect: "(@.x in ['a','b','c'])"},
 		{src: "(@ empty true)", expect: "(@ empty true)"},
+		{src: "(@ =~ /abc/)", expect: "(@ =~ /abc/)"},
+		{src: "(@ =~ /a\\/c/)", expect: "(@ =~ /a\\/c/)"},
 
 		{src: "@.x == 4", err: "a script must start with a '('"},
 		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 8 in (@.x ++ 4)"},
 		{src: "(@[1:5} == 3)", err: "invalid slice syntax at 8 in (@[1:5} == 3)"},
+		{src: "(@ =~ /a[c/)", err: "error parsing regexp: missing closing ]: `[c` at 12 in (@ =~ /a[c/)"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
@@ -198,6 +201,11 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@ empty true)", value: []interface{}{1}, noMatch: true},
 		{src: "(@ empty true)", value: map[string]interface{}{"x": 1}, noMatch: true},
 		{src: "(@ empty true)", value: "x", noMatch: true},
+
+		{src: "(@ =~ /a.c/)", value: "abc"},
+		{src: "(@ =~ 'a.c')", value: "abc"},
+		{src: "(@ =~ 'a.c')", value: "abb", noMatch: true},
+		{src: "(@ =~ 'a.c')", value: int64(3), noMatch: true},
 
 		{src: "(@.x || @.y)", value: map[string]interface{}{"x": false, "y": false}, noMatch: true},
 		{src: "(@.x || @.y)", value: map[string]interface{}{"x": false, "y": true}},

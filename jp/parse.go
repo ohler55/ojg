@@ -5,6 +5,7 @@ package jp
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"strconv"
 
 	"github.com/ohler55/ojg"
@@ -444,6 +445,28 @@ func (p *parser) readStr(term byte) string {
 	return string(p.buf[start : p.pos-1])
 }
 
+func (p *parser) readRegex() *regexp.Regexp {
+	start := p.pos
+	esc := false
+	for p.pos < len(p.buf) {
+		b := p.buf[p.pos]
+		p.pos++
+		if b == '/' && !esc {
+			break
+		}
+		if b == '\\' {
+			esc = !esc
+		} else {
+			esc = false
+		}
+	}
+	rx, err := regexp.Compile(string(p.buf[start : p.pos-1]))
+	if err != nil {
+		p.raise(err.Error())
+	}
+	return rx
+}
+
 func (p *parser) readFilter() *Filter {
 	if len(p.buf) <= p.pos {
 		p.raise("not terminated")
@@ -510,8 +533,7 @@ func (p *parser) readEqValue() (eq *Equation) {
 		eq = &Equation{result: v}
 	case '\'', '"':
 		p.pos++
-		var s string
-		s = p.readStr(b)
+		s := p.readStr(b)
 		eq = &Equation{result: s}
 	case 'n':
 		p.readEqToken([]byte("null"))
@@ -531,6 +553,10 @@ func (p *parser) readEqValue() (eq *Equation) {
 		eq = p.readEquation()
 	case '[':
 		eq = &Equation{result: p.readEqList()}
+	case '/':
+		p.pos++
+		rx := p.readRegex()
+		eq = &Equation{result: rx}
 	default:
 		p.raise("expected a value")
 	}

@@ -772,6 +772,9 @@ supported are:
  in    returns true if left is in right. Right must be an array either as a
        constant of the form [1,'a'] or as a path that evaluates to an array.
 
+ =~    returns true if left is a string and matches the right regex which can be
+       either a regex delimited by / or a string.
+
 `)
 }
 

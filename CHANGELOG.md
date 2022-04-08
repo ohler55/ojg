@@ -8,6 +8,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ### Added
 - Added the JSONPath filter operation `in`.
 - Added the JSONPath filter operation `empty`.
+- Added the JSONPath filter operation `=~` for regex.
 
 ## [1.13.1] - 2022-03-19
 ### Fixed

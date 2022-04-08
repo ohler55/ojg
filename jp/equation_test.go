@@ -3,6 +3,7 @@
 package jp_test
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/ohler55/ojg/jp"
@@ -54,6 +55,12 @@ func TestEquation(t *testing.T) {
 
 	eq = jp.In(jp.ConstInt(3), jp.ConstList([]interface{}{int64(1), int64(2), int64(3)}))
 	tt.Equal(t, "(3 in [1,2,3])", eq.String())
+
+	eq = jp.Empty(jp.ConstList([]interface{}{int64(1)}), jp.ConstBool(true))
+	tt.Equal(t, "([1] empty true)", eq.String())
+
+	eq = jp.Regex(jp.ConstString("abc"), jp.ConstRegex(regexp.MustCompile("a.c")))
+	tt.Equal(t, "('abc' =~ /a.c/)", eq.String())
 }
 
 func TestEquationScript(t *testing.T) {
