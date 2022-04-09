@@ -83,7 +83,7 @@ func main() {
 		}
 		defer func() { _ = f.Close() }() // error handling omitted for example
 		if err := pprof.StartCPUProfile(f); err != nil {
-			panic(fmt.Sprintf("could not start CPU profile: ", err))
+			panic(fmt.Sprintf("could not start CPU profile: %s", err))
 		}
 		defer pprof.StopCPUProfile()
 	}
