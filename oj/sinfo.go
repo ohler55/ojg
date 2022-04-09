@@ -64,11 +64,12 @@ func buildStruct(rt reflect.Type, x uintptr, embedded bool) (st *sinfo) {
 }
 
 func buildFields(rt reflect.Type, u byte, embedded bool) (fa []*finfo) {
-	if (maskByTag & u) != 0 {
+	switch {
+	case (maskByTag & u) != 0:
 		fa = buildTagFields(rt, (maskNested&u) != 0, (maskPretty&u) != 0, embedded)
-	} else if (maskExact & u) != 0 {
+	case (maskExact & u) != 0:
 		fa = buildExactFields(rt, (maskNested&u) != 0, (maskPretty&u) != 0, embedded)
-	} else {
+	default:
 		fa = buildLowFields(rt, (maskNested&u) != 0, (maskPretty&u) != 0, embedded)
 	}
 	sort.Slice(fa, func(i, j int) bool { return 0 > strings.Compare(fa[i].key, fa[j].key) })
@@ -123,7 +124,7 @@ func buildTagFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo) {
 					}
 				}
 			}
-			fa = append(fa, newFinfo(f, key, omitEmpty, asString, pretty, embedded))
+			fa = append(fa, newFinfo(&f, key, omitEmpty, asString, pretty, embedded))
 		}
 	}
 	return
@@ -151,7 +152,7 @@ func buildExactFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo)
 				}
 			}
 		} else {
-			fa = append(fa, newFinfo(f, f.Name, false, false, pretty, embedded))
+			fa = append(fa, newFinfo(&f, f.Name, false, false, pretty, embedded))
 		}
 	}
 	return
@@ -181,12 +182,12 @@ func buildLowFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo) {
 		} else {
 			if 3 < len(name) {
 				if name[0] < 0x80 {
-					name[0] = name[0] | 0x20
+					name[0] |= 0x20
 				}
 			} else {
 				name = bytes.ToLower(name)
 			}
-			fa = append(fa, newFinfo(f, string(name), false, false, pretty, embedded))
+			fa = append(fa, newFinfo(&f, string(name), false, false, pretty, embedded))
 		}
 	}
 	return

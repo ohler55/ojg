@@ -40,7 +40,7 @@ func sillyRecompose(data map[string]interface{}) (interface{}, error) {
 	if !ok {
 		return nil, fmt.Errorf("val is not an int")
 	}
-	return &silly{val: int(i)}, nil
+	return &silly{val: i}, nil
 }
 
 func TestRecomposeBasic(t *testing.T) {
@@ -270,7 +270,8 @@ func TestRecomposeNested(t *testing.T) {
 	v, err = r.Recompose(simple, &Parent{})
 	tt.Nil(t, err, "Recompose")
 	p, _ := v.(*Parent)
-	tt.NotNil(t, p, "check type - %"+"T", v)
+	format := "check type - %T"
+	tt.NotNil(t, p, format, v)
 
 	diff := alt.Compare(&src, p)
 	tt.Equal(t, 0, len(diff), "compare diff - ", diff)

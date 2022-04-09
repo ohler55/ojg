@@ -129,7 +129,7 @@ func whichAppend(rt reflect.Type, omitEmpty bool) (f appendFunc) {
 	return
 }
 
-func newFinfo(f reflect.StructField, key string, omitEmpty, asString, pretty, embedded bool) *finfo {
+func newFinfo(f *reflect.StructField, key string, omitEmpty, asString, pretty, embedded bool) *finfo {
 	fi := finfo{
 		rt:     f.Type,
 		key:    key,

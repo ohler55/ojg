@@ -31,21 +31,23 @@ func product(root map[string]interface{}, at interface{}, args ...interface{}) i
 		switch v := evalArg(root, at, arg).(type) {
 		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 			ii, _ := asInt(v)
-			if i == 0 {
+			switch {
+			case i == 0:
 				ip = ii
-			} else if isFloat {
+			case isFloat:
 				fp *= float64(ii)
-			} else {
+			default:
 				ip *= ii
 			}
 		case float32, float64:
 			f, _ := asFloat(v)
-			if i == 0 {
+			switch {
+			case i == 0:
 				fp = f
 				isFloat = true
-			} else if isFloat {
+			case isFloat:
 				fp *= f
-			} else {
+			default:
 				isFloat = true
 				fp = float64(ip) * f
 			}

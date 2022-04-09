@@ -25,7 +25,8 @@ func indexType(rt reflect.Type) (im map[string]reflect.StructField) {
 			if f.Anonymous {
 				fim := indexType(f.Type)
 				// prepend index and add to im
-				for k, ff := range fim {
+				for k := range fim {
+					ff := fim[k]
 					ff.Index = append([]int{i}, ff.Index...)
 					im[k] = ff
 				}

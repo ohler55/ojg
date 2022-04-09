@@ -33,8 +33,8 @@ func Define(f *Fn) {
 // FnDocs returns the documentation for all function.
 func FnDocs() map[string]string {
 	docs := map[string]string{}
-	for k, f := range fnMap {
-		docs[k] = f.Desc
+	for k := range fnMap {
+		docs[k] = fnMap[k].Desc
 	}
 	return docs
 }

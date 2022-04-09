@@ -204,10 +204,8 @@ func reflectStruct(rv reflect.Value, val interface{}, opt *Options) interface{} 
 				if !opt.OmitNil || v != nil {
 					obj[fi.key] = v
 				}
-			} else {
-				if !opt.OmitNil || v != nil {
-					obj[fi.key] = v
-				}
+			} else if !opt.OmitNil || v != nil {
+				obj[fi.key] = v
 			}
 		}
 	}
@@ -237,10 +235,8 @@ func reflectEmbed(rv reflect.Value, val interface{}, opt *Options) interface{} {
 				if !opt.OmitNil || v != nil {
 					obj[fi.key] = v
 				}
-			} else {
-				if !opt.OmitNil || v != nil {
-					obj[fi.key] = v
-				}
+			} else if !opt.OmitNil || v != nil {
+				obj[fi.key] = v
 			}
 		}
 	}

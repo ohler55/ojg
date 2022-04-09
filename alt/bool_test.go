@@ -17,7 +17,7 @@ type boolData struct {
 }
 
 func TestBool(t *testing.T) {
-	//tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
+	// tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
 	for _, d := range []boolData{
 		{value: nil, expect: false},
 		{value: nil, expect: true, defaults: []bool{false, true}},

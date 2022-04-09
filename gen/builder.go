@@ -85,16 +85,17 @@ func (b *Builder) MustValue(value Node, key ...string) {
 // Value adds a Node to the builder. A key is required if adding to a parent
 // object.
 func (b *Builder) Value(value Node, key ...string) error {
-	if 0 < len(key) {
+	switch {
+	case 0 < len(key):
 		if len(b.starts) == 0 || 0 <= b.starts[len(b.starts)-1] {
 			return fmt.Errorf("can not use a key when pushing to an array")
 		}
 		if obj, _ := b.stack[len(b.stack)-1].(Object); obj != nil {
 			obj[key[0]] = value
 		}
-	} else if 0 < len(b.starts) && b.starts[len(b.starts)-1] < 0 {
+	case 0 < len(b.starts) && b.starts[len(b.starts)-1] < 0:
 		return fmt.Errorf("must have a key when pushing to an object")
-	} else {
+	default:
 		b.stack = append(b.stack, value)
 	}
 	return nil

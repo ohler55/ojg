@@ -19,7 +19,7 @@ func TestError(t *testing.T) {
 	tt.Equal(t, true, strings.Contains(lines[len(lines)-2], "testing.go"))
 
 	ojg.ErrorWithStack = true
-	lines = strings.Split(string(err.Error()), "\n")
+	lines = strings.Split(err.Error(), "\n")
 	tt.Equal(t, true, strings.Contains(lines[0], "some error"))
 	tt.Equal(t, true, strings.Contains(lines[len(lines)-2], "testing.go"))
 }

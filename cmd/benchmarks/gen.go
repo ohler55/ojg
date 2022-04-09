@@ -17,7 +17,7 @@ func genParse(b *testing.B) {
 	p := &gen.Parser{}
 	for n := 0; n < b.N; n++ {
 		if _, err := p.Parse(sample); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -28,7 +28,7 @@ func genParseReuse(b *testing.B) {
 	p := &gen.Parser{Reuse: true}
 	for n := 0; n < b.N; n++ {
 		if _, err := p.Parse(sample); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -43,7 +43,7 @@ func genParseReader(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_, _ = f.Seek(0, 0)
 		if _, err = p.ParseReader(f); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -58,7 +58,7 @@ func genParseReaderReuse(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_, _ = f.Seek(0, 0)
 		if _, err = p.ParseReader(f); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -80,7 +80,7 @@ func genParseChan(b *testing.B) {
 	var p gen.Parser
 	for n := 0; n < b.N; n++ {
 		if _, err := p.Parse(sample, rc); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 	rc <- nil

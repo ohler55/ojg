@@ -33,21 +33,23 @@ func quotient(root map[string]interface{}, at interface{}, args ...interface{}) 
 		switch v := evalArg(root, at, arg).(type) {
 		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 			ii, _ := asInt(v)
-			if i == 0 {
+			switch {
+			case i == 0:
 				iq = ii
-			} else if isFloat {
+			case isFloat:
 				fq /= float64(ii)
-			} else {
+			default:
 				iq /= ii
 			}
 		case float32, float64:
 			f, _ := asFloat(v)
-			if i == 0 {
+			switch {
+			case i == 0:
 				fq = f
 				isFloat = true
-			} else if isFloat {
+			case isFloat:
 				fq /= f
-			} else {
+			default:
 				isFloat = true
 				fq = float64(iq) / f
 			}

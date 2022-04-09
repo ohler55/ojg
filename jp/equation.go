@@ -3,6 +3,7 @@
 package jp
 
 import (
+	"regexp"
 	"strconv"
 )
 
@@ -52,6 +53,16 @@ func ConstFloat(f float64) *Equation {
 // ConstString creates and returns an Equation for a string constant.
 func ConstString(s string) *Equation {
 	return &Equation{result: s}
+}
+
+// ConstList creates and returns an Equation for an []interface{} constant.
+func ConstList(list []interface{}) *Equation {
+	return &Equation{result: list}
+}
+
+// ConstRegex creates and returns an Equation for a regex constant.
+func ConstRegex(rx *regexp.Regexp) *Equation {
+	return &Equation{result: rx}
 }
 
 // Get creates and returns an Equation for an expression get of the form
@@ -125,6 +136,21 @@ func Divide(left, right *Equation) *Equation {
 	return &Equation{o: divide, left: left, right: right}
 }
 
+// In creates and returns an Equation for an in operator.
+func In(left, right *Equation) *Equation {
+	return &Equation{o: in, left: left, right: right}
+}
+
+// Empty creates and returns an Equation for an empty operator.
+func Empty(left, right *Equation) *Equation {
+	return &Equation{o: empty, left: left, right: right}
+}
+
+// Regex creates and returns an Equation for a regex operator.
+func Regex(left, right *Equation) *Equation {
+	return &Equation{o: rx, left: left, right: right}
+}
+
 // Append a fragment string representation of the fragment to the buffer
 // then returning the expanded buffer.
 func (e *Equation) Append(buf []byte, parens bool) []byte {
@@ -180,8 +206,21 @@ func (e *Equation) appendValue(buf []byte, v interface{}) []byte {
 		} else {
 			buf = append(buf, "false"...)
 		}
+	case []interface{}:
+		buf = append(buf, '[')
+		for i, ev := range tv {
+			if 0 < i {
+				buf = append(buf, ',')
+			}
+			buf = e.appendValue(buf, ev)
+		}
+		buf = append(buf, ']')
 	case Expr:
 		buf = tv.Append(buf)
+	case *regexp.Regexp:
+		buf = append(buf, '/')
+		buf = append(buf, tv.String()...)
+		buf = append(buf, '/')
 	}
 	return buf
 }

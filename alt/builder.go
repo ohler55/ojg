@@ -72,16 +72,17 @@ func (b *Builder) Array(key ...string) error {
 // the stack is an object (map) and must not be provided if the op of the
 // stack is an array or slice.
 func (b *Builder) Value(value interface{}, key ...string) error {
-	if 0 < len(key) {
+	switch {
+	case 0 < len(key):
 		if len(b.starts) == 0 || 0 <= b.starts[len(b.starts)-1] {
 			return fmt.Errorf("can not use a key when pushing to an array")
 		}
 		if obj, _ := b.stack[len(b.stack)-1].(map[string]interface{}); obj != nil {
 			obj[key[0]] = value
 		}
-	} else if 0 < len(b.starts) && b.starts[len(b.starts)-1] < 0 {
+	case 0 < len(b.starts) && b.starts[len(b.starts)-1] < 0:
 		return fmt.Errorf("must have a key when pushing to an object")
-	} else {
+	default:
 		b.stack = append(b.stack, value)
 	}
 	return nil

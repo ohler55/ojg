@@ -190,7 +190,7 @@ The functions available are:
               raised. If an attempt is made to divide by zero and error will
               be raised.
 
-     replace: Replace an occurances the second argument with the third
+     replace: Replace an occurrences the second argument with the third
               argument. All three arguments must be strings.
 
      reverse: Reverse the items in an array and return a copy of it.
@@ -235,7 +235,7 @@ The functions available are:
 
         time: Converts the first argument to a time if possible otherwise
               an error is raised. The first argument can be a integer, float,
-              or string and are coverted as follows:
+              or string and are converted as follows:
                 integer < 10^10:  time in seconds since 1970-01-01 UTC
                 integer >= 10^10: time in nanoseconds 1970-01-01 UTC
                 decimal (float):  time in seconds 1970-01-01 UTC

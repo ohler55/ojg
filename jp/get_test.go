@@ -218,7 +218,7 @@ var (
 		{path: "['a','b']", expect: []interface{}{}, data: []interface{}{1, 2, 3}},
 		{path: "$.*.x", expect: []interface{}{}, data: &Any{X: 5}},
 		{path: "$.*.x", expect: []interface{}{}, data: &Any{X: 5}},
-		{path: "[0:1].z", expect: []interface{}{}, data: []*Any{nil, &Any{X: 5}}},
+		{path: "[0:1].z", expect: []interface{}{}, data: []*Any{nil, {X: 5}}},
 		{path: "[0:1].z", expect: []interface{}{}, data: []int{1}},
 	}
 )
@@ -298,7 +298,7 @@ var (
 		{path: "['a','b']", expect: []interface{}{nil}, data: []interface{}{1, 2, 3}},
 		{path: "$.*.x", expect: []interface{}{nil}, data: &Any{X: 5}},
 		{path: "$.*.x", expect: []interface{}{nil}, data: &Any{X: 5}},
-		{path: "[0:1].z", expect: []interface{}{nil}, data: []*Any{nil, &Any{X: 5}}},
+		{path: "[0:1].z", expect: []interface{}{nil}, data: []*Any{nil, {X: 5}}},
 		{path: "[0:1].z", expect: []interface{}{nil}, data: []int{1}},
 	}
 )

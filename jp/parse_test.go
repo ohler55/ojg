@@ -111,6 +111,7 @@ func TestParse(t *testing.T) {
 		{src: "[?(@.x == x)]", err: "expected a value at 11 in [?(@.x == x)]"},
 		{src: "[?(@.x -- x)]", err: "'--' is not a valid operation at 9 in [?(@.x -- x)]"},
 		{src: "[?(@.x =", err: "equation not terminated at 9 in [?(@.x ="},
+		{src: "[?(@.x in [1 2])]", err: "expected a comma at 15 in [?(@.x in [1 2])]"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
@@ -131,6 +132,5 @@ func BenchmarkParse(b *testing.B) {
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
 		_ = jp.MustParse([]byte("@.abc.*[2,3]..xyz[2]"))
-		//fmt.Printf("*** x: %s\n", x)
 	}
 }

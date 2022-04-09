@@ -226,7 +226,7 @@ func reflectGenStruct(rv reflect.Value, opt *Options) gen.Node {
 			// not a public field
 			continue
 		}
-		name[0] = name[0] | 0x20
+		name[0] |= 0x20
 		g := Generify(rv.Field(i).Interface(), opt)
 		if g != nil || !opt.OmitNil {
 			obj[string(name)] = g

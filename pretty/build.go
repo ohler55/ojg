@@ -30,7 +30,7 @@ func (w *Writer) build(data interface{}) (n *node) {
 	case int32:
 		n = w.buildInt(int64(td))
 	case int64:
-		n = w.buildInt(int64(td))
+		n = w.buildInt(td)
 	case uint:
 		n = w.buildInt(int64(td))
 	case uint8:
@@ -56,7 +56,7 @@ func (w *Writer) build(data interface{}) (n *node) {
 	case []byte:
 		switch w.BytesAs {
 		case ojg.BytesAsBase64:
-			n = w.buildStringNode(string(base64.StdEncoding.EncodeToString(td)))
+			n = w.buildStringNode(base64.StdEncoding.EncodeToString(td))
 		case ojg.BytesAsArray:
 			a := make([]interface{}, len(td))
 			for i, m := range td {

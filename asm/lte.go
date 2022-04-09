@@ -23,14 +23,15 @@ func lte(root map[string]interface{}, at interface{}, args ...interface{}) inter
 	answer := true
 	if 0 < len(args) {
 		switch t0 := args[0].(type) {
-		case float32, float64,
-			int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		case float32, float64, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 			f0, _ := asFloat(t0)
 			for _, arg := range args[1:] {
 				v := evalArg(root, at, arg)
-				if f, ok := asFloat(v); !ok {
+				f, ok := asFloat(v)
+				if !ok {
 					panic(fmt.Errorf("lte of a number must be another number, not %T", v))
-				} else if f0 > f {
+				}
+				if f0 > f {
 					answer = false
 					break
 				} else {

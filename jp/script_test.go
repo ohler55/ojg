@@ -49,7 +49,6 @@ func TestScriptBasicEval(t *testing.T) {
 	f := e.Filter()
 	tt.Equal(t, "[?(@.a < 52 || @.x == 'cool')]", f.String())
 
-	//fmt.Printf("*** data: %s\n", jp.JSON(data))
 	stack := s.Eval([]interface{}{}, data)
 	tt.Equal(t, `[{"a":1,"b":2,"c":3}]`, oj.JSON(stack, &oj.Options{Sort: true}))
 }
@@ -77,10 +76,16 @@ func TestScriptParse(t *testing.T) {
 		{src: "((@.x == 3) || (@.y > 5))", expect: "(@.x == 3 || @.y > 5)"},
 		{src: "(@.x < 3 && @.x > 1 || @.z == 3)", expect: "(@.x < 3 && @.x > 1 || @.z == 3)"},
 		{src: "(!(3 == @.x))", expect: "(!(3 == @.x))"},
+		{src: "(@.x in [1,2,3])", expect: "(@.x in [1,2,3])"},
+		{src: "(@.x in ['a' , 'b', 'c'])", expect: "(@.x in ['a','b','c'])"},
+		{src: "(@ empty true)", expect: "(@ empty true)"},
+		{src: "(@ =~ /abc/)", expect: "(@ =~ /abc/)"},
+		{src: "(@ =~ /a\\/c/)", expect: "(@ =~ /a\\/c/)"},
 
 		{src: "@.x == 4", err: "a script must start with a '('"},
 		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 8 in (@.x ++ 4)"},
 		{src: "(@[1:5} == 3)", err: "invalid slice syntax at 8 in (@[1:5} == 3)"},
+		{src: "(@ =~ /a[c/)", err: "error parsing regexp: missing closing ]: `[c` at 12 in (@ =~ /a[c/)"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
@@ -185,6 +190,23 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@ >= 3.0)", value: 3.1},
 		{src: "(@ >= 'abc')", value: "abd"},
 
+		{src: "(@ in [1,2,3])", value: int64(2)},
+		{src: "(@ in ['a','b','c'])", value: "b"},
+		{src: "(2 in @)", value: []interface{}{int64(1), int64(2), int64(3)}},
+
+		{src: "(@ empty false)", value: []interface{}{int64(1)}},
+		{src: "(@ empty true)", value: []interface{}{}},
+		{src: "(@ empty true)", value: map[string]interface{}{}},
+		{src: "(@ empty true)", value: ""},
+		{src: "(@ empty true)", value: []interface{}{1}, noMatch: true},
+		{src: "(@ empty true)", value: map[string]interface{}{"x": 1}, noMatch: true},
+		{src: "(@ empty true)", value: "x", noMatch: true},
+
+		{src: "(@ =~ /a.c/)", value: "abc"},
+		{src: "(@ =~ 'a.c')", value: "abc"},
+		{src: "(@ =~ 'a.c')", value: "abb", noMatch: true},
+		{src: "(@ =~ 'a.c')", value: int64(3), noMatch: true},
+
 		{src: "(@.x || @.y)", value: map[string]interface{}{"x": false, "y": false}, noMatch: true},
 		{src: "(@.x || @.y)", value: map[string]interface{}{"x": false, "y": true}},
 
@@ -249,10 +271,8 @@ func BenchmarkOjScriptDev(b *testing.B) {
 	stack := []interface{}{}
 	b.ReportAllocs()
 	b.ResetTimer()
-	//fmt.Printf("*** data: %s\n", jp.JSON(data))
 	for n := 0; n < b.N; n++ {
 		stack = stack[:0]
 		stack, _ = s.Eval(stack, data).([]interface{})
-		//fmt.Printf("*** stack: %s\n", jp.JSON(stack))
 	}
 }

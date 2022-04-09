@@ -5,6 +5,7 @@ package jp
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 
 	"github.com/ohler55/ojg"
@@ -26,7 +27,9 @@ var (
 	mult   = &op{prec: 1, code: '*', name: "*", cnt: 2}
 	divide = &op{prec: 1, code: '/', name: "/", cnt: 2}
 	get    = &op{prec: 0, code: 'G', name: "get", cnt: 1}
-	//rx     = &op{prec: 0, code: '~', name: "=~", cnt: 2}
+	in     = &op{prec: 3, code: 'i', name: "in", cnt: 2}
+	empty  = &op{prec: 3, code: 'e', name: "empty", cnt: 2}
+	rx     = &op{prec: 0, code: '~', name: "=~", cnt: 2}
 
 	opMap = map[string]*op{
 		eq.name:     eq,
@@ -42,6 +45,9 @@ var (
 		sub.name:    sub,
 		mult.name:   mult,
 		divide.name: divide,
+		in.name:     in,
+		empty.name:  empty,
+		rx.name:     rx,
 	}
 )
 
@@ -471,6 +477,42 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 						}
 					}
 				}
+			case in.code:
+				sstack[i] = false
+				if list, ok := right.([]interface{}); ok {
+					for _, ev := range list {
+						if left == ev {
+							sstack[i] = true
+							break
+						}
+					}
+				}
+			case empty.code:
+				sstack[i] = false
+				if boo, ok := right.(bool); ok {
+					switch tl := left.(type) {
+					case string:
+						sstack[i] = boo == (len(tl) == 0)
+					case []interface{}:
+						sstack[i] = boo == (len(tl) == 0)
+					case map[string]interface{}:
+						sstack[i] = boo == (len(tl) == 0)
+					}
+				}
+			case rx.code:
+				sstack[i] = false
+				ls, ok := left.(string)
+				if !ok {
+					break
+				}
+				switch tr := right.(type) {
+				case string:
+					if rx, err := regexp.Compile(tr); err == nil {
+						sstack[i] = rx.MatchString(ls)
+					}
+				case *regexp.Regexp:
+					sstack[i] = tr.MatchString(ls)
+				}
 			}
 			if i+int(o.cnt)+1 <= len(sstack) {
 				copy(sstack[i+1:], sstack[i+int(o.cnt)+1:])
@@ -479,10 +521,12 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 		if b, _ := sstack[0].(bool); b {
 			switch tstack := stack.(type) {
 			case []interface{}:
-				stack = append(tstack, v)
+				tstack = append(tstack, v)
+				stack = tstack
 			case []gen.Node:
 				if n, ok := v.(gen.Node); ok {
-					stack = append(tstack, n)
+					tstack = append(tstack, n)
+					stack = tstack
 				}
 			}
 		}
@@ -519,8 +563,9 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 		buf = append(buf, '\'')
 	case int64:
 		buf = append(buf, strconv.FormatInt(tv, 10)...)
-	case int:
-		buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
+		// TBD verify this is never reached
+	// case int:
+	//	buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
 	case float64:
 		buf = append(buf, strconv.FormatFloat(tv, 'g', -1, 64)...)
 	case bool:
@@ -529,8 +574,21 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 		} else {
 			buf = append(buf, "false"...)
 		}
+	case []interface{}:
+		buf = append(buf, '[')
+		for i, v := range tv {
+			if 0 < i {
+				buf = append(buf, ',')
+			}
+			buf = s.appendValue(buf, v, prec)
+		}
+		buf = append(buf, ']')
 	case Expr:
 		buf = tv.Append(buf)
+	case *regexp.Regexp:
+		buf = append(buf, '/')
+		buf = append(buf, tv.String()...)
+		buf = append(buf, '/')
 	case *precBuf:
 		if prec < tv.prec {
 			buf = append(buf, '(')

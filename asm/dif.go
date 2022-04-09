@@ -31,21 +31,23 @@ func dif(root map[string]interface{}, at interface{}, args ...interface{}) inter
 		switch v := evalArg(root, at, arg).(type) {
 		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 			ii, _ := asInt(v)
-			if i == 0 {
+			switch {
+			case i == 0:
 				idif = ii
-			} else if isFloat {
+			case isFloat:
 				fdif -= float64(ii)
-			} else {
+			default:
 				idif -= ii
 			}
 		case float32, float64:
 			f, _ := asFloat(v)
-			if i == 0 {
+			switch {
+			case i == 0:
 				fdif = f
 				isFloat = true
-			} else if isFloat {
+			case isFloat:
 				fdif -= f
-			} else {
+			default:
 				isFloat = true
 				fdif = float64(idif) - f
 			}

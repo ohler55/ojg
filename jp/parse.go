@@ -3,7 +3,9 @@
 package jp
 
 import (
+	"bytes"
 	"fmt"
+	"regexp"
 	"strconv"
 
 	"github.com/ohler55/ojg"
@@ -28,7 +30,7 @@ const (
 		"................................" + // 0x00
 		".ov.v.ovv.oo.o.ovvvvvvvvvv..ooo." + // 0x20
 		"v..............................." + // 0x40
-		"......v.......v.....v.......o.o." + // 0x60
+		".....ov..o....v.....v.......o.o." + // 0x60
 		"................................" + // 0x80
 		"................................" + // 0xa0
 		"................................" + // 0xc0
@@ -231,8 +233,8 @@ func (p *parser) afterBracket() Frag {
 	}
 	p.pos--
 	// Kind of ugly but needed to attain full cod coverage as the cover tool
-	// and the complier don't know about panics in functions so get the return
-	// and raise on the same line.
+	// and the compilier don't know about panics in functions so get the
+	// return and raise on the same line.
 	return func() Frag { p.raise("parse error"); return nil }()
 }
 
@@ -325,7 +327,7 @@ func (p *parser) readNum(b byte) interface{} {
 		if err != nil {
 			p.raise(err.Error())
 		}
-		return int(i)
+		return i
 	}
 	if b == '+' || b == '-' {
 		num = append(num, b)
@@ -443,6 +445,28 @@ func (p *parser) readStr(term byte) string {
 	return string(p.buf[start : p.pos-1])
 }
 
+func (p *parser) readRegex() *regexp.Regexp {
+	start := p.pos
+	esc := false
+	for p.pos < len(p.buf) {
+		b := p.buf[p.pos]
+		p.pos++
+		if b == '/' && !esc {
+			break
+		}
+		if b == '\\' {
+			esc = !esc
+		} else {
+			esc = false
+		}
+	}
+	rx, err := regexp.Compile(string(p.buf[start : p.pos-1]))
+	if err != nil {
+		p.raise(err.Error())
+	}
+	return rx
+}
+
 func (p *parser) readFilter() *Filter {
 	if len(p.buf) <= p.pos {
 		p.raise("not terminated")
@@ -509,8 +533,7 @@ func (p *parser) readEqValue() (eq *Equation) {
 		eq = &Equation{result: v}
 	case '\'', '"':
 		p.pos++
-		var s string
-		s = p.readStr(b)
+		s := p.readStr(b)
 		eq = &Equation{result: s}
 	case 'n':
 		p.readEqToken([]byte("null"))
@@ -528,6 +551,12 @@ func (p *parser) readEqValue() (eq *Equation) {
 	case '(':
 		p.pos++
 		eq = p.readEquation()
+	case '[':
+		eq = &Equation{result: p.readEqList()}
+	case '/':
+		p.pos++
+		rx := p.readRegex()
+		eq = &Equation{result: rx}
 	default:
 		p.raise("expected a value")
 	}
@@ -543,12 +572,41 @@ func (p *parser) readEqToken(token []byte) {
 	}
 }
 
+func (p *parser) readEqList() (list []interface{}) {
+	p.pos++
+List:
+	for p.pos < len(p.buf) {
+		eq := p.readEqValue()
+		list = append(list, eq.result)
+		b := p.skipSpace()
+		switch b {
+		case ',':
+		case ']':
+			break List
+		default:
+			p.raise("expected a comma")
+		}
+	}
+	return
+}
+
+func partialOp(token []byte, b byte) bool {
+	for k := range opMap {
+		if len(token) < len(k) && bytes.HasPrefix([]byte(k), token) && b == k[len(token)] {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *parser) readEqOp() (o *op) {
 	var token []byte
 	b := p.nextNonSpace()
 	for {
 		if eqMap[b] != 'o' {
-			break
+			if len(token) == 0 || !partialOp(token, b) {
+				break
+			}
 		}
 		token = append(token, b)
 		if b == '-' && 1 < len(token) {

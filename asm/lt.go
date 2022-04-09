@@ -28,9 +28,11 @@ func lt(root map[string]interface{}, at interface{}, args ...interface{}) interf
 			f0, _ := asFloat(t0)
 			for _, arg := range args[1:] {
 				v := evalArg(root, at, arg)
-				if f, ok := asFloat(v); !ok {
+				f, ok := asFloat(v)
+				if !ok {
 					panic(fmt.Errorf("lt of a number must be another number, not %T", v))
-				} else if f0 >= f {
+				}
+				if f0 >= f {
 					answer = false
 					break
 				} else {

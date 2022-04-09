@@ -39,14 +39,15 @@ func (n *Number) Reset() {
 
 // AddDigit to a number.
 func (n *Number) AddDigit(b byte) {
-	if 0 < len(n.BigBuf) {
+	switch {
+	case 0 < len(n.BigBuf):
 		n.BigBuf = append(n.BigBuf, b)
-	} else if n.I <= BigLimit {
+	case n.I <= BigLimit:
 		n.I = n.I*10 + uint64(b-'0')
 		if math.MaxInt64 < n.I {
 			n.FillBig()
 		}
-	} else {
+	default:
 		n.FillBig()
 		n.BigBuf = append(n.BigBuf, b)
 	}
@@ -54,15 +55,16 @@ func (n *Number) AddDigit(b byte) {
 
 // AddFrac adds a fractional digit.
 func (n *Number) AddFrac(b byte) {
-	if 0 < len(n.BigBuf) {
+	switch {
+	case 0 < len(n.BigBuf):
 		n.BigBuf = append(n.BigBuf, b)
-	} else if n.Frac <= BigLimit {
+	case n.Frac <= BigLimit:
 		n.Frac = n.Frac*10 + uint64(b-'0')
 		n.Div *= 10.0
 		if math.MaxInt64 < n.Frac {
 			n.FillBig()
 		}
-	} else { // big
+	default: // big
 		n.FillBig()
 		n.BigBuf = append(n.BigBuf, b)
 	}
@@ -70,14 +72,15 @@ func (n *Number) AddFrac(b byte) {
 
 // AddExp adds an exponent digit.
 func (n *Number) AddExp(b byte) {
-	if 0 < len(n.BigBuf) {
+	switch {
+	case 0 < len(n.BigBuf):
 		n.BigBuf = append(n.BigBuf, b)
-	} else if n.Exp <= 102 {
+	case n.Exp <= 102:
 		n.Exp = n.Exp*10 + uint64(b-'0')
 		if 1022 < n.Exp {
 			n.FillBig()
 		}
-	} else { // big
+	default: // big
 		n.FillBig()
 		n.BigBuf = append(n.BigBuf, b)
 	}
@@ -109,9 +112,10 @@ func (n *Number) FillBig() {
 
 // AsNum returns the number as best fit.
 func (n *Number) AsNum() (num interface{}) {
-	if 0 < len(n.BigBuf) {
+	switch {
+	case 0 < len(n.BigBuf):
 		num = json.Number(n.BigBuf)
-	} else if n.Div == 1 && n.Exp == 0 {
+	case n.Div == 1 && n.Exp == 0:
 		i := int64(n.I)
 		if n.Neg {
 			i = -i
@@ -121,7 +125,7 @@ func (n *Number) AsNum() (num interface{}) {
 		} else {
 			num = i
 		}
-	} else {
+	default:
 		f := float64(n.I)
 		if 0 < n.Frac {
 			f += float64(n.Frac) / float64(n.Div)
@@ -134,7 +138,7 @@ func (n *Number) AsNum() (num interface{}) {
 			if n.NegExp {
 				x = -x
 			}
-			f *= math.Pow10(int(x))
+			f *= math.Pow10(x)
 		}
 		num = f
 	}
@@ -143,15 +147,16 @@ func (n *Number) AsNum() (num interface{}) {
 
 // AsNode returns the number as best fit.
 func (n *Number) AsNode() (num Node) {
-	if 0 < len(n.BigBuf) {
+	switch {
+	case 0 < len(n.BigBuf):
 		num = Big(n.BigBuf)
-	} else if n.Frac == 0 && n.Exp == 0 {
+	case n.Frac == 0 && n.Exp == 0:
 		i := int64(n.I)
 		if n.Neg {
 			i = -i
 		}
 		num = Int(i)
-	} else {
+	default:
 		f := float64(n.I)
 		if 0 < n.Frac {
 			f += float64(n.Frac) / float64(n.Div)
@@ -164,7 +169,7 @@ func (n *Number) AsNode() (num Node) {
 			if n.NegExp {
 				x = -x
 			}
-			f *= math.Pow10(int(x))
+			f *= math.Pow10(x)
 		}
 		num = Float(f)
 	}

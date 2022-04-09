@@ -20,8 +20,9 @@ import (
 )
 
 const (
-	spaces = "\n                                                                                                                                "
-	tabs   = "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+	spaces = "\n                                                                " +
+		"                                                                "
+	tabs = "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
 )
 
 // Writer is a SEN writer that includes a reused buffer for reduced
@@ -197,7 +198,7 @@ func (wr *Writer) appendSEN(data interface{}, depth int) {
 	case float32:
 		wr.buf = strconv.AppendFloat(wr.buf, float64(td), 'g', -1, 32)
 	case float64:
-		wr.buf = strconv.AppendFloat(wr.buf, float64(td), 'g', -1, 64)
+		wr.buf = strconv.AppendFloat(wr.buf, td, 'g', -1, 64)
 
 	case string:
 		wr.buf = wr.appendString(wr.buf, td, !wr.HTMLUnsafe)
