@@ -61,7 +61,7 @@ func (wr *Writer) colorSEN(data interface{}, depth int) {
 		wr.buf = strconv.AppendFloat(wr.buf, float64(td), 'g', -1, 32)
 	case float64:
 		wr.buf = append(wr.buf, wr.NumberColor...)
-		wr.buf = strconv.AppendFloat(wr.buf, float64(td), 'g', -1, 64)
+		wr.buf = strconv.AppendFloat(wr.buf, td, 'g', -1, 64)
 
 	case string:
 		wr.buf = append(wr.buf, wr.StringColor...)

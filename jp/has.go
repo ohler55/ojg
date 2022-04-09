@@ -324,11 +324,11 @@ func (x Expr) Has(data interface{}) bool {
 					case string:
 						switch tv := prev.(type) {
 						case map[string]interface{}:
-							v, has = tv[string(tu)]
+							v, has = tv[tu]
 						case gen.Object:
-							v, has = tv[string(tu)]
+							v, has = tv[tu]
 						default:
-							v, has = x.reflectGetChild(tv, string(tu))
+							v, has = x.reflectGetChild(tv, tu)
 						}
 					case int64:
 						i := int(tu)
@@ -365,11 +365,11 @@ func (x Expr) Has(data interface{}) bool {
 					case string:
 						switch tv := prev.(type) {
 						case map[string]interface{}:
-							v, has = tv[string(tu)]
+							v, has = tv[tu]
 						case gen.Object:
-							v, has = tv[string(tu)]
+							v, has = tv[tu]
 						default:
-							v, has = x.reflectGetChild(tv, string(tu))
+							v, has = x.reflectGetChild(tv, tu)
 						}
 					case int64:
 						i := int(tu)

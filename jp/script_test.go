@@ -271,10 +271,8 @@ func BenchmarkOjScriptDev(b *testing.B) {
 	stack := []interface{}{}
 	b.ReportAllocs()
 	b.ResetTimer()
-	//fmt.Printf("*** data: %s\n", jp.JSON(data))
 	for n := 0; n < b.N; n++ {
 		stack = stack[:0]
 		stack, _ = s.Eval(stack, data).([]interface{})
-		//fmt.Printf("*** stack: %s\n", jp.JSON(stack))
 	}
 }

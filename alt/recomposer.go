@@ -354,18 +354,19 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 		if rv.IsNil() {
 			rv.Set(reflect.MakeMapWithSize(rv.Type(), len(vm)))
 		}
-		if et.Kind() == reflect.Interface {
+		switch {
+		case et.Kind() == reflect.Interface:
 			for k, m := range vm {
 				rv.SetMapIndex(reflect.ValueOf(k), reflect.ValueOf(r.recompAny(m)))
 			}
-		} else if et.Kind() == reflect.Ptr {
+		case et.Kind() == reflect.Ptr:
 			et = et.Elem()
 			for k, m := range vm {
 				ev := reflect.New(et)
 				r.recomp(m, ev)
 				rv.SetMapIndex(reflect.ValueOf(k), ev)
 			}
-		} else {
+		default:
 			for k, m := range vm {
 				ev := reflect.New(et)
 				r.recomp(m, ev)
@@ -432,14 +433,15 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 			c, _ = r.registerComposer(rv.Type(), nil)
 			im = c.indexes
 		}
-		for k, sf := range im {
+		for k := range im {
+			sf := im[k]
 			f := rv.FieldByIndex(sf.Index)
 			var m interface{}
 			var has bool
 			if m, has = vm[k]; !has {
 				if m, has = vm[sf.Name]; !has {
 					name := []byte(sf.Name)
-					name[0] = name[0] | 0x20
+					name[0] |= 0x20
 					if m, has = vm[string(name)]; !has {
 						m, has = vm[strings.ToLower(string(name))]
 					}

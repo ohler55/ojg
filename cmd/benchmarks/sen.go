@@ -19,13 +19,13 @@ func senParse(b *testing.B) {
 	if data, err := (&oj.Parser{}).Parse(j); err == nil {
 		sample = []byte(sen.String(data, &sen.Options{Indent: 2}))
 	} else {
-		log.Fatal(err)
+		panic(err)
 	}
 	b.ResetTimer()
 	p := &sen.Parser{}
 	for n := 0; n < b.N; n++ {
 		if _, err := p.Parse(sample); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -36,13 +36,13 @@ func senParseReuse(b *testing.B) {
 	if data, err := (&oj.Parser{}).Parse(j); err == nil {
 		sample = []byte(sen.String(data, &sen.Options{Indent: 2}))
 	} else {
-		log.Fatal(err)
+		panic(err)
 	}
 	b.ResetTimer()
 	p := &sen.Parser{Reuse: true}
 	for n := 0; n < b.N; n++ {
 		if _, err := p.Parse(sample); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -54,7 +54,7 @@ func senTokenize(b *testing.B) {
 	t := sen.Tokenizer{}
 	for n := 0; n < b.N; n++ {
 		if err := t.Parse(sample, &h); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -70,7 +70,7 @@ func senTokenizeLoad(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_, _ = f.Seek(0, 0)
 		if err := t.Load(f, &h); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -85,7 +85,7 @@ func senParseReader(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_, _ = f.Seek(0, 0)
 		if _, err = p.ParseReader(f); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -100,7 +100,7 @@ func senParseReaderReuse(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_, _ = f.Seek(0, 0)
 		if _, err = p.ParseReader(f); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -112,7 +112,7 @@ func senUnmarshalPatient(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		var out Patient
 		if err := p.Unmarshal(sample, &out); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -124,7 +124,7 @@ func senUnmarshalCatalog(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		var out Catalog
 		if err := p.Unmarshal(sample, &out); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -135,7 +135,7 @@ func senParseChan(b *testing.B) {
 	if data, err := (&oj.Parser{}).Parse(j); err == nil {
 		sample = []byte(sen.String(data, &sen.Options{Indent: 2}))
 	} else {
-		log.Fatal(err)
+		panic(err)
 	}
 	rc := make(chan interface{}, b.N)
 	ready := make(chan bool)
@@ -152,7 +152,7 @@ func senParseChan(b *testing.B) {
 	var p sen.Parser
 	for n := 0; n < b.N; n++ {
 		if _, err := p.Parse(sample, rc); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 	rc <- nil

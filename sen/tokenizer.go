@@ -4,6 +4,7 @@ package sen
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -115,7 +116,7 @@ func (t *Tokenizer) Load(r io.Reader, handler oj.TokenHandler) (err error) {
 	buf = buf[:cnt]
 	t.mode = valueMap
 	if err != nil {
-		if err != io.EOF {
+		if !errors.Is(err, io.EOF) {
 			return
 		}
 		eof = true
@@ -140,7 +141,7 @@ func (t *Tokenizer) Load(r io.Reader, handler oj.TokenHandler) (err error) {
 		cnt, err = r.Read(buf)
 		buf = buf[:cnt]
 		if err != nil {
-			if err != io.EOF {
+			if !errors.Is(err, io.EOF) {
 				return
 			}
 			eof = true

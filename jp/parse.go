@@ -233,8 +233,8 @@ func (p *parser) afterBracket() Frag {
 	}
 	p.pos--
 	// Kind of ugly but needed to attain full cod coverage as the cover tool
-	// and the complier don't know about panics in functions so get the return
-	// and raise on the same line.
+	// and the compilier don't know about panics in functions so get the
+	// return and raise on the same line.
 	return func() Frag { p.raise("parse error"); return nil }()
 }
 

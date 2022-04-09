@@ -4,6 +4,7 @@ package oj
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 )
@@ -69,7 +70,7 @@ func (p *Validator) ValidateReader(r io.Reader) error {
 	cnt, err := r.Read(buf)
 	buf = buf[:cnt]
 	if err != nil {
-		if err != io.EOF {
+		if !errors.Is(err, io.EOF) {
 			return err
 		}
 		eof = true

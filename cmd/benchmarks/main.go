@@ -25,8 +25,8 @@ import (
 const (
 	blocks    = " ▏▎▍▌▋▊▉█"
 	darkBlock = "▓"
-	//mediumBlock = "▒"
-	//lightBlock  = "░"
+	// mediumBlock = "▒"
+	// lightBlock  = "░"
 )
 
 var (
@@ -81,9 +81,9 @@ func main() {
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
 		}
-		defer f.Close() // error handling omitted for example
+		defer func() { _ = f.Close() }() // error handling omitted for example
 		if err := pprof.StartCPUProfile(f); err != nil {
-			log.Fatal("could not start CPU profile: ", err)
+			panic(fmt.Sprintf("could not start CPU profile: ", err))
 		}
 		defer pprof.StopCPUProfile()
 	}
@@ -298,7 +298,7 @@ func loadSample() (data interface{}) {
 
 	var p oj.Parser
 	if data, err = p.ParseReader(f); err != nil {
-		log.Fatalf("Failed to parse %s. %s\n", filename, err)
+		panic(fmt.Sprintf("Failed to parse %s. %s\n", filename, err))
 	}
 	return
 }
@@ -332,7 +332,7 @@ func getSpecs() (s *specs) {
 		s = &specs{}
 		parts := strings.Split(string(out), ":")
 		if 1 < len(parts) {
-			s.os = string(strings.TrimSpace(parts[1]))
+			s.os = strings.TrimSpace(parts[1])
 		}
 		if out, err = ioutil.ReadFile("/proc/cpuinfo"); err == nil {
 			cnt := 0

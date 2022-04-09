@@ -40,7 +40,7 @@ func sillyRecompose(data map[string]interface{}) (interface{}, error) {
 	if !ok {
 		return nil, fmt.Errorf("val is not an int")
 	}
-	return &silly{val: int(i)}, nil
+	return &silly{val: i}, nil
 }
 
 func TestRecomposeBasic(t *testing.T) {

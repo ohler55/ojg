@@ -521,10 +521,12 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 		if b, _ := sstack[0].(bool); b {
 			switch tstack := stack.(type) {
 			case []interface{}:
-				stack = append(tstack, v)
+				tstack = append(tstack, v)
+				stack = tstack
 			case []gen.Node:
 				if n, ok := v.(gen.Node); ok {
-					stack = append(tstack, n)
+					tstack = append(tstack, n)
+					stack = tstack
 				}
 			}
 		}

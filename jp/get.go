@@ -26,7 +26,7 @@ type fragIndex int
 
 // The easy way to implement the Get is to have each fragment handle the
 // getting using recursion. The overhead of a go function call is rather high
-// though so instead a psuedo call stack is implemented here that grows and
+// though so instead a pseudo call stack is implemented here that grows and
 // shrinks as the getting takes place. The fragment index if placed on the
 // stack as well mostly for a small degree of simplicity in what a few people
 // might find a complex approach to the solution. Its at least twice as fast
@@ -341,11 +341,11 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					case string:
 						switch tv := prev.(type) {
 						case map[string]interface{}:
-							v, has = tv[string(tu)]
+							v, has = tv[tu]
 						case gen.Object:
-							v, has = tv[string(tu)]
+							v, has = tv[tu]
 						default:
-							v, has = x.reflectGetChild(tv, string(tu))
+							v, has = x.reflectGetChild(tv, tu)
 						}
 					case int64:
 						i := int(tu)
@@ -382,11 +382,11 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					case string:
 						switch tv := prev.(type) {
 						case map[string]interface{}:
-							v, has = tv[string(tu)]
+							v, has = tv[tu]
 						case gen.Object:
-							v, has = tv[string(tu)]
+							v, has = tv[tu]
 						default:
-							v, has = x.reflectGetChild(tv, string(tu))
+							v, has = x.reflectGetChild(tv, tu)
 						}
 					case int64:
 						i := int(tu)
@@ -917,11 +917,11 @@ func (x Expr) First(data interface{}) interface{} {
 					case string:
 						switch tv := prev.(type) {
 						case map[string]interface{}:
-							v, has = tv[string(tu)]
+							v, has = tv[tu]
 						case gen.Object:
-							v, has = tv[string(tu)]
+							v, has = tv[tu]
 						default:
-							v, has = x.reflectGetChild(tv, string(tu))
+							v, has = x.reflectGetChild(tv, tu)
 						}
 					case int64:
 						i := int(tu)
@@ -958,11 +958,11 @@ func (x Expr) First(data interface{}) interface{} {
 					case string:
 						switch tv := prev.(type) {
 						case map[string]interface{}:
-							v, has = tv[string(tu)]
+							v, has = tv[tu]
 						case gen.Object:
-							v, has = tv[string(tu)]
+							v, has = tv[tu]
 						default:
-							v, has = x.reflectGetChild(tv, string(tu))
+							v, has = x.reflectGetChild(tv, tu)
 						}
 					case int64:
 						i := int(tu)

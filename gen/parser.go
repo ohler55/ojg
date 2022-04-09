@@ -4,6 +4,7 @@ package gen
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -137,7 +138,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data Node, err e
 	buf = buf[:cnt]
 	p.mode = valueMap
 	if err != nil {
-		if err != io.EOF {
+		if !errors.Is(err, io.EOF) {
 			return
 		}
 		eof = true
@@ -170,7 +171,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data Node, err e
 		cnt, err = r.Read(buf)
 		buf = buf[:cnt]
 		if err != nil {
-			if err != io.EOF {
+			if !errors.Is(err, io.EOF) {
 				return
 			}
 			eof = true

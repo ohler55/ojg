@@ -20,8 +20,9 @@ import (
 )
 
 const (
-	spaces = "\n                                                                                                                                "
-	tabs   = "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+	spaces = "\n                                                                " +
+		"                                                                "
+	tabs = "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
 )
 
 // Writer is a JSON writer that includes a reused buffer for reduced
@@ -196,7 +197,7 @@ func (wr *Writer) appendJSON(data interface{}, depth int) {
 	case float32:
 		wr.buf = strconv.AppendFloat(wr.buf, float64(td), 'g', -1, 32)
 	case float64:
-		wr.buf = strconv.AppendFloat(wr.buf, float64(td), 'g', -1, 64)
+		wr.buf = strconv.AppendFloat(wr.buf, td, 'g', -1, 64)
 
 	case string:
 		wr.buf = wr.appendString(wr.buf, td, !wr.HTMLUnsafe)
@@ -259,7 +260,8 @@ func (wr *Writer) appendJSON(data interface{}, depth int) {
 }
 
 func appendDefault(wr *Writer, data interface{}, depth int) {
-	if !wr.NoReflect {
+	switch {
+	case !wr.NoReflect:
 		rv := reflect.ValueOf(data)
 		kind := rv.Kind()
 		if kind == reflect.Ptr {
@@ -282,9 +284,9 @@ func appendDefault(wr *Writer, data interface{}, depth int) {
 			dec := alt.Decompose(data, &wr.Options)
 			wr.appendJSON(dec, depth)
 		}
-	} else if wr.strict {
+	case wr.strict:
 		panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
-	} else {
+	default:
 		wr.buf = wr.appendString(wr.buf, fmt.Sprintf("%v", data), !wr.HTMLUnsafe)
 	}
 }

@@ -132,6 +132,5 @@ func BenchmarkParse(b *testing.B) {
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
 		_ = jp.MustParse([]byte("@.abc.*[2,3]..xyz[2]"))
-		//fmt.Printf("*** x: %s\n", x)
 	}
 }

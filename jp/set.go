@@ -406,14 +406,14 @@ func (x Expr) Set(data, value interface{}) error {
 				case map[string]interface{}:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, fragIndex(di|descentFlag))
+					stack = append(stack, di|descentFlag)
 					for _, v = range tv {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							stack = append(stack, fragIndex(fi|descentChildFlag))
+							stack = append(stack, fi|descentChildFlag)
 						default:
 							kind := reflect.Invalid
 							if rt := reflect.TypeOf(v); rt != nil {
@@ -428,14 +428,14 @@ func (x Expr) Set(data, value interface{}) error {
 				case []interface{}:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, fragIndex(di|descentFlag))
+					stack = append(stack, di|descentFlag)
 					for _, v = range tv {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							stack = append(stack, fragIndex(fi|descentChildFlag))
+							stack = append(stack, fi|descentChildFlag)
 						default:
 							kind := reflect.Invalid
 							if rt := reflect.TypeOf(v); rt != nil {
@@ -450,23 +450,23 @@ func (x Expr) Set(data, value interface{}) error {
 				case gen.Object:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, fragIndex(di|descentFlag))
+					stack = append(stack, di|descentFlag)
 					for _, v = range tv {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							stack = append(stack, fragIndex(fi|descentChildFlag))
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
 				case gen.Array:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, fragIndex(di|descentFlag))
+					stack = append(stack, di|descentFlag)
 					for _, v = range tv {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							stack = append(stack, fragIndex(fi|descentChildFlag))
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
 				}
@@ -480,7 +480,7 @@ func (x Expr) Set(data, value interface{}) error {
 					var has bool
 					switch tv := prev.(type) {
 					case map[string]interface{}:
-						if v, has = tv[string(tu)]; has {
+						if v, has = tv[tu]; has {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
@@ -498,7 +498,7 @@ func (x Expr) Set(data, value interface{}) error {
 							}
 						}
 					case gen.Object:
-						if v, has = tv[string(tu)]; has {
+						if v, has = tv[tu]; has {
 							switch v.(type) {
 							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 								stack = append(stack, v)
@@ -506,7 +506,7 @@ func (x Expr) Set(data, value interface{}) error {
 						}
 					default:
 						var has bool
-						if v, has = x.reflectGetChild(tv, string(tu)); has {
+						if v, has = x.reflectGetChild(tv, tu); has {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
@@ -1069,14 +1069,14 @@ func (x Expr) SetOne(data, value interface{}) error {
 				case map[string]interface{}:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, fragIndex(di|descentFlag))
+					stack = append(stack, di|descentFlag)
 					for _, v = range tv {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							stack = append(stack, fragIndex(fi|descentChildFlag))
+							stack = append(stack, fi|descentChildFlag)
 						default:
 							kind := reflect.Invalid
 							if rt := reflect.TypeOf(v); rt != nil {
@@ -1091,7 +1091,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 				case []interface{}:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, fragIndex(di|descentFlag))
+					stack = append(stack, di|descentFlag)
 					for i := len(tv) - 1; 0 <= i; i-- {
 						v = tv[i]
 						switch v.(type) {
@@ -1099,7 +1099,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							stack = append(stack, fragIndex(fi|descentChildFlag))
+							stack = append(stack, fi|descentChildFlag)
 						default:
 							kind := reflect.Invalid
 							if rt := reflect.TypeOf(v); rt != nil {
@@ -1114,24 +1114,24 @@ func (x Expr) SetOne(data, value interface{}) error {
 				case gen.Object:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, fragIndex(di|descentFlag))
+					stack = append(stack, di|descentFlag)
 					for _, v = range tv {
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							stack = append(stack, fragIndex(fi|descentChildFlag))
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
 				case gen.Array:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, fragIndex(di|descentFlag))
+					stack = append(stack, di|descentFlag)
 					for i := len(tv) - 1; 0 <= i; i-- {
 						v = tv[i]
 						switch v.(type) {
 						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
 							stack = append(stack, v)
-							stack = append(stack, fragIndex(fi|descentChildFlag))
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
 				}
@@ -1145,7 +1145,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 					var has bool
 					switch tv := prev.(type) {
 					case map[string]interface{}:
-						if v, has = tv[string(tu)]; has {
+						if v, has = tv[tu]; has {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
@@ -1163,7 +1163,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 							}
 						}
 					case gen.Object:
-						if v, has = tv[string(tu)]; has {
+						if v, has = tv[tu]; has {
 							switch v.(type) {
 							case gen.Object, gen.Array:
 								stack = append(stack, v)
@@ -1171,7 +1171,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 						}
 					default:
 						var has bool
-						if v, has = x.reflectGetChild(tv, string(tu)); has {
+						if v, has = x.reflectGetChild(tv, tu); has {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:

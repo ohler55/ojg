@@ -14,8 +14,6 @@ func jpGet(b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		_ = p.Get(data)
-		//x := p.Get(data)
-		//fmt.Printf("*** %s\n", oj.JSON(x))
 	}
 }
 
@@ -25,6 +23,5 @@ func jpFirst(b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		_ = p.First(data)
-		//fmt.Printf("*** %v\n", z)
 	}
 }

@@ -14,7 +14,8 @@ import (
 )
 
 func tightDefault(wr *Writer, data interface{}, _ int) {
-	if !wr.NoReflect {
+	switch {
+	case !wr.NoReflect:
 		rv := reflect.ValueOf(data)
 		kind := rv.Kind()
 		if kind == reflect.Ptr {
@@ -37,9 +38,9 @@ func tightDefault(wr *Writer, data interface{}, _ int) {
 			dec := alt.Decompose(data, &wr.Options)
 			wr.appendJSON(dec, 0)
 		}
-	} else if wr.strict {
+	case wr.strict:
 		panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
-	} else {
+	default:
 		wr.buf = ojg.AppendJSONString(wr.buf, fmt.Sprintf("%v", data), !wr.HTMLUnsafe)
 	}
 }

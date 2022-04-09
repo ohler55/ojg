@@ -58,7 +58,7 @@ An example of building simple data is:
 
 Writer
 
-The writer functions output data values to JSON. The basic oj.JSON() attemts
+The writer function's output data values to JSON. The basic oj.JSON() attempts
 to build JSON from any data provided skipping types that can not be converted.
 
     s := oj.JSON([]interface{}{1, 2, "abc", true})

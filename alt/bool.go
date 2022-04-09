@@ -24,25 +24,27 @@ func Bool(v interface{}, defaults ...bool) (b bool) {
 	case bool:
 		b = tv
 	case string:
-		if 1 < len(defaults) {
+		switch {
+		case 1 < len(defaults):
 			b = defaults[1]
-		} else if strings.EqualFold(tv, "true") {
+		case strings.EqualFold(tv, "true"):
 			b = true
-		} else if strings.EqualFold(tv, "false") {
+		case strings.EqualFold(tv, "false"):
 			b = false
-		} else if 0 < len(defaults) {
+		case 0 < len(defaults):
 			b = defaults[0]
 		}
 	case gen.Bool:
 		b = bool(tv)
 	case gen.String:
-		if 1 < len(defaults) {
+		switch {
+		case 1 < len(defaults):
 			b = defaults[1]
-		} else if strings.EqualFold(string(tv), "true") {
+		case strings.EqualFold(string(tv), "true"):
 			b = true
-		} else if strings.EqualFold(string(tv), "false") {
+		case strings.EqualFold(string(tv), "false"):
 			b = false
-		} else if 0 < len(defaults) {
+		case 0 < len(defaults):
 			b = defaults[0]
 		}
 	default:

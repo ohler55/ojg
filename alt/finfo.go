@@ -93,7 +93,7 @@ func valGenericerAddr(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, r
 	return nil, nilValue, false
 }
 
-func newFinfo(f reflect.StructField, key string, fx byte) *finfo {
+func newFinfo(f *reflect.StructField, key string, fx byte) *finfo {
 	fi := finfo{
 		rt:     f.Type,
 		key:    key,

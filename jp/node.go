@@ -139,14 +139,14 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 			}
 		case Descent:
 			di, _ := stack[len(stack)-1].(index)
-			top := (index(di) & descentChildFlag) == 0
+			top := (di & descentChildFlag) == 0
 			// first pass expands, second continues evaluation
 			if (int64(di) & descentFlag) == 0 {
 				switch tv := prev.(type) {
 				case gen.Object:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, index(di|descentFlag))
+					stack = append(stack, di|descentFlag)
 					if fi == index(len(x))-1 { // last one
 						for _, v = range tv {
 							results = append(results, v)
@@ -156,13 +156,13 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 						switch v.(type) {
 						case gen.Object, gen.Array:
 							stack = append(stack, v)
-							stack = append(stack, index(fi|descentChildFlag))
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
 				case gen.Array:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, index(di|descentFlag))
+					stack = append(stack, di|descentFlag)
 					if fi == index(len(x))-1 { // last one
 						for _, v = range tv {
 							results = append(results, v)
@@ -173,7 +173,7 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 						switch v.(type) {
 						case gen.Object, gen.Array:
 							stack = append(stack, v)
-							stack = append(stack, index(fi|descentChildFlag))
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
 				}
@@ -203,16 +203,14 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 				for _, u := range tf {
 					switch tu := u.(type) {
 					case string:
-						switch tv := prev.(type) {
-						case gen.Object:
-							if v, has = tv[string(tu)]; has {
+						if tv, ok := prev.(gen.Object); ok {
+							if v, has = tv[tu]; has {
 								results = append(results, v)
 							}
 						}
 					case int64:
 						i := int(tu)
-						switch tv := prev.(type) {
-						case gen.Array:
+						if tv, ok := prev.(gen.Array); ok {
 							if i < 0 {
 								i = len(tv) + i
 							}
@@ -229,9 +227,8 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 					u := tf[ui]
 					switch tu := u.(type) {
 					case string:
-						switch tv := prev.(type) {
-						case gen.Object:
-							if v, has = tv[string(tu)]; has {
+						if tv, ok := prev.(gen.Object); ok {
+							if v, has = tv[tu]; has {
 								switch v.(type) {
 								case gen.Object, gen.Array:
 									stack = append(stack, v)
@@ -240,8 +237,7 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 						}
 					case int64:
 						i := int(tu)
-						switch tv := prev.(type) {
-						case gen.Array:
+						if tv, ok := prev.(gen.Array); ok {
 							if i < 0 {
 								i = len(tv) + i
 							}
@@ -340,7 +336,7 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 			if _, ok := stack[len(stack)-1].(index); !ok {
 				fi++
 				f = x[fi]
-				stack = append(stack, index(fi))
+				stack = append(stack, fi)
 			}
 		}
 	}
@@ -371,13 +367,13 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 	stack = append(stack, n)
 	f := x[0]
 	fi := index(0) // frag index
-	stack = append(stack, index(fi))
+	stack = append(stack, fi)
 
 	for 1 < len(stack) { // must have at least a data element and a fragment index
 		prev = stack[len(stack)-2]
 		if ii, up := prev.(index); up {
 			stack = stack[:len(stack)-1]
-			fi = index(ii) & fragIndexMask
+			fi = ii & fragIndexMask
 			f = x[fi]
 			continue
 		}
@@ -451,7 +447,7 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 				case gen.Object:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, index(di|descentFlag))
+					stack = append(stack, di|descentFlag)
 					if fi == index(len(x))-1 { // last one
 						for _, v = range tv {
 							return v
@@ -461,13 +457,13 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 						switch v.(type) {
 						case gen.Object, gen.Array:
 							stack = append(stack, v)
-							stack = append(stack, index(fi|descentChildFlag))
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
 				case gen.Array:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
-					stack = append(stack, index(di|descentFlag))
+					stack = append(stack, di|descentFlag)
 					if fi == index(len(x))-1 { // last one
 						if 0 < len(tv) {
 							return tv[0]
@@ -478,7 +474,7 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 						switch v.(type) {
 						case gen.Object, gen.Array:
 							stack = append(stack, v)
-							stack = append(stack, index(fi|descentChildFlag))
+							stack = append(stack, fi|descentChildFlag)
 						}
 					}
 				}
@@ -500,9 +496,8 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 				u := tf[ui]
 				switch tu := u.(type) {
 				case string:
-					switch tv := prev.(type) {
-					case gen.Object:
-						if v, has = tv[string(tu)]; has {
+					if tv, ok := prev.(gen.Object); ok {
+						if v, has = tv[tu]; has {
 							if fi == index(len(x))-1 { // last one
 								return v
 							}
@@ -514,8 +509,7 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 					}
 				case int64:
 					i := int(tu)
-					switch tv := prev.(type) {
-					case gen.Array:
+					if tv, ok := prev.(gen.Array); ok {
 						if i < 0 {
 							i = len(tv) + i
 						}
@@ -608,7 +602,7 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 			if _, ok := stack[len(stack)-1].(index); !ok {
 				fi++
 				f = x[fi]
-				stack = append(stack, index(fi))
+				stack = append(stack, fi)
 			}
 		}
 	}

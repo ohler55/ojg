@@ -41,7 +41,7 @@ func Time(v interface{}, defaults ...time.Time) (t time.Time) {
 			case float64:
 				secs := int64(tv)
 				// Only good to microseconds, not nanoseconds.
-				nano := int64((float64(tv)-float64(secs))*float64(time.Second)) / 1000 * 1000
+				nano := int64((tv-float64(secs))*float64(time.Second)) / 1000 * 1000
 				t = time.Unix(secs, nano).UTC()
 			case string:
 				var err error

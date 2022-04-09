@@ -24,7 +24,7 @@ type Writer struct {
 	ojg.Options
 
 	// Width is the suggested maximum width. In some cases it may not be
-	// possible to stay withing the specified width.
+	// possible to stay within the specified width.
 	Width int
 
 	// MaxDepth is the maximum depth of an element on a single line.
@@ -175,14 +175,14 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 			for i, m := range n.members {
 				if 0 < i {
 					w.buf = append(w.buf, comma...)
-					w.buf = append(w.buf, []byte(cs)...)
+					w.buf = append(w.buf, cs...)
 				} else if !flat {
-					w.buf = append(w.buf, []byte(cs)...)
+					w.buf = append(w.buf, cs...)
 				}
 				w.fill(m, d2, flat)
 			}
 		}
-		w.buf = append(w.buf, []byte(is)...)
+		w.buf = append(w.buf, is...)
 		if w.Color {
 			w.buf = append(w.buf, w.SyntaxColor...)
 			w.buf = append(w.buf, ']')
@@ -237,9 +237,9 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 		for i, m := range n.members {
 			if 0 < i {
 				w.buf = append(w.buf, comma...)
-				w.buf = append(w.buf, []byte(cs)...)
+				w.buf = append(w.buf, cs...)
 			} else if !flat {
-				w.buf = append(w.buf, []byte(cs)...)
+				w.buf = append(w.buf, cs...)
 			}
 			w.buf = append(w.buf, m.key...)
 			if w.Color {
@@ -255,7 +255,7 @@ func (w *Writer) fill(n *node, depth int, flat bool) {
 			}
 			w.fill(m, d2, flat)
 		}
-		w.buf = append(w.buf, []byte(is)...)
+		w.buf = append(w.buf, is...)
 		if w.Color {
 			w.buf = append(w.buf, w.SyntaxColor...)
 			w.buf = append(w.buf, '}')
@@ -282,7 +282,7 @@ func (w *Writer) checkAlign(n *node, start int, comma, cs []byte) bool {
 		if 0 < i {
 			w.buf = append(w.buf, comma...)
 		}
-		w.buf = append(w.buf, []byte(cs)...)
+		w.buf = append(w.buf, cs...)
 		switch m.kind {
 		case arrayNode:
 			w.alignArray(m, c, comma, cs)

@@ -127,8 +127,8 @@ then used as the input.
   oj -i 0 -z {a:1, b:two}
   => {"a":1,"b":"two"}
 
-Elements can be deleted from the JSON using the -d option. Multiple occurances
-of -d are supported.
+Elements can be deleted from the JSON using the -d option. Multiple
+occurrences of -d are supported.
 
 Oj can also be used to assemble new JSON output from input data. An assembly
 plan that describes how to assemble the new JSON if specified by the -a
@@ -270,8 +270,7 @@ func run() (err error) {
 		if planDef[0] != '[' {
 			var b []byte
 			if b, err = ioutil.ReadFile(planDef); err != nil {
-				fmt.Fprintf(os.Stderr, "*-*-* %s\n", err)
-				os.Exit(1)
+				return err
 			}
 			planDef = string(b)
 		}
@@ -290,7 +289,7 @@ func run() (err error) {
 		for _, file := range files {
 			if f, err = os.Open(file); err == nil {
 				_, err = p.ParseReader(f, write)
-				f.Close()
+				_ = f.Close()
 			}
 			if err != nil {
 				panic(err)
@@ -335,7 +334,8 @@ func write(v interface{}) bool {
 	for _, x := range dels {
 		_ = x.Del(v)
 	}
-	if 0 < len(extracts) {
+	switch {
+	case 0 < len(extracts):
 		if wrapExtract {
 			var w []interface{}
 			for _, x := range extracts {
@@ -357,9 +357,9 @@ func write(v interface{}) bool {
 				}
 			}
 		}
-	} else if senOut {
+	case senOut:
 		writeSEN(v)
-	} else {
+	default:
 		if plan != nil {
 			root["src"] = v
 			if err := plan.Execute(root); err != nil {
@@ -413,7 +413,7 @@ func writeJSON(v interface{}) {
 	} else {
 		_ = oj.Write(os.Stdout, v, options)
 	}
-	os.Stdout.Write([]byte{'\n'})
+	_, _ = os.Stdout.Write([]byte{'\n'})
 }
 
 func writeSEN(v interface{}) {
@@ -446,7 +446,7 @@ func writeSEN(v interface{}) {
 	} else {
 		_ = sen.Write(os.Stdout, v, options)
 	}
-	os.Stdout.Write([]byte{'\n'})
+	_, _ = os.Stdout.Write([]byte{'\n'})
 }
 
 func parsePrettyOpt() {

@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -19,7 +20,7 @@ func goParse(b *testing.B) {
 	var result interface{}
 	for n := 0; n < b.N; n++ {
 		if err := json.Unmarshal(sample, &result); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -30,7 +31,7 @@ func goUnmarshalPatient(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		var out Patient
 		if err := json.Unmarshal(sample, &out); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -41,7 +42,7 @@ func goUnmarshalCatalog(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		var out Catalog
 		if err := json.Unmarshal(sample, &out); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -57,10 +58,10 @@ func goDecodeReader(b *testing.B) {
 		dec := json.NewDecoder(f)
 		for {
 			var data interface{}
-			if err := dec.Decode(&data); err == io.EOF {
+			if err := dec.Decode(&data); errors.Is(err, io.EOF) {
 				break
 			} else if err != nil {
-				log.Fatal(err)
+				panic(err)
 			}
 		}
 	}
@@ -72,11 +73,11 @@ func goDecode(b *testing.B) {
 		dec := json.NewDecoder(bytes.NewReader(sample))
 		for {
 			_, err := dec.Token()
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			if err != nil {
-				log.Fatal(err)
+				panic(err)
 			}
 		}
 	}
@@ -101,7 +102,7 @@ func goParseChan(b *testing.B) {
 		// The go json package does not have a chan based result handler so
 		// fake it to set the baseline for others.
 		if err := json.Unmarshal(sample, &result); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 		rc <- result
 	}
@@ -122,12 +123,12 @@ func goMarshalCatalog(b *testing.B) {
 	sample, _ := ioutil.ReadFile(catFilename)
 	var cat Catalog
 	if err := json.Unmarshal(sample, &cat); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		if _, err := json.Marshal(&cat); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -136,12 +137,12 @@ func goMarshalPatient(b *testing.B) {
 	sample, _ := ioutil.ReadFile(patFilename)
 	var patient Patient
 	if err := json.Unmarshal(sample, &patient); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		if _, err := json.Marshal(&patient); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -151,7 +152,7 @@ func marshalJSON(b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		if _, err := json.Marshal(data); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -161,7 +162,7 @@ func marshalJSONIndent(b *testing.B) {
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		if _, err := json.MarshalIndent(data, "", "  "); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -175,7 +176,7 @@ func jsonEncodeIndent(b *testing.B) {
 		enc := json.NewEncoder(&buf)
 		enc.SetIndent("", "  ")
 		if err := enc.Encode(data); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }

@@ -20,7 +20,7 @@ func ojParse(b *testing.B) {
 	p := &oj.Parser{}
 	for n := 0; n < b.N; n++ {
 		if _, err := p.Parse(sample); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -31,7 +31,7 @@ func ojParseReuse(b *testing.B) {
 	p := &oj.Parser{Reuse: true}
 	for n := 0; n < b.N; n++ {
 		if _, err := p.Parse(sample); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -46,7 +46,7 @@ func ojParseReader(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_, _ = f.Seek(0, 0)
 		if _, err = p.ParseReader(f); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -61,7 +61,7 @@ func ojParseReaderReuse(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_, _ = f.Seek(0, 0)
 		if _, err = p.ParseReader(f); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -73,7 +73,7 @@ func ojTokenize(b *testing.B) {
 	t := oj.Tokenizer{}
 	for n := 0; n < b.N; n++ {
 		if err := t.Parse(sample, &h); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -89,7 +89,7 @@ func ojTokenizeLoad(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_, _ = f.Seek(0, 0)
 		if err := t.Load(f, &h); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -98,12 +98,12 @@ func ojMarshalCatalog(b *testing.B) {
 	sample, _ := ioutil.ReadFile(catFilename)
 	var cat Catalog
 	if err := json.Unmarshal(sample, &cat); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		if _, err := oj.Marshal(&cat); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -112,12 +112,12 @@ func ojMarshalPatient(b *testing.B) {
 	sample, _ := ioutil.ReadFile(patFilename)
 	var patient Patient
 	if err := json.Unmarshal(sample, &patient); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		if _, err := oj.Marshal(&patient); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -129,7 +129,7 @@ func ojUnmarshalPatient(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		var out Patient
 		if err := p.Unmarshal(sample, &out); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -141,7 +141,7 @@ func ojUnmarshalCatalog(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		var out Catalog
 		if err := p.Unmarshal(sample, &out); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -163,7 +163,7 @@ func ojParseChan(b *testing.B) {
 	var p oj.Parser
 	for n := 0; n < b.N; n++ {
 		if _, err := p.Parse(sample, rc); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 	rc <- nil
@@ -175,7 +175,7 @@ func ojValidate(b *testing.B) {
 	var v oj.Validator
 	for n := 0; n < b.N; n++ {
 		if err := v.Validate(sample); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }
@@ -191,7 +191,7 @@ func ojValidateReader(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_, _ = f.Seek(0, 0)
 		if err := v.ValidateReader(f); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}
 }

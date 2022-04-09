@@ -89,7 +89,7 @@ var (
 		{path: "['a','b']", expect: false, data: []interface{}{1, 2, 3}},
 		{path: "$.*.x", expect: false, data: &Any{X: 5}},
 		{path: "$.*.x", expect: false, data: &Any{X: 5}},
-		{path: "[0:1].z", expect: false, data: []*Any{nil, &Any{X: 5}}},
+		{path: "[0:1].z", expect: false, data: []*Any{nil, {X: 5}}},
 		{path: "[0:1].z", expect: false, data: []int{1}},
 	}
 )
