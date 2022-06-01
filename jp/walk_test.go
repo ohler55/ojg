@@ -9,7 +9,7 @@ import (
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/sen"
-	"github.com/stretchr/testify/require"
+	"github.com/ohler55/ojg/tt"
 )
 
 func TestWalk(t *testing.T) {
@@ -17,7 +17,7 @@ func TestWalk(t *testing.T) {
 	var paths []string
 	jp.Walk(data, func(path jp.Expr, value interface{}) { paths = append(paths, path.String()) })
 	sort.Strings(paths)
-	require.Equal(t, `[$ $.a "$.a[0]" "$.a[1]" "$.a[2]" $.b]`, string(sen.Bytes(paths)))
+	tt.Equal(t, `[$ $.a "$.a[0]" "$.a[1]" "$.a[2]" $.b]`, string(sen.Bytes(paths)))
 }
 
 func TestWalkNode(t *testing.T) {
@@ -25,5 +25,5 @@ func TestWalkNode(t *testing.T) {
 	var paths []string
 	jp.Walk(data, func(path jp.Expr, value interface{}) { paths = append(paths, path.String()) })
 	sort.Strings(paths)
-	require.Equal(t, `[$ $.a "$.a[0]" "$.a[1]" "$.a[2]" $.b]`, string(sen.Bytes(paths)))
+	tt.Equal(t, `[$ $.a "$.a[0]" "$.a[1]" "$.a[2]" $.b]`, string(sen.Bytes(paths)))
 }
