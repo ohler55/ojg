@@ -3,7 +3,6 @@
 package tt
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 )
@@ -13,15 +12,7 @@ func Panic(t *testing.T, fun func(), args ...interface{}) {
 	ff := func() {
 		var b strings.Builder
 		b.WriteString("\nexpect: panic\nactual: no panic\n")
-		stackFill(&b)
-		if 0 < len(args) {
-			if format, _ := args[0].(string); 0 < len(format) {
-				b.WriteString(fmt.Sprintf(format, args[1:]...))
-			} else {
-				b.WriteString(fmt.Sprint(args...))
-			}
-		}
-		t.Fatal(b.String())
+		finishFail(t, &b, args)
 	}
 	defer func() {
 		if r := recover(); r == nil {

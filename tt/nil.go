@@ -13,15 +13,7 @@ func Nil(t *testing.T, actual interface{}, args ...interface{}) {
 	if !isNil(actual) {
 		var b strings.Builder
 		b.WriteString(fmt.Sprintf("\nexpect: nil\nactual: (%T) %v\n", actual, actual))
-		stackFill(&b)
-		if 0 < len(args) {
-			if format, _ := args[0].(string); 0 < len(format) {
-				b.WriteString(fmt.Sprintf(format, args[1:]...))
-			} else {
-				b.WriteString(fmt.Sprint(args...))
-			}
-		}
-		t.Fatal(b.String())
+		finishFail(t, &b, args)
 	}
 }
 
@@ -30,14 +22,6 @@ func NotNil(t *testing.T, actual interface{}, args ...interface{}) {
 	if isNil(actual) {
 		var b strings.Builder
 		b.WriteString("\nexpect: not nil\nactual: nil\n")
-		stackFill(&b)
-		if 0 < len(args) {
-			if format, _ := args[0].(string); 0 < len(format) {
-				b.WriteString(fmt.Sprintf(format, args[1:]...))
-			} else {
-				b.WriteString(fmt.Sprint(args...))
-			}
-		}
-		t.Fatal(b.String())
+		finishFail(t, &b, args)
 	}
 }

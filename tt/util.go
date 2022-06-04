@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+	"testing"
 	"unsafe"
 
 	"github.com/ohler55/ojg/gen"
@@ -16,6 +17,18 @@ type call struct {
 	fn   string
 	file string
 	line int
+}
+
+func finishFail(t *testing.T, b *strings.Builder, args []interface{}) {
+	stackFill(b)
+	if 0 < len(args) {
+		if format, _ := args[0].(string); 0 < len(format) {
+			b.WriteString(fmt.Sprintf(format, args[1:]...))
+		} else {
+			b.WriteString(fmt.Sprint(args...))
+		}
+	}
+	t.Fatal(b.String())
 }
 
 func stackFill(b *strings.Builder) {

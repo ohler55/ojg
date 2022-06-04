@@ -5,6 +5,7 @@ package tt
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -16,6 +17,27 @@ import (
 
 // Equal return true if two values are equal and fails a test if not equal.
 func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bool) {
+	eq = valuesEqual(expect, actual)
+	if !eq {
+		var b strings.Builder
+		b.WriteString(fmt.Sprintf("\nexpect: (%T) %v\nactual: (%T) %v\n", expect, expect, actual, actual))
+		finishFail(t, &b, args)
+	}
+	return
+}
+
+// NotEqual return true if two values are not equal and fails a test if equal.
+func NotEqual(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bool) {
+	eq = valuesEqual(expect, actual)
+	if eq {
+		var b strings.Builder
+		b.WriteString(fmt.Sprintf("\nexpect: (%T) %v to not equal\nactual: (%T) %v\n", expect, expect, actual, actual))
+		finishFail(t, &b, args)
+	}
+	return
+}
+
+func valuesEqual(expect, actual interface{}) (eq bool) {
 	switch te := expect.(type) {
 	case nil:
 		eq = nil == actual
@@ -87,7 +109,7 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 					eq = false
 					break
 				}
-				if eq = Equal(t, te[i], ta[i], args...); !eq {
+				if eq = valuesEqual(te[i], ta[i]); !eq {
 					break
 				}
 			}
@@ -95,7 +117,7 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 				eq = false
 			}
 		case gen.Array:
-			eq = Equal(t, expect, ta.Simplify(), args...)
+			eq = valuesEqual(expect, ta.Simplify())
 		default:
 			eq = false
 		}
@@ -108,7 +130,7 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 					eq = false
 					break
 				}
-				if eq = Equal(t, te[i], ta[i], args...); !eq {
+				if eq = valuesEqual(te[i], ta[i]); !eq {
 					break
 				}
 			}
@@ -127,7 +149,7 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 					eq = false
 					break
 				}
-				if eq = Equal(t, te[i], ta[i], args...); !eq {
+				if eq = valuesEqual(te[i], ta[i]); !eq {
 					break
 				}
 			}
@@ -147,13 +169,13 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 					eq = false
 					break
 				}
-				eq = Equal(t, ve, va, args...)
+				eq = valuesEqual(ve, va)
 			}
 			if eq && len(te) != len(ta) {
 				eq = false
 			}
 		case gen.Object:
-			eq = Equal(t, expect, ta.Simplify(), args...)
+			eq = valuesEqual(expect, ta.Simplify())
 		default:
 			eq = false
 		}
@@ -167,7 +189,7 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 					eq = false
 					break
 				}
-				eq = Equal(t, ve, va, args...)
+				eq = valuesEqual(ve, va)
 			}
 			if eq && len(te) != len(ta) {
 				eq = false
@@ -183,7 +205,7 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 					eq = false
 					break
 				}
-				if eq = Equal(t, te[i], ta[i], args...); !eq {
+				if eq = valuesEqual(te[i], ta[i]); !eq {
 					break
 				}
 			}
@@ -191,15 +213,10 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 				eq = false
 			}
 		}
-	}
-	if !eq {
-		var b strings.Builder
-		b.WriteString(fmt.Sprintf("\nexpect: (%T) %v\nactual: (%T) %v\n", expect, expect, actual, actual))
-		stackFill(&b)
-		if 0 < len(args) {
-			b.WriteString(fmt.Sprint(args...))
+	default:
+		if actual != nil {
+			eq = reflect.DeepEqual(expect, actual)
 		}
-		t.Fatal(b.String())
 	}
 	return
 }
