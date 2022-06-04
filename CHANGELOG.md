@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.14.2] - 2022-06-03
+### Added
+- Added SameType test tool.
+
 ## [1.14.1] - 2022-05-31
 ### Fixed
 - Removed dependency on external packages.
