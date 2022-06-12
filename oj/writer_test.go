@@ -364,6 +364,11 @@ func TestMarshal(t *testing.T) {
 	b, err = oj.Marshal([]interface{}{true, &Dummy{Val: 3}})
 	tt.Nil(t, err)
 	tt.Equal(t, `[true,{"Val":3}]`, string(b))
+	save := b
+	b, err = oj.Marshal([]interface{}{true, &Dummy{Val: 5}})
+	tt.Nil(t, err)
+	tt.Equal(t, `[true,{"Val":5}]`, string(b))
+	tt.Equal(t, `[true,{"Val":3}]`, string(save))
 
 	b, err = oj.Marshal([]interface{}{true, &Dummy{Val: 3}}, &oj.Options{UseTags: false})
 	tt.Nil(t, err)

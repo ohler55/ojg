@@ -41,7 +41,9 @@ type Writer struct {
 }
 
 // Encode data. Any panics during encoding will cause an empty return but will
-// not fail.
+// not fail.The returned buffer is the Writer buffer and is reused on the next
+// call to write. If returned value is to be preserved past a second
+// invocation then the buffer should be copied.
 func (w *Writer) Encode(data interface{}) []byte {
 	b, _ := w.encode(data)
 
@@ -51,10 +53,18 @@ func (w *Writer) Encode(data interface{}) []byte {
 // Marshal data. The same as Encode but a panics during encoding will result
 // in an error return.
 func (w *Writer) Marshal(data interface{}) ([]byte, error) {
-	return w.encode(data)
+	if _, err := w.encode(data); err != nil {
+		return nil, err
+	}
+	out := make([]byte, len(w.buf))
+	copy(out, w.buf)
+
+	return out, nil
 }
 
-// Write encoded data to the op.Writer.
+// Write encoded data to the op.Writer. The returned buffer is the Writer
+// buffer and is reused on the next call to write. If returned value is to be
+// preserved past a second invocation then the buffer should be copied.
 func (w *Writer) Write(wr io.Writer, data interface{}) (err error) {
 	w.w = wr
 	_, err = w.encode(data)

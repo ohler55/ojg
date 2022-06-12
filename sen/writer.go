@@ -50,7 +50,10 @@ func (wr *Writer) SEN(data interface{}) string {
 }
 
 // MustSEN writes data, SEN encoded as a []byte and not a string like the
-// SEN() function. On error a panic is called with the error.
+// SEN() function. On error a panic is called with the error. The returned
+// buffer is the Writer buffer and is reused on the next call to write. If
+// returned value is to be preserved past a second invocation then the buffer
+// should be copied.
 func (wr *Writer) MustSEN(data interface{}) []byte {
 	wr.w = nil
 	if wr.InitSize <= 0 {

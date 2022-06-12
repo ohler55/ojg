@@ -263,3 +263,15 @@ s]x`, string(out))
   s[x0100x 0200x 0300x s{xkxx: 01x kyx: 020x kzx: 0300xs}xs]x
 s]x`, string(out))
 }
+
+type simplyPanic int
+
+func (sp simplyPanic) Simplify() interface{} {
+	panic("no can do")
+}
+
+func TestMarshalError(t *testing.T) {
+	w := pretty.Writer{}
+	_, err := w.Marshal(simplyPanic(0))
+	tt.NotNil(t, err)
+}

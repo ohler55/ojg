@@ -196,7 +196,8 @@ func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
 		}
 	}()
 	wr.MustJSON(data)
-	out = wr.buf
+	out = make([]byte, len(wr.buf))
+	copy(out, wr.buf)
 
 	return
 }
