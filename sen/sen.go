@@ -152,7 +152,9 @@ func String(data interface{}, args ...interface{}) string {
 // Bytes returns a SEN []byte for the data provided. The data can be a simple
 // type of nil, bool, int, floats, time.Time, []interface{}, or
 // map[string]interface{} or a Node type, The args, if supplied can be an int
-// as an indent, *ojg.Options, or a *Writer.
+// as an indent, *ojg.Options, or a *Writer. The returned buffer is the Writer
+// buffer and is reused on the next call to write. If returned value is to be
+// preserved past a second invocation then the buffer should be copied.
 func Bytes(data interface{}, args ...interface{}) []byte {
 	var wr *Writer
 	if 0 < len(args) {
