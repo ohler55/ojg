@@ -32,6 +32,7 @@ func TestParse(t *testing.T) {
 		{src: "@.*", expect: "@.*"},
 		{src: "[1,2]", expect: "[1,2]"},
 		{src: "abc..def", expect: "abc..def"},
+		{src: "abc-def", expect: "abc-def"},
 		{src: "abc[*].def", expect: "abc[*].def"},
 		{src: "abc[0].def", expect: "abc[0].def"},
 		{src: "abc[-1].def", expect: "abc[-1].def"},
