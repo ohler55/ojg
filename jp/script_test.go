@@ -233,6 +233,8 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@.x - @.y == 1.5)", value: map[string]interface{}{"x": 3.5, "y": 2.0}},
 		{src: "(@.x - @.y == null)", value: map[string]interface{}{"x": 1.2, "y": "abc"}},
 		{src: "(@.x - @.y == null)", value: map[string]interface{}{"x": 1, "y": "abc"}},
+		{src: "(@.x-1 == @.y)", value: map[string]interface{}{"x": 1, "y": 0}},
+		{src: `(@["x-1"] == @.y)`, value: map[string]interface{}{"x-1": 1, "y": 1}},
 
 		{src: "(@.x * @.y == 0)", value: map[string]interface{}{"x": 1, "y": 2}, noMatch: true},
 		{src: "(@.x * @.y == 2)", value: map[string]interface{}{"x": 1, "y": 2}},
