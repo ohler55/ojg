@@ -245,6 +245,7 @@ linters:
     - stylecheck # not ready for go1.18 yet
     - unparam # not ready for go1.18 yet
     - unused # not ready for go1.18 yet
+    - asasalint # stupid rule that makes no sense
 
   disable-all: false
   presets:
@@ -271,6 +272,16 @@ issues:
         - lll
         - goconst
         - noctx
+
+    - path: doc.go
+      linters:
+        - gofmt
+        - goimports
+    - path: sen/mongo.go
+      linters:
+        - gofmt # gofmt does not match the doc comment description
+        - goimports
+
 
     # Exclude known linters from partially hard-vendored code,
     # which is impossible to exclude via "nolint" comments.

@@ -677,6 +677,20 @@ func TestRecomposerAnyComposePtr(t *testing.T) {
 	})
 }
 
+func TestRecomposeReflectPrivate(t *testing.T) {
+	type Sample struct {
+		X int
+		y int
+	}
+	r := alt.MustNewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Sample{}: nil})
+	data := map[string]interface{}{"^": "Sample", "x": 1, "y": 2}
+	var sample Sample
+	v := r.MustRecompose(data, &sample)
+	tt.NotNil(t, v)
+	tt.Equal(t, 0, sample.y)
+	tt.Equal(t, 1, sample.X)
+}
+
 func TestRecomposeEmbeddedMap(t *testing.T) {
 	type Sample struct {
 		Ss map[string]string

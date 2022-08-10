@@ -22,6 +22,9 @@ func indexType(rt reflect.Type) (im map[string]reflect.StructField) {
 		im = map[string]reflect.StructField{}
 		for i--; 0 <= i; i-- {
 			f := rt.Field(i)
+			if 0 < len(f.PkgPath) {
+				continue
+			}
 			if f.Anonymous {
 				fim := indexType(f.Type)
 				// prepend index and add to im
