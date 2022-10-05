@@ -8,6 +8,7 @@ import (
 	"github.com/ohler55/ojg/gen"
 )
 
+var emptyObject = map[string]interface{}{}
 var emptySlice = []interface{}{}
 
 // Builder is a basic type builder. It uses a stack model to build where maps
@@ -33,19 +34,16 @@ func (b *Builder) Reset() {
 // provided if the top of the stack is an object (map) and must not be
 // provided if the op of the stack is an array or slice.
 func (b *Builder) Object(key ...string) error {
-	newObj := map[string]interface{}{}
 	if 0 < len(key) {
 		if len(b.starts) == 0 || 0 <= b.starts[len(b.starts)-1] {
 			return fmt.Errorf("can not use a key when pushing to an array")
 		}
-		if obj, _ := b.stack[len(b.stack)-1].(map[string]interface{}); obj != nil {
-			obj[key[0]] = newObj
-		}
+		b.stack = append(b.stack, gen.Key(key[0]))
 	} else if 0 < len(b.starts) && b.starts[len(b.starts)-1] < 0 {
 		return fmt.Errorf("must have a key when pushing to an object")
 	}
-	b.starts = append(b.starts, -1)
-	b.stack = append(b.stack, newObj)
+	b.starts = append(b.starts, -len(b.stack)-1)
+	b.stack = append(b.stack, emptyObject)
 
 	return nil
 }
@@ -72,19 +70,16 @@ func (b *Builder) Array(key ...string) error {
 // the stack is an object (map) and must not be provided if the op of the
 // stack is an array or slice.
 func (b *Builder) Value(value interface{}, key ...string) error {
-	switch {
-	case 0 < len(key):
+	if 0 < len(key) {
 		if len(b.starts) == 0 || 0 <= b.starts[len(b.starts)-1] {
 			return fmt.Errorf("can not use a key when pushing to an array")
 		}
-		if obj, _ := b.stack[len(b.stack)-1].(map[string]interface{}); obj != nil {
-			obj[key[0]] = value
-		}
-	case 0 < len(b.starts) && b.starts[len(b.starts)-1] < 0:
+		b.stack = append(b.stack, gen.Key(key[0]))
+	} else if 0 < len(b.starts) && b.starts[len(b.starts)-1] < 0 {
 		return fmt.Errorf("must have a key when pushing to an object")
-	default:
-		b.stack = append(b.stack, value)
 	}
+	b.stack = append(b.stack, value)
+
 	return nil
 }
 
@@ -99,14 +94,16 @@ func (b *Builder) Pop() {
 			copy(a, b.stack[start:len(b.stack)])
 			b.stack = b.stack[:start]
 			b.stack[start-1] = a
-			if 2 < len(b.stack) {
-				if k, ok := b.stack[len(b.stack)-2].(gen.Key); ok {
-					if obj, _ := b.stack[len(b.stack)-3].(map[string]interface{}); obj != nil {
-						obj[string(k)] = a
-						b.stack = b.stack[:len(b.stack)-2]
-					}
-				}
+		} else { // object
+			start = -start
+			o := make(map[string]interface{})
+			for i := start; i < len(b.stack)-1; i += 2 {
+				key := b.stack[i].(gen.Key).String()
+				val := b.stack[i+1]
+				o[key] = val
 			}
+			b.stack = b.stack[:start]
+			b.stack[start-1] = o
 		}
 		b.starts = b.starts[:len(b.starts)-1]
 	}

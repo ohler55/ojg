@@ -29,10 +29,14 @@ func TestBuilderArray(t *testing.T) {
 	tt.Nil(t, err, "second b.Array()")
 	err = b.Value(false)
 	tt.Nil(t, err, "b.Value(false)")
+
+	b.Pop()
+	err = b.Value(nil)
+	tt.Nil(t, err, "b.Value(nil)")
 	b.PopAll()
 
 	v = b.Result()
-	tt.Equal(t, []interface{}{true, []interface{}{false}}, v)
+	tt.Equal(t, []interface{}{true, []interface{}{false}, nil}, v)
 }
 
 func TestBuilderObject(t *testing.T) {
@@ -56,10 +60,14 @@ func TestBuilderObject(t *testing.T) {
 	tt.Nil(t, err, "second b.Object()")
 	err = b.Value(false, "c")
 	tt.Nil(t, err, "b.Value(false, c)")
+
+	b.Pop()
+	err = b.Value(nil, "d")
+	tt.Nil(t, err, "b.Value(nil, d)")
 	b.PopAll()
 
 	v = b.Result()
-	tt.Equal(t, map[string]interface{}{"a": true, "b": map[string]interface{}{"c": false}}, v)
+	tt.Equal(t, map[string]interface{}{"a": true, "b": map[string]interface{}{"c": false}, "d": nil}, v)
 }
 
 func TestBuilderMixed(t *testing.T) {
