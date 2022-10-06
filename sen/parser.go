@@ -340,6 +340,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			p.starts = p.starts[0:depth]
 			n := p.stack[len(p.stack)-1]
 			p.stack = p.stack[:len(p.stack)-1]
+			// TBD maybe separarte add function or check here for time options
 			if err = p.add(n, off); err != nil {
 				return
 			}
@@ -799,6 +800,8 @@ func (p *Parser) addString(s string, off int) {
 		p.plus = false
 		return
 	}
+	// TBD if time option for @ and length is over a certain size try as time
+
 	// Array or just a value
 	p.stack = append(p.stack, s)
 }

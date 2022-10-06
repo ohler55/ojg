@@ -107,6 +107,8 @@ func (b *Builder) Pop() {
 					}
 				}
 			}
+		} else if 1 < len(b.starts) && b.starts[len(b.starts)-2] < 0 {
+			b.stack = b.stack[:len(b.stack)-1]
 		}
 		b.starts = b.starts[:len(b.starts)-1]
 	}

@@ -49,6 +49,7 @@ func TestBuilderObject(t *testing.T) {
 
 	err = b.Object()
 	tt.Nil(t, err, "first b.Object()")
+
 	err = b.Value(true, "a")
 	tt.Nil(t, err, "b.Value(true, a)")
 
@@ -56,10 +57,14 @@ func TestBuilderObject(t *testing.T) {
 	tt.Nil(t, err, "second b.Object()")
 	err = b.Value(false, "c")
 	tt.Nil(t, err, "b.Value(false, c)")
+
+	b.Pop()
+	err = b.Value(nil, "d")
+	tt.Nil(t, err, "b.Value(nil, d)")
 	b.PopAll()
 
 	v = b.Result()
-	tt.Equal(t, map[string]interface{}{"a": true, "b": map[string]interface{}{"c": false}}, v)
+	tt.Equal(t, map[string]interface{}{"a": true, "b": map[string]interface{}{"c": false}, "d": nil}, v)
 }
 
 func TestBuilderMixed(t *testing.T) {
