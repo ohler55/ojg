@@ -120,10 +120,9 @@ func TestBuilderErrors(t *testing.T) {
 
 // This test can be runned with this command:
 //
-//     $ go test -fuzz=FuzzBuilder -fuzztime=1s
+//	$ go test -fuzz=FuzzBuilder -fuzztime=1s
 //
 // Contributed by nono (Bruno Michel)
-//
 func FuzzBuilder(f *testing.F) {
 	defer func() {
 		if recover() != nil {

@@ -1,5 +1,6 @@
 // Copyright (c) 2021, Peter Ohler, All rights reserved.
 
+// Package sen contains the SEN parsers and writers.
 package sen
 
 import (

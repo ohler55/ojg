@@ -206,7 +206,6 @@ linters-settings:
 
 linters:
   enable:
-    - deadcode
     - errcheck
     - gocritic
     - gofmt
@@ -218,7 +217,6 @@ linters:
     - misspell
     - typecheck
     - unconvert
-    - varcheck
   enable-all: false
   disable:
     - govet
@@ -246,6 +244,9 @@ linters:
     - unparam # not ready for go1.18 yet
     - unused # not ready for go1.18 yet
     - asasalint # stupid rule that makes no sense
+    - varcheck # deprecated
+    - deadcode # deprecated
+    - reassign # removed because it makes no sense to flag an assignment of a public variable as an error.
 
   disable-all: false
   presets:

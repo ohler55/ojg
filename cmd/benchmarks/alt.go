@@ -1,5 +1,6 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
+// Package main is the main package. (stupid comment to satisfy the linter).
 package main
 
 import (
