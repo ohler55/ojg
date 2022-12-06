@@ -537,6 +537,14 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 	return stack
 }
 
+// Inspect the script.
+func (s *Script) Inspect() *Form {
+
+	// TBD
+
+	return nil
+}
+
 func (s *Script) appendOp(o *op, left, right interface{}) (pb *precBuf) {
 	pb = &precBuf{prec: o.prec}
 	switch o.code {
