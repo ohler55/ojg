@@ -539,10 +539,24 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 
 // Inspect the script.
 func (s *Script) Inspect() *Form {
+	f, _ := nextForm(s.template)
 
-	// TBD
+	return f.(*Form)
+}
 
-	return nil
+func nextForm(st []any) (any, []any) {
+	var v any
+	if 0 < len(st) {
+		v = st[0]
+		st = st[1:]
+		if ov, ok := v.(*op); ok {
+			f := Form{Op: ov.name}
+			f.Left, st = nextForm(st)
+			f.Right, st = nextForm(st)
+			v = &f
+		}
+	}
+	return v, st
 }
 
 func (s *Script) appendOp(o *op, left, right interface{}) (pb *precBuf) {

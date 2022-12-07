@@ -9,6 +9,7 @@ import (
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
+	"github.com/ohler55/ojg/pretty"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -264,6 +265,26 @@ func TestScriptEval(t *testing.T) {
 		} else {
 			tt.Equal(t, 1, len(result), d.src, " in ", d.value)
 		}
+	}
+}
+
+func TestScriptInspect(t *testing.T) {
+	type idata struct {
+		src    string
+		expect string
+	}
+	for i, d := range []idata{
+		{src: "(@ == 3)", expect: `{left: @ op: "==" right: 3}`},
+		{src: "(@.x - @.y == 0)", expect: `{left: {left: @.x op: - right: @.y} op: "==" right: 0}`},
+		{src: "(!@.x)", expect: `{left: @.x op: "!" right: null}`},
+	} {
+		if testing.Verbose() {
+			fmt.Printf("... %d: %s\n", i, d.src)
+		}
+		s, err := jp.NewScript(d.src)
+		tt.Nil(t, err)
+		f := s.Inspect()
+		tt.Equal(t, d.expect, pretty.SEN(f))
 	}
 }
 
