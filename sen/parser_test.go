@@ -238,6 +238,41 @@ func TestParserParseReader(t *testing.T) {
 
 func TestParserParseCallback(t *testing.T) {
 	var results []byte
+	cb := func(n interface{}) {
+		if 0 < len(results) {
+			results = append(results, ' ')
+		}
+		results = append(results, fmt.Sprintf("%v", n)...)
+	}
+	p := sen.Parser{Reuse: true}
+	v, err := p.Parse([]byte(callbackSEN), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
+
+	_, _ = p.Parse([]byte("[1,[2,[3}]]")) // fail to leave stack not cleaned up
+
+	results = results[:0]
+	v, err = p.Parse([]byte(callbackSEN), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
+
+	results = results[:0]
+	v, err = p.Parse([]byte("123"), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, `123`, string(results))
+
+	results = results[:0]
+	v, err = p.Parse([]byte("abc"), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, "abc", string(results))
+}
+
+func TestParserParseCallbackAlt(t *testing.T) {
+	var results []byte
 	cb := func(n interface{}) bool {
 		if 0 < len(results) {
 			results = append(results, ' ')
@@ -273,6 +308,27 @@ func TestParserParseCallback(t *testing.T) {
 }
 
 func TestParserParseReaderCallback(t *testing.T) {
+	var results []byte
+	cb := func(n interface{}) {
+		if 0 < len(results) {
+			results = append(results, ' ')
+		}
+		results = append(results, fmt.Sprintf("%v", n)...)
+	}
+	var p sen.Parser
+	v, err := p.ParseReader(strings.NewReader("\xef\xbb\xbf"+callbackSEN), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
+
+	results = results[:0]
+	v, err = p.ParseReader(strings.NewReader(callbackSEN), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, `1 [2] map[x:3] true false 123`, string(results))
+}
+
+func TestParserParseReaderCallbackAlt(t *testing.T) {
 	var results []byte
 	cb := func(n interface{}) bool {
 		if 0 < len(results) {

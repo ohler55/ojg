@@ -32,7 +32,7 @@ type Parser struct {
 	stack      []interface{}
 	starts     []int
 	maps       []map[string]interface{}
-	cb         func(interface{}) bool
+	cb         func(interface{})
 	resultChan chan interface{}
 	ri         int // read index for null, false, and true
 	mi         int
@@ -76,6 +76,9 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 	for _, a := range args {
 		switch ta := a.(type) {
 		case func(interface{}) bool:
+			p.cb = func(x any) { _ = ta(x) }
+			p.OnlyOne = false
+		case func(interface{}):
 			p.cb = ta
 			p.OnlyOne = false
 		case chan interface{}:
@@ -130,6 +133,9 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}
 	for _, a := range args {
 		switch ta := a.(type) {
 		case func(interface{}) bool:
+			p.cb = func(x any) { _ = ta(x) }
+			p.OnlyOne = false
+		case func(interface{}):
 			p.cb = ta
 			p.OnlyOne = false
 		case chan interface{}:

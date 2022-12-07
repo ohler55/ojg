@@ -164,6 +164,29 @@ func TestParseString(t *testing.T) {
 
 func TestParseCallback(t *testing.T) {
 	var results []byte
+	cb := func(n gen.Node) {
+		if 0 < len(results) {
+			results = append(results, ' ')
+		}
+		results = append(results, n.String()...)
+	}
+	p := gen.Parser{Reuse: true}
+	v, err := p.Parse([]byte(callbackJSON), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, `1 [2] {"x":3} true false 123`, string(results))
+
+	_, _ = p.Parse([]byte("[1,[2,[3}]]")) // fail to leave stack not cleaned up
+
+	results = results[:0]
+	v, err = p.Parse([]byte(callbackJSON), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, `1 [2] {"x":3} true false 123`, string(results))
+}
+
+func TestParseCallbackAlt(t *testing.T) {
+	var results []byte
 	cb := func(n gen.Node) bool {
 		if 0 < len(results) {
 			results = append(results, ' ')
@@ -187,6 +210,27 @@ func TestParseCallback(t *testing.T) {
 }
 
 func TestParseReaderCallback(t *testing.T) {
+	var results []byte
+	cb := func(n gen.Node) {
+		if 0 < len(results) {
+			results = append(results, ' ')
+		}
+		results = append(results, n.String()...)
+	}
+	var p gen.Parser
+	v, err := p.ParseReader(strings.NewReader("\xef\xbb\xbf"+callbackJSON), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, `1 [2] {"x":3} true false 123`, string(results))
+
+	results = results[:0]
+	v, err = p.ParseReader(strings.NewReader(callbackJSON), cb)
+	tt.Nil(t, err)
+	tt.Nil(t, v)
+	tt.Equal(t, `1 [2] {"x":3} true false 123`, string(results))
+}
+
+func TestParseReaderCallbackAlt(t *testing.T) {
 	var results []byte
 	cb := func(n gen.Node) bool {
 		if 0 < len(results) {

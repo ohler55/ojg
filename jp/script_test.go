@@ -275,7 +275,9 @@ func TestScriptInspect(t *testing.T) {
 	}
 	for i, d := range []idata{
 		{src: "(@ == 3)", expect: `{left: @ op: "==" right: 3}`},
+		{src: "(3 == @)", expect: `{left: 3 op: "==" right: @}`},
 		{src: "(@.x - @.y == 0)", expect: `{left: {left: @.x op: - right: @.y} op: "==" right: 0}`},
+		{src: "(0 == @.x - @.y)", expect: `{left: 0 op: "==" right: {left: @.x op: - right: @.y}}`},
 		{src: "(!@.x)", expect: `{left: @.x op: "!" right: null}`},
 	} {
 		if testing.Verbose() {

@@ -39,7 +39,7 @@ type Parser struct {
 	stack      []interface{}
 	starts     []int
 	maps       []map[string]interface{}
-	cb         func(interface{}) bool
+	cb         func(interface{})
 	resultChan chan interface{}
 	line       int
 	noff       int // Offset of last newline from start of buf. Can be negative when using a reader.
@@ -100,7 +100,10 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 	p.OnlyOne = true
 	for _, a := range args {
 		switch ta := a.(type) {
-		case func(interface{}) bool:
+		case func(any) bool:
+			p.cb = func(x any) { _ = ta(x) }
+			p.OnlyOne = false
+		case func(any):
 			p.cb = ta
 			p.OnlyOne = false
 		case chan interface{}:
@@ -162,7 +165,10 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}
 	p.OnlyOne = true
 	for _, a := range args {
 		switch ta := a.(type) {
-		case func(interface{}) bool:
+		case func(any) bool:
+			p.cb = func(x any) { _ = ta(x) }
+			p.OnlyOne = false
+		case func(any):
 			p.cb = ta
 			p.OnlyOne = false
 		case chan interface{}:
