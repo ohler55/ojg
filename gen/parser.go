@@ -26,7 +26,7 @@ type Parser struct {
 	stack      []Node
 	starts     []int
 	maps       []Object
-	cb         func(Node) bool
+	cb         func(Node)
 	resultChan chan Node
 	line       int
 	noff       int // Offset of last newline from start of buf. Can be negative when using a reader.
@@ -54,6 +54,9 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (Node, error) {
 	for _, a := range args {
 		switch ta := a.(type) {
 		case func(Node) bool:
+			p.cb = func(x Node) { _ = ta(x) }
+			p.OnlyOne = false
+		case func(Node):
 			p.cb = ta
 			p.OnlyOne = false
 		case chan Node:
@@ -107,6 +110,9 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data Node, err e
 	for _, a := range args {
 		switch ta := a.(type) {
 		case func(Node) bool:
+			p.cb = func(x Node) { _ = ta(x) }
+			p.OnlyOne = false
+		case func(Node):
 			p.cb = ta
 			p.OnlyOne = false
 		case chan Node:

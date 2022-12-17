@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.15.0] - 2022-12-16
+### Added
+- Added `jp.Script.Inspect()` to be able to get the details of a script.
+- The parser callback function now allows `func(any)` in addition to `func(any) bool`.
+
 ## [1.14.5] - 2022-10-12
 ### Fixed
 - alt.Builder Pop fixed for nested objects.
