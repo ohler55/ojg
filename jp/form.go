@@ -8,7 +8,7 @@ package jp
 // an example a Filter fragment of [?(@.x == 3)] whould be representing in a
 // Form as
 //
-//    Form{Op: "==", Left: jp.Expr{jp.At('@'), jp.Child("x")}, Right: 3}.
+//	Form{Op: "==", Left: jp.Expr{jp.At('@'), jp.Child("x")}, Right: 3}.
 type Form struct {
 	// Op is the operation to perform.
 	Op string
