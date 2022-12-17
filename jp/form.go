@@ -22,6 +22,7 @@ type Form struct {
 	Right any
 }
 
+// Simplify the form.
 func (f *Form) Simplify() any {
 	simple := map[string]any{"op": f.Op}
 	switch tv := f.Left.(type) {
