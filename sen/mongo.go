@@ -10,11 +10,12 @@ import (
 // AddMongoFuncs adds TokenFuncs for the common mongo Javascript functions
 // that appear in the output from mongosh for some types. They functions
 // included are:
-//  ISODate(arg) returns time.Time when given either a RFC3339 string or milliseconds
-//  ObjectId(arg) returns the arg as a string
-//  NumberInt(arg)  returns the string argument as an int64 or if too large the original string
-//  NumberLong(arg)  returns the string argument as an int64 or if too large the original string
-//  NumberDecimal(arg)  returns the string argument as a float64 or if too large the original string
+//
+//	ISODate(arg) returns time.Time when given either a RFC3339 string or milliseconds
+//	ObjectId(arg) returns the arg as a string
+//	NumberInt(arg)  returns the string argument as an int64 or if too large the original string
+//	NumberLong(arg)  returns the string argument as an int64 or if too large the original string
+//	NumberDecimal(arg)  returns the string argument as a float64 or if too large the original string
 func (p *Parser) AddMongoFuncs() {
 	if p.tokenFuncs == nil {
 		p.tokenFuncs = map[string]TokenFunc{}

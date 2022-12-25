@@ -65,7 +65,7 @@ func TestExprDel(t *testing.T) {
 		x, err := jp.ParseString(d.path)
 		tt.Nil(t, err, i, " : ", x)
 
-		var data interface{}
+		var data any
 		if !d.noSimple {
 			data, err = oj.ParseString(d.data)
 			tt.Nil(t, err, i, " : ", x)
@@ -102,7 +102,7 @@ func TestExprDelOne(t *testing.T) {
 		x, err := jp.ParseString(d.path)
 		tt.Nil(t, err, i, " : ", x)
 
-		var data interface{}
+		var data any
 		if !d.noSimple {
 			data, err = oj.ParseString(d.data)
 			tt.Nil(t, err, i, " : ", x)

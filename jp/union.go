@@ -6,7 +6,7 @@ import "strconv"
 
 // Union is a union operation for a JSON path expression which is a union of a
 // Child and Nth fragment.
-type Union []interface{}
+type Union []any
 
 // Append a fragment string representation of the fragment to the buffer
 // then returning the expanded buffer.
@@ -31,7 +31,7 @@ func (f Union) Append(buf []byte, _, _ bool) []byte {
 }
 
 // NewUnion creates a new Union with the provide keys.
-func NewUnion(keys ...interface{}) (u Union) {
+func NewUnion(keys ...any) (u Union) {
 	for _, k := range keys {
 		switch tk := k.(type) {
 		case string:

@@ -13,20 +13,20 @@ import (
 // invalid string representation of the script is provided.
 type Equation struct {
 	o      *op
-	result interface{}
+	result any
 	left   *Equation
 	right  *Equation
 }
 
 // Script creates and returns a Script that implements the equation.
 func (e *Equation) Script() (s *Script) {
-	s = &Script{template: e.buildScript([]interface{}{})}
+	s = &Script{template: e.buildScript([]any{})}
 	return
 }
 
 // Filter creates and returns a Script that implements the equation.
 func (e *Equation) Filter() (f *Filter) {
-	f = &Filter{Script: Script{template: e.buildScript([]interface{}{})}}
+	f = &Filter{Script: Script{template: e.buildScript([]any{})}}
 	return
 }
 
@@ -55,8 +55,8 @@ func ConstString(s string) *Equation {
 	return &Equation{result: s}
 }
 
-// ConstList creates and returns an Equation for an []interface{} constant.
-func ConstList(list []interface{}) *Equation {
+// ConstList creates and returns an Equation for an []any constant.
+func ConstList(list []any) *Equation {
 	return &Equation{result: list}
 }
 
@@ -188,7 +188,7 @@ func (e *Equation) Append(buf []byte, parens bool) []byte {
 	return buf
 }
 
-func (e *Equation) appendValue(buf []byte, v interface{}) []byte {
+func (e *Equation) appendValue(buf []byte, v any) []byte {
 	switch tv := v.(type) {
 	case nil:
 		buf = append(buf, "null"...)
@@ -206,7 +206,7 @@ func (e *Equation) appendValue(buf []byte, v interface{}) []byte {
 		} else {
 			buf = append(buf, "false"...)
 		}
-	case []interface{}:
+	case []any:
 		buf = append(buf, '[')
 		for i, ev := range tv {
 			if 0 < i {
@@ -230,7 +230,7 @@ func (e *Equation) String() string {
 	return string(e.Append([]byte{}, true))
 }
 
-func (e *Equation) buildScript(stack []interface{}) []interface{} {
+func (e *Equation) buildScript(stack []any) []any {
 	if e.o == nil {
 		stack = append(stack, e.result)
 		return stack

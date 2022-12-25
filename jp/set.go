@@ -16,24 +16,24 @@ type delFlagType struct{}
 var delFlag = &delFlagType{}
 
 // MustDel removes matching nodes and pinics on error.
-func (x Expr) MustDel(n interface{}) {
+func (x Expr) MustDel(n any) {
 	x.MustSet(n, delFlag)
 }
 
 // Del removes matching nodes.
-func (x Expr) Del(n interface{}) error {
+func (x Expr) Del(n any) error {
 	return x.Set(n, delFlag)
 }
 
 // DelOne removes at most one node.
-func (x Expr) DelOne(n interface{}) error {
+func (x Expr) DelOne(n any) error {
 	return x.SetOne(n, delFlag)
 }
 
 // MustSet all matching child node values. An error is returned if it is not
 // possible. If the path to the child does not exist array and map elements
 // are added. Panics on error.
-func (x Expr) MustSet(data, value interface{}) {
+func (x Expr) MustSet(data, value any) {
 	if err := x.Set(data, value); err != nil {
 		panic(err)
 	}
@@ -42,7 +42,7 @@ func (x Expr) MustSet(data, value interface{}) {
 // Set all matching child node values. An error is returned if it is not
 // possible. If the path to the child does not exist array and map elements
 // are added.
-func (x Expr) Set(data, value interface{}) error {
+func (x Expr) Set(data, value any) error {
 	fun := "set"
 	if value == delFlag {
 		fun = "delete"
@@ -55,7 +55,7 @@ func (x Expr) Set(data, value interface{}) error {
 		ta := strings.Split(fmt.Sprintf("%T", x[len(x)-1]), ".")
 		return fmt.Errorf("can not %s with an expression ending with a %s", fun, ta[len(ta)-1])
 	}
-	var v interface{}
+	var v any
 	var nv gen.Node
 	_, isNode := data.(gen.Node)
 	nodeValue, ok := value.(gen.Node)
@@ -67,8 +67,8 @@ func (x Expr) Set(data, value interface{}) error {
 			nodeValue, _ = v.(gen.Node)
 		}
 	}
-	var prev interface{}
-	stack := make([]interface{}, 0, 64)
+	var prev any
+	stack := make([]any, 0, 64)
 	stack = append(stack, data)
 
 	f := x[0]
@@ -91,7 +91,7 @@ func (x Expr) Set(data, value interface{}) error {
 		case Child:
 			var has bool
 			switch tv := prev.(type) {
-			case map[string]interface{}:
+			case map[string]any:
 				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
 						delete(tv, string(tf))
@@ -103,7 +103,7 @@ func (x Expr) Set(data, value interface{}) error {
 					case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 						bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+					case map[string]any, []any, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
 						kind := reflect.Invalid
@@ -120,14 +120,14 @@ func (x Expr) Set(data, value interface{}) error {
 				} else if value != delFlag {
 					switch tc := x[fi+1].(type) {
 					case Child:
-						v = map[string]interface{}{}
+						v = map[string]any{}
 						tv[string(tf)] = v
 						stack = append(stack, v)
 					case Nth:
 						if int(tc) < 0 {
 							return fmt.Errorf("can not deduce the length of the array to add at '%s'", x[:fi+1])
 						}
-						v = make([]interface{}, int(tc)+1)
+						v = make([]any, int(tc)+1)
 						tv[string(tf)] = v
 						stack = append(stack, v)
 					default:
@@ -175,7 +175,7 @@ func (x Expr) Set(data, value interface{}) error {
 					case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 						bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+					case map[string]any, []any, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
 						kind := reflect.Invalid
@@ -194,7 +194,7 @@ func (x Expr) Set(data, value interface{}) error {
 		case Nth:
 			i := int(tf)
 			switch tv := prev.(type) {
-			case []interface{}:
+			case []any:
 				if i < 0 {
 					i = len(tv) + i
 				}
@@ -211,7 +211,7 @@ func (x Expr) Set(data, value interface{}) error {
 						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
 							nil, gen.Bool, gen.Int, gen.Float, gen.String:
 							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -263,7 +263,7 @@ func (x Expr) Set(data, value interface{}) error {
 					case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
 						nil, gen.Bool, gen.Int, gen.Float, gen.String:
 						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+					case map[string]any, []any, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
 						kind := reflect.Invalid
@@ -281,7 +281,7 @@ func (x Expr) Set(data, value interface{}) error {
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
-			case map[string]interface{}:
+			case map[string]any:
 				var k string
 				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
@@ -298,7 +298,7 @@ func (x Expr) Set(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -312,7 +312,7 @@ func (x Expr) Set(data, value interface{}) error {
 						}
 					}
 				}
-			case []interface{}:
+			case []any:
 				if int(fi) == len(x)-1 { // last one
 					for i := range tv {
 						if value == delFlag {
@@ -326,7 +326,7 @@ func (x Expr) Set(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -383,7 +383,7 @@ func (x Expr) Set(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -403,7 +403,7 @@ func (x Expr) Set(data, value interface{}) error {
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
 				switch tv := prev.(type) {
-				case map[string]interface{}:
+				case map[string]any:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
@@ -411,7 +411,7 @@ func (x Expr) Set(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						default:
@@ -425,7 +425,7 @@ func (x Expr) Set(data, value interface{}) error {
 							}
 						}
 					}
-				case []interface{}:
+				case []any:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
@@ -433,7 +433,7 @@ func (x Expr) Set(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						default:
@@ -453,7 +453,7 @@ func (x Expr) Set(data, value interface{}) error {
 					stack = append(stack, di|descentFlag)
 					for _, v = range tv {
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						}
@@ -464,7 +464,7 @@ func (x Expr) Set(data, value interface{}) error {
 					stack = append(stack, di|descentFlag)
 					for _, v = range tv {
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						}
@@ -479,12 +479,12 @@ func (x Expr) Set(data, value interface{}) error {
 				case string:
 					var has bool
 					switch tv := prev.(type) {
-					case map[string]interface{}:
+					case map[string]any:
 						if v, has = tv[tu]; has {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
 								kind := reflect.Invalid
@@ -500,7 +500,7 @@ func (x Expr) Set(data, value interface{}) error {
 					case gen.Object:
 						if v, has = tv[tu]; has {
 							switch v.(type) {
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array:
 								stack = append(stack, v)
 							}
 						}
@@ -510,7 +510,7 @@ func (x Expr) Set(data, value interface{}) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
 								kind := reflect.Invalid
@@ -527,7 +527,7 @@ func (x Expr) Set(data, value interface{}) error {
 				case int64:
 					i := int(tu)
 					switch tv := prev.(type) {
-					case []interface{}:
+					case []any:
 						if i < 0 {
 							i = len(tv) + i
 						}
@@ -536,7 +536,7 @@ func (x Expr) Set(data, value interface{}) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
 								kind := reflect.Invalid
@@ -557,7 +557,7 @@ func (x Expr) Set(data, value interface{}) error {
 							v = tv[i]
 						}
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						}
 					default:
@@ -566,7 +566,7 @@ func (x Expr) Set(data, value interface{}) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
 								kind := reflect.Invalid
@@ -596,7 +596,7 @@ func (x Expr) Set(data, value interface{}) error {
 				step = tf[2]
 			}
 			switch tv := prev.(type) {
-			case []interface{}:
+			case []any:
 				if start < 0 {
 					start = len(tv) + start
 				}
@@ -610,7 +610,7 @@ func (x Expr) Set(data, value interface{}) error {
 					for i := start; i <= end; i += step {
 						v = tv[i]
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						}
 					}
@@ -618,7 +618,7 @@ func (x Expr) Set(data, value interface{}) error {
 					for i := start; end <= i; i += step {
 						v = tv[i]
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						}
 					}
@@ -637,7 +637,7 @@ func (x Expr) Set(data, value interface{}) error {
 					for i := start; i <= end; i += step {
 						v = tv[i]
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						}
 					}
@@ -645,7 +645,7 @@ func (x Expr) Set(data, value interface{}) error {
 					for i := start; end <= i; i += step {
 						v = tv[i]
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						}
 					}
@@ -656,7 +656,7 @@ func (x Expr) Set(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -673,7 +673,7 @@ func (x Expr) Set(data, value interface{}) error {
 			}
 		case *Filter:
 			// TBD if last one then set or remove
-			stack, _ = tf.Eval(stack, prev).([]interface{})
+			stack, _ = tf.Eval(stack, prev).([]any)
 		case Root:
 			if int(fi) == len(x)-1 { // last one
 				return fmt.Errorf("can not %s the root", fun)
@@ -698,7 +698,7 @@ func (x Expr) Set(data, value interface{}) error {
 
 // SetOne child node value. An error is returned if it is not possible. If the
 // path to the child does not exist array and map elements are added.
-func (x Expr) SetOne(data, value interface{}) error {
+func (x Expr) SetOne(data, value any) error {
 	fun := "set"
 	if value == delFlag {
 		fun = "delete"
@@ -711,7 +711,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 		ta := strings.Split(fmt.Sprintf("%T", x[len(x)-1]), ".")
 		return fmt.Errorf("can not %s with an expression ending with a %s", fun, ta[len(ta)-1])
 	}
-	var v interface{}
+	var v any
 	var nv gen.Node
 	_, isNode := data.(gen.Node)
 	nodeValue, ok := value.(gen.Node)
@@ -723,8 +723,8 @@ func (x Expr) SetOne(data, value interface{}) error {
 			nodeValue, _ = v.(gen.Node)
 		}
 	}
-	var prev interface{}
-	stack := make([]interface{}, 0, 64)
+	var prev any
+	stack := make([]any, 0, 64)
 	stack = append(stack, data)
 
 	f := x[0]
@@ -740,7 +740,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 		case Child:
 			var has bool
 			switch tv := prev.(type) {
-			case map[string]interface{}:
+			case map[string]any:
 				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
 						delete(tv, string(tf))
@@ -753,7 +753,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 					case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 						bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+					case map[string]any, []any, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
 						kind := reflect.Invalid
@@ -770,14 +770,14 @@ func (x Expr) SetOne(data, value interface{}) error {
 				} else if value != delFlag {
 					switch tc := x[fi+1].(type) {
 					case Child:
-						v = map[string]interface{}{}
+						v = map[string]any{}
 						tv[string(tf)] = v
 						stack = append(stack, v)
 					case Nth:
 						if int(tc) < 0 {
 							return fmt.Errorf("can not deduce the length of the array to add at '%s'", x[:fi+1])
 						}
-						v = make([]interface{}, int(tc)+1)
+						v = make([]any, int(tc)+1)
 						tv[string(tf)] = v
 						stack = append(stack, v)
 					default:
@@ -828,7 +828,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 					case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 						bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+					case map[string]any, []any, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
 						kind := reflect.Invalid
@@ -847,7 +847,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 		case Nth:
 			i := int(tf)
 			switch tv := prev.(type) {
-			case []interface{}:
+			case []any:
 				if i < 0 {
 					i = len(tv) + i
 				}
@@ -865,7 +865,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 					case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 						bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+					case map[string]any, []any, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
 						kind := reflect.Invalid
@@ -918,7 +918,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 					case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
 						nil, gen.Bool, gen.Int, gen.Float, gen.String:
 						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+					case map[string]any, []any, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
 						kind := reflect.Invalid
@@ -936,7 +936,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
-			case map[string]interface{}:
+			case map[string]any:
 				var k string
 				if int(fi) == len(x)-1 { // last one
 					if value == delFlag {
@@ -955,7 +955,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -969,7 +969,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 						}
 					}
 				}
-			case []interface{}:
+			case []any:
 				if int(fi) == len(x)-1 { // last one
 					for i := range tv {
 						if value == delFlag {
@@ -985,7 +985,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -1046,7 +1046,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -1066,7 +1066,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
 				switch tv := prev.(type) {
-				case map[string]interface{}:
+				case map[string]any:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
@@ -1074,7 +1074,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						default:
@@ -1088,7 +1088,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 							}
 						}
 					}
-				case []interface{}:
+				case []any:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
@@ -1097,7 +1097,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						default:
@@ -1117,7 +1117,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 					stack = append(stack, di|descentFlag)
 					for _, v = range tv {
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						}
@@ -1129,7 +1129,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 					for i := len(tv) - 1; 0 <= i; i-- {
 						v = tv[i]
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						}
@@ -1144,12 +1144,12 @@ func (x Expr) SetOne(data, value interface{}) error {
 				case string:
 					var has bool
 					switch tv := prev.(type) {
-					case map[string]interface{}:
+					case map[string]any:
 						if v, has = tv[tu]; has {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
 								kind := reflect.Invalid
@@ -1175,7 +1175,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
 								kind := reflect.Invalid
@@ -1192,7 +1192,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 				case int64:
 					i := int(tu)
 					switch tv := prev.(type) {
-					case []interface{}:
+					case []any:
 						if i < 0 {
 							i = len(tv) + i
 						}
@@ -1202,7 +1202,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -1231,7 +1231,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
 								kind := reflect.Invalid
@@ -1261,7 +1261,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 				step = tf[2]
 			}
 			switch tv := prev.(type) {
-			case []interface{}:
+			case []any:
 				if start < 0 {
 					start = len(tv) + start
 				}
@@ -1281,7 +1281,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -1300,7 +1300,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -1351,7 +1351,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -1367,7 +1367,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 				}
 			}
 		case *Filter:
-			stack, _ = tf.Eval(stack, prev).([]interface{})
+			stack, _ = tf.Eval(stack, prev).([]any)
 		case Root:
 			if int(fi) == len(x)-1 { // last one
 				return fmt.Errorf("can not %s the root", fun)
@@ -1390,7 +1390,7 @@ func (x Expr) SetOne(data, value interface{}) error {
 	return nil
 }
 
-func (x Expr) reflectSetChild(data interface{}, key string, v interface{}) {
+func (x Expr) reflectSetChild(data any, key string, v any) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
@@ -1410,7 +1410,7 @@ func (x Expr) reflectSetChild(data interface{}, key string, v interface{}) {
 	}
 }
 
-func (x Expr) reflectSetNth(data interface{}, i int, v interface{}) {
+func (x Expr) reflectSetNth(data any, i int, v any) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()

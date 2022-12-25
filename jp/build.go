@@ -48,7 +48,7 @@ func S(start int, rest ...int) Expr {
 }
 
 // U creates an Expr with an Union fragment.
-func U(keys ...interface{}) Expr {
+func U(keys ...any) Expr {
 	return Expr{NewUnion(keys...)}
 }
 
@@ -133,12 +133,12 @@ func (x Expr) Slice(start int, rest ...int) Expr {
 }
 
 // U appends a Union fragment to the Expr.
-func (x Expr) U(keys ...interface{}) Expr {
+func (x Expr) U(keys ...any) Expr {
 	return append(x, NewUnion(keys...))
 }
 
 // Union appends a Union fragment to the Expr.
-func (x Expr) Union(keys ...interface{}) Expr {
+func (x Expr) Union(keys ...any) Expr {
 	return append(x, NewUnion(keys...))
 }
 

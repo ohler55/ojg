@@ -1,10 +1,9 @@
 // Copyright (c) 2020, Peter Ohler, All rights reserved.
 
 /*
-
 Package alt contains functions and types for altering values.
 
-Conversions
+# Conversions
 
 Simple conversion from one to to another include converting to string, bool,
 int64, float64, and time.Time. Each of these functions takes between one and
@@ -16,16 +15,16 @@ cause the third default to be returned. The conversion functions are Int(),
 FLoat(), Bool(), String(), and Time(). The reason for the defaults are to
 allow a single return from a conversion unlike a type assertion.
 
-  i := alt.Int("123", 0)
+	i := alt.Int("123", 0)
 
-Generify
+# Generify
 
 It is often useful to work with generic values that can be converted to JSON
 and also provide type safety so that code can be checked at compile
 time. Those value types are defined in the gen package. The Genericer
 interface defines the Generic() function as
 
-  Generic() gen.Node
+	Generic() gen.Node
 
 A Generify() function is used to convert values to gen.Node types.
 
@@ -39,7 +38,7 @@ A Generify() function is used to convert values to gen.Node types.
 	v := alt.Generify(ga)
 	// v: [{"type":"Genny","val":3}]
 
-Decompose
+# Decompose
 
 The Decompose() functions creates a simple type converting non simple to
 simple types using either the Simplify() interface or reflection. Unlike
@@ -53,7 +52,7 @@ Alter() a deep copy is returned leaving the original data unchanged.
 	simple := alt.Decompose(&sample, &alt.Options{CreateKey: "^", FullTypePath: true})
 	// simple: {"^":"github.com/ohler55/ojg/alt_test/Sample","int":3,"str":"three"}
 
-Recompose
+# Recompose
 
 Recompose simple data into more complex go types using either the Recompose()
 function or the Recomposer struct that adds some efficiency by reusing
@@ -72,7 +71,7 @@ starting with a lower case character.
 	}
 	// sample: {Int: 3, Str: "three"}
 
-Alter
+# Alter
 
 The GenAlter() function converts a simple go data element into Node compliant
 data. A best effort is made to convert values that are not simple into generic
@@ -81,6 +80,5 @@ Nodes. It modifies the values inplace if possible by altering the original.
 	m := map[string]interface{}{"a": 1, "b": 4, "c": 9}
 	v := alt.GenAlter(m)
 	// v:  gen.Object{"a": gen.Int(1), "b": gen.Int(4), "c": gen.Int(9)}, v)
-
 */
 package alt

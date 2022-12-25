@@ -34,15 +34,15 @@ type fragIndex int
 // recursive descent more than an order of magnitude faster.
 
 // Get the elements of the data identified by the path.
-func (x Expr) Get(data interface{}) (results []interface{}) {
+func (x Expr) Get(data any) (results []any) {
 	if len(x) == 0 {
 		return
 	}
-	var v interface{}
-	var prev interface{}
+	var v any
+	var prev any
 	var has bool
 
-	stack := make([]interface{}, 0, 64)
+	stack := make([]any, 0, 64)
 	stack = append(stack, data)
 
 	f := x[0]
@@ -63,7 +63,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 		switch tf := f.(type) {
 		case Child:
 			switch tv := prev.(type) {
-			case map[string]interface{}:
+			case map[string]any:
 				v, has = tv[string(tf)]
 			case gen.Object:
 				v, has = tv[string(tf)]
@@ -77,7 +77,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					switch v.(type) {
 					case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 						int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+					case map[string]any, []any, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
 						if rt := reflect.TypeOf(v); rt != nil {
@@ -92,7 +92,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 		case Nth:
 			i := int(tf)
 			switch tv := prev.(type) {
-			case []interface{}:
+			case []any:
 				if i < 0 {
 					i = len(tv) + i
 				}
@@ -118,7 +118,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					switch v.(type) {
 					case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 						int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+					case map[string]any, []any, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
 						if rt := reflect.TypeOf(v); rt != nil {
@@ -132,7 +132,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
-			case map[string]interface{}:
+			case map[string]any:
 				if int(fi) == len(x)-1 { // last one
 					for _, v = range tv {
 						results = append(results, v)
@@ -142,7 +142,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
@@ -154,7 +154,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						}
 					}
 				}
-			case []interface{}:
+			case []any:
 				if int(fi) == len(x)-1 { // last one
 					results = append(results, tv...)
 				} else {
@@ -163,7 +163,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
@@ -183,7 +183,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				} else {
 					for _, v = range tv {
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						}
 					}
@@ -197,7 +197,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					for i := len(tv) - 1; 0 <= i; i-- {
 						v = tv[i]
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						}
 					}
@@ -210,7 +210,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
@@ -229,7 +229,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
 				switch tv := prev.(type) {
-				case map[string]interface{}:
+				case map[string]any:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
@@ -242,7 +242,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						default:
@@ -254,7 +254,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 							}
 						}
 					}
-				case []interface{}:
+				case []any:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
@@ -266,7 +266,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						default:
@@ -289,7 +289,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					}
 					for _, v = range tv {
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						}
@@ -306,7 +306,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					for i := len(tv) - 1; 0 <= i; i-- {
 						v = tv[i]
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						}
@@ -340,7 +340,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					switch tu := u.(type) {
 					case string:
 						switch tv := prev.(type) {
-						case map[string]interface{}:
+						case map[string]any:
 							v, has = tv[tu]
 						case gen.Object:
 							v, has = tv[tu]
@@ -350,7 +350,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					case int64:
 						i := int(tu)
 						switch tv := prev.(type) {
-						case []interface{}:
+						case []any:
 							if i < 0 {
 								i = len(tv) + i
 							}
@@ -381,7 +381,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					switch tu := u.(type) {
 					case string:
 						switch tv := prev.(type) {
-						case map[string]interface{}:
+						case map[string]any:
 							v, has = tv[tu]
 						case gen.Object:
 							v, has = tv[tu]
@@ -391,7 +391,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 					case int64:
 						i := int(tu)
 						switch tv := prev.(type) {
-						case []interface{}:
+						case []any:
 							if i < 0 {
 								i = len(tv) + i
 							}
@@ -415,7 +415,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
@@ -445,7 +445,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 				}
 			}
 			switch tv := prev.(type) {
-			case []interface{}:
+			case []any:
 				if start < 0 {
 					start = len(tv) + start
 					if start < 0 {
@@ -473,7 +473,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 							switch v.(type) {
 							case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 								int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
 								if rt := reflect.TypeOf(v); rt != nil {
@@ -500,7 +500,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 							switch v.(type) {
 							case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 								int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
 								if rt := reflect.TypeOf(v); rt != nil {
@@ -539,7 +539,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						for i := end; start <= i; i -= step {
 							v = tv[i]
 							switch v.(type) {
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array:
 								stack = append(stack, v)
 							}
 						}
@@ -557,7 +557,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						for i := end; i <= start; i -= step {
 							v = tv[i]
 							switch v.(type) {
-							case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array:
 								stack = append(stack, v)
 							}
 						}
@@ -571,7 +571,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
@@ -586,7 +586,7 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 			}
 		case *Filter:
 			before := len(stack)
-			stack, _ = tf.Eval(stack, prev).([]interface{})
+			stack, _ = tf.Eval(stack, prev).([]any)
 			if int(fi) == len(x)-1 { // last one
 				for i := before; i < len(stack); i++ {
 					results = append(results, stack[i])
@@ -613,15 +613,15 @@ func (x Expr) Get(data interface{}) (results []interface{}) {
 }
 
 // First element of the data identified by the path.
-func (x Expr) First(data interface{}) interface{} {
+func (x Expr) First(data any) any {
 	if len(x) == 0 {
 		return nil
 	}
-	var v interface{}
-	var prev interface{}
+	var v any
+	var prev any
 	var has bool
 
-	stack := make([]interface{}, 0, 64)
+	stack := make([]any, 0, 64)
 	defer func() {
 		stack = stack[0:cap(stack)]
 		for i := len(stack) - 1; 0 <= i; i-- {
@@ -647,7 +647,7 @@ func (x Expr) First(data interface{}) interface{} {
 		switch tf := f.(type) {
 		case Child:
 			switch tv := prev.(type) {
-			case map[string]interface{}:
+			case map[string]any:
 				v, has = tv[string(tf)]
 			case gen.Object:
 				v, has = tv[string(tf)]
@@ -661,7 +661,7 @@ func (x Expr) First(data interface{}) interface{} {
 				switch v.(type) {
 				case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 					int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-				case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+				case map[string]any, []any, gen.Object, gen.Array:
 					stack = append(stack, v)
 				default:
 					if rt := reflect.TypeOf(v); rt != nil {
@@ -675,7 +675,7 @@ func (x Expr) First(data interface{}) interface{} {
 		case Nth:
 			i := int(tf)
 			switch tv := prev.(type) {
-			case []interface{}:
+			case []any:
 				if i < 0 {
 					i = len(tv) + i
 				}
@@ -701,7 +701,7 @@ func (x Expr) First(data interface{}) interface{} {
 				switch v.(type) {
 				case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 					int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-				case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+				case map[string]any, []any, gen.Object, gen.Array:
 					stack = append(stack, v)
 				default:
 					if rt := reflect.TypeOf(v); rt != nil {
@@ -714,7 +714,7 @@ func (x Expr) First(data interface{}) interface{} {
 			}
 		case Wildcard:
 			switch tv := prev.(type) {
-			case map[string]interface{}:
+			case map[string]any:
 				if int(fi) == len(x)-1 { // last one
 					for _, v = range tv {
 						return v
@@ -724,7 +724,7 @@ func (x Expr) First(data interface{}) interface{} {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
@@ -736,7 +736,7 @@ func (x Expr) First(data interface{}) interface{} {
 						}
 					}
 				}
-			case []interface{}:
+			case []any:
 				if int(fi) == len(x)-1 { // last one
 					if 0 < len(tv) {
 						return tv[0]
@@ -747,7 +747,7 @@ func (x Expr) First(data interface{}) interface{} {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
@@ -767,7 +767,7 @@ func (x Expr) First(data interface{}) interface{} {
 				} else {
 					for _, v = range tv {
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						}
 					}
@@ -781,7 +781,7 @@ func (x Expr) First(data interface{}) interface{} {
 					for i := len(tv) - 1; 0 <= i; i-- {
 						v = tv[i]
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						}
 					}
@@ -794,7 +794,7 @@ func (x Expr) First(data interface{}) interface{} {
 					switch v.(type) {
 					case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 						int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+					case map[string]any, []any, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
 						if rt := reflect.TypeOf(v); rt != nil {
@@ -811,7 +811,7 @@ func (x Expr) First(data interface{}) interface{} {
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
 				switch tv := prev.(type) {
-				case map[string]interface{}:
+				case map[string]any:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
@@ -824,7 +824,7 @@ func (x Expr) First(data interface{}) interface{} {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						default:
@@ -836,7 +836,7 @@ func (x Expr) First(data interface{}) interface{} {
 							}
 						}
 					}
-				case []interface{}:
+				case []any:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
@@ -850,7 +850,7 @@ func (x Expr) First(data interface{}) interface{} {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						default:
@@ -873,7 +873,7 @@ func (x Expr) First(data interface{}) interface{} {
 					}
 					for _, v = range tv {
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						}
@@ -890,7 +890,7 @@ func (x Expr) First(data interface{}) interface{} {
 					for i := len(tv) - 1; 0 <= i; i-- {
 						v = tv[i]
 						switch v.(type) {
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						}
@@ -916,7 +916,7 @@ func (x Expr) First(data interface{}) interface{} {
 					switch tu := u.(type) {
 					case string:
 						switch tv := prev.(type) {
-						case map[string]interface{}:
+						case map[string]any:
 							v, has = tv[tu]
 						case gen.Object:
 							v, has = tv[tu]
@@ -926,7 +926,7 @@ func (x Expr) First(data interface{}) interface{} {
 					case int64:
 						i := int(tu)
 						switch tv := prev.(type) {
-						case []interface{}:
+						case []any:
 							if i < 0 {
 								i = len(tv) + i
 							}
@@ -957,7 +957,7 @@ func (x Expr) First(data interface{}) interface{} {
 					switch tu := u.(type) {
 					case string:
 						switch tv := prev.(type) {
-						case map[string]interface{}:
+						case map[string]any:
 							v, has = tv[tu]
 						case gen.Object:
 							v, has = tv[tu]
@@ -967,7 +967,7 @@ func (x Expr) First(data interface{}) interface{} {
 					case int64:
 						i := int(tu)
 						switch tv := prev.(type) {
-						case []interface{}:
+						case []any:
 							if i < 0 {
 								i = len(tv) + i
 							}
@@ -991,7 +991,7 @@ func (x Expr) First(data interface{}) interface{} {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
@@ -1021,7 +1021,7 @@ func (x Expr) First(data interface{}) interface{} {
 				}
 			}
 			switch tv := prev.(type) {
-			case []interface{}:
+			case []any:
 				if start < 0 {
 					start = len(tv) + start
 					if start < 0 {
@@ -1047,7 +1047,7 @@ func (x Expr) First(data interface{}) interface{} {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
@@ -1071,7 +1071,7 @@ func (x Expr) First(data interface{}) interface{} {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-						case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
@@ -1135,7 +1135,7 @@ func (x Expr) First(data interface{}) interface{} {
 					switch v.(type) {
 					case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 						int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
-					case map[string]interface{}, []interface{}, gen.Object, gen.Array:
+					case map[string]any, []any, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
 						if rt := reflect.TypeOf(v); rt != nil {
@@ -1149,7 +1149,7 @@ func (x Expr) First(data interface{}) interface{} {
 			}
 		case *Filter:
 			before := len(stack)
-			stack, _ = tf.Eval(stack, prev).([]interface{})
+			stack, _ = tf.Eval(stack, prev).([]any)
 			if int(fi) == len(x)-1 { // last one
 				if before < len(stack) {
 					result := stack[before]
@@ -1169,7 +1169,7 @@ func (x Expr) First(data interface{}) interface{} {
 	return nil
 }
 
-func (x Expr) reflectGetChild(data interface{}, key string) (v interface{}, has bool) {
+func (x Expr) reflectGetChild(data any, key string) (v any, has bool) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
@@ -1189,7 +1189,7 @@ func (x Expr) reflectGetChild(data interface{}, key string) (v interface{}, has 
 	return
 }
 
-func (x Expr) reflectGetNth(data interface{}, i int) (v interface{}, has bool) {
+func (x Expr) reflectGetNth(data any, i int) (v any, has bool) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
@@ -1211,7 +1211,7 @@ func (x Expr) reflectGetNth(data interface{}, i int) (v interface{}, has bool) {
 	return
 }
 
-func (x Expr) reflectGetWild(data interface{}) (va []interface{}) {
+func (x Expr) reflectGetWild(data any) (va []any) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
@@ -1240,7 +1240,7 @@ func (x Expr) reflectGetWild(data interface{}) (va []interface{}) {
 	return
 }
 
-func (x Expr) reflectGetWildOne(data interface{}) (interface{}, bool) {
+func (x Expr) reflectGetWildOne(data any) (any, bool) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
@@ -1269,7 +1269,7 @@ func (x Expr) reflectGetWildOne(data interface{}) (interface{}, bool) {
 	return nil, false
 }
 
-func (x Expr) reflectGetSlice(data interface{}, start, end, step int) (va []interface{}) {
+func (x Expr) reflectGetSlice(data any, start, end, step int) (va []any) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
@@ -1296,14 +1296,14 @@ func (x Expr) reflectGetSlice(data interface{}, start, end, step int) (va []inte
 					for i := start; i < end; i += step {
 						rv := rd.Index(i)
 						if rv.CanInterface() {
-							va = append([]interface{}{rv.Interface()}, va...)
+							va = append([]any{rv.Interface()}, va...)
 						}
 					}
 				} else {
 					for i := start; end < i; i += step {
 						rv := rd.Index(i)
 						if rv.CanInterface() {
-							va = append([]interface{}{rv.Interface()}, va...)
+							va = append([]any{rv.Interface()}, va...)
 						}
 					}
 				}

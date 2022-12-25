@@ -15,26 +15,26 @@ import (
 
 type edata struct {
 	src     string
-	value   interface{}
+	value   any
 	noMatch bool
 }
 
-func scriptBenchData(size int64) interface{} {
-	list := []interface{}{}
+func scriptBenchData(size int64) any {
+	list := []any{}
 	for i := int64(0); i < size; i++ {
-		list = append(list, map[string]interface{}{string([]byte{'a' + byte(i%26)}): i, "x": i})
+		list = append(list, map[string]any{string([]byte{'a' + byte(i%26)}): i, "x": i})
 	}
 	return list
 }
 
 func TestScriptBasicEval(t *testing.T) {
-	data := []interface{}{
-		map[string]interface{}{
+	data := []any{
+		map[string]any{
 			"a": 1,
 			"b": 2,
 			"c": 3,
 		},
-		map[string]interface{}{
+		map[string]any{
 			"a": int64(52),
 			"b": 4,
 			"c": 6,
@@ -50,7 +50,7 @@ func TestScriptBasicEval(t *testing.T) {
 	f := e.Filter()
 	tt.Equal(t, "[?(@.a < 52 || @.x == 'cool')]", f.String())
 
-	stack := s.Eval([]interface{}{}, data)
+	stack := s.Eval([]any{}, data)
 	tt.Equal(t, `[{"a":1,"b":2,"c":3}]`, oj.JSON(stack, &oj.Options{Sort: true}))
 }
 
@@ -105,14 +105,14 @@ func TestScriptParse(t *testing.T) {
 func TestScriptMatch(t *testing.T) {
 	s, err := jp.NewScript("(@.x == 3)")
 	tt.Nil(t, err)
-	tt.Equal(t, true, s.Match(map[string]interface{}{"x": 3}))
+	tt.Equal(t, true, s.Match(map[string]any{"x": 3}))
 	tt.Equal(t, true, s.Match(gen.Object{"x": gen.Int(3)}))
 }
 
 func TestScriptNormalizeEval(t *testing.T) {
 	s, err := jp.NewScript("(@ == 3)")
 	tt.Nil(t, err)
-	for _, v := range []interface{}{
+	for _, v := range []any{
 		int8(3),
 		int16(3),
 		int32(3),
@@ -127,26 +127,26 @@ func TestScriptNormalizeEval(t *testing.T) {
 		gen.Int(3),
 		gen.Float(3.0),
 	} {
-		result, _ := s.Eval([]interface{}{}, []interface{}{v}).([]interface{})
+		result, _ := s.Eval([]any{}, []any{v}).([]any)
 		tt.Equal(t, 1, len(result), fmt.Sprintf("%T %v", v, v))
 	}
 	s, err = jp.NewScript("(@ == 'x')")
 	tt.Nil(t, err)
-	result, _ := s.Eval([]interface{}{}, []interface{}{"x"}).([]interface{})
+	result, _ := s.Eval([]any{}, []any{"x"}).([]any)
 	tt.Equal(t, 1, len(result), "string normalize")
-	result, _ = s.Eval([]interface{}{}, gen.Array{gen.String("x")}).([]interface{})
+	result, _ = s.Eval([]any{}, gen.Array{gen.String("x")}).([]any)
 	tt.Equal(t, 1, len(result), "gen.String normalize")
 
 	s, err = jp.NewScript("(@ == true)")
 	tt.Nil(t, err)
-	result, _ = s.Eval([]interface{}{}, gen.Array{gen.True}).([]interface{})
+	result, _ = s.Eval([]any{}, gen.Array{gen.True}).([]any)
 	tt.Equal(t, 1, len(result), "bool normalize")
 }
 
 func TestScriptNonListEval(t *testing.T) {
 	s, err := jp.NewScript("(@ == 3)")
 	tt.Nil(t, err)
-	result, _ := s.Eval([]interface{}{}, "bad").([]interface{})
+	result, _ := s.Eval([]any{}, "bad").([]any)
 	tt.Equal(t, 0, len(result))
 }
 
@@ -193,14 +193,14 @@ func TestScriptEval(t *testing.T) {
 
 		{src: "(@ in [1,2,3])", value: int64(2)},
 		{src: "(@ in ['a','b','c'])", value: "b"},
-		{src: "(2 in @)", value: []interface{}{int64(1), int64(2), int64(3)}},
+		{src: "(2 in @)", value: []any{int64(1), int64(2), int64(3)}},
 
-		{src: "(@ empty false)", value: []interface{}{int64(1)}},
-		{src: "(@ empty true)", value: []interface{}{}},
-		{src: "(@ empty true)", value: map[string]interface{}{}},
+		{src: "(@ empty false)", value: []any{int64(1)}},
+		{src: "(@ empty true)", value: []any{}},
+		{src: "(@ empty true)", value: map[string]any{}},
 		{src: "(@ empty true)", value: ""},
-		{src: "(@ empty true)", value: []interface{}{1}, noMatch: true},
-		{src: "(@ empty true)", value: map[string]interface{}{"x": 1}, noMatch: true},
+		{src: "(@ empty true)", value: []any{1}, noMatch: true},
+		{src: "(@ empty true)", value: map[string]any{"x": 1}, noMatch: true},
 		{src: "(@ empty true)", value: "x", noMatch: true},
 
 		{src: "(@ =~ /a.c/)", value: "abc"},
@@ -208,58 +208,58 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@ =~ 'a.c')", value: "abb", noMatch: true},
 		{src: "(@ =~ 'a.c')", value: int64(3), noMatch: true},
 
-		{src: "(@.x || @.y)", value: map[string]interface{}{"x": false, "y": false}, noMatch: true},
-		{src: "(@.x || @.y)", value: map[string]interface{}{"x": false, "y": true}},
+		{src: "(@.x || @.y)", value: map[string]any{"x": false, "y": false}, noMatch: true},
+		{src: "(@.x || @.y)", value: map[string]any{"x": false, "y": true}},
 
-		{src: "(@.x && @.y)", value: map[string]interface{}{"x": true, "y": false}, noMatch: true},
-		{src: "(@.x && @.y)", value: map[string]interface{}{"x": true, "y": true}},
+		{src: "(@.x && @.y)", value: map[string]any{"x": true, "y": false}, noMatch: true},
+		{src: "(@.x && @.y)", value: map[string]any{"x": true, "y": true}},
 
-		{src: "(!@.x)", value: map[string]interface{}{"x": true}, noMatch: true},
-		{src: "(!@.x)", value: map[string]interface{}{"x": false}},
+		{src: "(!@.x)", value: map[string]any{"x": true}, noMatch: true},
+		{src: "(!@.x)", value: map[string]any{"x": false}},
 
-		{src: "(@.x + @.y == 0)", value: map[string]interface{}{"x": 1, "y": 2}, noMatch: true},
-		{src: "(@.x + @.y == 3)", value: map[string]interface{}{"x": 1, "y": 2}},
-		{src: "(@.x + @.y == 3.1)", value: map[string]interface{}{"x": 1.1, "y": 2}},
-		{src: "(@.x + @.y == 3.2)", value: map[string]interface{}{"x": 1, "y": 2.2}},
-		{src: "(@.x + @.y == 3.5)", value: map[string]interface{}{"x": 1.2, "y": 2.3}},
-		{src: "(@.x + @.y == null)", value: map[string]interface{}{"x": 1.2, "y": "abc"}},
-		{src: "(@.x + @.y == null)", value: map[string]interface{}{"x": 1, "y": "abc"}},
-		{src: "(@.x + @.y == 'abcdef')", value: map[string]interface{}{"x": "abc", "y": "def"}},
-		{src: "(@.x + @.y == null)", value: map[string]interface{}{"x": "abc", "y": nil}},
+		{src: "(@.x + @.y == 0)", value: map[string]any{"x": 1, "y": 2}, noMatch: true},
+		{src: "(@.x + @.y == 3)", value: map[string]any{"x": 1, "y": 2}},
+		{src: "(@.x + @.y == 3.1)", value: map[string]any{"x": 1.1, "y": 2}},
+		{src: "(@.x + @.y == 3.2)", value: map[string]any{"x": 1, "y": 2.2}},
+		{src: "(@.x + @.y == 3.5)", value: map[string]any{"x": 1.2, "y": 2.3}},
+		{src: "(@.x + @.y == null)", value: map[string]any{"x": 1.2, "y": "abc"}},
+		{src: "(@.x + @.y == null)", value: map[string]any{"x": 1, "y": "abc"}},
+		{src: "(@.x + @.y == 'abcdef')", value: map[string]any{"x": "abc", "y": "def"}},
+		{src: "(@.x + @.y == null)", value: map[string]any{"x": "abc", "y": nil}},
 
-		{src: "(@.x - @.y == 0)", value: map[string]interface{}{"x": 1, "y": 2}, noMatch: true},
-		{src: "(@.x - @.y == 2)", value: map[string]interface{}{"x": 3, "y": 1}},
-		{src: "(@.x - @.y == 1.1)", value: map[string]interface{}{"x": 3.1, "y": 2}},
-		{src: "(@.x - @.y == 0.5)", value: map[string]interface{}{"x": 3, "y": 2.5}},
-		{src: "(@.x - @.y == 1.5)", value: map[string]interface{}{"x": 3.5, "y": 2.0}},
-		{src: "(@.x - @.y == null)", value: map[string]interface{}{"x": 1.2, "y": "abc"}},
-		{src: "(@.x - @.y == null)", value: map[string]interface{}{"x": 1, "y": "abc"}},
-		{src: "(@.x-1 == @.y)", value: map[string]interface{}{"x": 1, "y": 0}},
-		{src: `(@["x-1"] == @.y)`, value: map[string]interface{}{"x-1": 1, "y": 1}},
+		{src: "(@.x - @.y == 0)", value: map[string]any{"x": 1, "y": 2}, noMatch: true},
+		{src: "(@.x - @.y == 2)", value: map[string]any{"x": 3, "y": 1}},
+		{src: "(@.x - @.y == 1.1)", value: map[string]any{"x": 3.1, "y": 2}},
+		{src: "(@.x - @.y == 0.5)", value: map[string]any{"x": 3, "y": 2.5}},
+		{src: "(@.x - @.y == 1.5)", value: map[string]any{"x": 3.5, "y": 2.0}},
+		{src: "(@.x - @.y == null)", value: map[string]any{"x": 1.2, "y": "abc"}},
+		{src: "(@.x - @.y == null)", value: map[string]any{"x": 1, "y": "abc"}},
+		{src: "(@.x-1 == @.y)", value: map[string]any{"x": 1, "y": 0}},
+		{src: `(@["x-1"] == @.y)`, value: map[string]any{"x-1": 1, "y": 1}},
 
-		{src: "(@.x * @.y == 0)", value: map[string]interface{}{"x": 1, "y": 2}, noMatch: true},
-		{src: "(@.x * @.y == 2)", value: map[string]interface{}{"x": 1, "y": 2}},
-		{src: "(@.x * @.y == 2.2)", value: map[string]interface{}{"x": 1.1, "y": 2}},
-		{src: "(@.x * @.y == 2.2)", value: map[string]interface{}{"x": 1, "y": 2.2}},
-		{src: "(@.x * @.y == 5.0)", value: map[string]interface{}{"x": 2.0, "y": 2.5}},
-		{src: "(@.x * @.y == null)", value: map[string]interface{}{"x": 1.2, "y": "abc"}},
-		{src: "(@.x * @.y == null)", value: map[string]interface{}{"x": 1, "y": "abc"}},
+		{src: "(@.x * @.y == 0)", value: map[string]any{"x": 1, "y": 2}, noMatch: true},
+		{src: "(@.x * @.y == 2)", value: map[string]any{"x": 1, "y": 2}},
+		{src: "(@.x * @.y == 2.2)", value: map[string]any{"x": 1.1, "y": 2}},
+		{src: "(@.x * @.y == 2.2)", value: map[string]any{"x": 1, "y": 2.2}},
+		{src: "(@.x * @.y == 5.0)", value: map[string]any{"x": 2.0, "y": 2.5}},
+		{src: "(@.x * @.y == null)", value: map[string]any{"x": 1.2, "y": "abc"}},
+		{src: "(@.x * @.y == null)", value: map[string]any{"x": 1, "y": "abc"}},
 
-		{src: "(@.x / @.y == 0)", value: map[string]interface{}{"x": 2, "y": 1}, noMatch: true},
-		{src: "(@.x / @.y == 0)", value: map[string]interface{}{"x": 1, "y": 2}},
-		{src: "(@.x / @.y == 1.1)", value: map[string]interface{}{"x": 2.2, "y": 2}},
-		{src: "(@.x / @.y == 2.5)", value: map[string]interface{}{"x": 5, "y": 2.0}},
-		{src: "(@.x / @.y == 2.0)", value: map[string]interface{}{"x": 5.0, "y": 2.5}},
-		{src: "(@.x / @.y == null)", value: map[string]interface{}{"x": 1.2, "y": "abc"}},
-		{src: "(@.x / @.y == null)", value: map[string]interface{}{"x": 1, "y": "abc"}},
-		{src: "(@.x / @.y == null)", value: map[string]interface{}{"x": 1, "y": 0}},
+		{src: "(@.x / @.y == 0)", value: map[string]any{"x": 2, "y": 1}, noMatch: true},
+		{src: "(@.x / @.y == 0)", value: map[string]any{"x": 1, "y": 2}},
+		{src: "(@.x / @.y == 1.1)", value: map[string]any{"x": 2.2, "y": 2}},
+		{src: "(@.x / @.y == 2.5)", value: map[string]any{"x": 5, "y": 2.0}},
+		{src: "(@.x / @.y == 2.0)", value: map[string]any{"x": 5.0, "y": 2.5}},
+		{src: "(@.x / @.y == null)", value: map[string]any{"x": 1.2, "y": "abc"}},
+		{src: "(@.x / @.y == null)", value: map[string]any{"x": 1, "y": "abc"}},
+		{src: "(@.x / @.y == null)", value: map[string]any{"x": 1, "y": 0}},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s in %s\n", i, d.src, oj.JSON(d.value))
 		}
 		s, err := jp.NewScript(d.src)
 		tt.Nil(t, err)
-		result, _ := s.Eval([]interface{}{}, []interface{}{d.value}).([]interface{})
+		result, _ := s.Eval([]any{}, []any{d.value}).([]any)
 		if d.noMatch {
 			tt.Equal(t, 0, len(result), d.src, " in ", d.value)
 		} else {
@@ -293,11 +293,11 @@ func TestScriptInspect(t *testing.T) {
 func BenchmarkOjScriptDev(b *testing.B) {
 	s := jp.Lt(jp.Get(jp.A().C("a")), jp.ConstInt(52)).Script()
 	data := scriptBenchData(100)
-	stack := []interface{}{}
+	stack := []any{}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		stack = stack[:0]
-		stack, _ = s.Eval(stack, data).([]interface{})
+		stack, _ = s.Eval(stack, data).([]any)
 	}
 }

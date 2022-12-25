@@ -15,7 +15,7 @@ import (
 type setData struct {
 	path     string
 	data     string // JSON
-	value    interface{}
+	value    any
 	expect   string // JSON
 	err      string
 	noNode   bool
@@ -24,8 +24,8 @@ type setData struct {
 
 type setReflectData struct {
 	path   string
-	data   interface{}
-	value  interface{}
+	data   any
+	value  any
 	expect string // JSON
 	err    string
 }
@@ -112,22 +112,22 @@ var (
 	}
 	setReflectTestData = []*setReflectData{
 		{path: "a", data: &Sample{A: 1, B: "a string"}, value: 3, expect: `{"^":"Sample","a":3,"b":"a string"}`},
-		{path: "x.a", data: &Any{X: map[string]interface{}{"a": 1}}, value: 3, expect: `{"^":"Any","x":{"a":3}}`},
+		{path: "x.a", data: &Any{X: map[string]any{"a": 1}}, value: 3, expect: `{"^":"Any","x":{"a":3}}`},
 		{path: "x.a", data: &Any{X: &Sample{A: 1}}, value: 3, expect: `{"^":"Any","x":{"^":"Sample","a":3,"b":""}}`},
-		{path: "x.a", data: map[string]interface{}{"x": &Sample{A: 1}}, value: 3, expect: `{"x":{"^":"Sample","a":3,"b":""}}`},
+		{path: "x.a", data: map[string]any{"x": &Sample{A: 1}}, value: 3, expect: `{"x":{"^":"Sample","a":3,"b":""}}`},
 		{path: "[1]", data: []int{1, 2, 3}, value: 5, expect: `[1,5,3]`},
 		{path: "[-2]", data: []int{1, 2, 3}, value: 5, expect: `[1,5,3]`},
 		{path: "[1].x", data: []*Any{{X: 1}, {X: 2}, {X: 3}}, value: 5, expect: `[{"^":"Any","x":1},{"^":"Any","x":5},{"^":"Any","x":3}]`},
 		{path: "$.*.x", data: []*Any{{X: 1}, {X: 2}, {X: 3}}, value: 5, expect: `[{"^":"Any","x":5},{"^":"Any","x":5},{"^":"Any","x":5}]`},
 		{path: "[1].x",
-			data: []map[string]interface{}{
+			data: []map[string]any{
 				{"x": 1},
 				{"x": 2},
 				{"x": 3},
 			},
 			value: 5, expect: `[{"x":1},{"x":5},{"x":3}]`},
 		{path: "[*].x",
-			data: []map[string]interface{}{
+			data: []map[string]any{
 				{"x": 1},
 				{"x": 2},
 				{"x": 3},
@@ -137,38 +137,38 @@ var (
 			data: []*Any{{X: 1}, {X: 2}, {X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":1},{"^":"Any","x":5},{"^":"Any","x":3}]`},
 		{path: "[1,'a'].x",
-			data: []map[string]interface{}{
+			data: []map[string]any{
 				{"x": 1},
 				{"x": 2},
 				{"x": 3},
 			},
 			value: 5, expect: `[{"x":1},{"x":5},{"x":3}]`},
 		{path: "[1,'a'].x",
-			data: []interface{}{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
+			data: []any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":1},{"^":"Any","x":5},{"^":"Any","x":3}]`},
 		{path: "[1,'a'].x",
-			data:  map[string]interface{}{"a": &Any{X: 1}, "b": &Any{X: 2}, "c": &Any{X: 3}},
+			data:  map[string]any{"a": &Any{X: 1}, "b": &Any{X: 2}, "c": &Any{X: 3}},
 			value: 5, expect: `{"a":{"^":"Any","x":5},"b":{"^":"Any","x":2},"c":{"^":"Any","x":3}}`},
 		{path: "[1,'x'].x", data: &Any{X: &Any{X: 1}}, value: 5, expect: `{"^":"Any","x":{"^":"Any","x":5}}`},
-		{path: "[1,'x'].x", data: &Any{X: map[string]interface{}{"x": 1}}, value: 5, expect: `{"^":"Any","x":{"x":5}}`},
+		{path: "[1,'x'].x", data: &Any{X: map[string]any{"x": 1}}, value: 5, expect: `{"^":"Any","x":{"x":5}}`},
 
-		{path: "[1].x", data: []interface{}{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
+		{path: "[1].x", data: []any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":1},{"^":"Any","x":5},{"^":"Any","x":3}]`},
-		{path: "[*].x", data: []interface{}{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
+		{path: "[*].x", data: []any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":5},{"^":"Any","x":5},{"^":"Any","x":5}]`},
 		{path: "$.*.x",
-			data:  map[string]interface{}{"a": &Any{X: 1}, "b": &Any{X: 2}, "c": &Any{X: 3}},
+			data:  map[string]any{"a": &Any{X: 1}, "b": &Any{X: 2}, "c": &Any{X: 3}},
 			value: 5, expect: `{"a":{"^":"Any","x":5},"b":{"^":"Any","x":5},"c":{"^":"Any","x":5}}`},
-		{path: "..x", data: []interface{}{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
+		{path: "..x", data: []any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":5},{"^":"Any","x":5},{"^":"Any","x":5}]`},
 		{path: "..x",
-			data:  map[string]interface{}{"a": &Any{X: 1}, "b": &Any{X: 2}, "c": &Any{X: 3}},
+			data:  map[string]any{"a": &Any{X: 1}, "b": &Any{X: 2}, "c": &Any{X: 3}},
 			value: 5, expect: `{"a":{"^":"Any","x":5},"b":{"^":"Any","x":5},"c":{"^":"Any","x":5},"x":5}`},
 		{path: "[:2:2].x",
 			data: []*Any{{X: 1}, {X: 2}, {X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":5},{"^":"Any","x":2},{"^":"Any","x":3}]`},
 		{path: "[:2:2].x",
-			data: []map[string]interface{}{
+			data: []map[string]any{
 				{"x": 1},
 				{"x": 2},
 				{"x": 3},
@@ -179,31 +179,31 @@ var (
 		{path: "[0:1].x", data: []int{1}, value: 3, expect: `[1]`},
 		{path: "['x','y'].a", data: &Any{X: 1}, value: 3, expect: `{"^":"Any","x":1}`},
 
-		{path: "x.a", data: map[string]interface{}{"x": func() {}}, value: 3, err: "can not follow a func() at 'x'"},
+		{path: "x.a", data: map[string]any{"x": func() {}}, value: 3, err: "can not follow a func() at 'x'"},
 		{path: "x.a", data: &Any{X: 1}, value: 3, err: "can not follow a int at 'x'"},
 		{path: "x.a", data: &Any{X: func() {}}, value: 3, err: "can not follow a func() at 'x'"},
-		{path: "[0].x", data: []interface{}{func() {}}, value: 5, err: "can not follow a func() at '[0]'"},
+		{path: "[0].x", data: []any{func() {}}, value: 5, err: "can not follow a func() at '[0]'"},
 		{path: "[0].x", data: []int{1, 2, 3}, value: 5, err: "can not follow a int at '[0]'"},
 		{path: "[0].x", data: []func(){func() {}}, value: 5, err: "can not follow a func() at '[0]'"},
 	}
 	setOneReflectTestData = []*setReflectData{
 		{path: "a", data: &Sample{A: 1, B: "a string"}, value: 3, expect: `{"^":"Sample","a":3,"b":"a string"}`},
-		{path: "x.a", data: &Any{X: map[string]interface{}{"a": 1}}, value: 3, expect: `{"^":"Any","x":{"a":3}}`},
+		{path: "x.a", data: &Any{X: map[string]any{"a": 1}}, value: 3, expect: `{"^":"Any","x":{"a":3}}`},
 		{path: "x.a", data: &Any{X: &Sample{A: 1}}, value: 3, expect: `{"^":"Any","x":{"^":"Sample","a":3,"b":""}}`},
-		{path: "x.a", data: map[string]interface{}{"x": &Sample{A: 1}}, value: 3, expect: `{"x":{"^":"Sample","a":3,"b":""}}`},
+		{path: "x.a", data: map[string]any{"x": &Sample{A: 1}}, value: 3, expect: `{"x":{"^":"Sample","a":3,"b":""}}`},
 		{path: "[1]", data: []int{1, 2, 3}, value: 5, expect: `[1,5,3]`},
 		{path: "[-2]", data: []int{1, 2, 3}, value: 5, expect: `[1,5,3]`},
 		{path: "[1].x", data: []*Any{{X: 1}, {X: 2}, {X: 3}}, value: 5, expect: `[{"^":"Any","x":1},{"^":"Any","x":5},{"^":"Any","x":3}]`},
 		{path: "$.*.x", data: []*Any{{X: 1}, {X: 2}, {X: 3}}, value: 5, expect: `[{"^":"Any","x":5},{"^":"Any","x":2},{"^":"Any","x":3}]`},
 		{path: "[1].x",
-			data: []map[string]interface{}{
+			data: []map[string]any{
 				{"x": 1},
 				{"x": 2},
 				{"x": 3},
 			},
 			value: 5, expect: `[{"x":1},{"x":5},{"x":3}]`},
 		{path: "[*].x",
-			data: []map[string]interface{}{
+			data: []map[string]any{
 				{"x": 1},
 				{"x": 2},
 				{"x": 3},
@@ -213,44 +213,44 @@ var (
 			data: []*Any{{X: 1}, {X: 2}, {X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":1},{"^":"Any","x":5},{"^":"Any","x":3}]`},
 		{path: "[1,'a'].x",
-			data: []map[string]interface{}{
+			data: []map[string]any{
 				{"x": 1},
 				{"x": 2},
 				{"x": 3},
 			},
 			value: 5, expect: `[{"x":1},{"x":5},{"x":3}]`},
 		{path: "[1,'a'].x",
-			data: []interface{}{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
+			data: []any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":1},{"^":"Any","x":5},{"^":"Any","x":3}]`},
 		{path: "[1,'a'].x",
-			data:  map[string]interface{}{"a": &Any{X: 1}, "b": &Any{X: 2}, "c": &Any{X: 3}},
+			data:  map[string]any{"a": &Any{X: 1}, "b": &Any{X: 2}, "c": &Any{X: 3}},
 			value: 5, expect: `{"a":{"^":"Any","x":5},"b":{"^":"Any","x":2},"c":{"^":"Any","x":3}}`},
 		{path: "[1,'x'].x", data: &Any{X: &Any{X: 1}}, value: 5, expect: `{"^":"Any","x":{"^":"Any","x":5}}`},
-		{path: "[1,'x'].x", data: &Any{X: map[string]interface{}{"x": 1}}, value: 5, expect: `{"^":"Any","x":{"x":5}}`},
+		{path: "[1,'x'].x", data: &Any{X: map[string]any{"x": 1}}, value: 5, expect: `{"^":"Any","x":{"x":5}}`},
 
-		{path: "[1].x", data: []interface{}{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
+		{path: "[1].x", data: []any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":1},{"^":"Any","x":5},{"^":"Any","x":3}]`},
-		{path: "[*].x", data: []interface{}{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
+		{path: "[*].x", data: []any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":5},{"^":"Any","x":2},{"^":"Any","x":3}]`},
 		{path: "$.*.x",
-			data:  map[string]interface{}{"a": &Any{X: 1}},
+			data:  map[string]any{"a": &Any{X: 1}},
 			value: 5, expect: `{"a":{"^":"Any","x":5}}`},
-		{path: "..x", data: []interface{}{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
+		{path: "..x", data: []any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":5},{"^":"Any","x":2},{"^":"Any","x":3}]`},
 		{path: "..x",
-			data:  map[string]interface{}{"a": &Any{X: 1}},
+			data:  map[string]any{"a": &Any{X: 1}},
 			value: 5, expect: `{"a":{"^":"Any","x":5}}`},
 		{path: "[:2:2].x",
 			data: []*Any{{X: 1}, {X: 2}, {X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":5},{"^":"Any","x":2},{"^":"Any","x":3}]`},
 		{path: "[:2:2].x",
-			data: []interface{}{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
+			data: []any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":5},{"^":"Any","x":2},{"^":"Any","x":3}]`},
 		{path: "[2:0:-2].x",
-			data: []interface{}{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
+			data: []any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":1},{"^":"Any","x":2},{"^":"Any","x":5}]`},
 		{path: "[:2:2].x",
-			data: []map[string]interface{}{
+			data: []map[string]any{
 				{"x": 1},
 				{"x": 2},
 				{"x": 3},
@@ -260,13 +260,13 @@ var (
 		{path: "['x','y'].a", data: &Any{X: 1}, value: 3, expect: `{"^":"Any","x":1}`},
 		{path: "[0,1].x", data: []int{1}, value: 3, expect: `[1]`},
 		{path: "[0:1].x", data: []int{1}, value: 3, expect: `[1]`},
-		{path: "[0:1].x", data: []interface{}{1}, value: 3, expect: `[1]`},
-		{path: "[1:0:-1].x", data: []interface{}{1, 2}, value: 3, expect: `[1,2]`},
+		{path: "[0:1].x", data: []any{1}, value: 3, expect: `[1]`},
+		{path: "[1:0:-1].x", data: []any{1, 2}, value: 3, expect: `[1,2]`},
 
-		{path: "x.a", data: map[string]interface{}{"x": func() {}}, value: 3, err: "can not follow a func() at 'x'"},
+		{path: "x.a", data: map[string]any{"x": func() {}}, value: 3, err: "can not follow a func() at 'x'"},
 		{path: "x.a", data: &Any{X: 1}, value: 3, err: "can not follow a int at 'x'"},
 		{path: "x.a", data: &Any{X: func() {}}, value: 3, err: "can not follow a func() at 'x'"},
-		{path: "[0].x", data: []interface{}{func() {}}, value: 5, err: "can not follow a func() at '[0]'"},
+		{path: "[0].x", data: []any{func() {}}, value: 5, err: "can not follow a func() at '[0]'"},
 		{path: "[0].x", data: []int{1, 2, 3}, value: 5, err: "can not follow a int at '[0]'"},
 		{path: "[0].x", data: []func(){func() {}}, value: 5, err: "can not follow a func() at '[0]'"},
 	}
@@ -280,7 +280,7 @@ func TestExprSet(t *testing.T) {
 		x, err := jp.ParseString(d.path)
 		tt.Nil(t, err, i, " : ", x)
 
-		var data interface{}
+		var data any
 		if !d.noSimple {
 			data, err = oj.ParseString(d.data)
 			tt.Nil(t, err, i, " : ", x)
@@ -317,7 +317,7 @@ func TestExprSetOne(t *testing.T) {
 		x, err := jp.ParseString(d.path)
 		tt.Nil(t, err, i, " : ", x)
 
-		var data interface{}
+		var data any
 		if !d.noSimple {
 			data, err = oj.ParseString(d.data)
 			tt.Nil(t, err, i, " : ", x)
@@ -385,6 +385,6 @@ func TestExprSetOneReflect(t *testing.T) {
 }
 
 func TestExprMustSet(t *testing.T) {
-	data := map[string]interface{}{"a": 1, "b": 2, "c": 3}
+	data := map[string]any{"a": 1, "b": 2, "c": 3}
 	tt.Panic(t, func() { jp.C("b").N(0).MustSet(data, 7) })
 }

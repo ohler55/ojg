@@ -118,12 +118,15 @@ func TestBuilderErrors(t *testing.T) {
 	tt.Equal(t, "must have a key when pushing to an object", err.Error())
 }
 
-// This test can be runned with this command:
+// This test can be run with this command:
 //
 //	$ go test -fuzz=FuzzBuilder -fuzztime=1s
 //
 // Contributed by nono (Bruno Michel)
-func FuzzBuilder(f *testing.F) {
+//
+// Commented out since the default time uses too much memory for most (all?)
+// machines.
+func xFuzzBuilder(f *testing.F) {
 	defer func() {
 		if recover() != nil {
 			debug.PrintStack()
