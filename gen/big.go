@@ -11,12 +11,12 @@ func (n Big) String() string {
 }
 
 // Alter returns the backing string.
-func (n Big) Alter() interface{} {
+func (n Big) Alter() any {
 	return string(n)
 }
 
 // Simplify the Node into a string.
-func (n Big) Simplify() interface{} {
+func (n Big) Simplify() any {
 	return string(n)
 }
 

@@ -16,7 +16,7 @@ import (
 )
 
 // Equal return true if two values are equal and fails a test if not equal.
-func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bool) {
+func Equal(t *testing.T, expect, actual any, args ...any) (eq bool) {
 	eq = valuesEqual(expect, actual)
 	if !eq {
 		var b strings.Builder
@@ -27,7 +27,7 @@ func Equal(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bo
 }
 
 // NotEqual return true if two values are not equal and fails a test if equal.
-func NotEqual(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bool) {
+func NotEqual(t *testing.T, expect, actual any, args ...any) (eq bool) {
 	eq = valuesEqual(expect, actual)
 	if eq {
 		var b strings.Builder
@@ -37,7 +37,7 @@ func NotEqual(t *testing.T, expect, actual interface{}, args ...interface{}) (eq
 	return
 }
 
-func valuesEqual(expect, actual interface{}) (eq bool) {
+func valuesEqual(expect, actual any) (eq bool) {
 	switch te := expect.(type) {
 	case nil:
 		eq = nil == actual
@@ -100,9 +100,9 @@ func valuesEqual(expect, actual interface{}) (eq bool) {
 		x, _ := asString(expect)
 		a, ok := asString(actual)
 		eq = x == a && ok
-	case []interface{}:
+	case []any:
 		switch ta := actual.(type) {
-		case []interface{}:
+		case []any:
 			eq = true
 			for i := 0; i < len(te); i++ {
 				if len(ta) <= i {
@@ -159,9 +159,9 @@ func valuesEqual(expect, actual interface{}) (eq bool) {
 		default:
 			eq = false
 		}
-	case map[string]interface{}:
+	case map[string]any:
 		switch ta := actual.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			eq = true
 			for k, ve := range te {
 				va, has := ta[k]

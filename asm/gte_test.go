@@ -44,19 +44,19 @@ func TestGteString(t *testing.T) {
 }
 
 func TestGteWrongType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", "$.asm.i", []interface{}{"gte", true, false}},
+	p := asm.NewPlan([]any{
+		[]any{"set", "$.asm.i", []any{"gte", true, false}},
 	})
-	root := map[string]interface{}{}
+	root := map[string]any{}
 	err := p.Execute(root)
 	tt.NotNil(t, err)
 }
 
 func TestGteWrongType2(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", "$.asm.i", []interface{}{"gte", 1, false}},
+	p := asm.NewPlan([]any{
+		[]any{"set", "$.asm.i", []any{"gte", 1, false}},
 	})
-	root := map[string]interface{}{}
+	root := map[string]any{}
 	err := p.Execute(root)
 	tt.NotNil(t, err)
 }

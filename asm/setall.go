@@ -19,7 +19,7 @@ jp.Set() function.`,
 	})
 }
 
-func setall(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func setall(root map[string]any, at any, args ...any) any {
 	if len(args) != 2 {
 		panic(fmt.Errorf("setall expects exactly two arguments. %d given", len(args)))
 	}

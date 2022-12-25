@@ -25,26 +25,26 @@ func TestDelall(t *testing.T) {
 }
 
 func TestDelallExprError(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		map[string]interface{}{},
-		[]interface{}{"delall", jp.D()},
+	p := asm.NewPlan([]any{
+		map[string]any{},
+		[]any{"delall", jp.D()},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestDelallArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"delall"},
+	p := asm.NewPlan([]any{
+		[]any{"delall"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestDelallArgNotExpr(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"delall", 1},
+	p := asm.NewPlan([]any{
+		[]any{"delall", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

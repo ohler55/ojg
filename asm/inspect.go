@@ -18,7 +18,7 @@ that follow.`,
 	})
 }
 
-func inspect(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func inspect(root map[string]any, at any, args ...any) any {
 	indent := 0
 	if 0 < len(args) {
 		for _, a := range args {

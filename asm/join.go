@@ -17,12 +17,12 @@ string is used.`,
 	})
 }
 
-func join(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func join(root map[string]any, at any, args ...any) any {
 	if len(args) < 1 || 2 < len(args) {
 		panic(fmt.Errorf("join expects one or two arguments. %d given", len(args)))
 	}
 	v := evalArg(root, at, args[0])
-	list, ok := v.([]interface{})
+	list, ok := v.([]any)
 	if !ok {
 		panic(fmt.Errorf("join expected an array of string arguments, not a %T", v))
 	}

@@ -97,12 +97,12 @@ func TestEqualMap(t *testing.T) {
 func TestEqualTime(t *testing.T) {
 	t1 := time.Now().UTC()
 	t2 := t1.Add(time.Second)
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", "$.asm.true", []interface{}{"eq", t1, t1}},
-		[]interface{}{"set", "$.asm.false", []interface{}{"eq", t1, t2}},
+	p := asm.NewPlan([]any{
+		[]any{"set", "$.asm.true", []any{"eq", t1, t1}},
+		[]any{"set", "$.asm.false", []any{"eq", t1, t2}},
 	})
-	root := map[string]interface{}{
-		"src": []interface{}{},
+	root := map[string]any{
+		"src": []any{},
 	}
 	err := p.Execute(root)
 	tt.Nil(t, err)
@@ -111,12 +111,12 @@ func TestEqualTime(t *testing.T) {
 }
 
 func TestEqualIntOthers(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", "$.asm.i", []interface{}{"eq", 1, int8(1), int16(1), int32(1), int64(1)}},
-		[]interface{}{"set", "$.asm.u", []interface{}{"eq", uint(1), uint8(1), uint16(1), uint32(1), uint64(1)}},
+	p := asm.NewPlan([]any{
+		[]any{"set", "$.asm.i", []any{"eq", 1, int8(1), int16(1), int32(1), int64(1)}},
+		[]any{"set", "$.asm.u", []any{"eq", uint(1), uint8(1), uint16(1), uint32(1), uint64(1)}},
 	})
-	root := map[string]interface{}{
-		"src": []interface{}{},
+	root := map[string]any{
+		"src": []any{},
 	}
 	err := p.Execute(root)
 	tt.Nil(t, err)
@@ -125,12 +125,12 @@ func TestEqualIntOthers(t *testing.T) {
 }
 
 func TestEqualFloatOthers(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
+	p := asm.NewPlan([]any{
 		// Float32 almost never matches float64 due to rounding errors
-		[]interface{}{"set", "$.asm.float", []interface{}{"eq", float32(1.1), float32(1.1)}},
+		[]any{"set", "$.asm.float", []any{"eq", float32(1.1), float32(1.1)}},
 	})
-	root := map[string]interface{}{
-		"src": []interface{}{},
+	root := map[string]any{
+		"src": []any{},
 	}
 	err := p.Execute(root)
 	tt.Nil(t, err)

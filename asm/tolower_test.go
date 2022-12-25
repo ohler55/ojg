@@ -28,17 +28,17 @@ func TestTolower(t *testing.T) {
 }
 
 func TestTolowerArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"tolower", "x", "y"},
+	p := asm.NewPlan([]any{
+		[]any{"tolower", "x", "y"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestTolowerArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"tolower", 1},
+	p := asm.NewPlan([]any{
+		[]any{"tolower", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

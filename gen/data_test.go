@@ -7,6 +7,6 @@ type data struct {
 	// Empty means no error expected while non empty should be compared
 	// err.Error().
 	expect  string
-	value   interface{}
+	value   any
 	onlyOne bool
 }

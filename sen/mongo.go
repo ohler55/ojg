@@ -27,7 +27,7 @@ func (p *Parser) AddMongoFuncs() {
 	p.tokenFuncs["NumberDecimal"] = numberDecimal
 }
 
-func isoDate(args ...interface{}) (t interface{}) {
+func isoDate(args ...any) (t any) {
 	if 0 < len(args) {
 		switch ta := args[0].(type) {
 		case string:
@@ -39,14 +39,14 @@ func isoDate(args ...interface{}) (t interface{}) {
 	return
 }
 
-func objectID(args ...interface{}) (v interface{}) {
+func objectID(args ...any) (v any) {
 	if 0 < len(args) {
 		v = args[0]
 	}
 	return
 }
 
-func numberInt64(args ...interface{}) (v interface{}) {
+func numberInt64(args ...any) (v any) {
 	if 0 < len(args) {
 		s, _ := args[0].(string)
 		var err error
@@ -57,7 +57,7 @@ func numberInt64(args ...interface{}) (v interface{}) {
 	return
 }
 
-func numberDecimal(args ...interface{}) (v interface{}) {
+func numberDecimal(args ...any) (v any) {
 	if 0 < len(args) {
 		s, _ := args[0].(string)
 		var err error

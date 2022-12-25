@@ -33,7 +33,7 @@ func TestDev(t *testing.T) {
 		{src: `1.2e200`, value: gen.Big("0.9223372036854775808")},
 	} {
 		var err error
-		var v interface{}
+		var v any
 		if d.onlyOne || d.noComment {
 			p := oj.Parser{NoComment: d.noComment}
 			v, err = p.Parse([]byte(d.src))

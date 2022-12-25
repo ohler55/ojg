@@ -13,7 +13,7 @@ func init() {
 	Define(&asmFn)
 }
 
-func asmEval(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func asmEval(root map[string]any, at any, args ...any) any {
 	for _, a := range args {
 		at = evalArg(root, at, a)
 	}

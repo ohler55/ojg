@@ -42,7 +42,7 @@ func TestGenBuilderObject(t *testing.T) {
 	tt.Nil(t, err, "b.Object()")
 	b.Pop()
 	v := b.Result()
-	tt.Equal(t, map[string]interface{}{}, v)
+	tt.Equal(t, map[string]any{}, v)
 
 	b.Reset()
 	tt.Nil(t, b.Result(), "b.Result() after reset")

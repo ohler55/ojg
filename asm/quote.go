@@ -14,7 +14,7 @@ treats "@.x" as a string instead of as a path.`,
 	})
 }
 
-func quote(root map[string]interface{}, at interface{}, args ...interface{}) (val interface{}) {
+func quote(root map[string]any, at any, args ...any) (val any) {
 	if 0 < len(args) {
 		val = args[0]
 	}

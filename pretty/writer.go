@@ -44,7 +44,7 @@ type Writer struct {
 // not fail.The returned buffer is the Writer buffer and is reused on the next
 // call to write. If returned value is to be preserved past a second
 // invocation then the buffer should be copied.
-func (w *Writer) Encode(data interface{}) []byte {
+func (w *Writer) Encode(data any) []byte {
 	b, _ := w.encode(data)
 
 	return b
@@ -52,7 +52,7 @@ func (w *Writer) Encode(data interface{}) []byte {
 
 // Marshal data. The same as Encode but a panics during encoding will result
 // in an error return.
-func (w *Writer) Marshal(data interface{}) ([]byte, error) {
+func (w *Writer) Marshal(data any) ([]byte, error) {
 	if _, err := w.encode(data); err != nil {
 		return nil, err
 	}
@@ -65,13 +65,13 @@ func (w *Writer) Marshal(data interface{}) ([]byte, error) {
 // Write encoded data to the op.Writer. The returned buffer is the Writer
 // buffer and is reused on the next call to write. If returned value is to be
 // preserved past a second invocation then the buffer should be copied.
-func (w *Writer) Write(wr io.Writer, data interface{}) (err error) {
+func (w *Writer) Write(wr io.Writer, data any) (err error) {
 	w.w = wr
 	_, err = w.encode(data)
 
 	return
 }
-func (w *Writer) config(args []interface{}) {
+func (w *Writer) config(args []any) {
 	for _, arg := range args {
 		switch ta := arg.(type) {
 		case int:
@@ -98,7 +98,7 @@ func (w *Writer) config(args []interface{}) {
 	}
 }
 
-func (w *Writer) encode(data interface{}) (out []byte, err error) {
+func (w *Writer) encode(data any) (out []byte, err error) {
 	if w.InitSize == 0 {
 		w.InitSize = 256
 	}

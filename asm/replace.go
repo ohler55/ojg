@@ -16,7 +16,7 @@ argument. All three arguments must be strings.`,
 	})
 }
 
-func replace(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func replace(root map[string]any, at any, args ...any) any {
 	if len(args) != 3 {
 		panic(fmt.Errorf("replace expects exactly three arguments. %d given", len(args)))
 	}

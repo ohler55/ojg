@@ -27,7 +27,7 @@ and equal.`,
 	})
 }
 
-func equal(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func equal(root map[string]any, at any, args ...any) any {
 	if 0 < len(args) {
 		v0 := evalArg(root, at, args[0])
 		for _, v := range args[1:] {
@@ -40,7 +40,7 @@ func equal(root map[string]interface{}, at interface{}, args ...interface{}) int
 	return true
 }
 
-func equalVals(v0, v1 interface{}) (eq bool) {
+func equalVals(v0, v1 any) (eq bool) {
 	switch t0 := v0.(type) {
 	case nil:
 		eq = nil == v1
@@ -66,8 +66,8 @@ func equalVals(v0, v1 interface{}) (eq bool) {
 	case time.Time:
 		tm, _ := v1.(time.Time)
 		eq = tm == t0
-	case []interface{}:
-		if t1, ok := v1.([]interface{}); ok && len(t0) == len(t1) {
+	case []any:
+		if t1, ok := v1.([]any); ok && len(t0) == len(t1) {
 			eq = true
 			for i, m0 := range t0 {
 				if eq = equalVals(m0, t1[i]); !eq {
@@ -75,8 +75,8 @@ func equalVals(v0, v1 interface{}) (eq bool) {
 				}
 			}
 		}
-	case map[string]interface{}:
-		if t1, ok := v1.(map[string]interface{}); ok && len(t0) == len(t1) {
+	case map[string]any:
+		if t1, ok := v1.(map[string]any); ok && len(t0) == len(t1) {
 			eq = true
 			for k, m0 := range t0 {
 				m1, has := t1[k]
@@ -89,7 +89,7 @@ func equalVals(v0, v1 interface{}) (eq bool) {
 	return
 }
 
-func asInt(v interface{}) (i int64, ok bool) {
+func asInt(v any) (i int64, ok bool) {
 	ok = true
 	switch tv := v.(type) {
 	case int:
@@ -118,7 +118,7 @@ func asInt(v interface{}) (i int64, ok bool) {
 	return
 }
 
-func asFloat(v interface{}) (f float64, ok bool) {
+func asFloat(v any) (f float64, ok bool) {
 	ok = true
 	switch tv := v.(type) {
 	case float32:

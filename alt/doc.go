@@ -64,10 +64,10 @@ starting with a lower case character.
 		Int int
 		Str string
 	}
-	r, err := alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Sample{}: nil})
-	var v interface{}
+	r, err := alt.NewRecomposer("^", map[any]alt.RecomposeFunc{&Sample{}: nil})
+	var v any
 	if err == nil {
-		v, err = r.Recompose(map[string]interface{}{"^": "Sample", "int": 3, "str": "three"})
+		v, err = r.Recompose(map[string]any{"^": "Sample", "int": 3, "str": "three"})
 	}
 	// sample: {Int: 3, Str: "three"}
 
@@ -77,7 +77,7 @@ The GenAlter() function converts a simple go data element into Node compliant
 data. A best effort is made to convert values that are not simple into generic
 Nodes. It modifies the values inplace if possible by altering the original.
 
-	m := map[string]interface{}{"a": 1, "b": 4, "c": 9}
+	m := map[string]any{"a": 1, "b": 4, "c": 9}
 	v := alt.GenAlter(m)
 	// v:  gen.Object{"a": gen.Int(1), "b": gen.Int(4), "c": gen.Int(9)}, v)
 */

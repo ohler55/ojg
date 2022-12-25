@@ -28,17 +28,17 @@ func TestTitle(t *testing.T) {
 }
 
 func TestTitleArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"title", "x", "y"},
+	p := asm.NewPlan([]any{
+		[]any{"title", "x", "y"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestTitleArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"title", 1},
+	p := asm.NewPlan([]any{
+		[]any{"title", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

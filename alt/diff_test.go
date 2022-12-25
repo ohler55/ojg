@@ -13,8 +13,8 @@ import (
 
 func TestDiffPrimitive(t *testing.T) {
 	type prim struct {
-		v0     interface{}
-		v1     interface{}
+		v0     any
+		v1     any
 		expect bool
 	}
 	for _, p := range []prim{
@@ -66,11 +66,11 @@ func TestDiffPrimitive(t *testing.T) {
 }
 
 func TestCompare(t *testing.T) {
-	dif := alt.Compare([]interface{}{1, 2}, []interface{}{1, 2, 3})
+	dif := alt.Compare([]any{1, 2}, []any{1, 2, 3})
 	tt.Equal(t, 1, len(dif))
 	tt.Equal(t, 2, dif[0])
 
-	dif = alt.Compare([]interface{}{1, 2}, []interface{}{1, 2})
+	dif = alt.Compare([]any{1, 2}, []any{1, 2})
 	tt.Equal(t, 0, len(dif))
 }
 
@@ -89,32 +89,32 @@ func TestCompareTime(t *testing.T) {
 
 func TestDiffSlice(t *testing.T) {
 	diffs := alt.Diff(
-		[]interface{}{1, 2, []interface{}{3, 4}},
-		[]interface{}{1, 2, []interface{}{4, 4}},
+		[]any{1, 2, []any{3, 4}},
+		[]any{1, 2, []any{4, 4}},
 	)
 	tt.Equal(t, 1, len(diffs))
 	tt.Equal(t, alt.Path{2, 0}, diffs[0])
 
-	diffs = alt.Diff([]interface{}{1, 2}, 5)
+	diffs = alt.Diff([]any{1, 2}, 5)
 	tt.Equal(t, 1, len(diffs))
 	tt.Equal(t, alt.Path{nil}, diffs[0])
 
 	diffs = alt.Diff(
-		[]interface{}{1, 2, []interface{}{3, 4}},
-		[]interface{}{1, 2, []interface{}{3, 4, 5}},
+		[]any{1, 2, []any{3, 4}},
+		[]any{1, 2, []any{3, 4, 5}},
 		alt.Path{2, 2},
 	)
 	tt.Equal(t, 0, len(diffs))
 
 	dif := alt.Compare(
-		[]interface{}{1, 2, []interface{}{3, 4}},
-		[]interface{}{1, 2, []interface{}{3, 5}},
+		[]any{1, 2, []any{3, 4}},
+		[]any{1, 2, []any{3, 5}},
 	)
 	tt.Equal(t, alt.Path{2, 1}, dif)
 
 	diffs = alt.Diff(
-		[]interface{}{1, 2, []interface{}{3, 4, 5}},
-		[]interface{}{1, 2, []interface{}{3, 4}},
+		[]any{1, 2, []any{3, 4, 5}},
+		[]any{1, 2, []any{3, 4}},
 	)
 	tt.Equal(t, 1, len(diffs))
 	tt.Equal(t, alt.Path{2, 2}, diffs[0])
@@ -122,22 +122,22 @@ func TestDiffSlice(t *testing.T) {
 
 func TestDiffSliceIgnores(t *testing.T) {
 	diffs := alt.Diff(
-		[]interface{}{1, 2, []interface{}{3, 4}},
-		[]interface{}{1, 2, []interface{}{3, 4, 5}},
+		[]any{1, 2, []any{3, 4}},
+		[]any{1, 2, []any{3, 4, 5}},
 		alt.Path{2, 2},
 	)
 	tt.Equal(t, 0, len(diffs))
 
 	diffs = alt.Diff(
-		[]interface{}{1, 2, []interface{}{3, 4}},
-		[]interface{}{1, 2, []interface{}{3, 5}},
+		[]any{1, 2, []any{3, 4}},
+		[]any{1, 2, []any{3, 5}},
 		alt.Path{2, 1},
 	)
 	tt.Equal(t, 0, len(diffs))
 
 	diffs = alt.Diff(
-		[]interface{}{1, 2, []interface{}{3, 4}},
-		[]interface{}{1, 2, []interface{}{3, 5}},
+		[]any{1, 2, []any{3, 4}},
+		[]any{1, 2, []any{3, 5}},
 		alt.Path{2, nil},
 	)
 	tt.Equal(t, 0, len(diffs))
@@ -145,30 +145,30 @@ func TestDiffSliceIgnores(t *testing.T) {
 
 func TestDiffMap(t *testing.T) {
 	diffs := alt.Diff(
-		map[string]interface{}{"x": 1, "y": 2, "z": map[string]interface{}{"a": 3, "b": 4}},
-		map[string]interface{}{"x": 1, "y": 2, "z": map[string]interface{}{"a": 4, "b": 4}},
+		map[string]any{"x": 1, "y": 2, "z": map[string]any{"a": 3, "b": 4}},
+		map[string]any{"x": 1, "y": 2, "z": map[string]any{"a": 4, "b": 4}},
 	)
 	tt.Equal(t, 1, len(diffs))
 	tt.Equal(t, alt.Path{"z", "a"}, diffs[0])
 
 	dif := alt.Compare(
-		map[string]interface{}{"x": 1, "y": 2, "z": map[string]interface{}{"a": 3, "b": 4}},
-		map[string]interface{}{"x": 1, "y": 2, "z": true},
+		map[string]any{"x": 1, "y": 2, "z": map[string]any{"a": 3, "b": 4}},
+		map[string]any{"x": 1, "y": 2, "z": true},
 	)
 	tt.Equal(t, alt.Path{"z"}, dif)
 }
 
 func TestDiffMapIgnores(t *testing.T) {
 	diffs := alt.Diff(
-		map[string]interface{}{"x": 1, "y": 2, "z": map[string]interface{}{"a": 3, "b": 4}},
-		map[string]interface{}{"x": 1, "y": 2, "z": map[string]interface{}{"a": 4, "b": 4}},
+		map[string]any{"x": 1, "y": 2, "z": map[string]any{"a": 3, "b": 4}},
+		map[string]any{"x": 1, "y": 2, "z": map[string]any{"a": 4, "b": 4}},
 		alt.Path{"z"},
 	)
 	tt.Equal(t, 0, len(diffs))
 
 	diffs = alt.Diff(
-		map[string]interface{}{"x": 1, "y": 2, "z": map[string]interface{}{"a": 3, "b": 4}},
-		map[string]interface{}{"x": 1, "y": 2, "z": map[string]interface{}{"a": 4, "b": 4}},
+		map[string]any{"x": 1, "y": 2, "z": map[string]any{"a": 3, "b": 4}},
+		map[string]any{"x": 1, "y": 2, "z": map[string]any{"a": 4, "b": 4}},
 		alt.Path{"z", nil},
 	)
 	tt.Equal(t, 0, len(diffs))

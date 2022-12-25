@@ -10,7 +10,7 @@ import (
 )
 
 func TestUnmarshal(t *testing.T) {
-	var obj map[string]interface{}
+	var obj map[string]any
 	src := `{x:3}`
 	err := sen.Unmarshal([]byte(src), &obj)
 	tt.Nil(t, err)

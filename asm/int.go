@@ -17,7 +17,7 @@ possible nil is returned.`,
 	})
 }
 
-func intEval(root map[string]interface{}, at interface{}, args ...interface{}) (i interface{}) {
+func intEval(root map[string]any, at any, args ...any) (i any) {
 	if len(args) != 1 {
 		panic(fmt.Errorf("int expects exactly one argument. %d given", len(args)))
 	}

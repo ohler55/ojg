@@ -17,7 +17,7 @@ func (s *Setter) String() string {
 	return fmt.Sprintf("Setter{a:%d,b:%s}", s.a, s.b)
 }
 
-func (s *Setter) SetAttr(attr string, val interface{}) error {
+func (s *Setter) SetAttr(attr string, val any) error {
 	switch attr {
 	case "a":
 		s.a = alt.Int(val)
@@ -30,7 +30,7 @@ func (s *Setter) SetAttr(attr string, val interface{}) error {
 }
 
 func ExampleAttrSetter() {
-	src := map[string]interface{}{"a": 3, "b": "bee"}
+	src := map[string]any{"a": 3, "b": "bee"}
 	r := alt.MustNewRecomposer("", nil)
 	var setter Setter
 	_ = r.MustRecompose(src, &setter)

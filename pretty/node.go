@@ -23,7 +23,7 @@ type node struct {
 }
 
 type table struct {
-	key     interface{} // string or int
+	key     any // string or int
 	size    int
 	columns []*table
 }

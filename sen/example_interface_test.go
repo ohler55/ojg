@@ -43,15 +43,15 @@ func ExampleUnmarshal_interface() {
 	// Create a new Recomposer. This can be use over and over again. Register
 	// the types with a nil creation function to let reflection do the work
 	// since the types are exported.
-	r, err := alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Dog{}: nil, &Cat{}: nil})
+	r, err := alt.NewRecomposer("^", map[any]alt.RecomposeFunc{&Dog{}: nil, &Cat{}: nil})
 	if err != nil {
 		panic(err)
 	}
-	var result interface{}
+	var result any
 	if err = sen.Unmarshal(b, &result, r); err != nil {
 		panic(err)
 	}
-	list, _ := result.([]interface{})
+	list, _ := result.([]any)
 	for _, item := range list {
 		animal, _ := item.(Animal)
 		fmt.Printf("  %s\n", animal.Kind())

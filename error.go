@@ -17,7 +17,7 @@ type Error struct {
 }
 
 // NewError creates a new Error instance, capturing the stack when created.
-func NewError(r interface{}) *Error {
+func NewError(r any) *Error {
 	return &Error{
 		msg:   fmt.Sprintf("%v", r),
 		stack: debug.Stack(),

@@ -16,7 +16,7 @@ argument provides an alternative cut set.`,
 	})
 }
 
-func trim(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func trim(root map[string]any, at any, args ...any) any {
 	if len(args) < 1 || 2 < len(args) {
 		panic(fmt.Errorf("trim expects one or two arguments. %d given", len(args)))
 	}

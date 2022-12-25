@@ -15,7 +15,7 @@ that do not evaluate to a boolean or null (false) raise an error.`,
 	})
 }
 
-func and(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func and(root map[string]any, at any, args ...any) any {
 	val := true
 	for _, arg := range args {
 		switch tv := evalArg(root, at, arg).(type) {

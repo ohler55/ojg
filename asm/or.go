@@ -16,7 +16,7 @@ raise an error.`,
 	})
 }
 
-func or(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func or(root map[string]any, at any, args ...any) any {
 	val := false
 	for _, arg := range args {
 		switch tv := evalArg(root, at, arg).(type) {

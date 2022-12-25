@@ -9,8 +9,8 @@
 //	float64
 //	string
 //	time.Time
-//	[]interface{}
-//	map[string]interface{}
+//	[]any
+//	map[string]any
 //
 // # Parser
 //
@@ -52,18 +52,18 @@
 //	b.Pop()
 //	v := b.Result()
 //
-//	// v: map[string]interface{}{"a": 1, "b": []interface{}{2}}
+//	// v: map[string]any{"a": 1, "b": []any{2}}
 //
 // # Writer
 //
 // The writer function's output data values to JSON. The basic oj.JSON() attempts
 // to build JSON from any data provided skipping types that can not be converted.
 //
-//	s := oj.JSON([]interface{}{1, 2, "abc", true})
+//	s := oj.JSON([]any{1, 2, "abc", true})
 //
 // Output can also be use with an io.Writer.
 //
 //	var b strings.Builder
 //
-//	err := oj.Write(&b, []interface{}{1, 2, "abc", true})
+//	err := oj.Write(&b, []any{1, 2, "abc", true})
 package oj

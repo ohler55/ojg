@@ -23,10 +23,10 @@ func TestStringCheck(t *testing.T) {
 }
 
 func TestStringCheckArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"string?", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"string?", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
@@ -64,17 +64,17 @@ func TestStringConv(t *testing.T) {
 }
 
 func TestStringConvArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"string", 1, "x", 3},
+	p := asm.NewPlan([]any{
+		[]any{"string", 1, "x", 3},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestStringConvFormatType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"string", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"string", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

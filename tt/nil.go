@@ -9,7 +9,7 @@ import (
 )
 
 // Nil check.
-func Nil(t *testing.T, actual interface{}, args ...interface{}) {
+func Nil(t *testing.T, actual any, args ...any) {
 	if !isNil(actual) {
 		var b strings.Builder
 		b.WriteString(fmt.Sprintf("\nexpect: nil\nactual: (%T) %v\n", actual, actual))
@@ -18,7 +18,7 @@ func Nil(t *testing.T, actual interface{}, args ...interface{}) {
 }
 
 // NotNil check.
-func NotNil(t *testing.T, actual interface{}, args ...interface{}) {
+func NotNil(t *testing.T, actual any, args ...any) {
 	if isNil(actual) {
 		var b strings.Builder
 		b.WriteString("\nexpect: not nil\nactual: nil\n")

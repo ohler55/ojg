@@ -21,7 +21,7 @@ func TestGetall(t *testing.T) {
          ]`,
 		"{src: {a:1 b:2 c:3}}",
 	)
-	got, _ := root["at"].([]interface{})
+	got, _ := root["at"].([]any)
 	sort.Slice(got, func(i, j int) bool {
 		a, _ := got[i].(int64)
 		b, _ := got[j].(int64)
@@ -29,7 +29,7 @@ func TestGetall(t *testing.T) {
 	})
 	tt.Equal(t, "[1 2]", sen.String(got))
 
-	got, _ = root["root"].([]interface{})
+	got, _ = root["root"].([]any)
 	sort.Slice(got, func(i, j int) bool {
 		a, _ := got[i].(int64)
 		b, _ := got[j].(int64)
@@ -37,7 +37,7 @@ func TestGetall(t *testing.T) {
 	})
 	tt.Equal(t, "[1 2 3]", sen.String(got))
 
-	got, _ = root["arg"].([]interface{})
+	got, _ = root["arg"].([]any)
 	sort.Slice(got, func(i, j int) bool {
 		a, _ := got[i].(int64)
 		b, _ := got[j].(int64)
@@ -47,25 +47,25 @@ func TestGetall(t *testing.T) {
 }
 
 func TestGetallArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"getall"},
+	p := asm.NewPlan([]any{
+		[]any{"getall"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestGetallArgNotExpr(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"getall", 1},
+	p := asm.NewPlan([]any{
+		[]any{"getall", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestGetallArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"getall", []interface{}{"sum"}},
+	p := asm.NewPlan([]any{
+		[]any{"getall", []any{"sum"}},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

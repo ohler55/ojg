@@ -14,17 +14,17 @@ func init() {
 	})
 }
 
-func reverse(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func reverse(root map[string]any, at any, args ...any) any {
 	if len(args) != 1 {
 		panic(fmt.Errorf("reverse expects exactly one argument. %d given", len(args)))
 	}
 	v := evalArg(root, at, args[0])
-	list, ok := v.([]interface{})
+	list, ok := v.([]any)
 	if !ok {
 		panic(fmt.Errorf("reverse expected an array argument, not a %T", v))
 	}
 	// Make a copy so not to change the original.
-	rev := make([]interface{}, len(list))
+	rev := make([]any, len(list))
 	var i int
 	for i, v = range list {
 		rev[len(list)-i-1] = v

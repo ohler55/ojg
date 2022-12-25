@@ -40,9 +40,9 @@ func TestSum(t *testing.T) {
 }
 
 func TestSumArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"sum", 1, true},
+	p := asm.NewPlan([]any{
+		[]any{"sum", 1, true},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

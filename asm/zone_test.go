@@ -37,25 +37,25 @@ func TestZone(t *testing.T) {
 }
 
 func TestZoneArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"zone", 1, 2, 3},
+	p := asm.NewPlan([]any{
+		[]any{"zone", 1, 2, 3},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestZoneNotTime(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"zone", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"zone", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestZoneNotLoc(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"zone", time.Now(), true},
+	p := asm.NewPlan([]any{
+		[]any{"zone", time.Now(), true},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

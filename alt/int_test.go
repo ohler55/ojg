@@ -12,7 +12,7 @@ import (
 )
 
 type intData struct {
-	value    interface{}
+	value    any
 	defaults []int64
 	expect   int64
 }
@@ -71,8 +71,8 @@ func TestInt(t *testing.T) {
 		{value: gen.Time(tm), expect: 1586709244123456789},
 		{value: gen.Time(tm), expect: 5, defaults: []int64{4, 5}},
 
-		{value: []interface{}{}, expect: 0},
-		{value: []interface{}{}, expect: 4, defaults: []int64{4, 5}},
+		{value: []any{}, expect: 0},
+		{value: []any{}, expect: 4, defaults: []int64{4, 5}},
 	} {
 		result := alt.Int(d.value, d.defaults...)
 		tt.Equal(t, d.expect, result, "Int(", d.value, d.defaults, ")")

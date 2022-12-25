@@ -32,7 +32,7 @@ func ExampleDup() {
 		Int int
 		Str string
 	}
-	sample := []interface{}{&Sample{Int: 3, Str: "three"}, 42}
+	sample := []any{&Sample{Int: 3, Str: "three"}, 42}
 	// Dup creates a deep duplicate of a simple type and decomposes any
 	// structs according to the optional options just like alt.Decompose does.
 	simple := alt.Decompose(sample, &ojg.Options{CreateKey: "^"})
@@ -48,13 +48,13 @@ func ExampleRecomposer_Recompose() {
 		Str string
 	}
 	// Recomposers are reuseable. Create one and use the default reflect composer (nil).
-	r, err := alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Sample{}: nil})
+	r, err := alt.NewRecomposer("^", map[any]alt.RecomposeFunc{&Sample{}: nil})
 	if err != nil {
 		panic(err)
 	}
-	var v interface{}
+	var v any
 	// Recompose without providing a struct to populate.
-	v, err = r.Recompose(map[string]interface{}{"^": "Sample", "int": 3, "str": "three"})
+	v, err = r.Recompose(map[string]any{"^": "Sample", "int": 3, "str": "three"})
 	if err != nil {
 		panic(err)
 	}
@@ -73,13 +73,13 @@ func ExampleNewRecomposer() {
 		Str string
 	}
 	// Recomposers are reuseable. Create one and use the default reflect composer (nil).
-	r, err := alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Sample{}: nil})
+	r, err := alt.NewRecomposer("^", map[any]alt.RecomposeFunc{&Sample{}: nil})
 	if err != nil {
 		panic(err)
 	}
-	var v interface{}
+	var v any
 	// Recompose without providing a struct to populate.
-	v, err = r.Recompose(map[string]interface{}{"^": "Sample", "int": 3, "str": "three"})
+	v, err = r.Recompose(map[string]any{"^": "Sample", "int": 3, "str": "three"})
 	if err != nil {
 		panic(err)
 	}
@@ -97,8 +97,8 @@ func ExampleRecompose() {
 		Int int
 		Str string
 	}
-	// Simplified sample data or JSON as a map[string]interface{}.
-	data := map[string]interface{}{"int": 3, "str": "three"}
+	// Simplified sample data or JSON as a map[string]any.
+	data := map[string]any{"int": 3, "str": "three"}
 	var sample Sample
 	// Recompose into the sample struct. Panic on failure.
 	v, err := alt.Recompose(data, &sample)
@@ -118,8 +118,8 @@ func ExampleMustRecompose() {
 		Int int
 		Str string
 	}
-	// Simplified sample data or JSON as a map[string]interface{}.
-	data := map[string]interface{}{"int": 3, "str": "three"}
+	// Simplified sample data or JSON as a map[string]any.
+	data := map[string]any{"int": 3, "str": "three"}
 	var sample Sample
 	// Recompose into the sample struct. Panic on failure.
 	v := alt.MustRecompose(data, &sample)
@@ -141,17 +141,17 @@ func ExampleRecomposer_MustRecompose() {
 	// default reflection recompose function (nil). A time recomposer from an
 	// integer is also included in the new recomposer compser options.
 	r := alt.MustNewRecomposer("^",
-		map[interface{}]alt.RecomposeFunc{&Sample{}: nil},
-		map[interface{}]alt.RecomposeAnyFunc{&time.Time{}: func(v interface{}) (interface{}, error) {
+		map[any]alt.RecomposeFunc{&Sample{}: nil},
+		map[any]alt.RecomposeAnyFunc{&time.Time{}: func(v any) (any, error) {
 			if s, _ := v.(string); 0 < len(s) {
 				return time.ParseInLocation(time.RFC3339, s, time.UTC)
 			}
 			return nil, fmt.Errorf("can not convert a %v to a time.Time", v)
 		}})
-	// Simplified sample data or JSON as a map[string]interface{} with an
+	// Simplified sample data or JSON as a map[string]any with an
 	// included create key using "^" to avoid possible conflicts with other
 	// fields in the struct.
-	data := map[string]interface{}{"^": "Sample", "int": 3, "when": "2021-02-09T01:02:03Z"}
+	data := map[string]any{"^": "Sample", "int": 3, "when": "2021-02-09T01:02:03Z"}
 	v := r.MustRecompose(data)
 
 	if sample, _ := v.(*Sample); sample != nil {
@@ -170,17 +170,17 @@ func ExampleMustNewRecomposer() {
 	// default reflection recompose function (nil). A time recomposer from an
 	// integer is also included in the new recomposer compser options.
 	r := alt.MustNewRecomposer("^",
-		map[interface{}]alt.RecomposeFunc{&Sample{}: nil},
-		map[interface{}]alt.RecomposeAnyFunc{&time.Time{}: func(v interface{}) (interface{}, error) {
+		map[any]alt.RecomposeFunc{&Sample{}: nil},
+		map[any]alt.RecomposeAnyFunc{&time.Time{}: func(v any) (any, error) {
 			if s, _ := v.(string); 0 < len(s) {
 				return time.ParseInLocation(time.RFC3339, s, time.UTC)
 			}
 			return nil, fmt.Errorf("can not convert a %v to a time.Time", v)
 		}})
-	// Simplified sample data or JSON as a map[string]interface{} with an
+	// Simplified sample data or JSON as a map[string]any with an
 	// included create key using "^" to avoid possible conflicts with other
 	// fields in the struct.
-	data := map[string]interface{}{"^": "Sample", "int": 3, "when": "2021-02-09T01:02:03Z"}
+	data := map[string]any{"^": "Sample", "int": 3, "when": "2021-02-09T01:02:03Z"}
 	v := r.MustRecompose(data)
 
 	if sample, _ := v.(*Sample); sample != nil {
@@ -191,7 +191,7 @@ func ExampleMustNewRecomposer() {
 }
 
 func ExampleAlter() {
-	src := map[string]interface{}{"a": 1, "b": 4, "c": 9}
+	src := map[string]any{"a": 1, "b": 4, "c": 9}
 	// Alter the src as needed avoiding duplicating when possible.
 	val := alt.Alter(src)
 	// Modify src should change val since they are the same map.
@@ -202,7 +202,7 @@ func ExampleAlter() {
 }
 
 func ExampleGenAlter() {
-	m := map[string]interface{}{"a": 1, "b": 4, "c": 9}
+	m := map[string]any{"a": 1, "b": 4, "c": 9}
 	// Convert to a gen.Node.
 	node := alt.GenAlter(m)
 	fmt.Println(sen.String(node, &oj.Options{Sort: true}))
@@ -224,7 +224,7 @@ func ExampleRecomposer_RegisterComposer() {
 		panic(err)
 	}
 	err = r.RegisterAnyComposer(time.Time{},
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			if secs, ok := v.(int); ok {
 				return time.Unix(int64(secs), 0), nil
 			}
@@ -233,7 +233,7 @@ func ExampleRecomposer_RegisterComposer() {
 	if err != nil {
 		panic(err)
 	}
-	data := map[string]interface{}{"^": "Sample", "int": 3, "when": 1612872722}
+	data := map[string]any{"^": "Sample", "int": 3, "when": 1612872722}
 	sample, _ := r.MustRecompose(data).(*Sample)
 
 	fmt.Printf("sample.Int: %d\n", sample.Int)
@@ -255,7 +255,7 @@ func ExampleRecomposer_RegisterAnyComposer() {
 		panic(err)
 	}
 	err = r.RegisterAnyComposer(time.Time{},
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			if secs, ok := v.(int); ok {
 				return time.Unix(int64(secs), 0), nil
 			}
@@ -264,7 +264,7 @@ func ExampleRecomposer_RegisterAnyComposer() {
 	if err != nil {
 		panic(err)
 	}
-	data := map[string]interface{}{"^": "Sample", "int": 3, "when": 1612872722}
+	data := map[string]any{"^": "Sample", "int": 3, "when": 1612872722}
 	sample, _ := r.MustRecompose(data).(*Sample)
 
 	fmt.Printf("sample.Int: %d\n", sample.Int)

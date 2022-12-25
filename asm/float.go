@@ -17,7 +17,7 @@ possible nil is returned.`,
 	})
 }
 
-func floatEval(root map[string]interface{}, at interface{}, args ...interface{}) (f interface{}) {
+func floatEval(root map[string]any, at any, args ...any) (f any) {
 	if len(args) != 1 {
 		panic(fmt.Errorf("float expects exactly one argument. %d given", len(args)))
 	}

@@ -25,7 +25,7 @@ def`
 type rdata struct {
 	src    string
 	expect string
-	value  interface{}
+	value  any
 }
 
 func TestParserParseString(t *testing.T) {
@@ -39,7 +39,7 @@ func TestParserParseString(t *testing.T) {
 		{src: `"hello"`, value: "hello"},
 		{src: `'ab"cd'`, value: `ab"cd`},
 		{src: `"ab'cd"`, value: `ab'cd`},
-		{src: "[one two]", value: []interface{}{"one", "two"}},
+		{src: "[one two]", value: []any{"one", "two"}},
 		{src: "123", value: 123},
 		{src: "-12.3", value: -12.3},
 		{src: "2e-7", value: 2e-7},
@@ -68,37 +68,37 @@ func TestParserParseString(t *testing.T) {
 
 		{src: "\xef\xbb\xbf\"xyz\"", value: "xyz"},
 
-		{src: "[]", value: []interface{}{}},
-		{src: "[0,\ntrue , false,null]", value: []interface{}{0, true, false, nil}},
-		{src: `[0.1e3,"x",-1,{}]`, value: []interface{}{100.0, "x", -1, map[string]interface{}{}}},
-		{src: "[1.2,0]", value: []interface{}{1.2, 0}},
-		{src: "[1.2e2,0.1]", value: []interface{}{1.2e2, 0.1}},
-		{src: "[1.2e2,0]", value: []interface{}{1.2e2, 0}},
-		{src: "[true]", value: []interface{}{true}},
-		{src: "[true,false]", value: []interface{}{true, false}},
-		{src: "[[]]", value: []interface{}{[]interface{}{}}},
-		{src: "[[true]]", value: []interface{}{[]interface{}{true}}},
+		{src: "[]", value: []any{}},
+		{src: "[0,\ntrue , false,null]", value: []any{0, true, false, nil}},
+		{src: `[0.1e3,"x",-1,{}]`, value: []any{100.0, "x", -1, map[string]any{}}},
+		{src: "[1.2,0]", value: []any{1.2, 0}},
+		{src: "[1.2e2,0.1]", value: []any{1.2e2, 0.1}},
+		{src: "[1.2e2,0]", value: []any{1.2e2, 0}},
+		{src: "[true]", value: []any{true}},
+		{src: "[true,false]", value: []any{true, false}},
+		{src: "[[]]", value: []any{[]any{}}},
+		{src: "[[true]]", value: []any{[]any{true}}},
 		{src: `"x\t\n\"\b\f\r\u0041\\\/y"`, value: "x\t\n\"\b\f\r\u0041\\/y"},
 		{src: `"x\u004a\u004Ay"`, value: "xJJy"},
 		{src: `"x\ry"`, value: "x\ry"},
 
-		{src: "{}", value: map[string]interface{}{}},
-		{src: `{"a\tbc":true}`, value: map[string]interface{}{"a\tbc": true}},
-		{src: `{x:null}`, value: map[string]interface{}{"x": nil}},
-		{src: `{x:true}`, value: map[string]interface{}{"x": true}},
-		{src: `{x:false}`, value: map[string]interface{}{"x": false}},
-		{src: "{\"z\":0,\n\"z2\":0}", value: map[string]interface{}{"z": 0, "z2": 0}},
-		{src: `{"z":1.2,"z2":0}`, value: map[string]interface{}{"z": 1.2, "z2": 0}},
-		{src: `{"abc":{"def" :3}}`, value: map[string]interface{}{"abc": map[string]interface{}{"def": 3}}},
-		{src: `{"x":1.2e3,"y":true}`, value: map[string]interface{}{"x": 1200.0, "y": true}},
+		{src: "{}", value: map[string]any{}},
+		{src: `{"a\tbc":true}`, value: map[string]any{"a\tbc": true}},
+		{src: `{x:null}`, value: map[string]any{"x": nil}},
+		{src: `{x:true}`, value: map[string]any{"x": true}},
+		{src: `{x:false}`, value: map[string]any{"x": false}},
+		{src: "{\"z\":0,\n\"z2\":0}", value: map[string]any{"z": 0, "z2": 0}},
+		{src: `{"z":1.2,"z2":0}`, value: map[string]any{"z": 1.2, "z2": 0}},
+		{src: `{"abc":{"def" :3}}`, value: map[string]any{"abc": map[string]any{"def": 3}}},
+		{src: `{"x":1.2e3,"y":true}`, value: map[string]any{"x": 1200.0, "y": true}},
 
 		{src: `{"abc": [{"x": {"y": [{"b": true}]},"z": 7}]}`,
-			value: map[string]interface{}{
-				"abc": []interface{}{
-					map[string]interface{}{
-						"x": map[string]interface{}{
-							"y": []interface{}{
-								map[string]interface{}{
+			value: map[string]any{
+				"abc": []any{
+					map[string]any{
+						"x": map[string]any{
+							"y": []any{
+								map[string]any{
 									"b": true,
 								},
 							},
@@ -157,26 +157,26 @@ func TestParserParseString(t *testing.T) {
 		{src: `{123{}}`, expect: "expected a key at 1:5"},
 		{src: `{[]]}`, expect: "expected a key at 1:3"},
 
-		{src: "[0 1,2]", value: []interface{}{0, 1, 2}},
-		{src: "[0[1[2]]]", value: []interface{}{0, []interface{}{1, []interface{}{2}}}},
-		{src: `{aaa:0 "bbb":"one" , c:2}`, value: map[string]interface{}{"aaa": 0, "bbb": "one", "c": 2}},
-		{src: "{aaa\n:one b:\ntwo}", value: map[string]interface{}{"aaa": "one", "b": "two"}},
-		{src: "[abc[x]]", value: []interface{}{"abc", []interface{}{"x"}}},
-		{src: "[abc{x:1}]", value: []interface{}{"abc", map[string]interface{}{"x": 1}}},
-		{src: `{aaa:"bbb" "bbb":"one" , c:2}`, value: map[string]interface{}{"aaa": "bbb", "bbb": "one", "c": 2}},
-		{src: `{aaa:"b\tb" x:2}`, value: map[string]interface{}{"aaa": "b\tb", "x": 2}},
+		{src: "[0 1,2]", value: []any{0, 1, 2}},
+		{src: "[0[1[2]]]", value: []any{0, []any{1, []any{2}}}},
+		{src: `{aaa:0 "bbb":"one" , c:2}`, value: map[string]any{"aaa": 0, "bbb": "one", "c": 2}},
+		{src: "{aaa\n:one b:\ntwo}", value: map[string]any{"aaa": "one", "b": "two"}},
+		{src: "[abc[x]]", value: []any{"abc", []any{"x"}}},
+		{src: "[abc{x:1}]", value: []any{"abc", map[string]any{"x": 1}}},
+		{src: `{aaa:"bbb" "bbb":"one" , c:2}`, value: map[string]any{"aaa": "bbb", "bbb": "one", "c": 2}},
+		{src: `{aaa:"b\tb" x:2}`, value: map[string]any{"aaa": "b\tb", "x": 2}},
 
-		{src: "[0{x:1}]", value: []interface{}{0, map[string]interface{}{"x": 1}}},
-		{src: "[1{x:1}]", value: []interface{}{1, map[string]interface{}{"x": 1}}},
-		{src: "[1.5{x:1}]", value: []interface{}{1.5, map[string]interface{}{"x": 1}}},
-		{src: "[1.5[1]]", value: []interface{}{1.5, []interface{}{1}}},
-		{src: "[1.5e2{x:1}]", value: []interface{}{150., map[string]interface{}{"x": 1}}},
-		{src: "[1.5e2[1]]", value: []interface{}{150.0, []interface{}{1}}},
+		{src: "[0{x:1}]", value: []any{0, map[string]any{"x": 1}}},
+		{src: "[1{x:1}]", value: []any{1, map[string]any{"x": 1}}},
+		{src: "[1.5{x:1}]", value: []any{1.5, map[string]any{"x": 1}}},
+		{src: "[1.5[1]]", value: []any{1.5, []any{1}}},
+		{src: "[1.5e2{x:1}]", value: []any{150., map[string]any{"x": 1}}},
+		{src: "[1.5e2[1]]", value: []any{150.0, []any{1}}},
 
-		{src: "[abc// a comment\n]", value: []interface{}{"abc"}},
-		{src: "[123// a comment\n]", value: []interface{}{123}},
-		{src: "[ // a comment\n  true\n]", value: []interface{}{true}},
-		{src: "[\n  null // a comment\n  true\n]", value: []interface{}{nil, true}},
+		{src: "[abc// a comment\n]", value: []any{"abc"}},
+		{src: "[123// a comment\n]", value: []any{123}},
+		{src: "[ // a comment\n  true\n]", value: []any{true}},
+		{src: "[\n  null // a comment\n  true\n]", value: []any{nil, true}},
 		{src: "[\n  null / a comment\n  true\n]", expect: "unexpected character ' ' at 2:9"},
 	} {
 		if testing.Verbose() {
@@ -202,15 +202,15 @@ func TestParserParseReader(t *testing.T) {
 		{src: strings.Repeat(" ", 4094) + "true ", value: true},
 		{src: strings.Repeat(" ", 4094) + "false ", value: false},
 		{src: strings.Repeat(" ", 4094) + "hello\n  ", value: "hello"},
-		{src: strings.Repeat(" ", 4092) + "{x:null} ", value: map[string]interface{}{"x": nil}},
-		{src: strings.Repeat(" ", 4092) + "{x:true} ", value: map[string]interface{}{"x": true}},
-		{src: strings.Repeat(" ", 4092) + "{x:false} ", value: map[string]interface{}{"x": false}},
-		{src: strings.Repeat(" ", 4090) + "{abc:def} ", value: map[string]interface{}{"abc": "def"}},
-		{src: strings.Repeat(" ", 4093) + "{abc:def} ", value: map[string]interface{}{"abc": "def"}},
-		{src: strings.Repeat(" ", 4093) + "[abc[def]]", value: []interface{}{"abc", []interface{}{"def"}}},
-		{src: strings.Repeat(" ", 4093) + "[abc]", value: []interface{}{"abc"}},
-		{src: strings.Repeat(" ", 4093) + "[abc// comment\n]", value: []interface{}{"abc"}},
-		{src: strings.Repeat(" ", 4093) + "[abc{x:1}]", value: []interface{}{"abc", map[string]interface{}{"x": 1}}},
+		{src: strings.Repeat(" ", 4092) + "{x:null} ", value: map[string]any{"x": nil}},
+		{src: strings.Repeat(" ", 4092) + "{x:true} ", value: map[string]any{"x": true}},
+		{src: strings.Repeat(" ", 4092) + "{x:false} ", value: map[string]any{"x": false}},
+		{src: strings.Repeat(" ", 4090) + "{abc:def} ", value: map[string]any{"abc": "def"}},
+		{src: strings.Repeat(" ", 4093) + "{abc:def} ", value: map[string]any{"abc": "def"}},
+		{src: strings.Repeat(" ", 4093) + "[abc[def]]", value: []any{"abc", []any{"def"}}},
+		{src: strings.Repeat(" ", 4093) + "[abc]", value: []any{"abc"}},
+		{src: strings.Repeat(" ", 4093) + "[abc// comment\n]", value: []any{"abc"}},
+		{src: strings.Repeat(" ", 4093) + "[abc{x:1}]", value: []any{"abc", map[string]any{"x": 1}}},
 
 		{src: strings.Repeat(" ", 4094) + "abc#", expect: "unexpected character '#' at 1:2"},
 		{src: strings.Repeat(" ", 4094) + "hello\n #", expect: "extra characters after close, '#' at 2:2"},
@@ -222,7 +222,7 @@ func TestParserParseReader(t *testing.T) {
 			fmt.Printf("... %d: %q\n", i, d.src)
 		}
 		var err error
-		var v interface{}
+		var v any
 		var p sen.Parser
 		v, err = p.ParseReader(strings.NewReader(d.src))
 
@@ -238,7 +238,7 @@ func TestParserParseReader(t *testing.T) {
 
 func TestParserParseCallback(t *testing.T) {
 	var results []byte
-	cb := func(n interface{}) {
+	cb := func(n any) {
 		if 0 < len(results) {
 			results = append(results, ' ')
 		}
@@ -273,7 +273,7 @@ func TestParserParseCallback(t *testing.T) {
 
 func TestParserParseCallbackAlt(t *testing.T) {
 	var results []byte
-	cb := func(n interface{}) bool {
+	cb := func(n any) bool {
 		if 0 < len(results) {
 			results = append(results, ' ')
 		}
@@ -309,7 +309,7 @@ func TestParserParseCallbackAlt(t *testing.T) {
 
 func TestParserParseReaderCallback(t *testing.T) {
 	var results []byte
-	cb := func(n interface{}) {
+	cb := func(n any) {
 		if 0 < len(results) {
 			results = append(results, ' ')
 		}
@@ -330,7 +330,7 @@ func TestParserParseReaderCallback(t *testing.T) {
 
 func TestParserParseReaderCallbackAlt(t *testing.T) {
 	var results []byte
-	cb := func(n interface{}) bool {
+	cb := func(n any) bool {
 		if 0 < len(results) {
 			results = append(results, ' ')
 		}
@@ -384,7 +384,7 @@ func TestParserParseReaderErr(t *testing.T) {
 
 func TestParserParseChan(t *testing.T) {
 	var results []byte
-	rc := make(chan interface{}, 10)
+	rc := make(chan any, 10)
 	var p sen.Parser
 	_, err := p.Parse([]byte(callbackSEN), rc)
 	tt.Nil(t, err)
@@ -420,7 +420,7 @@ func TestParserParseChan(t *testing.T) {
 
 func TestParserParseReaderChan(t *testing.T) {
 	var results []byte
-	rc := make(chan interface{}, 10)
+	rc := make(chan any, 10)
 	_, err := sen.ParseReader(strings.NewReader(callbackSEN), rc)
 	tt.Nil(t, err)
 	rc <- nil
@@ -458,11 +458,11 @@ func TestParserMustParseReader(t *testing.T) {
 func TestParserPlus(t *testing.T) {
 	src := `['abc' + "def" + 'ghi']`
 	v := sen.MustParse([]byte(src))
-	tt.Equal(t, []interface{}{"abcdefghi"}, v)
+	tt.Equal(t, []any{"abcdefghi"}, v)
 
 	src = `{a: abc + "def" + 'ghi'}`
 	v = sen.MustParse([]byte(src))
-	tt.Equal(t, map[string]interface{}{"a": "abcdefghi"}, v)
+	tt.Equal(t, map[string]any{"a": "abcdefghi"}, v)
 }
 
 func TestParserTokenFunc(t *testing.T) {
@@ -470,10 +470,10 @@ func TestParserTokenFunc(t *testing.T) {
 	tt.Equal(t, 123, v)
 
 	v = sen.MustParse([]byte(`[fun("xyz")]`))
-	tt.Equal(t, []interface{}{"xyz"}, v)
+	tt.Equal(t, []any{"xyz"}, v)
 
 	p := sen.Parser{}
-	p.AddTokenFunc("fun", func(args ...interface{}) interface{} {
+	p.AddTokenFunc("fun", func(args ...any) any {
 		var sum int64
 		for _, a := range args {
 			i, _ := a.(int64)

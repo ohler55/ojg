@@ -31,16 +31,16 @@ type Writer struct {
 	ojg.Options
 	buf           []byte
 	w             io.Writer
-	appendArray   func(wr *Writer, data []interface{}, depth int)
-	appendObject  func(wr *Writer, data map[string]interface{}, depth int)
-	appendDefault func(wr *Writer, data interface{}, depth int)
+	appendArray   func(wr *Writer, data []any, depth int)
+	appendObject  func(wr *Writer, data map[string]any, depth int)
+	appendDefault func(wr *Writer, data any, depth int)
 	appendString  func(buf []byte, s string, htmlSafe bool) []byte
 	findex        byte
 	needSep       bool
 }
 
 // SEN writes data, SEN encoded. On error, an empty string is returned.
-func (wr *Writer) SEN(data interface{}) string {
+func (wr *Writer) SEN(data any) string {
 	defer func() {
 		if r := recover(); r != nil {
 			wr.buf = wr.buf[:0]
@@ -54,7 +54,7 @@ func (wr *Writer) SEN(data interface{}) string {
 // buffer is the Writer buffer and is reused on the next call to write. If
 // returned value is to be preserved past a second invocation then the buffer
 // should be copied.
-func (wr *Writer) MustSEN(data interface{}) []byte {
+func (wr *Writer) MustSEN(data any) []byte {
 	wr.w = nil
 	if wr.InitSize <= 0 {
 		wr.InitSize = 256
@@ -92,7 +92,7 @@ func (wr *Writer) MustSEN(data interface{}) []byte {
 }
 
 // Write a SEN string for the data provided.
-func (wr *Writer) Write(w io.Writer, data interface{}) (err error) {
+func (wr *Writer) Write(w io.Writer, data any) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			wr.buf = wr.buf[:0]
@@ -105,7 +105,7 @@ func (wr *Writer) Write(w io.Writer, data interface{}) (err error) {
 
 // MustWrite a SEN string for the data provided. If an error occurs panic is
 // called with the error.
-func (wr *Writer) MustWrite(w io.Writer, data interface{}) {
+func (wr *Writer) MustWrite(w io.Writer, data any) {
 	wr.w = w
 	if wr.InitSize <= 0 {
 		wr.InitSize = 256
@@ -164,7 +164,7 @@ func (wr *Writer) calcFieldsIndex() {
 	}
 }
 
-func (wr *Writer) appendSEN(data interface{}, depth int) {
+func (wr *Writer) appendSEN(data any, depth int) {
 	wr.needSep = true
 	switch td := data.(type) {
 	case nil:
@@ -211,7 +211,7 @@ func (wr *Writer) appendSEN(data interface{}, depth int) {
 		case ojg.BytesAsBase64:
 			wr.buf = wr.appendString(wr.buf, base64.StdEncoding.EncodeToString(td), !wr.HTMLUnsafe)
 		case ojg.BytesAsArray:
-			a := make([]interface{}, len(td))
+			a := make([]any, len(td))
 			for i, m := range td {
 				a[i] = int64(m)
 			}
@@ -223,11 +223,11 @@ func (wr *Writer) appendSEN(data interface{}, depth int) {
 	case time.Time:
 		wr.buf = wr.AppendTime(wr.buf, td, true)
 
-	case []interface{}:
+	case []any:
 		wr.appendArray(wr, td, depth)
 		wr.needSep = false
 
-	case map[string]interface{}:
+	case map[string]any:
 		wr.appendObject(wr, td, depth)
 		wr.needSep = false
 
@@ -266,7 +266,7 @@ func (wr *Writer) appendSEN(data interface{}, depth int) {
 	}
 }
 
-func appendDefault(wr *Writer, data interface{}, depth int) {
+func appendDefault(wr *Writer, data any, depth int) {
 	if !wr.NoReflect {
 		rv := reflect.ValueOf(data)
 		kind := rv.Kind()
@@ -293,7 +293,7 @@ func appendDefault(wr *Writer, data interface{}, depth int) {
 	}
 }
 
-func appendArray(wr *Writer, n []interface{}, depth int) {
+func appendArray(wr *Writer, n []any, depth int) {
 	var is string
 	var cs string
 	d2 := depth + 1
@@ -333,7 +333,7 @@ func appendArray(wr *Writer, n []interface{}, depth int) {
 	}
 }
 
-func appendObject(wr *Writer, n map[string]interface{}, depth int) {
+func appendObject(wr *Writer, n map[string]any, depth int) {
 	d2 := depth + 1
 	var is string
 	var cs string
@@ -374,7 +374,7 @@ func appendObject(wr *Writer, n map[string]interface{}, depth int) {
 	wr.buf = append(wr.buf, '}')
 }
 
-func appendSortObject(wr *Writer, n map[string]interface{}, depth int) {
+func appendSortObject(wr *Writer, n map[string]any, depth int) {
 	d2 := depth + 1
 	var is string
 	var cs string
@@ -429,7 +429,7 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 	fields := si.fields[wr.findex]
 	wr.buf = append(wr.buf, '{')
 	empty := true
-	var v interface{}
+	var v any
 	indented := false
 	var is string
 	var cs string

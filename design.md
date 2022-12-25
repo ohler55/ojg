@@ -45,11 +45,11 @@ private fields or field that can't be converted to something that can
 say be written as a JSON element. Other options are often better.
 
 Another approach is to use simple Go types such as `bool`, `int64`,
-`[]interface{}`, and other types that map directly on to JSON or some
+`[]any`, and other types that map directly on to JSON or some
 other subset of all possible Go types. If too open, such as with
-`[]interface{}` it is still possible for the user to put unsupported
+`[]any` it is still possible for the user to put unsupported
 types into the data. Not to pick out any package specifically but it
-is frustrating to see an argument type of `interface{}` in an API and
+is frustrating to see an argument type of `any` in an API and
 then no documentation describing that the supported types are.
 
 There is another approach though: Define a set of types that can be in
@@ -65,8 +65,8 @@ element that could not be encoded as JSON in the data.
 
 A frequent operation for generic data is to store that data into a
 JSON database or similar. That meant converting to simple Go types of
-`nil`, `bool`, `int64`, `float64`, `string`, `[]interface{}`, and
-`map[string]interface{}` had to be fast.
+`nil`, `bool`, `int64`, `float64`, `string`, `[]any`, and
+`map[string]any` had to be fast.
 
 Also planned for this part of the journey was methods on the types to
 support getting, setting, and deleting elements using JSONPath. The
@@ -148,7 +148,7 @@ types from simple Go types and then add methods on those types? A
 `[]gen.Node`. With that approach there are no extra allocations.
 
 ```golang
-type Node interface{}
+type Node any
 type Int int64
 type Array []Node
 ```
@@ -261,7 +261,7 @@ in the form of a 256 long bytes array is used for that purpose.
 
 Going back to the stack used in the validator, instead of putting a
 simple marker on the stack like the validator, when an Object start
-character, a `{` is encountered a new `map[string]interface{}` is put
+character, a `{` is encountered a new `map[string]any` is put
 on the stack. Values and keys are then used to set members of the
 map. Nothing special there.
 
@@ -273,7 +273,7 @@ second slice index stack is kept. As an array is to be created, a spot
 is reserved on the stack and the index of that stack location is
 placed on the slice index stack. After that values are pushed onto the
 stack until an array close character `]` is reached. The slice index
-is then referenced and a new `[]interface{}` is allocated for all the
+is then referenced and a new `[]any` is allocated for all the
 values from the arry index on the stack to the end of the
 stack. Values are copied to the new array and the stack is collapsed
 to the index. A bit complicated but it does save multiple object

@@ -23,7 +23,7 @@ raised.`,
 	})
 }
 
-func dif(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func dif(root map[string]any, at any, args ...any) any {
 	var idif int64
 	var fdif float64
 	isFloat := false

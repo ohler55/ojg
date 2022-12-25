@@ -94,18 +94,18 @@ func TestOptionsDecomposeTime(t *testing.T) {
 	o.TimeMap = true
 	o.CreateKey = "^"
 	v = o.DecomposeTime(when)
-	m, _ := v.(map[string]interface{})
-	tt.Equal(t, map[string]interface{}{"^": "Time", "value": "2021-05-21T10:11:12.123456789Z"}, m)
+	m, _ := v.(map[string]any)
+	tt.Equal(t, map[string]any{"^": "Time", "value": "2021-05-21T10:11:12.123456789Z"}, m)
 
 	o.FullTypePath = true
 	v = o.DecomposeTime(when)
-	m, _ = v.(map[string]interface{})
-	tt.Equal(t, map[string]interface{}{"^": "time/Time", "value": "2021-05-21T10:11:12.123456789Z"}, m)
+	m, _ = v.(map[string]any)
+	tt.Equal(t, map[string]any{"^": "time/Time", "value": "2021-05-21T10:11:12.123456789Z"}, m)
 
 	o.TimeMap = false
 	o.TimeWrap = "@"
 	v = o.DecomposeTime(when)
-	m, _ = v.(map[string]interface{})
-	tt.Equal(t, map[string]interface{}{"@": "2021-05-21T10:11:12.123456789Z"}, m)
+	m, _ = v.(map[string]any)
+	tt.Equal(t, map[string]any{"@": "2021-05-21T10:11:12.123456789Z"}, m)
 
 }

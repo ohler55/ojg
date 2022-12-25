@@ -30,25 +30,25 @@ func TestTrim(t *testing.T) {
 }
 
 func TestTrimArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"trim", "x", "y", 1},
+	p := asm.NewPlan([]any{
+		[]any{"trim", "x", "y", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestTrimArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"trim", 1, "x"},
+	p := asm.NewPlan([]any{
+		[]any{"trim", 1, "x"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestTrimArgType2(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"trim", "x", 1},
+	p := asm.NewPlan([]any{
+		[]any{"trim", "x", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

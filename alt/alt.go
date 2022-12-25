@@ -46,14 +46,14 @@ func init() {
 }
 
 // Dup is an alias for Decompose.
-func Dup(v interface{}, options ...*ojg.Options) interface{} {
+func Dup(v any, options ...*ojg.Options) any {
 	return Decompose(v, options...)
 }
 
 // Decompose creates a simple type converting non simple to simple types using
 // either the Simplify() interface or reflection. Unlike Alter() a deep copy
 // is returned leaving the original data unchanged.
-func Decompose(v interface{}, options ...*ojg.Options) interface{} {
+func Decompose(v any, options ...*ojg.Options) any {
 	opt := &DefaultOptions
 	if 0 < len(options) {
 		opt = options[0]
@@ -68,7 +68,7 @@ func Decompose(v interface{}, options ...*ojg.Options) interface{} {
 // using either the Simplify() interface or reflection. Unlike Decompose() map
 // and slice members are modified if necessary to assure all elements are
 // simple types.
-func Alter(v interface{}, options ...*ojg.Options) interface{} {
+func Alter(v any, options ...*ojg.Options) any {
 	opt := &DefaultOptions
 	if 0 < len(options) {
 		opt = options[0]
@@ -80,12 +80,12 @@ func Alter(v interface{}, options ...*ojg.Options) interface{} {
 }
 
 // Recompose simple data into more complex go types.
-func Recompose(v interface{}, tv ...interface{}) (out interface{}, err error) {
+func Recompose(v any, tv ...any) (out any, err error) {
 	return DefaultRecomposer.Recompose(v, tv...)
 }
 
 // MustRecompose simple data into more complex go types and panics on error.
-func MustRecompose(v interface{}, tv ...interface{}) (out interface{}) {
+func MustRecompose(v any, tv ...any) (out any) {
 	return DefaultRecomposer.MustRecompose(v, tv...)
 }
 
@@ -94,8 +94,8 @@ func MustRecompose(v interface{}, tv ...interface{}) (out interface{}) {
 // reflection is used instead.
 func NewRecomposer(
 	createKey string,
-	composers map[interface{}]RecomposeFunc,
-	anyComposers ...map[interface{}]RecomposeAnyFunc) (rec *Recomposer, err error) {
+	composers map[any]RecomposeFunc,
+	anyComposers ...map[any]RecomposeAnyFunc) (rec *Recomposer, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = ojg.NewError(r)
@@ -111,8 +111,8 @@ func NewRecomposer(
 // reflection is used instead. Panics on error.
 func MustNewRecomposer(
 	createKey string,
-	composers map[interface{}]RecomposeFunc,
-	anyComposers ...map[interface{}]RecomposeAnyFunc) *Recomposer {
+	composers map[any]RecomposeFunc,
+	anyComposers ...map[any]RecomposeAnyFunc) *Recomposer {
 
 	r := Recomposer{
 		CreateKey: createKey,

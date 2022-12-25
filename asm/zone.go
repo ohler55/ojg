@@ -19,7 +19,7 @@ from UTC.`,
 	})
 }
 
-func zone(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func zone(root map[string]any, at any, args ...any) any {
 	if len(args) != 2 {
 		panic(fmt.Errorf("zone expects exactly two arguments. %d given", len(args)))
 	}

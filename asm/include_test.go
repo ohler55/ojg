@@ -34,25 +34,25 @@ func TestInclude(t *testing.T) {
 }
 
 func TestIncludeArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"include", []interface{}{}, "x", 1},
+	p := asm.NewPlan([]any{
+		[]any{"include", []any{}, "x", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestIncludeArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"include", 1, "x"},
+	p := asm.NewPlan([]any{
+		[]any{"include", 1, "x"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestIncludeArgType2(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"include", "abc", 1},
+	p := asm.NewPlan([]any{
+		[]any{"include", "abc", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

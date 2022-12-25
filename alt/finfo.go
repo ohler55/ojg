@@ -15,7 +15,7 @@ const (
 
 var nilValue reflect.Value
 
-type valFunc func(fi *finfo, rv reflect.Value, addr uintptr) (v interface{}, fv reflect.Value, omit bool)
+type valFunc func(fi *finfo, rv reflect.Value, addr uintptr) (v any, fv reflect.Value, omit bool)
 
 type finfo struct {
 	rt     reflect.Type
@@ -26,11 +26,11 @@ type finfo struct {
 	offset uintptr
 }
 
-func valString(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+func valString(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
 	return rv.FieldByIndex(fi.index).String(), nilValue, false
 }
 
-func valStringNotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+func valStringNotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
 	s := rv.FieldByIndex(fi.index).String()
 	if len(s) == 0 {
 		return s, nilValue, true
@@ -38,18 +38,18 @@ func valStringNotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, 
 	return s, nilValue, false
 }
 
-func valJustVal(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+func valJustVal(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
 	fv := rv.FieldByIndex(fi.index)
 	return fv.Interface(), fv, false
 }
 
-func valPtrNotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+func valPtrNotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
 	fv := rv.FieldByIndex(fi.index)
 	v := fv.Interface()
 	return v, fv, (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0
 }
 
-func valSliceNotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+func valSliceNotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
 	fv := rv.FieldByIndex(fi.index)
 	if fv.Len() == 0 {
 		return nil, nilValue, true
@@ -57,7 +57,7 @@ func valSliceNotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, r
 	return fv.Interface(), fv, false
 }
 
-func valSimplifier(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+func valSimplifier(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
 	v := rv.FieldByIndex(fi.index).Interface()
 	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 {
 		return nil, nilValue, false
@@ -65,12 +65,12 @@ func valSimplifier(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, refl
 	return v.(Simplifier).Simplify(), nilValue, false
 }
 
-func valSimplifierAddr(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+func valSimplifierAddr(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
 	v := rv.FieldByIndex(fi.index).Addr().Interface()
 	return v.(Simplifier).Simplify(), nilValue, false
 }
 
-func valGenericer(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+func valGenericer(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
 	v := rv.FieldByIndex(fi.index).Interface()
 	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 {
 		return nil, nilValue, false
@@ -83,7 +83,7 @@ func valGenericer(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, refle
 	return nil, nilValue, false
 }
 
-func valGenericerAddr(fi *finfo, rv reflect.Value, addr uintptr) (interface{}, reflect.Value, bool) {
+func valGenericerAddr(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
 	v := rv.FieldByIndex(fi.index).Addr().Interface()
 	if g, _ := v.(Genericer); g != nil {
 		if n := g.Generic(); n != nil {

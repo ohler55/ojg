@@ -13,7 +13,7 @@ import (
 
 func TestGenerifyBase(t *testing.T) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	a := []interface{}{
+	a := []any{
 		true,
 		gen.False,
 		int8(-8),
@@ -104,7 +104,7 @@ func TestGenerifyArray(t *testing.T) {
 }
 
 func TestGenerifyOdd(t *testing.T) {
-	odd := []interface{}{func() {}, nil}
+	odd := []any{func() {}, nil}
 	v := alt.Generify(odd)
 	tt.Equal(t, gen.Array{nil, nil}, v)
 }
@@ -129,7 +129,7 @@ func TestGenerifyNode(t *testing.T) {
 
 func TestGenAlterBase(t *testing.T) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	a := []interface{}{
+	a := []any{
 		true,
 		gen.False,
 		int8(-8),
@@ -208,7 +208,7 @@ func TestGenAlterMap(t *testing.T) {
 	v = alt.GenAlter(m2)
 	tt.Equal(t, gen.Object{"1": gen.Int(1), "2": gen.Int(4), "3": gen.Int(9)}, v)
 
-	m3 := map[string]interface{}{"1": 1, "2": nil, "3": true}
+	m3 := map[string]any{"1": 1, "2": nil, "3": true}
 	v = alt.GenAlter(m3, &alt.Options{OmitNil: true})
 	tt.Equal(t, gen.Object{"1": gen.Int(1), "3": gen.True}, v)
 
@@ -225,7 +225,7 @@ func TestGenAlterArray(t *testing.T) {
 }
 
 func TestGenAlterOdd(t *testing.T) {
-	odd := []interface{}{func() {}, nil}
+	odd := []any{func() {}, nil}
 	v := alt.GenAlter(odd)
 	tt.Equal(t, gen.Array{nil, nil}, v)
 }

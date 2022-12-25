@@ -12,7 +12,7 @@ import (
 )
 
 type floatData struct {
-	value    interface{}
+	value    any
 	defaults []float64
 	expect   float64
 }
@@ -70,9 +70,9 @@ func TestFloat(t *testing.T) {
 		{value: gen.Time(tm), expect: 1586709244.123456789},
 		{value: gen.Time(tm), expect: 5.5, defaults: []float64{4.4, 5.5}},
 
-		{value: []interface{}{}, expect: 0.0},
-		{value: []interface{}{}, expect: 4.4, defaults: []float64{4.4}},
-		{value: []interface{}{}, expect: 5.5, defaults: []float64{4.4, 5.5}},
+		{value: []any{}, expect: 0.0},
+		{value: []any{}, expect: 4.4, defaults: []float64{4.4}},
+		{value: []any{}, expect: 5.5, defaults: []float64{4.4, 5.5}},
 	} {
 		result := alt.Float(d.value, d.defaults...)
 		tt.Equal(t, d.expect, result, "Float(", d.value, d.defaults, ")")

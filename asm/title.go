@@ -16,7 +16,7 @@ one string argument.`,
 	})
 }
 
-func title(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func title(root map[string]any, at any, args ...any) any {
 	if len(args) != 1 {
 		panic(fmt.Errorf("title expects exactly one arguments. %d given", len(args)))
 	}

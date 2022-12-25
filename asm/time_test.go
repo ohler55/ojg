@@ -22,10 +22,10 @@ func TestTimeCheck(t *testing.T) {
 }
 
 func TestTimeCheckArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"time?", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"time?", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
@@ -57,25 +57,25 @@ func TestTimeConv(t *testing.T) {
 }
 
 func TestTimeConvArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"time", 1, 2, 3},
+	p := asm.NewPlan([]any{
+		[]any{"time", 1, 2, 3},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestTimeConvFormatType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"time", "2021", 2},
+	p := asm.NewPlan([]any{
+		[]any{"time", "2021", 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestTimeConvParseErr(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"time", "Jan 05 2021"},
+	p := asm.NewPlan([]any{
+		[]any{"time", "Jan 05 2021"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

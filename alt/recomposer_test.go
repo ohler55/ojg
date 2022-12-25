@@ -35,7 +35,7 @@ func (c *Child) String() string {
 	return c.Name
 }
 
-func sillyRecompose(data map[string]interface{}) (interface{}, error) {
+func sillyRecompose(data map[string]any) (any, error) {
 	i, ok := data["val"].(int)
 	if !ok {
 		return nil, fmt.Errorf("val is not an int")
@@ -44,55 +44,55 @@ func sillyRecompose(data map[string]interface{}) (interface{}, error) {
 }
 
 func TestRecomposeBasic(t *testing.T) {
-	src := map[string]interface{}{
+	src := map[string]any{
 		"type": "Dummy",
 		"val":  3,
-		"nest": []interface{}{
+		"nest": []any{
 			int8(-8), int16(-16), int32(-32),
 			uint(0), uint8(8), uint16(16), uint32(32), uint64(64),
 			float32(1.2),
-			map[string]interface{}{},
+			map[string]any{},
 		},
 	}
-	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Dummy{}: nil})
+	r, err := alt.NewRecomposer("type", map[any]alt.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
-	var v interface{}
+	var v any
 	v, err = r.Recompose(src)
 	tt.Nil(t, err, "Recompose")
 	d, _ := v.(*Dummy)
 	tt.NotNil(t, d, "Dummy")
-	tt.Equal(t, []interface{}{-8, -16, -32, 0, 8, 16, 32, 64, 1.2, map[string]interface{}{}}, d.Nest)
+	tt.Equal(t, []any{-8, -16, -32, 0, 8, 16, 32, 64, 1.2, map[string]any{}}, d.Nest)
 }
 
 func TestRecomposeNode(t *testing.T) {
 	tm := time.Date(2020, time.April, 12, 16, 34, 04, 123456789, time.UTC)
-	src := map[string]interface{}{
+	src := map[string]any{
 		"type": "Dummy",
 		"val":  gen.Int(3),
 		"nest": gen.Array{gen.Int(-8), gen.Bool(true), gen.Float(1.2), gen.String("abc"),
 			gen.Object{"big": gen.Big("123"), "time": gen.Time(tm)},
 		},
 	}
-	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Dummy{}: nil})
+	r, err := alt.NewRecomposer("type", map[any]alt.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
-	var v interface{}
+	var v any
 	v, err = r.Recompose(src)
 	tt.Nil(t, err, "Recompose")
 	d, _ := v.(*Dummy)
 	tt.NotNil(t, d, "Dummy")
-	tt.Equal(t, []interface{}{-8, true, 1.2, "abc", map[string]interface{}{"big": "123", "time": tm}}, d.Nest)
+	tt.Equal(t, []any{-8, true, 1.2, "abc", map[string]any{"big": "123", "time": tm}}, d.Nest)
 }
 
 func TestRecomposeFunc(t *testing.T) {
 	type SillyWrap struct {
 		Silly *silly
 	}
-	src := map[string]interface{}{
-		"silly": map[string]interface{}{"type": "silly", "val": 3},
+	src := map[string]any{
+		"silly": map[string]any{"type": "silly", "val": 3},
 	}
-	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&silly{}: sillyRecompose})
+	r, err := alt.NewRecomposer("type", map[any]alt.RecomposeFunc{&silly{}: sillyRecompose})
 	tt.Nil(t, err, "NewRecomposer")
-	var v interface{}
+	var v any
 	var wrap SillyWrap
 	v, err = r.Recompose(src, &wrap)
 	tt.Nil(t, err, "Recompose")
@@ -102,21 +102,21 @@ func TestRecomposeFunc(t *testing.T) {
 
 	v, err = r.Recompose(src)
 	tt.Nil(t, err, "Recompose")
-	m, _ := v.(map[string]interface{})
+	m, _ := v.(map[string]any)
 	tt.NotNil(t, m["silly"])
 
-	src = map[string]interface{}{
-		"silly": map[string]interface{}{"type": "silly", "val": true},
+	src = map[string]any{
+		"silly": map[string]any{"type": "silly", "val": true},
 	}
 	_, err = r.Recompose(src, &wrap)
 	tt.NotNil(t, err, "Recompose should return and error")
 }
 
 func TestRecomposeReflect(t *testing.T) {
-	src := map[string]interface{}{"type": "Dummy", "val": 3, "extra": true, "fun": true}
-	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Dummy{}: nil})
+	src := map[string]any{"type": "Dummy", "val": 3, "extra": true, "fun": true}
+	r, err := alt.NewRecomposer("type", map[any]alt.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
-	var v interface{}
+	var v any
 	v, err = r.Recompose(src)
 	tt.Nil(t, err, "Recompose")
 	d, _ := v.(*Dummy)
@@ -125,26 +125,26 @@ func TestRecomposeReflect(t *testing.T) {
 }
 
 func TestRecomposeAttrSetter(t *testing.T) {
-	src := map[string]interface{}{"type": "Setter", "a": 3, "b": "bee"}
-	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Setter{}: nil})
+	src := map[string]any{"type": "Setter", "a": 3, "b": "bee"}
+	r, err := alt.NewRecomposer("type", map[any]alt.RecomposeFunc{&Setter{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
-	var v interface{}
+	var v any
 	v, err = r.Recompose(src)
 	tt.Nil(t, err, "Recompose")
 	s, _ := v.(*Setter)
 	tt.NotNil(t, s, "check type")
 	tt.Equal(t, "Setter{a:3,b:bee}", s.String())
 
-	src = map[string]interface{}{"type": "Setter", "a": 3, "b": "bee", "c": 5}
+	src = map[string]any{"type": "Setter", "a": 3, "b": "bee", "c": 5}
 	_, err = r.Recompose(src)
 	tt.NotNil(t, err, "Recompose from bad source")
 }
 
 func TestRecomposeReflectList(t *testing.T) {
-	src := map[string]interface{}{"type": "WithList", "list": []interface{}{1, 2, 3}}
-	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&WithList{}: nil})
+	src := map[string]any{"type": "WithList", "list": []any{1, 2, 3}}
+	r, err := alt.NewRecomposer("type", map[any]alt.RecomposeFunc{&WithList{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
-	var v interface{}
+	var v any
 	v, err = r.Recompose(src)
 	tt.Nil(t, err, "Recompose")
 	wl, _ := v.(*WithList)
@@ -153,46 +153,46 @@ func TestRecomposeReflectList(t *testing.T) {
 }
 
 func TestRecomposeBadMap(t *testing.T) {
-	_, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{3: nil})
+	_, err := alt.NewRecomposer("type", map[any]alt.RecomposeFunc{3: nil})
 	tt.NotNil(t, err, "NewRecomposer")
 }
 
 func TestRecomposeBadField(t *testing.T) {
-	src := map[string]interface{}{"type": "Dummy", "val": true}
-	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Dummy{}: nil})
+	src := map[string]any{"type": "Dummy", "val": true}
+	r, err := alt.NewRecomposer("type", map[any]alt.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
 	_, err = r.Recompose(src)
 	tt.NotNil(t, err, "Recompose")
 }
 
 func TestRecomposeReflectListBad(t *testing.T) {
-	src := map[string]interface{}{"type": "WithList", "list": []interface{}{1, true, 3}}
-	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&WithList{}: nil})
+	src := map[string]any{"type": "WithList", "list": []any{1, true, 3}}
+	r, err := alt.NewRecomposer("type", map[any]alt.RecomposeFunc{&WithList{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
 	_, err = r.Recompose(src)
 	tt.NotNil(t, err, "Recompose")
 }
 
 func TestRecomposeBadListItem(t *testing.T) {
-	src := map[string]interface{}{
+	src := map[string]any{
 		"type": "Dummy",
 		"val":  3,
-		"nest": []interface{}{func() {}},
+		"nest": []any{func() {}},
 	}
-	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Dummy{}: nil})
+	r, err := alt.NewRecomposer("type", map[any]alt.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
 	_, err = r.Recompose(src)
 	tt.NotNil(t, err, "Recompose")
 }
 
 func TestRecomposeListResult(t *testing.T) {
-	src := []interface{}{
-		map[string]interface{}{"type": "Dummy", "val": 1},
-		map[string]interface{}{"type": "Dummy", "val": 2},
+	src := []any{
+		map[string]any{"type": "Dummy", "val": 1},
+		map[string]any{"type": "Dummy", "val": 2},
 	}
-	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Dummy{}: nil})
+	r, err := alt.NewRecomposer("type", map[any]alt.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
-	var v interface{}
+	var v any
 	v, err = r.Recompose(src, []*Dummy{})
 	tt.Nil(t, err, "Recompose")
 	da, _ := v.([]*Dummy)
@@ -208,9 +208,9 @@ func TestRecomposeArrayResult(t *testing.T) {
 		gen.Object{"type": gen.String("Dummy"), "val": gen.Int(1)},
 		gen.Object{"type": gen.String("Dummy"), "val": gen.Int(2)},
 	}
-	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{&Dummy{}: nil})
+	r, err := alt.NewRecomposer("type", map[any]alt.RecomposeFunc{&Dummy{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
-	var v interface{}
+	var v any
 	v, err = r.Recompose(src, []*Dummy{})
 	tt.Nil(t, err, "Recompose")
 	da, _ := v.([]*Dummy)
@@ -228,15 +228,15 @@ func TestRecomposeArrayResult(t *testing.T) {
 }
 
 func TestRecomposeListBadResult(t *testing.T) {
-	src := []interface{}{true}
-	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{})
+	src := []any{true}
+	r, err := alt.NewRecomposer("type", map[any]alt.RecomposeFunc{})
 	tt.Nil(t, err, "NewRecomposer")
 	_, err = r.Recompose(src, []*Dummy{})
 	tt.NotNil(t, err, "Recompose")
 }
 
 func TestRecomposeListBadTarget(t *testing.T) {
-	r, err := alt.NewRecomposer("type", map[interface{}]alt.RecomposeFunc{})
+	r, err := alt.NewRecomposer("type", map[any]alt.RecomposeFunc{})
 	tt.Nil(t, err, "NewRecomposer")
 	_, err = r.Recompose("[]", 7)
 	tt.NotNil(t, err, "Recompose")
@@ -263,10 +263,10 @@ func TestRecomposeNested(t *testing.T) {
 	_ = jp.C("friends").W().C("^").Set(simple, "Child")
 	// Make sure the recomposer knows about the Child type so the hint has
 	// something to refer to.
-	r, err := alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Parent{}: nil})
+	r, err := alt.NewRecomposer("^", map[any]alt.RecomposeFunc{&Parent{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
 
-	var v interface{}
+	var v any
 	v, err = r.Recompose(simple, &Parent{})
 	tt.Nil(t, err, "Recompose")
 	p, _ := v.(*Parent)
@@ -287,7 +287,7 @@ func TestRecomposeSlice(t *testing.T) {
 	r, err := alt.NewRecomposer("", nil)
 	tt.Nil(t, err, "NewRecomposer")
 	var slice []Child
-	var v interface{}
+	var v any
 	v, err = r.Recompose(simple, &slice)
 	tt.Nil(t, err, "Recompose")
 
@@ -308,7 +308,7 @@ func TestRecomposePtrSlice(t *testing.T) {
 	tt.Nil(t, err, "NewRecomposer")
 
 	var slice []*Child
-	var v interface{}
+	var v any
 	v, err = r.Recompose(simple, &slice)
 	tt.Nil(t, err, "Recompose")
 
@@ -329,7 +329,7 @@ func TestRecomposePtrMap(t *testing.T) {
 	tt.Nil(t, err, "NewRecomposer")
 
 	var out map[string]*Child
-	var v interface{}
+	var v any
 	v, err = r.Recompose(simple, &out)
 	tt.Nil(t, err, "Recompose")
 
@@ -355,16 +355,16 @@ func TestRecomposeNotSettable(t *testing.T) {
 	type NotSet struct {
 		X chan bool
 	}
-	src := map[string]interface{}{"x": 3}
+	src := map[string]any{"x": 3}
 	var out NotSet
 	_, err := alt.Recompose(src, &out)
 	tt.NotNil(t, err, "Recompose")
 }
 
 func TestRecomposeMap(t *testing.T) {
-	src := map[string]interface{}{"x": 3}
-	var out map[string]interface{}
-	var v interface{}
+	src := map[string]any{"x": 3}
+	var out map[string]any
+	var v any
 	v, err := alt.Recompose(src, &out)
 	tt.Nil(t, err, "Recompose")
 
@@ -374,7 +374,7 @@ func TestRecomposeMap(t *testing.T) {
 	diff = alt.Compare(out, v)
 	tt.Equal(t, 0, len(diff), "compare target and return: diff - ", diff)
 
-	out = map[string]interface{}{}
+	out = map[string]any{}
 	v, err = alt.Recompose(src, out)
 	tt.Nil(t, err, "Recompose")
 
@@ -392,9 +392,9 @@ func TestRecomposeMap(t *testing.T) {
 }
 
 func TestRecomposeBadComposerFunc(t *testing.T) {
-	src := map[string]interface{}{"^": "Dummy", "x": 3}
+	src := map[string]any{"^": "Dummy", "x": 3}
 	r, err := alt.NewRecomposer("^",
-		map[interface{}]alt.RecomposeFunc{&Dummy{}: func(_ map[string]interface{}) (interface{}, error) {
+		map[any]alt.RecomposeFunc{&Dummy{}: func(_ map[string]any) (any, error) {
 			return nil, fmt.Errorf("failed")
 		}})
 	tt.Nil(t, err, "NewRecomposer")
@@ -405,7 +405,7 @@ func TestRecomposeBadComposerFunc(t *testing.T) {
 func TestRecomposeGenComposerFunc(t *testing.T) {
 	src := gen.Object{"^": gen.String("Dummy"), "val": gen.Int(3)}
 	r, err := alt.NewRecomposer("^",
-		map[interface{}]alt.RecomposeFunc{&Dummy{}: func(_ map[string]interface{}) (interface{}, error) {
+		map[any]alt.RecomposeFunc{&Dummy{}: func(_ map[string]any) (any, error) {
 			return nil, fmt.Errorf("failed")
 		}})
 	tt.Nil(t, err, "NewRecomposer")
@@ -413,11 +413,11 @@ func TestRecomposeGenComposerFunc(t *testing.T) {
 	tt.NotNil(t, err, "Recompose")
 
 	r, err = alt.NewRecomposer("^",
-		map[interface{}]alt.RecomposeFunc{&Dummy{}: func(data map[string]interface{}) (interface{}, error) {
+		map[any]alt.RecomposeFunc{&Dummy{}: func(data map[string]any) (any, error) {
 			return &Dummy{Val: int(alt.Int(jp.C("val").First(data)))}, nil
 		}})
 	tt.Nil(t, err, "NewRecomposer")
-	var v interface{}
+	var v any
 	v, err = r.Recompose(src)
 	tt.Nil(t, err, "Recompose")
 	d, _ := v.(*Dummy)
@@ -426,41 +426,41 @@ func TestRecomposeGenComposerFunc(t *testing.T) {
 }
 
 func TestRecomposeNotSlice(t *testing.T) {
-	src := map[string]interface{}{"x": 3}
-	var out []interface{}
+	src := map[string]any{"x": 3}
+	var out []any
 	_, err := alt.Recompose(src, &out)
 	tt.NotNil(t, err, "Recompose")
 }
 
 func TestRecomposeNotMap(t *testing.T) {
-	src := []interface{}{3}
-	var out map[string]interface{}
+	src := []any{3}
+	var out map[string]any
 	_, err := alt.Recompose(src, &out)
 	tt.NotNil(t, err, "Recompose")
 }
 
 func TestRecomposeOtherMap(t *testing.T) {
 	src := map[string]int{"x": 3}
-	var out map[string]interface{}
+	var out map[string]any
 	v, err := alt.Recompose(src, &out)
 	tt.Nil(t, err, "Recompose")
-	vo, _ := v.(map[string]interface{})
+	vo, _ := v.(map[string]any)
 	tt.NotNil(t, vo)
 	tt.Equal(t, 3, vo["x"].(int64))
 }
 
 func TestRecomposeOtherMap2(t *testing.T) {
 	src := map[string]int64{"x": 3}
-	var out map[string]interface{}
+	var out map[string]any
 	v, err := alt.Recompose(src, &out)
 	tt.Nil(t, err, "Recompose")
-	vo, _ := v.(map[string]interface{})
+	vo, _ := v.(map[string]any)
 	tt.NotNil(t, vo)
 	tt.Equal(t, 3, vo["x"].(int64))
 }
 
 func TestRecomposeSimpleMap(t *testing.T) {
-	src := map[string]interface{}{"x": map[string]interface{}{"val": 3}}
+	src := map[string]any{"x": map[string]any{"val": 3}}
 	var out map[string]Dummy
 	v, err := alt.Recompose(src, &out)
 	tt.Nil(t, err, "Recompose")
@@ -470,7 +470,7 @@ func TestRecomposeSimpleMap(t *testing.T) {
 }
 
 func TestRecomposeAlternateKeys(t *testing.T) {
-	src := map[string]interface{}{"Val": 3}
+	src := map[string]any{"Val": 3}
 	var out Anno
 	v, err := alt.Recompose(src, &out)
 	tt.Nil(t, err, "Recompose")
@@ -478,14 +478,14 @@ func TestRecomposeAlternateKeys(t *testing.T) {
 	tt.NotNil(t, a)
 	tt.Equal(t, 3, a.Val)
 
-	src = map[string]interface{}{"val": 3}
+	src = map[string]any{"val": 3}
 	v, err = alt.Recompose(src, &out)
 	tt.Nil(t, err, "Recompose")
 	a, _ = v.(*Anno)
 	tt.NotNil(t, a)
 	tt.Equal(t, 3, a.Val)
 
-	src = map[string]interface{}{"v": 3}
+	src = map[string]any{"v": 3}
 	v, err = alt.Recompose(src, &out)
 	tt.Nil(t, err, "Recompose")
 	a, _ = v.(*Anno)
@@ -494,9 +494,9 @@ func TestRecomposeAlternateKeys(t *testing.T) {
 }
 
 func TestRecomposeInterface(t *testing.T) {
-	src := map[string]interface{}{"^": "Child", "name": "Pat"}
+	src := map[string]any{"^": "Child", "name": "Pat"}
 
-	r, err := alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Child{}: nil})
+	r, err := alt.NewRecomposer("^", map[any]alt.RecomposeFunc{&Child{}: nil})
 	tt.Nil(t, err, "NewRecomposer")
 
 	var out fmt.Stringer
@@ -513,7 +513,7 @@ type BooFlu struct {
 }
 
 func TestRecomposeTags(t *testing.T) {
-	src := map[string]interface{}{"v": 3, "Title": 2, "skip": 7, "-": 4, "str": "1"}
+	src := map[string]any{"v": 3, "Title": 2, "skip": 7, "-": 4, "str": "1"}
 	var out Anno
 	v, err := alt.Recompose(src, &out)
 	tt.Nil(t, err, "Recompose")
@@ -525,24 +525,24 @@ func TestRecomposeTags(t *testing.T) {
 	tt.Equal(t, 1, a.Str)
 	tt.Equal(t, 4, a.Dash)
 
-	src = map[string]interface{}{"str": "1x"}
+	src = map[string]any{"str": "1x"}
 	_, err = alt.Recompose(src, &out)
 	tt.NotNil(t, err, "Recompose tag str invalid")
 
 	var bf BooFlu
-	src = map[string]interface{}{"boo": "true", "flu": "1.23"}
+	src = map[string]any{"boo": "true", "flu": "1.23"}
 	_, err = alt.Recompose(src, &bf)
 	tt.Nil(t, err, "Recompose tag string ok")
 
-	src = map[string]interface{}{"boo": true, "flu": 1.23}
+	src = map[string]any{"boo": true, "flu": 1.23}
 	_, err = alt.Recompose(src, &bf)
 	tt.Nil(t, err, "Recompose tag not string")
 
-	src = map[string]interface{}{"boo": "yes"}
+	src = map[string]any{"boo": "yes"}
 	_, err = alt.Recompose(src, &bf)
 	tt.NotNil(t, err, "Recompose tag invalid string")
 
-	src = map[string]interface{}{"boo": "true", "flu": "1x2"}
+	src = map[string]any{"boo": "true", "flu": "1x2"}
 	_, err = alt.Recompose(src, &bf)
 	tt.NotNil(t, err, "Recompose tag invalid string")
 }
@@ -550,22 +550,22 @@ func TestRecomposeTags(t *testing.T) {
 func TestRecomposeNil(t *testing.T) {
 	r, err := alt.NewRecomposer("", nil)
 	tt.Nil(t, err, "NewRecomposer")
-	var v interface{}
-	var a []interface{}
+	var v any
+	var a []any
 	v, err = r.Recompose(nil, &a)
 	tt.Nil(t, err, "Recompose")
-	tt.Equal(t, []interface{}{}, v)
+	tt.Equal(t, []any{}, v)
 
 	var list WithList
-	v, err = r.Recompose(map[string]interface{}{"list": nil}, &list)
+	v, err = r.Recompose(map[string]any{"list": nil}, &list)
 	tt.Nil(t, err, "Recompose")
 	l2, _ := v.(*WithList)
 	tt.NotNil(t, l2)
 
-	m := map[string]interface{}{}
+	m := map[string]any{}
 	v, err = r.Recompose(nil, m)
 	tt.Nil(t, err, "Recompose")
-	tt.Equal(t, map[string]interface{}{}, v)
+	tt.Equal(t, map[string]any{}, v)
 
 	var d Dummy
 	v, err = r.Recompose(nil, &d)
@@ -577,7 +577,7 @@ func TestRecomposeNil(t *testing.T) {
 
 func TestMustNewRecomposePanic(t *testing.T) {
 	tt.Panic(t, func() {
-		_ = alt.MustNewRecomposer("^", nil, map[interface{}]alt.RecomposeAnyFunc{true: nil})
+		_ = alt.MustNewRecomposer("^", nil, map[any]alt.RecomposeAnyFunc{true: nil})
 	})
 }
 
@@ -590,14 +590,14 @@ func TestRecomposerRegister(t *testing.T) {
 	err := r.RegisterComposer(&Sample{}, nil)
 	tt.Nil(t, err)
 	err = r.RegisterAnyComposer(time.Time{},
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			if secs, ok := v.(int); ok {
 				return time.Unix(int64(secs), 0), nil
 			}
 			return nil, fmt.Errorf("can not convert a %T to a time.Time", v)
 		})
 	tt.Nil(t, err)
-	data := map[string]interface{}{"^": "Sample", "int": 3, "when": 1612872722}
+	data := map[string]any{"^": "Sample", "int": 3, "when": 1612872722}
 	v := r.MustRecompose(data)
 	sample, _ := v.(*Sample)
 	tt.NotNil(t, sample)
@@ -609,7 +609,7 @@ func TestRecomposerRegister(t *testing.T) {
 	err = r.RegisterComposer(&Sample{}, nil)
 	tt.Nil(t, err)
 	err = r.RegisterAnyComposer(time.Time{},
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			if secs, ok := v.(int); ok {
 				return time.Unix(int64(secs), 0), nil
 			}
@@ -617,7 +617,7 @@ func TestRecomposerRegister(t *testing.T) {
 		})
 	tt.Nil(t, err)
 	err = r.RegisterComposer(time.Time{},
-		func(v map[string]interface{}) (interface{}, error) {
+		func(v map[string]any) (any, error) {
 			for _, m := range v {
 				if secs, ok := m.(int); ok {
 					return time.Unix(int64(secs), 0), nil
@@ -627,14 +627,14 @@ func TestRecomposerRegister(t *testing.T) {
 			return nil, fmt.Errorf("can not convert a %T to a time.Time", v)
 		})
 	tt.Nil(t, err)
-	data = map[string]interface{}{"^": "Sample", "int": 3, "when": map[string]interface{}{"@": 1612872722}}
+	data = map[string]any{"^": "Sample", "int": 3, "when": map[string]any{"@": 1612872722}}
 	v = r.MustRecompose(data)
 	sample, _ = v.(*Sample)
 	tt.NotNil(t, sample)
 	tt.Equal(t, 3, sample.Int)
 	tt.Equal(t, int64(1612872722), sample.When.Unix())
 
-	data = map[string]interface{}{"^": "Sample", "int": 3, "when": true}
+	data = map[string]any{"^": "Sample", "int": 3, "when": true}
 	v = r.MustRecompose(data)
 	sample, _ = v.(*Sample)
 	tt.NotNil(t, sample)
@@ -645,8 +645,8 @@ func TestRecomposeReflectBool(t *testing.T) {
 	type Sample struct {
 		Boo bool
 	}
-	r := alt.MustNewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Sample{}: nil})
-	data := map[string]interface{}{"^": "Sample", "boo": true}
+	r := alt.MustNewRecomposer("^", map[any]alt.RecomposeFunc{&Sample{}: nil})
+	data := map[string]any{"^": "Sample", "boo": true}
 	var sample Sample
 	v := r.MustRecompose(data, &sample)
 	tt.NotNil(t, v)
@@ -658,7 +658,7 @@ func TestRecomposerAnyComposePtr(t *testing.T) {
 	}
 	r := alt.MustNewRecomposer("^", nil)
 	err := r.RegisterAnyComposer(time.Time{},
-		func(v interface{}) (interface{}, error) {
+		func(v any) (any, error) {
 			if secs, ok := v.(int); ok {
 				t := time.Unix(int64(secs), 0)
 				return &t, nil
@@ -666,12 +666,12 @@ func TestRecomposerAnyComposePtr(t *testing.T) {
 			return nil, fmt.Errorf("can not convert a %T to a time.Time", v)
 		})
 	tt.Nil(t, err)
-	data := map[string]interface{}{"^": "Sample", "when": 1612872722}
+	data := map[string]any{"^": "Sample", "when": 1612872722}
 	var sample Sample
 	_ = r.MustRecompose(data, &sample)
 	tt.Equal(t, int64(1612872722), sample.When.Unix())
 
-	data = map[string]interface{}{"^": "Sample", "when": true}
+	data = map[string]any{"^": "Sample", "when": true}
 	tt.Panic(t, func() {
 		_ = r.MustRecompose(data, &sample)
 	})
@@ -682,8 +682,8 @@ func TestRecomposeReflectPrivate(t *testing.T) {
 		X int
 		y int
 	}
-	r := alt.MustNewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Sample{}: nil})
-	data := map[string]interface{}{"^": "Sample", "x": 1, "y": 2}
+	r := alt.MustNewRecomposer("^", map[any]alt.RecomposeFunc{&Sample{}: nil})
+	data := map[string]any{"^": "Sample", "x": 1, "y": 2}
 	var sample Sample
 	v := r.MustRecompose(data, &sample)
 	tt.NotNil(t, v)
@@ -697,9 +697,9 @@ func TestRecomposeEmbeddedMap(t *testing.T) {
 		Sb map[string]bool
 	}
 	r := alt.MustNewRecomposer("^", nil)
-	src := map[string]interface{}{
-		"ss": map[string]interface{}{"one": "two"},
-		"sb": map[string]interface{}{"yes": true},
+	src := map[string]any{
+		"ss": map[string]any{"one": "two"},
+		"sb": map[string]any{"yes": true},
 	}
 	var sample Sample
 	_ = r.MustRecompose(src, &sample)
@@ -707,15 +707,15 @@ func TestRecomposeEmbeddedMap(t *testing.T) {
 	tt.Equal(t, true, sample.Sb["yes"])
 }
 
-type TagMap map[string]interface{}
+type TagMap map[string]any
 
 func (tm *TagMap) UnmarshalJSON(data []byte) error {
-	*tm = map[string]interface{}{}
+	*tm = map[string]any{}
 	simple, err := oj.Parse(data)
 	if err != nil {
 		return err
 	}
-	for _, kv := range simple.([]interface{}) {
+	for _, kv := range simple.([]any) {
 		k := jp.C("key").First(kv).(string)
 		if k == "fail" {
 			return fmt.Errorf("intentional fail")
@@ -725,12 +725,12 @@ func (tm *TagMap) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func recomposeToJSON(v interface{}) (interface{}, error) {
+func recomposeToJSON(v any) (any, error) {
 	return []byte(oj.JSON(v)), nil
 }
 
 func TestRecomposeUnmarshaller(t *testing.T) {
-	src := []interface{}{map[string]interface{}{"key": "k1", "value": 1}}
+	src := []any{map[string]any{"key": "k1", "value": 1}}
 
 	r := alt.MustNewRecomposer("^", nil)
 	r.RegisterUnmarshalerComposer(recomposeToJSON)
@@ -740,7 +740,7 @@ func TestRecomposeUnmarshaller(t *testing.T) {
 	tt.Equal(t, 1, len(tags))
 	tt.Equal(t, 1, tags["k1"])
 
-	src = []interface{}{map[string]interface{}{"key": "fail", "value": 1}}
+	src = []any{map[string]any{"key": "fail", "value": 1}}
 
 	_, err := alt.Recompose(src, &tags)
 	tt.NotNil(t, err)
@@ -750,7 +750,7 @@ func TestRecomposeUnmarshallerField(t *testing.T) {
 	type Wrap struct {
 		X TagMap
 	}
-	src := map[string]interface{}{"X": []interface{}{map[string]interface{}{"key": "k1", "value": 1}}}
+	src := map[string]any{"X": []any{map[string]any{"key": "k1", "value": 1}}}
 
 	r := alt.MustNewRecomposer("^", nil)
 	r.RegisterUnmarshalerComposer(recomposeToJSON)
@@ -761,13 +761,13 @@ func TestRecomposeUnmarshallerField(t *testing.T) {
 	tt.Equal(t, 1, len(wrap.X))
 	tt.Equal(t, 1, wrap.X["k1"])
 
-	src = map[string]interface{}{"X": []interface{}{map[string]interface{}{"key": "fail", "value": 1}}}
+	src = map[string]any{"X": []any{map[string]any{"key": "fail", "value": 1}}}
 	_, err := alt.Recompose(src, &wrap)
 	tt.NotNil(t, err)
 }
 
 func TestRecomposeUnmarshallerList(t *testing.T) {
-	src := []interface{}{[]interface{}{map[string]interface{}{"key": "k1", "value": 1}}}
+	src := []any{[]any{map[string]any{"key": "k1", "value": 1}}}
 
 	r := alt.MustNewRecomposer("^", nil)
 	r.RegisterUnmarshalerComposer(recomposeToJSON)

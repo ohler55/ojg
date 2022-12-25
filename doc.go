@@ -12,8 +12,8 @@ types.
 	float64
 	string
 	time.Time
-	[]interface{}
-	map[string]interface{}
+	[]any
+	map[string]any
 
 # Oj
 
@@ -60,7 +60,7 @@ to follow a path.
 The alt package contains functions and types for altering values. It includes functions for:
 
 	Decompose() a value into simple types of bool, int64, float64, string,
-		time.Time, []interface{} and map[string]interface{}.
+		time.Time, []any and map[string]any.
 
 	Recompose() takes simple data type and converts it back into a complex type.
 

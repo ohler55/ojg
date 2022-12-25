@@ -15,8 +15,8 @@ var fnMap = map[string]Fn{}
 // Fn encapsulates the information about a formula function in the package.
 type Fn struct {
 	Name     string
-	Eval     func(root map[string]interface{}, at interface{}, args ...interface{}) interface{}
-	Args     []interface{}
+	Eval     func(root map[string]any, at any, args ...any) any
+	Args     []any
 	Desc     string
 	Compile  func(*Fn)
 	compiled bool
@@ -48,8 +48,8 @@ func NewFn(name string) (fn *Fn) {
 }
 
 // Simplify a function in to simple types that can be encodes as JSON or SEN.
-func (f *Fn) Simplify() interface{} {
-	simple := make([]interface{}, 0, len(f.Args)+1)
+func (f *Fn) Simplify() any {
+	simple := make([]any, 0, len(f.Args)+1)
 	simple = append(simple, f.Name)
 	for _, a := range f.Args {
 		switch ta := a.(type) {
@@ -74,7 +74,7 @@ func (f *Fn) compile() {
 		f.Compile(f)
 	} else {
 		for i, a := range f.Args {
-			if list, _ := a.([]interface{}); 0 < len(list) {
+			if list, _ := a.([]any); 0 < len(list) {
 				if name, _ := list[0].(string); 0 < len(name) {
 					if af := NewFn(name); af != nil {
 						af.Args = list[1:]
@@ -92,7 +92,7 @@ func (f *Fn) compile() {
 	f.compiled = true
 }
 
-func evalArg(root map[string]interface{}, at, arg interface{}) (val interface{}) {
+func evalArg(root map[string]any, at, arg any) (val any) {
 	switch ta := arg.(type) {
 	case *Fn:
 		val = ta.Eval(root, at, ta.Args...)

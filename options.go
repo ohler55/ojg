@@ -300,7 +300,7 @@ func (o *Options) AppendTime(buf []byte, t time.Time, sen bool) []byte {
 
 // DecomposeTime encodes time in the format specified by the settings of the
 // options.
-func (o *Options) DecomposeTime(t time.Time) (v interface{}) {
+func (o *Options) DecomposeTime(t time.Time) (v any) {
 	switch o.TimeFormat {
 	case "time":
 		v = t
@@ -313,12 +313,12 @@ func (o *Options) DecomposeTime(t time.Time) (v interface{}) {
 	}
 	if o.TimeMap {
 		if o.FullTypePath {
-			v = map[string]interface{}{o.CreateKey: "time/Time", "value": v}
+			v = map[string]any{o.CreateKey: "time/Time", "value": v}
 		} else {
-			v = map[string]interface{}{o.CreateKey: "Time", "value": v}
+			v = map[string]any{o.CreateKey: "Time", "value": v}
 		}
 	} else if 0 < len(o.TimeWrap) {
-		v = map[string]interface{}{o.TimeWrap: v}
+		v = map[string]any{o.TimeWrap: v}
 	}
 	return
 }

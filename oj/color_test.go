@@ -34,31 +34,31 @@ func TestColor(t *testing.T) {
 		{value: false, expect: "bfalsex"},
 		{value: "string", expect: `q"string"x`},
 		{value: gen.String("string"), expect: `q"string"x`},
-		{value: []interface{}{true, false}, expect: "s[xbtruexs,xbfalsexs]x"},
+		{value: []any{true, false}, expect: "s[xbtruexs,xbfalsexs]x"},
 		{value: gen.Array{gen.Bool(true), gen.Bool(false)}, expect: "s[xbtruexs,xbfalsexs]x"},
 		{value: gen.Object{"f": gen.False}, expect: `s{xk"f"xs:xbfalsexs}x`},
 		{value: gen.Object{"f": gen.False}, expect: `s{xk"f"xs:xbfalsexs}x`, options: &oj.Options{Sort: true}},
-		{value: map[string]interface{}{"t": true, "f": false},
+		{value: map[string]any{"t": true, "f": false},
 			expect: `s{xk"f"xs:xbfalsexs,xk"t"xs:xbtruexs}x`, options: &oj.Options{Sort: true}},
 		{value: gen.Array{gen.True, gen.False}, expect: "s[xbtruexs,xbfalsexs]x"},
 		{value: gen.Array{gen.False, gen.True}, expect: "s[xbfalsexs,xbtruexs]x"},
-		{value: []interface{}{-1, int8(2), int16(-3), int32(4), int64(-5)},
+		{value: []any{-1, int8(2), int16(-3), int32(4), int64(-5)},
 			expect: "s[x0-1xs,x02xs,x0-3xs,x04xs,x0-5xs]x"},
-		{value: []interface{}{uint(1), 'A', uint8(2), uint16(3), uint32(4), uint64(5)},
+		{value: []any{uint(1), 'A', uint8(2), uint16(3), uint32(4), uint64(5)},
 			expect: "s[x01xs,x065xs,x02xs,x03xs,x04xs,x05xs]x"},
 		{value: gen.Array{gen.Int(1), gen.Float(1.2)}, expect: "s[x01xs,x01.2xs]x"},
-		{value: []interface{}{float32(1.2), float64(2.1)}, expect: "s[x01.2xs,x02.1xs]x"},
-		{value: []interface{}{tm}, expect: "s[xt1588879759123456789xs]x"},
+		{value: []any{float32(1.2), float64(2.1)}, expect: "s[x01.2xs,x02.1xs]x"},
+		{value: []any{tm}, expect: "s[xt1588879759123456789xs]x"},
 		{value: gen.Array{gen.Time(tm)}, expect: "s[xt1588879759123456789xs]x"},
 
-		{value: map[string]interface{}{"t": true, "x": nil}, expect: "s{xk\"t\"xs:xbtruexs}x",
+		{value: map[string]any{"t": true, "x": nil}, expect: "s{xk\"t\"xs:xbtruexs}x",
 			options: &oj.Options{OmitNil: true}},
-		{value: map[string]interface{}{"t": true, "x": nil}, expect: "s{xk\"t\"xs:xbtruexs}x",
+		{value: map[string]any{"t": true, "x": nil}, expect: "s{xk\"t\"xs:xbtruexs}x",
 			options: &oj.Options{OmitNil: true, Sort: true}},
-		{value: map[string]interface{}{"t": true, "f": false},
+		{value: map[string]any{"t": true, "f": false},
 			expect:  "s{x\n  k\"f\"xs:x bfalsexs,x\n  k\"t\"xs:x btruex\ns}x",
 			options: &oj.Options{Sort: true, Indent: 2}},
-		{value: map[string]interface{}{"t": true},
+		{value: map[string]any{"t": true},
 			expect: "s{x\n  k\"t\"xs:x btruex\ns}x", options: &oj.Options{Indent: 2}},
 		{value: gen.Object{"t": gen.True, "x": nil}, expect: "s{xk\"t\"xs:xbtruexs}x",
 			options: &oj.Options{OmitNil: true}},
@@ -112,7 +112,7 @@ func TestColorWide(t *testing.T) {
 		Indent:      300,
 		WriteLimit:  2,
 	}
-	err := oj.Write(&b, []interface{}{[]interface{}{true, nil}}, &opt)
+	err := oj.Write(&b, []any{[]any{true, nil}}, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, 544, len(b.String()))
 
@@ -122,7 +122,7 @@ func TestColorWide(t *testing.T) {
 	tt.Equal(t, 544, len(b.String()))
 
 	b.Reset()
-	err = oj.Write(&b, map[string]interface{}{"x": map[string]interface{}{"y": true, "z": nil}}, &opt)
+	err = oj.Write(&b, map[string]any{"x": map[string]any{"y": true, "z": nil}}, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, 571, len(b.String()))
 
@@ -147,9 +147,9 @@ func TestColorDeep(t *testing.T) {
 		Tab:         true,
 		WriteLimit:  2,
 	}
-	a := []interface{}{map[string]interface{}{"x": true}}
+	a := []any{map[string]any{"x": true}}
 	for i := 40; 0 < i; i-- {
-		a = []interface{}{a}
+		a = []any{a}
 	}
 	err := oj.Write(&b, a, &opt)
 	tt.Nil(t, err)
@@ -179,18 +179,18 @@ func TestColorShort(t *testing.T) {
 		Indent:      2,
 		WriteLimit:  2,
 	}
-	err := oj.Write(&shortWriter{max: 3}, []interface{}{true, nil}, &opt)
+	err := oj.Write(&shortWriter{max: 3}, []any{true, nil}, &opt)
 	tt.NotNil(t, err)
 	err = oj.Write(&shortWriter{max: 3}, gen.Array{gen.True, nil}, &opt)
 	tt.NotNil(t, err)
 
 	opt.Indent = 0
-	err = oj.Write(&shortWriter{max: 3}, []interface{}{true, nil}, &opt)
+	err = oj.Write(&shortWriter{max: 3}, []any{true, nil}, &opt)
 	tt.NotNil(t, err)
 	err = oj.Write(&shortWriter{max: 3}, gen.Array{gen.True, nil}, &opt)
 	tt.NotNil(t, err)
 
-	obj := map[string]interface{}{"t": true, "n": nil}
+	obj := map[string]any{"t": true, "n": nil}
 	sobj := gen.Object{"t": gen.True, "n": nil}
 	err = oj.Write(&shortWriter{max: 7}, obj, &opt)
 	tt.NotNil(t, err)
@@ -231,7 +231,7 @@ func TestColorMarshal(t *testing.T) {
 	}
 	var b strings.Builder
 
-	err := oj.Write(&b, []interface{}{true, &Dummy{Val: 3}}, &opt)
+	err := oj.Write(&b, []any{true, &Dummy{Val: 3}}, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, `s[xbtruexs,x"\u0026{3}"xs]x`, b.String())
 }

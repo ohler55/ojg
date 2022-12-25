@@ -23,17 +23,17 @@ func TestAppend(t *testing.T) {
 }
 
 func TestAppendArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"append", []interface{}{}, 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"append", []any{}, 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestAppendArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"append", 1, "x"},
+	p := asm.NewPlan([]any{
+		[]any{"append", 1, "x"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

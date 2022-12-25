@@ -25,7 +25,7 @@ be raised.`,
 	})
 }
 
-func quotient(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func quotient(root map[string]any, at any, args ...any) any {
 	var iq int64
 	var fq float64
 	isFloat := false

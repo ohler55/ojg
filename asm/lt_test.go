@@ -44,19 +44,19 @@ func TestLtString(t *testing.T) {
 }
 
 func TestLtWrongType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", "$.asm.i", []interface{}{"lt", true, false}},
+	p := asm.NewPlan([]any{
+		[]any{"set", "$.asm.i", []any{"lt", true, false}},
 	})
-	root := map[string]interface{}{}
+	root := map[string]any{}
 	err := p.Execute(root)
 	tt.NotNil(t, err)
 }
 
 func TestLtWrongType2(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", "$.asm.i", []interface{}{"lt", 1, false}},
+	p := asm.NewPlan([]any{
+		[]any{"set", "$.asm.i", []any{"lt", 1, false}},
 	})
-	root := map[string]interface{}{}
+	root := map[string]any{}
 	err := p.Execute(root)
 	tt.NotNil(t, err)
 }

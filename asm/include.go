@@ -17,13 +17,13 @@ string and the second string argument is included in the first.`,
 	})
 }
 
-func include(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func include(root map[string]any, at any, args ...any) any {
 	if len(args) != 2 {
 		panic(fmt.Errorf("include expects two arguments. %d given", len(args)))
 	}
 	v1 := evalArg(root, at, args[1])
 	switch v := evalArg(root, at, args[0]).(type) {
-	case []interface{}:
+	case []any:
 		for _, m := range v {
 			if m == v1 {
 				return true

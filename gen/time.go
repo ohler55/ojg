@@ -32,12 +32,12 @@ func (n Time) String() string {
 }
 
 // Alter returns the backing time.Time value of the Node.
-func (n Time) Alter() interface{} {
+func (n Time) Alter() any {
 	return time.Time(n)
 }
 
 // Simplify returns the backing time.Time value of the Node.
-func (n Time) Simplify() interface{} {
+func (n Time) Simplify() any {
 	return time.Time(n)
 }
 

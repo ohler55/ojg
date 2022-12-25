@@ -30,25 +30,25 @@ func TestNth(t *testing.T) {
 }
 
 func TestNthArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"nth", []interface{}{}, 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"nth", []any{}, 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestNthArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"nth", 1, "x"},
+	p := asm.NewPlan([]any{
+		[]any{"nth", 1, "x"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestNthArgType2(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"nth", []interface{}{}, true},
+	p := asm.NewPlan([]any{
+		[]any{"nth", []any{}, true},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

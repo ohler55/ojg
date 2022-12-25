@@ -23,7 +23,7 @@ type Genericer interface {
 
 // Generify converts a value into Node compliant data. A best effort is made
 // to convert values that are not simple into generic Nodes.
-func Generify(v interface{}, options ...*Options) (n gen.Node) {
+func Generify(v any, options ...*Options) (n gen.Node) {
 	opt := &DefaultOptions
 	if 0 < len(options) {
 		opt = options[0]
@@ -70,13 +70,13 @@ func Generify(v interface{}, options ...*Options) (n gen.Node) {
 			n = gen.Time(tv)
 		case gen.Time:
 			n = tv
-		case []interface{}:
+		case []any:
 			a := make(gen.Array, len(tv))
 			for i, m := range tv {
 				a[i] = Generify(m, opt)
 			}
 			n = a
-		case map[string]interface{}:
+		case map[string]any:
 			o := gen.Object{}
 			for k, m := range tv {
 				g := Generify(m, opt)
@@ -105,7 +105,7 @@ func Generify(v interface{}, options ...*Options) (n gen.Node) {
 // GenAlter converts a simple go data element into Node compliant data. A best
 // effort is made to convert values that are not simple into generic Nodes. It
 // modifies the values inplace if possible by altering the original.
-func GenAlter(v interface{}, options ...*Options) (n gen.Node) {
+func GenAlter(v any, options ...*Options) (n gen.Node) {
 	opt := &DefaultOptions
 	if 0 < len(options) {
 		opt = options[0]
@@ -150,13 +150,13 @@ func GenAlter(v interface{}, options ...*Options) (n gen.Node) {
 			n = tv
 		case time.Time:
 			n = gen.Time(tv)
-		case []interface{}:
+		case []any:
 			a := *(*gen.Array)(unsafe.Pointer(&tv))
 			for i, m := range tv {
 				a[i] = GenAlter(m)
 			}
 			n = a
-		case map[string]interface{}:
+		case map[string]any:
 			o := *(*gen.Object)(unsafe.Pointer(&tv))
 			var delKeys []string
 			for k, m := range tv {
@@ -188,7 +188,7 @@ func GenAlter(v interface{}, options ...*Options) (n gen.Node) {
 	return
 }
 
-func reflectGenData(data interface{}, opt *Options) gen.Node {
+func reflectGenData(data any, opt *Options) gen.Node {
 	return reflectGenValue(reflect.ValueOf(data), opt)
 }
 

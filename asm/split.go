@@ -15,7 +15,7 @@ func init() {
 	})
 }
 
-func split(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func split(root map[string]any, at any, args ...any) any {
 	if len(args) != 2 {
 		panic(fmt.Errorf("split expects exactly two arguments. %d given", len(args)))
 	}
@@ -29,7 +29,7 @@ func split(root map[string]interface{}, at interface{}, args ...interface{}) int
 	if sep, ok = v.(string); !ok {
 		panic(fmt.Errorf("split expected a string separator argument, not a %T", v))
 	}
-	var list []interface{}
+	var list []any
 	for _, s := range strings.Split(s, sep) {
 		list = append(list, s)
 	}

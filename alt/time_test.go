@@ -12,7 +12,7 @@ import (
 )
 
 type timeData struct {
-	value    interface{}
+	value    any
 	defaults []time.Time
 	expect   time.Time
 }
@@ -48,8 +48,8 @@ func TestTime(t *testing.T) {
 		{value: "x", expect: tm, defaults: []time.Time{tm}},
 		{value: gen.String("x"), expect: tm, defaults: []time.Time{tm}},
 
-		{value: []interface{}{}, expect: zero},
-		{value: []interface{}{}, expect: tm, defaults: []time.Time{tm}},
+		{value: []any{}, expect: zero},
+		{value: []any{}, expect: tm, defaults: []time.Time{tm}},
 	} {
 		result := alt.Time(d.value, d.defaults...)
 		tt.Equal(t, d.expect, result, "Time(", d.value, d.defaults, ")")

@@ -31,7 +31,7 @@ const (
 	strSum
 )
 
-func sum(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func sum(root map[string]any, at any, args ...any) any {
 	kind := intSum
 	var ssum string
 	var isum int64

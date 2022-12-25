@@ -23,9 +23,9 @@ func TestArray(t *testing.T) {
 }
 
 func TestArrayArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"array?", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"array?", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

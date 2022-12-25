@@ -40,17 +40,17 @@ func TestQuotient(t *testing.T) {
 }
 
 func TestQuotientArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"quotient", 1, true},
+	p := asm.NewPlan([]any{
+		[]any{"quotient", 1, true},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestQuotientZero(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"quotient", 1, 0},
+	p := asm.NewPlan([]any{
+		[]any{"quotient", 1, 0},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

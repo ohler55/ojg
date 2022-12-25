@@ -16,7 +16,7 @@ type Plan struct {
 
 // NewPlan creates new place from a simplified (JSON) encoding of the
 // instance.
-func NewPlan(plan []interface{}) *Plan {
+func NewPlan(plan []any) *Plan {
 	if len(plan) == 0 {
 		return nil
 	}
@@ -39,7 +39,7 @@ func NewPlan(plan []interface{}) *Plan {
 }
 
 // Execute a plan.
-func (p *Plan) Execute(root map[string]interface{}) (err error) {
+func (p *Plan) Execute(root map[string]any) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = ojg.NewError(r)

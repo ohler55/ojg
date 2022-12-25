@@ -19,7 +19,7 @@ The local (@) value is returned.`,
 	})
 }
 
-func delall(root map[string]interface{}, at interface{}, args ...interface{}) (list interface{}) {
+func delall(root map[string]any, at any, args ...any) (list any) {
 	if len(args) != 1 {
 		panic(fmt.Errorf("delall expects exactly one arguments. %d given", len(args)))
 	}

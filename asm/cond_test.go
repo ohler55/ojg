@@ -34,17 +34,17 @@ func TestCond(t *testing.T) {
 }
 
 func TestCondArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"cond", 1, "x"},
+	p := asm.NewPlan([]any{
+		[]any{"cond", 1, "x"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestCondArgElementCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"cond", []interface{}{true, 1, 2}},
+	p := asm.NewPlan([]any{
+		[]any{"cond", []any{true, 1, 2}},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

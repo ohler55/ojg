@@ -38,9 +38,9 @@ func TestDif(t *testing.T) {
 }
 
 func TestDifArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"dif", 1, true},
+	p := asm.NewPlan([]any{
+		[]any{"dif", 1, true},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

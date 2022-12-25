@@ -137,7 +137,7 @@ func senParseChan(b *testing.B) {
 	} else {
 		panic(err)
 	}
-	rc := make(chan interface{}, b.N)
+	rc := make(chan any, b.N)
 	ready := make(chan bool)
 	go func() {
 		ready <- true

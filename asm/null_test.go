@@ -22,9 +22,9 @@ func TestNull(t *testing.T) {
 }
 
 func TestNullArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"null?", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"null?", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

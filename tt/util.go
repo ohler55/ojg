@@ -19,7 +19,7 @@ type call struct {
 	line int
 }
 
-func finishFail(t *testing.T, b *strings.Builder, args []interface{}) {
+func finishFail(t *testing.T, b *strings.Builder, args []any) {
 	stackFill(b)
 	if 0 < len(args) {
 		if format, _ := args[0].(string); 0 < len(format) {
@@ -49,11 +49,11 @@ func stackFill(b *strings.Builder) {
 	}
 }
 
-func isNil(v interface{}) bool {
+func isNil(v any) bool {
 	return (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0
 }
 
-func asInt(v interface{}) (i int64, ok bool) {
+func asInt(v any) (i int64, ok bool) {
 	ok = true
 	switch tv := v.(type) {
 	case int:
@@ -84,7 +84,7 @@ func asInt(v interface{}) (i int64, ok bool) {
 	return
 }
 
-func asFloat(v interface{}) (f float64, ok bool) {
+func asFloat(v any) (f float64, ok bool) {
 	ok = true
 	switch tv := v.(type) {
 	case float32:
@@ -99,7 +99,7 @@ func asFloat(v interface{}) (f float64, ok bool) {
 	return
 }
 
-func asString(v interface{}) (s string, ok bool) {
+func asString(v any) (s string, ok bool) {
 	ok = true
 	switch tv := v.(type) {
 	case string:

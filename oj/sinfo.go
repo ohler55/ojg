@@ -39,7 +39,7 @@ func getTypeStruct(rt reflect.Type, embedded bool) (st *sinfo) {
 	return buildStruct(rt, x, embedded)
 }
 
-func getSinfo(v interface{}) (st *sinfo) {
+func getSinfo(v any) (st *sinfo) {
 	x := (*[2]uintptr)(unsafe.Pointer(&v))[0]
 	structMut.Lock()
 	defer structMut.Unlock()

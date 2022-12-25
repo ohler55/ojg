@@ -36,35 +36,35 @@ func TestSetFn(t *testing.T) {
 }
 
 func TestSetExprError(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		map[string]interface{}{}, // Sets @
-		[]interface{}{"set", jp.D(), 1},
-		[]interface{}{"set", "$.asm", "@"},
+	p := asm.NewPlan([]any{
+		map[string]any{}, // Sets @
+		[]any{"set", jp.D(), 1},
+		[]any{"set", "$.asm", "@"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSetArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", "@.x"},
+	p := asm.NewPlan([]any{
+		[]any{"set", "@.x"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSetArgNotExpr(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"set", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSetArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", []interface{}{"sum"}, 1},
+	p := asm.NewPlan([]any{
+		[]any{"set", []any{"sum"}, 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

@@ -47,7 +47,7 @@ func (si *sinfo) getFields(o *ojg.Options) []*finfo {
 
 // getSinfo gets the struct information for the provided value. This is use
 // internally and is not expected to be used externally.
-func getSinfo(v interface{}) (st *sinfo) {
+func getSinfo(v any) (st *sinfo) {
 	x := (*[2]uintptr)(unsafe.Pointer(&v))[0]
 	structMut.Lock()
 	defer structMut.Unlock()

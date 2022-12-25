@@ -14,12 +14,12 @@ func init() {
 	})
 }
 
-func each(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func each(root map[string]any, at any, args ...any) any {
 	if len(args) < 2 || 3 < len(args) {
 		panic(fmt.Errorf("each expects two or three argument. %d given", len(args)))
 	}
 	v := evalArg(root, at, args[0])
-	list, ok := v.([]interface{})
+	list, ok := v.([]any)
 	if !ok {
 		panic(fmt.Errorf("each expects an array argument, not a %T", v))
 	}
@@ -36,9 +36,9 @@ func each(root map[string]interface{}, at interface{}, args ...interface{}) inte
 		}
 		key = s
 	}
-	var result []interface{}
+	var result []any
 	for _, src := range list {
-		at := map[string]interface{}{"src": src}
+		at := map[string]any{"src": src}
 		fn.Eval(root, at, fn.Args...)
 		result = append(result, at[key])
 	}

@@ -21,17 +21,17 @@ func TestRoot(t *testing.T) {
 }
 
 func TestRootArgNotString(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"root", 1},
+	p := asm.NewPlan([]any{
+		[]any{"root", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestRootArgParseError(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"root", "[[["},
+	p := asm.NewPlan([]any{
+		[]any{"root", "[[["},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

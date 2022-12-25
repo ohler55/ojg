@@ -16,7 +16,7 @@ import (
 // second default value is returned. This approach keeps the return as a
 // single value and gives the caller the choice of how to indicate a bad
 // value.
-func Int(v interface{}, defaults ...int64) (i int64) {
+func Int(v any, defaults ...int64) (i int64) {
 	switch tv := v.(type) {
 	case nil:
 		if 1 < len(defaults) {
