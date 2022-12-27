@@ -135,8 +135,6 @@ func (x Expr) remove(data any, max int) any {
 					switch v.(type) {
 					case gen.Object, gen.Array:
 						stack = append(stack, v)
-					default:
-						panic(fmt.Sprintf("can not follow a %T at '%s'", v, wx[:fi+1]))
 					}
 				}
 			default:
@@ -219,23 +217,28 @@ func (x Expr) remove(data any, max int) any {
 				}
 			default:
 				var has bool
-				if int(fi) == len(x)-1 { // last one
-					// TBD
-				} else if v, has = x.reflectGetNth(tv, i); has {
-					switch v.(type) {
-					case bool, string, float64, float32,
-						int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
-						nil, gen.Bool, gen.Int, gen.Float, gen.String:
-					case map[string]any, []any, gen.Object, gen.Array:
-						stack = append(stack, v)
-					default:
-						kind := reflect.Invalid
-						if rt := reflect.TypeOf(v); rt != nil {
-							kind = rt.Kind()
+				if v, has = x.reflectGetNth(tv, i); has {
+					if int(fi) == len(x)-1 { // last one
+						if nv, mx := removeLast(last, v, max); max != mx {
+							x.reflectSetNth(tv, i, nv)
+							max = mx
 						}
-						switch kind {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+					} else {
+						switch v.(type) {
+						case bool, string, float64, float32,
+							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+							nil, gen.Bool, gen.Int, gen.Float, gen.String:
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
+						default:
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								stack = append(stack, v)
+							}
 						}
 					}
 				}
@@ -702,25 +705,50 @@ func (x Expr) remove(data any, max int) any {
 func removeLast(f Frag, value any, max int) (any, int) {
 	switch tf := f.(type) {
 	case Child:
+		key := string(tf)
 		switch tv := value.(type) {
 		case map[string]any:
-			delete(tv, string(tf))
+			if _, has := tv[key]; has {
+				delete(tv, key)
+			}
 		case gen.Object:
-			delete(tv, string(tf))
+			if _, has := tv[key]; has {
+				delete(tv, string(tf))
+			}
+		default:
+			if rt := reflect.TypeOf(value); rt != nil {
+				// Can't remove a field from a struct so only a map can be modified.
+				if rt.Kind() == reflect.Map {
+					rv := reflect.ValueOf(value)
+					rk := reflect.ValueOf(key)
+					if rv.MapIndex(rk).IsValid() {
+						rv.SetMapIndex(rk, reflect.Value{})
+						max--
+					}
+				}
+			}
 		}
 	case Nth:
 		i := int(tf)
 		switch tv := value.(type) {
 		case []any:
+			if i < 0 {
+				i = len(tv) + i
+			}
 			if 0 <= i && i < len(tv) {
 				value = append(tv[:i], tv[i+1:]...)
 				max--
 			}
 		case gen.Array:
+			if i < 0 {
+				i = len(tv) + i
+			}
 			if 0 <= i && i < len(tv) {
 				value = append(tv[:i], tv[i+1:]...)
 				max--
 			}
+		default:
+			fmt.Printf("*** try reflect on %T with %s\n", tv, Expr{f})
 		}
 	case Wildcard:
 		switch tv := value.(type) {
@@ -791,11 +819,16 @@ func removeNodeLast(f Frag, value gen.Node, max int) (gen.Node, int) {
 	switch tf := f.(type) {
 	case Child:
 		if tv, ok := value.(gen.Object); ok {
-			delete(tv, string(tf))
+			if _, has := tv[string(tf)]; has {
+				delete(tv, string(tf))
+			}
 		}
 	case Nth:
 		i := int(tf)
 		if tv, ok := value.(gen.Array); ok {
+			if i < 0 {
+				i = len(tv) + i
+			}
 			if 0 <= i && i < len(tv) {
 				value = append(tv[:i], tv[i+1:]...)
 				max--
