@@ -111,7 +111,7 @@ func (x Expr) Set(data, value any) error {
 							kind = rt.Kind()
 						}
 						switch kind {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 							stack = append(stack, v)
 						default:
 							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
@@ -183,7 +183,7 @@ func (x Expr) Set(data, value any) error {
 							kind = rt.Kind()
 						}
 						switch kind {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 							stack = append(stack, v)
 						default:
 							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
@@ -219,7 +219,7 @@ func (x Expr) Set(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							default:
 								return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
@@ -271,7 +271,7 @@ func (x Expr) Set(data, value any) error {
 							kind = rt.Kind()
 						}
 						switch kind {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 							stack = append(stack, v)
 						default:
 							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
@@ -306,7 +306,7 @@ func (x Expr) Set(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -334,7 +334,7 @@ func (x Expr) Set(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -391,7 +391,7 @@ func (x Expr) Set(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -420,7 +420,7 @@ func (x Expr) Set(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -442,7 +442,7 @@ func (x Expr) Set(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -492,7 +492,7 @@ func (x Expr) Set(data, value any) error {
 									kind = rt.Kind()
 								}
 								switch kind {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -518,7 +518,7 @@ func (x Expr) Set(data, value any) error {
 									kind = rt.Kind()
 								}
 								switch kind {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -544,7 +544,7 @@ func (x Expr) Set(data, value any) error {
 									kind = rt.Kind()
 								}
 								switch kind {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -574,7 +574,7 @@ func (x Expr) Set(data, value any) error {
 									kind = rt.Kind()
 								}
 								switch kind {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -664,7 +664,7 @@ func (x Expr) Set(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -761,7 +761,7 @@ func (x Expr) SetOne(data, value any) error {
 							kind = rt.Kind()
 						}
 						switch kind {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 							stack = append(stack, v)
 						default:
 							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
@@ -836,7 +836,7 @@ func (x Expr) SetOne(data, value any) error {
 							kind = rt.Kind()
 						}
 						switch kind {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 							stack = append(stack, v)
 						default:
 							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
@@ -873,7 +873,7 @@ func (x Expr) SetOne(data, value any) error {
 							kind = rt.Kind()
 						}
 						switch kind {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 							stack = append(stack, v)
 						default:
 							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
@@ -926,7 +926,7 @@ func (x Expr) SetOne(data, value any) error {
 							kind = rt.Kind()
 						}
 						switch kind {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 							stack = append(stack, v)
 						default:
 							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
@@ -963,7 +963,7 @@ func (x Expr) SetOne(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -993,7 +993,7 @@ func (x Expr) SetOne(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -1054,7 +1054,7 @@ func (x Expr) SetOne(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -1083,7 +1083,7 @@ func (x Expr) SetOne(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -1106,7 +1106,7 @@ func (x Expr) SetOne(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -1157,7 +1157,7 @@ func (x Expr) SetOne(data, value any) error {
 									kind = rt.Kind()
 								}
 								switch kind {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -1183,7 +1183,7 @@ func (x Expr) SetOne(data, value any) error {
 									kind = rt.Kind()
 								}
 								switch kind {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -1210,7 +1210,7 @@ func (x Expr) SetOne(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -1239,7 +1239,7 @@ func (x Expr) SetOne(data, value any) error {
 									kind = rt.Kind()
 								}
 								switch kind {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -1289,7 +1289,7 @@ func (x Expr) SetOne(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -1308,7 +1308,7 @@ func (x Expr) SetOne(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -1359,7 +1359,7 @@ func (x Expr) SetOne(data, value any) error {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}

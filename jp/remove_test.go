@@ -8,6 +8,7 @@ import (
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
+	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/pretty"
 	"github.com/ohler55/ojg/sen"
@@ -34,6 +35,7 @@ var (
 		{path: "@[1]", data: `[1,2,3,4]`, expect: `[1 3 4]`},
 		{path: "key", data: `{key:[1,2,3,4]}`, expect: `{}`},
 		{path: "key[*]", data: `{key:[1,2,3,4]}`, expect: `{key: []}`},
+		{path: "key.gee", data: `{key:{gee:3}}`, expect: `{key: {}}`},
 		{path: "*[0]", data: `{one:[1],two:[1,2]}`, expect: `{one: [] two: [2]}`},
 		{path: "*[0]", data: `[[1],[1,2]]`, expect: `[[] [2]]`},
 		{path: "key[0]", data: `[[1],[1,2]]`, expect: `[[1] [1 2]]`},
@@ -42,6 +44,20 @@ var (
 		{path: "key[-2]", data: `{key:[1,2,3,4]}`, expect: `{key: [1 2 4]}`},
 		{path: "[-1][-2]", data: `[1,2,[1,2,3,4]]`, expect: `[1 2 [1 2 4]]`},
 		{path: "[0][-1][-2]", data: `[[1,2,[1,2,3,4]]]`, expect: `[[1 2 [1 2 4]]]`},
+		{path: "*.two[*]", data: `{one:{two:[1,2,3,4]}}`, expect: `{one: {two: []}}`},
+		{path: "*.two[*]", data: `{one:1}`, expect: `{one: 1}`},
+		{path: "*.two.*", data: `{one:{two:{x:1 y:2}}}`, expect: `{one: {two: {}}}`},
+		{path: "*[*][*]", data: `[[1,2,[1,2,3,4]]]`, expect: `[[1 2 []]]`},
+	}
+	remOneTestData = []*delData{
+		{path: "key[2]", data: "{key:[1,2,3,4]}", expect: "{key: [1 2 4]}"},
+		{path: "*[1]", data: "[[0,1,2][3,2,1]]", expect: "[[0 2] [3 2 1]]"},
+		{path: "*[*]", data: "[[0,1,2][3,2,1]]", expect: "[[1 2] [3 2 1]]"},
+		{path: "@[*][1]", data: "[[0,1,2][3,2,1]]", expect: "[[0 2] [3 2 1]]"},
+		{path: "*[*]", data: "{one:[1,2]}", expect: "{one: [2]}"},
+		{path: "*.*", data: "{one:{two: 2 three: 3}}", expect: "{one: {two: 2}}"},
+		//{path: "", data: "", expect: ""},
+
 	}
 )
 
@@ -83,6 +99,44 @@ func TestExprRemoveAll(t *testing.T) {
 	}
 }
 
+func TestExprRemoveOne(t *testing.T) {
+	for i, d := range remOneTestData {
+		if testing.Verbose() {
+			fmt.Printf("... %d: %s\n", i, d.path)
+		}
+		x, err := jp.ParseString(d.path)
+		tt.Nil(t, err, i, " : ", x)
+
+		var data any
+		var out any
+		if !d.noSimple {
+			data, err = sen.Parse([]byte(d.data))
+			tt.Nil(t, err, i, " : ", x)
+			out, err = x.RemoveOne(data)
+			if 0 < len(d.err) {
+				tt.NotNil(t, err, i, " : ", x)
+				tt.Equal(t, d.err, err.Error(), i, " : ", x)
+			} else {
+				result := string(pw.Encode(out))
+				tt.Equal(t, d.expect, result, i, " : ", x)
+			}
+		}
+		if !d.noNode {
+			data, err = sen.Parse([]byte(d.data))
+			tt.Nil(t, err, i, " : ", x)
+			data = alt.Generify(data)
+			out = x.MustRemoveOne(data)
+			if 0 < len(d.err) {
+				tt.NotNil(t, err, i, " : ", x)
+				tt.Equal(t, d.err, err.Error(), i, " : ", x)
+			} else {
+				result := string(pw.Encode(out))
+				tt.Equal(t, d.expect, result, i, " : ", x)
+			}
+		}
+	}
+}
+
 func TestExprRemoveReflect(t *testing.T) {
 	x, err := jp.ParseString("field[1]")
 	tt.Nil(t, err)
@@ -104,19 +158,20 @@ func TestExprRemoveReflect(t *testing.T) {
 	result = x.MustRemove(obj)
 	tt.Equal(t, "{field: 3}", string(pw.Encode(result)))
 	tt.Equal(t, "{field: 3}", string(pw.Encode(obj)))
-
-	// TBD try other variations
 }
 
-func TestExprRemoveOne(t *testing.T) {
-	x, err := jp.ParseString("*[1]")
+func TestExprRemoveOneMap(t *testing.T) {
+	x, err := jp.ParseString("*.two")
 	tt.Nil(t, err)
-	data := sen.MustParse([]byte("[[0,1,2][3,2,1]]"))
+	data := sen.MustParse([]byte("{one:{two:2} two:{two:4}}"))
 	var result any
 	result, err = x.RemoveOne(data)
 	tt.Nil(t, err)
-	tt.Equal(t, "[[0 2] [3 2 1]]", string(pw.Encode(result)))
-	tt.Equal(t, "[[0 2] [3 2 1]]", string(pw.Encode(data)))
+	// No telling what order items are removed from a map nor can the print
+	// order be counted on to be consistent so just verify there is only one
+	// match on the result and the original data.
+	tt.Equal(t, 1, len(x.Get(result)))
+	tt.Equal(t, 1, len(x.Get(data)))
 }
 
 func TestExprRemoveOneFail(t *testing.T) {
@@ -133,15 +188,6 @@ func TestExprRemoveFail(t *testing.T) {
 	data := sen.MustParse([]byte("{one:[0,1,2] two:[3,2,1]}"))
 	_, err = x.Remove(data)
 	tt.NotNil(t, err)
-}
-
-func TestExprMustRemoveOne(t *testing.T) {
-	x, err := jp.ParseString("@[*][1]")
-	tt.Nil(t, err)
-	data := sen.MustParse([]byte("[[0,1,2][3,2,1]]"))
-	result := x.MustRemoveOne(data)
-	tt.Equal(t, "[[0 2] [3 2 1]]", string(pw.Encode(result)))
-	tt.Equal(t, "[[0 2] [3 2 1]]", string(pw.Encode(data)))
 }
 
 func TestExprRemoveChildReflect(t *testing.T) {
@@ -189,17 +235,97 @@ func TestExprRemoveNthReflectLastMap(t *testing.T) {
 	tt.Equal(t, "[{} {two: 2}]", string(pw.Encode(data)))
 }
 
-// TBD
-func xTestExprRemoveNthReflectLastSlice(t *testing.T) {
-	x, err := jp.ParseString("@[1][0]")
+func TestExprRemoveNthReflectLastSlice(t *testing.T) {
+	x, err := jp.ParseString("@[1][-2]")
 	tt.Nil(t, err)
-	data := [][]int{[]int{}, []int{1, 2}}
+	data := [][]int{[]int{}, []int{1, 2, 3}}
 	result := x.MustRemove(data)
-	tt.Equal(t, "[[] [2]]", string(pw.Encode(result)))
-	tt.Equal(t, "[[] [2]]", string(pw.Encode(data)))
+	tt.Equal(t, "[[] [1 3]]", string(pw.Encode(result)))
+	tt.Equal(t, "[[] [1 3]]", string(pw.Encode(data)))
 }
 
-func TestExprRemoveDev(t *testing.T) {
+func TestExprRemoveWildReflectMap(t *testing.T) {
+	x, err := jp.ParseString("*.field[1]")
+	tt.Nil(t, err)
+	data := map[string]any{"one": &RemObj{Field: []any{1, 2}}}
+	result := x.MustRemove(data)
+	tt.Equal(t, "{one: {field: [1]}}", string(pw.Encode(result)))
+	tt.Equal(t, "{one: {field: [1]}}", string(pw.Encode(data)))
+}
+
+func TestExprRemoveWildReflectSlice(t *testing.T) {
+	x, err := jp.ParseString("*.field[1]")
+	tt.Nil(t, err)
+	data := []any{&RemObj{Field: []any{1, 2}}}
+	result := x.MustRemove(data)
+	tt.Equal(t, "[{field: [1]}]", string(pw.Encode(result)))
+	tt.Equal(t, "[{field: [1]}]", string(pw.Encode(data)))
+}
+
+func TestExprRemoveNthNodeInSimple(t *testing.T) {
+	x, err := jp.ParseString("@[1][-2]")
+	tt.Nil(t, err)
+	data := []any{[]any{}, gen.Array{gen.Int(1), gen.Int(2), gen.Int(3)}}
+	result := x.MustRemove(data)
+	tt.Equal(t, "[[] [1 3]]", string(pw.Encode(result)))
+	tt.Equal(t, "[[] [1 3]]", string(pw.Encode(data)))
+}
+
+func TestExprRemoveWildReflectWildSlice(t *testing.T) {
+	x, err := jp.ParseString("[*][1]")
+	tt.Nil(t, err)
+	data := [][]int{[]int{}, []int{1, 2, 3}}
+	result := x.MustRemove(data)
+	tt.Equal(t, "[[] [1 3]]", string(pw.Encode(result)))
+	tt.Equal(t, "[[] [1 3]]", string(pw.Encode(data)))
+
+	data = [][]int{[]int{}, []int{1, 2, 3}}
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, "[[] [1 3]]", string(pw.Encode(result)))
+	tt.Equal(t, "[[] [1 3]]", string(pw.Encode(data)))
+}
+
+func TestExprRemoveWildReflectWildMap(t *testing.T) {
+	x, err := jp.ParseString("*[1]")
+	tt.Nil(t, err)
+	data := map[string][]int{"one": []int{}, "two": []int{1, 2, 3}}
+	result := x.MustRemove(data)
+	tt.Equal(t, "{one: [] two: [1 3]}", string(pw.Encode(result)))
+	tt.Equal(t, "{one: [] two: [1 3]}", string(pw.Encode(data)))
+
+	// TBD RemoveOne
+}
+
+func TestExprRemoveWildArrayInSimple(t *testing.T) {
+	x, err := jp.ParseString("[1][*]")
+	tt.Nil(t, err)
+	data := []any{[]any{}, gen.Array{gen.Int(1), gen.Int(2), gen.Int(3)}}
+	result := x.MustRemove(data)
+	tt.Equal(t, "[[] []]", string(pw.Encode(result)))
+	tt.Equal(t, "[[] []]", string(pw.Encode(data)))
+
+	data = []any{[]any{}, gen.Array{gen.Int(1), gen.Int(2), gen.Int(3)}}
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, "[[] [2 3]]", string(pw.Encode(result)))
+	tt.Equal(t, "[[] [2 3]]", string(pw.Encode(data)))
+}
+
+func TestExprRemoveWildObjectInSimple(t *testing.T) {
+	x, err := jp.ParseString("[1].*")
+	tt.Nil(t, err)
+	data := []any{[]any{}, gen.Object{"one": gen.Int(1), "two": gen.Int(2), "three": gen.Int(3)}}
+	result := x.MustRemove(data)
+	tt.Equal(t, "[[] {}]", string(pw.Encode(result)))
+	tt.Equal(t, "[[] {}]", string(pw.Encode(data)))
+
+	data = []any{[]any{}, gen.Object{"one": gen.Int(1), "two": gen.Int(2), "three": gen.Int(3)}}
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, "[[] {three: 3 two: 2}]", string(pw.Encode(result)))
+	tt.Equal(t, "[[] {three: 3 two: 2}]", string(pw.Encode(data)))
+
+}
+
+func xTestExprRemoveDev(t *testing.T) {
 	x, err := jp.ParseString("field[1]")
 	tt.Nil(t, err)
 

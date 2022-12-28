@@ -97,6 +97,7 @@ func (x Expr) remove(data any, max int) any {
 		stack[len(stack)-2] = stack[len(stack)-1]
 		stack[len(stack)-1] = nil
 		stack = stack[:len(stack)-1]
+
 		switch tf := f.(type) {
 		case Child:
 			var has bool
@@ -120,7 +121,7 @@ func (x Expr) remove(data any, max int) any {
 							kind = rt.Kind()
 						}
 						switch kind {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 							stack = append(stack, v)
 						}
 					}
@@ -157,7 +158,7 @@ func (x Expr) remove(data any, max int) any {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -191,7 +192,7 @@ func (x Expr) remove(data any, max int) any {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -236,7 +237,7 @@ func (x Expr) remove(data any, max int) any {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -271,7 +272,7 @@ func (x Expr) remove(data any, max int) any {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -302,7 +303,7 @@ func (x Expr) remove(data any, max int) any {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -348,8 +349,26 @@ func (x Expr) remove(data any, max int) any {
 					}
 				}
 			default:
-				// TBD handle
-				if int(fi) != len(x)-1 {
+				if int(fi) == len(x)-1 { // last one
+					rv := reflect.ValueOf(v)
+					switch rv.Kind() {
+					case reflect.Slice:
+						cnt := rv.Len()
+						for i := 0; i < cnt; i++ {
+							iv := rv.Index(i)
+							if nv, mx := removeLast(last, iv.Interface(), max); max != mx {
+								iv.Set(reflect.ValueOf(nv))
+								max = mx
+								if max <= 0 {
+									break
+								}
+							}
+						}
+					case reflect.Map:
+						fmt.Printf("*** reflect map\n")
+						// TBD
+					}
+				} else {
 					for _, v := range x.reflectGetWild(tv) {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
@@ -363,7 +382,7 @@ func (x Expr) remove(data any, max int) any {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -395,7 +414,7 @@ func (x Expr) remove(data any, max int) any {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -418,7 +437,7 @@ func (x Expr) remove(data any, max int) any {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -475,7 +494,7 @@ func (x Expr) remove(data any, max int) any {
 									kind = rt.Kind()
 								}
 								switch kind {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -502,7 +521,7 @@ func (x Expr) remove(data any, max int) any {
 									kind = rt.Kind()
 								}
 								switch kind {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -532,7 +551,7 @@ func (x Expr) remove(data any, max int) any {
 									kind = rt.Kind()
 								}
 								switch kind {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -563,7 +582,7 @@ func (x Expr) remove(data any, max int) any {
 									kind = rt.Kind()
 								}
 								switch kind {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -663,7 +682,7 @@ func (x Expr) remove(data any, max int) any {
 								kind = rt.Kind()
 							}
 							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -710,10 +729,12 @@ func removeLast(f Frag, value any, max int) (any, int) {
 		case map[string]any:
 			if _, has := tv[key]; has {
 				delete(tv, key)
+				max--
 			}
 		case gen.Object:
 			if _, has := tv[key]; has {
 				delete(tv, string(tf))
+				max--
 			}
 		default:
 			if rt := reflect.TypeOf(value); rt != nil {
@@ -748,7 +769,28 @@ func removeLast(f Frag, value any, max int) (any, int) {
 				max--
 			}
 		default:
-			fmt.Printf("*** try reflect on %T with %s\n", tv, Expr{f})
+			if rt := reflect.TypeOf(value); rt != nil {
+				if rt.Kind() == reflect.Slice {
+					rv := reflect.ValueOf(value)
+					cnt := rv.Len()
+					if 0 < cnt {
+						if i < 0 {
+							i = cnt + i
+						}
+						if 0 <= i && i < cnt {
+							nv := reflect.MakeSlice(rt, cnt-1, cnt-1)
+							for j := 0; j < i; j++ {
+								nv.Index(j).Set(rv.Index(j))
+							}
+							for j := i + 1; j < cnt; j++ {
+								nv.Index(j - 1).Set(rv.Index(j))
+							}
+							value = nv.Interface()
+							max--
+						}
+					}
+				}
+			}
 		}
 	case Wildcard:
 		switch tv := value.(type) {
@@ -756,16 +798,6 @@ func removeLast(f Frag, value any, max int) (any, int) {
 			if len(tv) <= max {
 				max -= len(tv)
 				value = []any{}
-			} else {
-				for ; 0 < max; max-- {
-					tv = tv[1:]
-				}
-				value = tv
-			}
-		case gen.Array:
-			if len(tv) <= max {
-				max -= len(tv)
-				value = gen.Array{}
 			} else {
 				for ; 0 < max; max-- {
 					tv = tv[1:]
@@ -790,6 +822,16 @@ func removeLast(f Frag, value any, max int) (any, int) {
 					}
 				}
 			}
+		case gen.Array:
+			if len(tv) <= max {
+				max -= len(tv)
+				value = gen.Array{}
+			} else {
+				for ; 0 < max; max-- {
+					tv = tv[1:]
+				}
+				value = tv
+			}
 		case gen.Object:
 			if len(tv) <= max {
 				max -= len(tv)
@@ -808,6 +850,8 @@ func removeLast(f Frag, value any, max int) (any, int) {
 					}
 				}
 			}
+		default:
+			// TBD reflect
 		}
 	case *Filter:
 		// TBD find indices then remove those until max
@@ -821,6 +865,7 @@ func removeNodeLast(f Frag, value gen.Node, max int) (gen.Node, int) {
 		if tv, ok := value.(gen.Object); ok {
 			if _, has := tv[string(tf)]; has {
 				delete(tv, string(tf))
+				max--
 			}
 		}
 	case Nth:
