@@ -293,7 +293,31 @@ func TestExprRemoveWildReflectWildMap(t *testing.T) {
 	tt.Equal(t, "{one: [] two: [1 3]}", string(pw.Encode(result)))
 	tt.Equal(t, "{one: [] two: [1 3]}", string(pw.Encode(data)))
 
-	// TBD RemoveOne
+	data = map[string][]int{"one": []int{4, 5}, "two": []int{1, 2, 3}}
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, "{one: [4] two: [1 2 3]}", string(pw.Encode(result)))
+	tt.Equal(t, "{one: [4] two: [1 2 3]}", string(pw.Encode(data)))
+
+	x, err = jp.ParseString("[*].*[1]")
+	tt.Nil(t, err)
+	data2 := []map[string][]int{map[string][]int{"one": []int{4, 5}, "two": []int{1, 2, 3}}}
+	result = x.MustRemoveOne(data2)
+	tt.Equal(t, "[{one: [4] two: [1 2 3]}]", string(pw.Encode(result)))
+	tt.Equal(t, "[{one: [4] two: [1 2 3]}]", string(pw.Encode(data2)))
+
+	x, err = jp.ParseString("[*][0][1]")
+	tt.Nil(t, err)
+	data3 := [][]any{{[]any{1, 2, 3}}}
+	result = x.MustRemoveOne(data3)
+	tt.Equal(t, "[[[1 3]]]", string(pw.Encode(result)))
+	tt.Equal(t, "[[[1 3]]]", string(pw.Encode(data3)))
+
+	data4 := []int{1, 2, 3}
+	result = x.MustRemoveOne(data4)
+	tt.Equal(t, "[1 2 3]", string(pw.Encode(result)))
+	tt.Equal(t, "[1 2 3]", string(pw.Encode(data4)))
+
+	// TBD array of RemObj
 }
 
 func TestExprRemoveWildArrayInSimple(t *testing.T) {
@@ -325,14 +349,18 @@ func TestExprRemoveWildObjectInSimple(t *testing.T) {
 
 }
 
-func xTestExprRemoveDev(t *testing.T) {
-	x, err := jp.ParseString("field[1]")
+func TestExprRemoveDescent(t *testing.T) {
+	x, err := jp.ParseString("..[1]")
 	tt.Nil(t, err)
+	data := sen.MustParse([]byte(`[[1,2,[1,2,3,4]]]`))
+	tt.Panic(t, func() { _ = x.MustRemove(data) })
+}
 
-	obj := RemObj{Field: []any{1, 2, 3, 4}}
-
-	result := x.MustRemove(obj)
+func xTestExprRemoveDev(t *testing.T) {
+	x, err := jp.ParseString("..[1]")
+	tt.Nil(t, err)
+	data := sen.MustParse([]byte(`[[1,2,[1,2,3,4]]]`))
+	result := x.MustRemove(data)
 	fmt.Printf("*** %s\n", pw.Encode(result))
-	fmt.Printf("*** %s\n", pw.Encode(obj))
-
+	fmt.Printf("*** %s\n", pw.Encode(data))
 }

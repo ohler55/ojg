@@ -64,16 +64,22 @@ func (x Expr) remove(data any, max int) any {
 		panic("can not remove with an empty expression")
 	}
 	last := x[len(x)-1]
-	switch last.(type) {
-	case Descent, Union, Slice:
-		ta := strings.Split(fmt.Sprintf("%T", x[len(x)-1]), ".")
-		panic(fmt.Sprintf("can not remove with an expression ending with a %s", ta[len(ta)-1]))
+	for i, f := range x {
+		switch f.(type) {
+		case Descent:
+			ta := strings.Split(fmt.Sprintf("%T", f), ".")
+			panic(fmt.Sprintf("can not remove with an expression where the second to last fragment is a %s", ta[len(ta)-1]))
+		case Union, Slice:
+			if i == len(x)-1 {
+				ta := strings.Split(fmt.Sprintf("%T", f), ".")
+				panic(fmt.Sprintf("can not remove with an expression ending with a %s", ta[len(ta)-1]))
+			}
+		}
 	}
 	wx := make(Expr, len(x))
 	copy(wx[1:], x)
 	wx[0] = Nth(0)
 	wrap := []any{data}
-
 	var (
 		v    any
 		prev any
@@ -350,7 +356,7 @@ func (x Expr) remove(data any, max int) any {
 				}
 			default:
 				if int(fi) == len(x)-1 { // last one
-					rv := reflect.ValueOf(v)
+					rv := reflect.ValueOf(tv)
 					switch rv.Kind() {
 					case reflect.Slice:
 						cnt := rv.Len()
@@ -365,8 +371,20 @@ func (x Expr) remove(data any, max int) any {
 							}
 						}
 					case reflect.Map:
-						fmt.Printf("*** reflect map\n")
-						// TBD
+						keys := rv.MapKeys()
+						sort.Slice(keys, func(i, j int) bool {
+							return strings.Compare(keys[i].String(), keys[j].String()) < 0
+						})
+						for _, k := range keys {
+							ev := rv.MapIndex(k)
+							if nv, mx := removeLast(last, ev.Interface(), max); max != mx {
+								rv.SetMapIndex(k, reflect.ValueOf(nv))
+								max = mx
+							}
+							if max <= 0 {
+								break
+							}
+						}
 					}
 				} else {
 					for _, v := range x.reflectGetWild(tv) {
@@ -388,85 +406,6 @@ func (x Expr) remove(data any, max int) any {
 						}
 					}
 				}
-			}
-		case Descent:
-			// TBD handle
-
-			di, _ := stack[len(stack)-1].(fragIndex)
-			// first pass expands, second continues evaluation
-			if (di & descentFlag) == 0 {
-				switch tv := prev.(type) {
-				case map[string]any:
-					// Put prev back and slide fi.
-					stack[len(stack)-1] = prev
-					stack = append(stack, di|descentFlag)
-					for _, v = range tv {
-						switch v.(type) {
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-							bool, string, float64, float32,
-							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]any, []any, gen.Object, gen.Array:
-							stack = append(stack, v)
-							stack = append(stack, fi|descentChildFlag)
-						default:
-							kind := reflect.Invalid
-							if rt := reflect.TypeOf(v); rt != nil {
-								kind = rt.Kind()
-							}
-							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
-								stack = append(stack, v)
-							}
-						}
-					}
-				case []any:
-					// Put prev back and slide fi.
-					stack[len(stack)-1] = prev
-					stack = append(stack, di|descentFlag)
-					for _, v = range tv {
-						switch v.(type) {
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-							bool, string, float64, float32,
-							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]any, []any, gen.Object, gen.Array:
-							stack = append(stack, v)
-							stack = append(stack, fi|descentChildFlag)
-						default:
-							kind := reflect.Invalid
-							if rt := reflect.TypeOf(v); rt != nil {
-								kind = rt.Kind()
-							}
-							switch kind {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
-								stack = append(stack, v)
-							}
-						}
-					}
-				case gen.Object:
-					// Put prev back and slide fi.
-					stack[len(stack)-1] = prev
-					stack = append(stack, di|descentFlag)
-					for _, v = range tv {
-						switch v.(type) {
-						case map[string]any, []any, gen.Object, gen.Array:
-							stack = append(stack, v)
-							stack = append(stack, fi|descentChildFlag)
-						}
-					}
-				case gen.Array:
-					// Put prev back and slide fi.
-					stack[len(stack)-1] = prev
-					stack = append(stack, di|descentFlag)
-					for _, v = range tv {
-						switch v.(type) {
-						case map[string]any, []any, gen.Object, gen.Array:
-							stack = append(stack, v)
-							stack = append(stack, fi|descentChildFlag)
-						}
-					}
-				}
-			} else {
-				stack = append(stack, prev)
 			}
 		case Union:
 
