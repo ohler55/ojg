@@ -50,6 +50,12 @@ var (
 		{path: "*[*][*]", data: `[[1,2,[1,2,3,4]]]`, expect: `[[1 2 []]]`},
 		{path: "['a','b']['x','y'][1]", data: `{a:[] b:{x:[1,2,3]}}`, expect: `{a: [] b: {x: [1 3]}}`},
 		{path: "[0,1][0,-1][1]", data: `[[[][1,2,3]]]`, expect: `[[[] [1 3]]]`},
+		{path: "[1:3:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6] [8 9]]"},
+		{path: "[3:1:-2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6] [8 9]]"},
+		{path: "[-4:-2:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6] [8 9]]"},
+		{path: "[-6:-2:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 2 3] [4 5] [6 7] [8 9]]"},
+		{path: "[:3][1:3:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6] [8 9]]]"},
+		{path: "[-1:0:-1][1:3:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6] [8 9]]]"},
 	}
 	remOneTestData = []*delData{
 		{path: "key[2]", data: "{key:[1,2,3,4]}", expect: "{key: [1 2 4]}"},
@@ -58,6 +64,9 @@ var (
 		{path: "@[*][1]", data: "[[0,1,2][3,2,1]]", expect: "[[0 2] [3 2 1]]"},
 		{path: "*[*]", data: "{one:[1,2]}", expect: "{one: [2]}"},
 		{path: "*.*", data: "{one:{two: 2 three: 3}}", expect: "{one: {two: 2}}"},
+		{path: "[1:3:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6 7] [8 9]]"},
+		{path: "[3:1:-2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 2 3] [4 5] [6] [8 9]]"},
+		{path: "[-4:-2:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6 7] [8 9]]"},
 		// {path: "", data: "", expect: ""},
 	}
 )
@@ -418,9 +427,9 @@ func TestExprRemoveUnionReflectSlice(t *testing.T) {
 }
 
 func xTestExprRemoveDev(t *testing.T) {
-	x, err := jp.ParseString("..[1]")
+	x, err := jp.ParseString("[:3][1:3:2][1]")
 	tt.Nil(t, err)
-	data := sen.MustParse([]byte(`[[1,2,[1,2,3,4]]]`))
+	data := sen.MustParse([]byte(`[[[][1,2,3][4,5][6,7][8,9]]]`))
 	result := x.MustRemove(data)
 	fmt.Printf("*** %s\n", pw.Encode(result))
 	fmt.Printf("*** %s\n", pw.Encode(data))

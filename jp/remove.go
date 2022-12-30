@@ -570,9 +570,6 @@ func (x Expr) remove(data any, max int) any {
 				}
 			}
 		case Slice:
-
-			// TBD handle
-
 			start := 0
 			end := -1
 			step := 1
@@ -593,29 +590,46 @@ func (x Expr) remove(data any, max int) any {
 				if end < 0 {
 					end = len(tv) + end
 				}
+				if len(tv) < end {
+					end = len(tv) - 1
+				}
 				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
 					continue
 				}
 				if 0 < step {
 					for i := start; i <= end; i += step {
-
-						// TBD handle last
-
 						v = tv[i]
-						switch v.(type) {
-						case map[string]any, []any, gen.Object, gen.Array:
-							stack = append(stack, v)
+						if int(fi) == len(wx)-1 { // last one
+							if nv, mx := removeLast(last, v, max); max != mx {
+								tv[i] = nv
+								max = mx
+							}
+							if max <= 0 {
+								break
+							}
+						} else {
+							switch v.(type) {
+							case map[string]any, []any, gen.Object, gen.Array:
+								stack = append(stack, v)
+							}
 						}
 					}
 				} else {
 					for i := start; end <= i; i += step {
-
-						// TBD handle last
-
 						v = tv[i]
-						switch v.(type) {
-						case map[string]any, []any, gen.Object, gen.Array:
-							stack = append(stack, v)
+						if int(fi) == len(wx)-1 { // last one
+							if nv, mx := removeLast(last, v, max); max != mx {
+								tv[i] = nv
+								max = mx
+							}
+							if max <= 0 {
+								break
+							}
+						} else {
+							switch v.(type) {
+							case map[string]any, []any, gen.Object, gen.Array:
+								stack = append(stack, v)
+							}
 						}
 					}
 				}
@@ -626,27 +640,51 @@ func (x Expr) remove(data any, max int) any {
 				if end < 0 {
 					end = len(tv) + end
 				}
+				if len(tv) < end {
+					end = len(tv) - 1
+				}
 				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
 					continue
 				}
 				if 0 < step {
 					for i := start; i <= end; i += step {
-						v = tv[i]
-						switch v.(type) {
-						case map[string]any, []any, gen.Object, gen.Array:
-							stack = append(stack, v)
+						if int(fi) == len(wx)-1 { // last one
+							if nv, mx := removeNodeLast(last, tv[i], max); max != mx {
+								tv[i] = nv
+								max = mx
+							}
+							if max <= 0 {
+								break
+							}
+						} else {
+							v = tv[i]
+							switch v.(type) {
+							case gen.Object, gen.Array:
+								stack = append(stack, v)
+							}
 						}
 					}
 				} else {
 					for i := start; end <= i; i += step {
-						v = tv[i]
-						switch v.(type) {
-						case map[string]any, []any, gen.Object, gen.Array:
-							stack = append(stack, v)
+						if int(fi) == len(wx)-1 { // last one
+							if nv, mx := removeNodeLast(last, tv[i], max); max != mx {
+								tv[i] = nv
+								max = mx
+							}
+							if max <= 0 {
+								break
+							}
+						} else {
+							v = tv[i]
+							switch v.(type) {
+							case gen.Object, gen.Array:
+								stack = append(stack, v)
+							}
 						}
 					}
 				}
 			default:
+				// TBD
 				if int(fi) != len(wx)-1 {
 					for _, v := range wx.reflectGetSlice(tv, start, end, step) {
 						switch v.(type) {
