@@ -427,9 +427,9 @@ func TestExprRemoveUnionReflectSlice(t *testing.T) {
 }
 
 func xTestExprRemoveDev(t *testing.T) {
-	x, err := jp.ParseString("[:3][1:3:2][1]")
+	x, err := jp.ParseString("[?(@.x == 1)].y")
 	tt.Nil(t, err)
-	data := sen.MustParse([]byte(`[[[][1,2,3][4,5][6,7][8,9]]]`))
+	data := sen.MustParse([]byte(`[{x:1 y:2}]`))
 	result := x.MustRemove(data)
 	fmt.Printf("*** %s\n", pw.Encode(result))
 	fmt.Printf("*** %s\n", pw.Encode(data))

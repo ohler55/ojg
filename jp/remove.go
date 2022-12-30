@@ -684,8 +684,9 @@ func (x Expr) remove(data any, max int) any {
 					}
 				}
 			default:
-				// TBD
-				if int(fi) != len(wx)-1 {
+				if int(fi) == len(wx)-1 {
+					// TBD
+				} else {
 					for _, v := range wx.reflectGetSlice(tv, start, end, step) {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
@@ -707,7 +708,12 @@ func (x Expr) remove(data any, max int) any {
 				}
 			}
 		case *Filter:
-			// TBD handle
+
+			// TBD prev is a sliceslice?
+			// iterate and match each, remember i
+
+			fmt.Printf("*** filter - %v\n", prev)
+
 			stack, _ = tf.Eval(stack, prev).([]any)
 		case Root:
 			if int(fi) == len(wx)-1 { // last one
