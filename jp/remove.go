@@ -1053,6 +1053,7 @@ func removeLast(f Frag, value any, one bool) (out any, changed bool) {
 					}
 				}
 				if changed {
+					changed = false
 					ni := 0
 					ns := reflect.MakeSlice(rv.Type(), nc, nc)
 					for i := 0; i < cnt; i++ {
@@ -1082,9 +1083,147 @@ func removeLast(f Frag, value any, one bool) (out any, changed bool) {
 			}
 		}
 	case Slice:
-		// TBD
-		// must be slice
-		// copy to new slice
+		start := 0
+		end := -1
+		step := 1
+		if 0 < len(tf) {
+			start = tf[0]
+		}
+		if 1 < len(tf) {
+			end = tf[1]
+		}
+		if 2 < len(tf) {
+			step = tf[2]
+		}
+		switch tv := value.(type) {
+		case []any:
+			if start < 0 {
+				start = len(tv) + start
+			}
+			if end < 0 {
+				end = len(tv) + end
+			}
+			if len(tv) <= end {
+				end = len(tv) - 1
+			}
+			if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
+				return
+			}
+			ns := make([]any, 0, len(tv))
+			if 0 < step {
+				for i, v := range tv {
+					if !(one && changed) && inStep(i, start, end, step) {
+						changed = true
+					} else {
+						ns = append(ns, v)
+					}
+				}
+			} else {
+				// Walk in reverse to handle the just-one condition.
+				for i := len(tv) - 1; 0 <= i; i-- {
+					if !(one && changed) && inStep(i, start, end, step) {
+						changed = true
+					} else {
+						ns = append(ns, tv[i])
+					}
+				}
+				for i := len(ns)/2 - 1; 0 <= i; i-- {
+					ns[i], ns[len(ns)-i-1] = ns[len(ns)-i-1], ns[i]
+				}
+			}
+			if changed {
+				out = ns
+			}
+		case gen.Array:
+			if start < 0 {
+				start = len(tv) + start
+			}
+			if end < 0 {
+				end = len(tv) + end
+			}
+			if len(tv) <= end {
+				end = len(tv) - 1
+			}
+			if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
+				return
+			}
+			ns := make(gen.Array, 0, len(tv))
+			if 0 < step {
+				for i, v := range tv {
+					if !(one && changed) && inStep(i, start, end, step) {
+						changed = true
+					} else {
+						ns = append(ns, v)
+					}
+				}
+			} else {
+				// Walk in reverse to handle the just-one condition.
+				for i := len(tv) - 1; 0 <= i; i-- {
+					if !(one && changed) && inStep(i, start, end, step) {
+						changed = true
+					} else {
+						ns = append(ns, tv[i])
+					}
+				}
+				for i := len(ns)/2 - 1; 0 <= i; i-- {
+					ns[i], ns[len(ns)-i-1] = ns[len(ns)-i-1], ns[i]
+				}
+			}
+			if changed {
+				out = ns
+			}
+		default:
+			rv := reflect.ValueOf(value)
+			if rv.Kind() == reflect.Slice {
+				cnt := rv.Len()
+				if start < 0 {
+					start = cnt + start
+				}
+				if end < 0 {
+					end = cnt + end
+				}
+				if cnt <= end {
+					end = cnt - 1
+				}
+				if start < 0 || end < 0 || cnt <= start || cnt <= end || step == 0 {
+					return
+				}
+				nc := 0
+				for i := 0; i < cnt; i++ {
+					if !(one && changed) && inStep(i, start, end, step) {
+						changed = true
+					} else {
+						nc++
+					}
+				}
+				if changed {
+					changed = false
+					ns := reflect.MakeSlice(rv.Type(), nc, nc)
+					if 0 < step {
+						ni := 0
+						for i := 0; i < cnt; i++ {
+							if !(one && changed) && inStep(i, start, end, step) {
+								changed = true
+							} else {
+								ns.Index(ni).Set(rv.Index(i))
+								ni++
+							}
+						}
+					} else {
+						ni := nc - 1
+						for i := cnt - 1; 0 <= i; i-- {
+							if !(one && changed) && inStep(i, start, end, step) {
+								changed = true
+							} else {
+								ns.Index(ni).Set(rv.Index(i))
+								ni--
+							}
+						}
+					}
+					out = ns.Interface()
+				}
+			}
+		}
 	case *Filter:
 		// TBD slice or map or reflect slice or map
 		//
@@ -1141,11 +1280,105 @@ func removeNodeLast(f Frag, value gen.Node, one bool) (out gen.Node, changed boo
 			}
 		}
 	case Union:
-		// TBD
+		switch tv := value.(type) {
+		case gen.Array:
+			ns := make(gen.Array, 0, len(tv))
+			for i, v := range tv {
+				if !(one && changed) && tf.hasN(int64(i)) {
+					changed = true
+				} else {
+					ns = append(ns, v)
+				}
+			}
+			if changed {
+				out = ns
+			}
+		case gen.Object:
+			if one {
+				if 0 < len(tv) {
+					keys := make([]string, 0, len(tv))
+					for k := range tv {
+						keys = append(keys, k)
+					}
+					sort.Strings(keys)
+					for _, k := range keys {
+						if tf.hasKey(k) {
+							delete(tv, k)
+							changed = true
+							break
+						}
+					}
+				}
+			} else {
+				for k := range tv {
+					if tf.hasKey(k) {
+						delete(tv, k)
+						changed = true
+					}
+				}
+			}
+		}
 	case Slice:
-		// TBD
+		if tv, ok := value.(gen.Array); ok {
+			start := 0
+			end := -1
+			step := 1
+			if 0 < len(tf) {
+				start = tf[0]
+			}
+			if 1 < len(tf) {
+				end = tf[1]
+			}
+			if 2 < len(tf) {
+				step = tf[2]
+			}
+			if start < 0 {
+				start = len(tv) + start
+			}
+			if end < 0 {
+				end = len(tv) + end
+			}
+			if len(tv) <= end {
+				end = len(tv) - 1
+			}
+			if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
+				return
+			}
+			ns := make(gen.Array, 0, len(tv))
+			if 0 < step {
+				for i, v := range tv {
+					if !(one && changed) && inStep(i, start, end, step) {
+						changed = true
+					} else {
+						ns = append(ns, v)
+					}
+				}
+			} else {
+				// Walk in reverse to handle the just-one condition.
+				for i := len(tv) - 1; 0 <= i; i-- {
+					if !(one && changed) && inStep(i, start, end, step) {
+						changed = true
+					} else {
+						ns = append(ns, tv[i])
+					}
+				}
+				for i := len(ns)/2 - 1; 0 <= i; i-- {
+					ns[i], ns[len(ns)-i-1] = ns[len(ns)-i-1], ns[i]
+				}
+			}
+			if changed {
+				out = ns
+			}
+		}
 	case *Filter:
 		// TBD find indices then remove those until max
 	}
 	return
+}
+
+func inStep(i, start, end, step int) bool {
+	if 0 < step {
+		return start <= i && i <= end && (i-start)%step == 0
+	}
+	return end <= i && i <= start && (i-end)%-step == 0
 }

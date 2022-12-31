@@ -59,7 +59,16 @@ var (
 		{path: "[?(@.x == 1)].y", data: `[{x:1 y:2}]`, expect: `[{x: 1}]`},
 		{path: "[?(@[0] != 0)][?(@.x == 1)].y", data: `[[{x:1 y:2}]]`, expect: `[[{x: 1}]]`},
 		{path: "['a','b']", data: `{a:1 b:2 c:3}`, expect: `{c: 3}`},
+		{path: "[0]['a','b']", data: `[{a:1 b:2 c:3}]`, expect: `[{c: 3}]`},
 		{path: "[1,2]", data: `[1,2,3]`, expect: `[1]`},
+		{path: "[0][1,2]", data: `[[1,2,3]]`, expect: `[[1]]`},
+		{path: "[1:3:2]", data: `[0,1,2,3,4,5]`, expect: "[0 2 4 5]"},
+		{path: "[0][1:3:2]", data: `[[0,1,2,3,4,5]]`, expect: "[[0 2 4 5]]"},
+		{path: "[-3:-5:-2]", data: `[0,1,2,3,4,5]`, expect: "[0 2 4 5]"},
+		{path: "[0][-3:-5:-2]", data: `[[0,1,2,3,4,5]]`, expect: "[[0 2 4 5]]"},
+		{path: "[7:8]", data: `[0,1,2,3,4,5]`, expect: "[0 1 2 3 4 5]"},
+		{path: "[0][7:8]", data: `[[0,1,2,3,4,5]]`, expect: "[[0 1 2 3 4 5]]"},
+
 		// {path: "[?(@.x == 1)]", data: `[{x:1}{y:2}{x:3}]`, expect: `[{x: 1}]`},
 	}
 	remOneTestData = []*delData{
@@ -79,7 +88,12 @@ var (
 		{path: "[0,1][0,-1][1]", data: `[[[][1,2,3]]]`, expect: `[[[] [1 3]]]`},
 		{path: "[?(@.x == 1)].y", data: `[{x:1 y:2}]`, expect: `[{x: 1}]`},
 		{path: "['a','b']", data: `{a:1 b:2 c:3}`, expect: `{b: 2 c: 3}`},
+		{path: "[0]['a','b']", data: `[{a:1 b:2 c:3}]`, expect: `[{b: 2 c: 3}]`},
 		{path: "[1,2]", data: `[1,2,3]`, expect: `[1 3]`},
+		{path: "[0][1,2]", data: `[[1,2,3]]`, expect: `[[1 3]]`},
+		{path: "[1:3:2]", data: `[0,1,2,3,4,5]`, expect: "[0 2 3 4 5]"},
+		{path: "[-3:-5:-2]", data: `[0,1,2,3,4,5]`, expect: "[0 1 2 4 5]"},
+		{path: "[0][1:3:2]", data: `[[0,1,2,3,4,5]]`, expect: "[[0 2 3 4 5]]"},
 	}
 )
 
@@ -112,10 +126,10 @@ func TestExprRemoveAll(t *testing.T) {
 			out = x.MustRemove(data)
 			if 0 < len(d.err) {
 				tt.NotNil(t, err, i, " : ", x)
-				tt.Equal(t, d.err, err.Error(), i, " : ", x)
+				tt.Equal(t, d.err, err.Error(), i, " gen: ", x)
 			} else {
 				result := string(pw.Encode(out))
-				tt.Equal(t, d.expect, result, i, " : ", x)
+				tt.Equal(t, d.expect, result, i, " gen: ", x)
 			}
 		}
 	}
@@ -150,10 +164,10 @@ func TestExprRemoveOne(t *testing.T) {
 			out = x.MustRemoveOne(data)
 			if 0 < len(d.err) {
 				tt.NotNil(t, err, i, " : ", x)
-				tt.Equal(t, d.err, err.Error(), i, " : ", x)
+				tt.Equal(t, d.err, err.Error(), i, " gen: ", x)
 			} else {
 				result := string(pw.Encode(out))
-				tt.Equal(t, d.expect, result, i, " : ", x)
+				tt.Equal(t, d.expect, result, i, " gen: ", x)
 			}
 		}
 	}
@@ -544,6 +558,28 @@ func TestExprRemoveSliceReflect(t *testing.T) {
 	result = x.MustRemove(data3)
 	tt.Equal(t, "[[1 2 3] [4 5 6]]", string(pw.Encode(result)))
 	tt.Equal(t, "[[1 2 3] [4 5 6]]", string(pw.Encode(data3)))
+
+	x, err = jp.ParseString("[1:2]")
+	tt.Nil(t, err)
+	data3 = [][]any{{1}, {2}, {3}, {4}}
+	result = x.MustRemove(data3)
+	tt.Equal(t, "[[1] [4]]", string(pw.Encode(result)))
+
+	data3 = [][]any{{1}, {2}, {3}, {4}}
+	result = x.MustRemoveOne(data3)
+	tt.Equal(t, "[[1] [3] [4]]", string(pw.Encode(result)))
+
+	x, err = jp.ParseString("[-2:-3:-1]")
+	tt.Nil(t, err)
+	data3 = [][]any{{1}, {2}, {3}, {4}}
+	result = x.MustRemove(data3)
+	tt.Equal(t, "[[1] [4]]", string(pw.Encode(result)))
+
+	x, err = jp.ParseString("[5:6]")
+	tt.Nil(t, err)
+	data3 = [][]any{{1}, {2}, {3}, {4}}
+	result = x.MustRemove(data3)
+	tt.Equal(t, "[[1] [2] [3] [4]]", string(pw.Encode(result)))
 }
 
 func TestExprRemoveFilterSlice(t *testing.T) {
