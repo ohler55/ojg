@@ -56,6 +56,8 @@ var (
 		{path: "[-6:-2:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 2 3] [4 5] [6 7] [8 9]]"},
 		{path: "[:3][1:3:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6] [8 9]]]"},
 		{path: "[-1:0:-1][1:3:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6] [8 9]]]"},
+		{path: "[?(@.x == 1)].y", data: `[{x:1 y:2}]`, expect: `[{x: 1}]`},
+		{path: "[?(@[0] != 0)][?(@.x == 1)].y", data: `[[{x:1 y:2}]]`, expect: `[[{x: 1}]]`},
 	}
 	remOneTestData = []*delData{
 		{path: "key[2]", data: "{key:[1,2,3,4]}", expect: "{key: [1 2 4]}"},
@@ -72,6 +74,7 @@ var (
 		{path: "$[1][2]", data: `[1 [1,2,3,4]]`, expect: `[1 [1 2 4]]`},
 		{path: "['a','b']['x','y'][1]", data: `{a:[] b:{x:[1,2,3]}}`, expect: `{a: [] b: {x: [1 3]}}`},
 		{path: "[0,1][0,-1][1]", data: `[[[][1,2,3]]]`, expect: `[[[] [1 3]]]`},
+		{path: "[?(@.x == 1)].y", data: `[{x:1 y:2}]`, expect: `[{x: 1}]`},
 	}
 )
 
@@ -493,13 +496,40 @@ func TestExprRemoveSliceReflect(t *testing.T) {
 	result = x.MustRemove(data3)
 	tt.Equal(t, "[[1 2 3] [4 5 6]]", string(pw.Encode(result)))
 	tt.Equal(t, "[[1 2 3] [4 5 6]]", string(pw.Encode(data3)))
+}
 
+func TestExprRemoveFilterSlice(t *testing.T) {
+	x, err := jp.ParseString("[?(@.x == 1)].y")
+	tt.Nil(t, err)
+	data := []map[string]any{{"x": 1, "y": 2}}
+	result := x.MustRemove(data)
+	tt.Equal(t, "[{x: 1}]", string(pw.Encode(result)))
+	tt.Equal(t, "[{x: 1}]", string(pw.Encode(data)))
+
+	data = []map[string]any{{"x": 1, "y": 2}}
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, "[{x: 1}]", string(pw.Encode(result)))
+	tt.Equal(t, "[{x: 1}]", string(pw.Encode(data)))
+}
+
+func TestExprRemoveFilterMap(t *testing.T) {
+	x, err := jp.ParseString("[?(@.x == 1)].y")
+	tt.Nil(t, err)
+	data := map[string]map[string]any{"a": {"x": 1, "y": 2}, "b": {"x": 1, "y": 3}}
+	result := x.MustRemove(data)
+	tt.Equal(t, "{a: {x: 1} b: {x: 1}}", string(pw.Encode(result)))
+	tt.Equal(t, "{a: {x: 1} b: {x: 1}}", string(pw.Encode(data)))
+
+	data = map[string]map[string]any{"a": {"x": 1, "y": 2}, "b": {"x": 1, "y": 3}}
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, "{a: {x: 1} b: {x: 1 y: 3}}", string(pw.Encode(result)))
+	tt.Equal(t, "{a: {x: 1} b: {x: 1 y: 3}}", string(pw.Encode(data)))
 }
 
 func xTestExprRemoveDev(t *testing.T) {
 	x, err := jp.ParseString("[?(@.x == 1)].y")
 	tt.Nil(t, err)
-	data := sen.MustParse([]byte(`[{x:1 y:2}]`))
+	data := []map[string]any{{"x": 1, "y": 2}}
 	result := x.MustRemove(data)
 	fmt.Printf("*** %s\n", pw.Encode(result))
 	fmt.Printf("*** %s\n", pw.Encode(data))

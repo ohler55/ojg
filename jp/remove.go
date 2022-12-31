@@ -716,13 +716,69 @@ done:
 				}
 			}
 		case *Filter:
-
-			// TBD prev is a slice
-			// iterate and match each, remember i
-
-			fmt.Printf("*** filter - %v\n", prev)
-
-			stack, _ = tf.Eval(stack, prev).([]any)
+			if int(fi) == len(wx)-1 { // last one
+				switch tv := prev.(type) {
+				case []any:
+					for i, vv := range tv {
+						if tf.Match(vv) {
+							if nv, changed := removeLast(last, vv, one); changed {
+								tv[i] = nv
+								if one && changed {
+									break done
+								}
+							}
+						}
+					}
+				case gen.Array:
+					for i, vv := range tv {
+						if tf.Match(vv) {
+							if nv, changed := removeNodeLast(last, vv, one); changed {
+								tv[i] = nv
+								if one && changed {
+									break done
+								}
+							}
+						}
+					}
+				default:
+					rv := reflect.ValueOf(tv)
+					switch rv.Kind() {
+					case reflect.Slice:
+						cnt := rv.Len()
+						for i := 0; i < cnt; i++ {
+							iv := rv.Index(i)
+							vv := iv.Interface()
+							if tf.Match(vv) {
+								if nv, changed := removeLast(last, vv, one); changed {
+									iv.Set(reflect.ValueOf(nv))
+									if one && changed {
+										break done
+									}
+								}
+							}
+						}
+					case reflect.Map:
+						keys := rv.MapKeys()
+						sort.Slice(keys, func(i, j int) bool {
+							return strings.Compare(keys[i].String(), keys[j].String()) < 0
+						})
+						for _, k := range keys {
+							ev := rv.MapIndex(k)
+							vv := ev.Interface()
+							if tf.Match(vv) {
+								if nv, changed := removeLast(last, vv, one); changed {
+									rv.SetMapIndex(k, reflect.ValueOf(nv))
+									if one && changed {
+										break done
+									}
+								}
+							}
+						}
+					}
+				}
+			} else {
+				stack, _ = tf.Eval(stack, prev).([]any)
+			}
 		case Root:
 			if int(fi) == len(wx)-1 { // last one
 				if nv, changed := removeLast(last, data, one); changed {
