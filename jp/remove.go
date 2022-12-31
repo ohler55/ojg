@@ -4,7 +4,6 @@ package jp
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 	"sort"
 	"strings"
@@ -18,7 +17,7 @@ import (
 // slice elements are removed and the remaining elements are moveed to fill in
 // the removed element. The slice is shortened.
 func (x Expr) MustRemove(n any) any {
-	return x.remove(n, math.MaxInt)
+	return x.remove(n, false)
 }
 
 // MustRemoveOne removes matching nodes and panics on error expression error
@@ -26,7 +25,7 @@ func (x Expr) MustRemove(n any) any {
 // expression. Removed slice elements are removed and the remaining elements
 // are moveed to fill in the removed element. The slice is shortened.
 func (x Expr) MustRemoveOne(n any) any {
-	return x.remove(n, 1)
+	return x.remove(n, true)
 }
 
 // Remove removes matching nodes. An error is returned for an expression error
@@ -39,7 +38,7 @@ func (x Expr) Remove(n any) (result any, err error) {
 			err = ojg.NewError(r)
 		}
 	}()
-	result = x.remove(n, math.MaxInt)
+	result = x.remove(n, false)
 
 	return
 }
@@ -54,12 +53,12 @@ func (x Expr) RemoveOne(n any) (result any, err error) {
 			err = ojg.NewError(r)
 		}
 	}()
-	result = x.remove(n, 1)
+	result = x.remove(n, true)
 
 	return
 }
 
-func (x Expr) remove(data any, max int) any {
+func (x Expr) remove(data any, one bool) any {
 	if len(x) == 0 {
 		panic("can not remove with an empty expression")
 	}
@@ -86,7 +85,8 @@ func (x Expr) remove(data any, max int) any {
 	fi := fragIndex(0) // frag index
 	stack = append(stack, fi)
 
-	for 1 < len(stack) && 0 < max {
+done:
+	for 1 < len(stack) {
 		prev = stack[len(stack)-2]
 		if ii, up := prev.(fragIndex); up {
 			stack[len(stack)-1] = nil
@@ -105,15 +105,14 @@ func (x Expr) remove(data any, max int) any {
 			switch tv := prev.(type) {
 			case map[string]any:
 				if int(fi) == len(wx)-1 { // last one
-					if nv, mx := removeLast(last, tv[string(tf)], max); max != mx {
+					if nv, changed := removeLast(last, tv[string(tf)], one); changed {
 						tv[string(tf)] = nv
-						max = mx
+						if one && changed {
+							break done
+						}
 					}
 				} else if v, has = tv[string(tf)]; has {
 					switch v.(type) {
-					case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-						bool, string, float64, float32,
-						int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 					case map[string]any, []any, gen.Object, gen.Array:
 						stack = append(stack, v)
 					default:
@@ -129,9 +128,11 @@ func (x Expr) remove(data any, max int) any {
 				}
 			case gen.Object:
 				if int(fi) == len(wx)-1 { // last one
-					if nv, mx := removeNodeLast(last, tv[string(tf)], max); max != mx {
+					if nv, changed := removeNodeLast(last, tv[string(tf)], one); changed {
 						tv[string(tf)] = nv
-						max = mx
+						if one && changed {
+							break done
+						}
 					}
 				} else if v, has = tv[string(tf)]; has {
 					switch v.(type) {
@@ -142,15 +143,14 @@ func (x Expr) remove(data any, max int) any {
 			default:
 				if v, has = wx.reflectGetChild(tv, string(tf)); has {
 					if int(fi) == len(wx)-1 { // last one
-						if nv, mx := removeLast(last, v, max); max != mx {
+						if nv, changed := removeLast(last, v, one); changed {
 							wx.reflectSetChild(tv, string(tf), nv)
-							max = mx
+							if one && changed {
+								break done
+							}
 						}
 					} else {
 						switch v.(type) {
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-							bool, string, float64, float32,
-							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -175,16 +175,15 @@ func (x Expr) remove(data any, max int) any {
 				}
 				if 0 <= i && i < len(tv) {
 					if int(fi) == len(wx)-1 { // last one
-						if nv, mx := removeLast(last, tv[i], max); max != mx {
+						if nv, changed := removeLast(last, tv[i], one); changed {
 							tv[i] = nv
-							max = mx
+							if one && changed {
+								break done
+							}
 						}
 					} else {
 						v = tv[i]
 						switch v.(type) {
-						case bool, string, float64, float32,
-							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
-							nil, gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -205,9 +204,11 @@ func (x Expr) remove(data any, max int) any {
 				}
 				if 0 <= i && i < len(tv) {
 					if int(fi) == len(wx)-1 { // last one
-						if nv, mx := removeNodeLast(last, tv[i], max); max != mx {
+						if nv, changed := removeNodeLast(last, tv[i], one); changed {
 							tv[i] = nv
-							max = mx
+							if one && changed {
+								break done
+							}
 						}
 					} else {
 						v = tv[i]
@@ -221,15 +222,14 @@ func (x Expr) remove(data any, max int) any {
 				var has bool
 				if v, has = wx.reflectGetNth(tv, i); has {
 					if int(fi) == len(wx)-1 { // last one
-						if nv, mx := removeLast(last, v, max); max != mx {
+						if nv, changed := removeLast(last, v, one); changed {
 							wx.reflectSetNth(tv, i, nv)
-							max = mx
+							if one && changed {
+								break done
+							}
 						}
 					} else {
 						switch v.(type) {
-						case bool, string, float64, float32,
-							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
-							nil, gen.Bool, gen.Int, gen.Float, gen.String:
 						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -251,20 +251,16 @@ func (x Expr) remove(data any, max int) any {
 				var k string
 				if int(fi) == len(wx)-1 { // last one
 					for k = range tv {
-						if nv, mx := removeLast(last, tv[k], max); max != mx {
+						if nv, changed := removeLast(last, tv[k], one); changed {
 							tv[k] = nv
-							max = mx
-							if max <= 0 {
-								break
+							if one && changed {
+								break done
 							}
 						}
 					}
 				} else {
 					for _, v = range tv {
 						switch v.(type) {
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-							bool, string, float64, float32,
-							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -282,20 +278,16 @@ func (x Expr) remove(data any, max int) any {
 			case []any:
 				if int(fi) == len(wx)-1 { // last one
 					for i := range tv {
-						if nv, mx := removeLast(last, tv[i], max); max != mx {
+						if nv, changed := removeLast(last, tv[i], one); changed {
 							tv[i] = nv
-							max = mx
-							if max <= 0 {
-								break
+							if one && changed {
+								break done
 							}
 						}
 					}
 				} else {
 					for _, v = range tv {
 						switch v.(type) {
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-							bool, string, float64, float32,
-							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -314,11 +306,10 @@ func (x Expr) remove(data any, max int) any {
 				var k string
 				if int(fi) == len(wx)-1 { // last one
 					for k = range tv {
-						if nv, mx := removeNodeLast(last, tv[k], max); max != mx {
+						if nv, changed := removeNodeLast(last, tv[k], one); changed {
 							tv[k] = nv
-							max = mx
-							if max <= 0 {
-								break
+							if one && changed {
+								break done
 							}
 						}
 					}
@@ -333,11 +324,10 @@ func (x Expr) remove(data any, max int) any {
 			case gen.Array:
 				if int(fi) == len(wx)-1 { // last one
 					for i := range tv {
-						if nv, mx := removeNodeLast(last, tv[i], max); max != mx {
+						if nv, changed := removeNodeLast(last, tv[i], one); changed {
 							tv[i] = nv
-							max = mx
-							if max <= 0 {
-								break
+							if one && changed {
+								break done
 							}
 						}
 					}
@@ -357,11 +347,10 @@ func (x Expr) remove(data any, max int) any {
 						cnt := rv.Len()
 						for i := 0; i < cnt; i++ {
 							iv := rv.Index(i)
-							if nv, mx := removeLast(last, iv.Interface(), max); max != mx {
+							if nv, changed := removeLast(last, iv.Interface(), one); changed {
 								iv.Set(reflect.ValueOf(nv))
-								max = mx
-								if max <= 0 {
-									break
+								if one && changed {
+									break done
 								}
 							}
 						}
@@ -372,21 +361,17 @@ func (x Expr) remove(data any, max int) any {
 						})
 						for _, k := range keys {
 							ev := rv.MapIndex(k)
-							if nv, mx := removeLast(last, ev.Interface(), max); max != mx {
+							if nv, changed := removeLast(last, ev.Interface(), one); changed {
 								rv.SetMapIndex(k, reflect.ValueOf(nv))
-								max = mx
-							}
-							if max <= 0 {
-								break
+								if one && changed {
+									break done
+								}
 							}
 						}
 					}
 				} else {
 					for _, v := range wx.reflectGetWild(tv) {
 						switch v.(type) {
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-							bool, string, float64, float32,
-							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -410,15 +395,14 @@ func (x Expr) remove(data any, max int) any {
 					switch tv := prev.(type) {
 					case map[string]any:
 						if int(fi) == len(wx)-1 { // last one
-							if nv, mx := removeLast(last, tv[tu], max); max != mx {
+							if nv, changed := removeLast(last, tv[tu], one); changed {
 								tv[tu] = nv
-								max = mx
+								if one && changed {
+									break done
+								}
 							}
 						} else if v, has = tv[tu]; has {
 							switch v.(type) {
-							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-								bool, string, float64, float32,
-								int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 							case map[string]any, []any, gen.Object, gen.Array:
 								stack = append(stack, v)
 							default:
@@ -434,9 +418,11 @@ func (x Expr) remove(data any, max int) any {
 						}
 					case gen.Object:
 						if int(fi) == len(wx)-1 { // last one
-							if nv, mx := removeNodeLast(last, tv[tu], max); max != mx {
+							if nv, changed := removeNodeLast(last, tv[tu], one); changed {
 								tv[tu] = nv
-								max = mx
+								if one && changed {
+									break done
+								}
 							}
 						} else if v, has = tv[tu]; has {
 							switch v.(type) {
@@ -448,15 +434,14 @@ func (x Expr) remove(data any, max int) any {
 						var has bool
 						if v, has = wx.reflectGetChild(tv, tu); has {
 							if int(fi) == len(wx)-1 { // last one
-								if nv, mx := removeLast(last, v, max); max != mx {
+								if nv, changed := removeLast(last, v, one); changed {
 									wx.reflectSetChild(tv, tu, nv)
-									max = mx
+									if one && changed {
+										break done
+									}
 								}
 							} else {
 								switch v.(type) {
-								case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-									bool, string, float64, float32,
-									int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 								case map[string]any, []any, gen.Object, gen.Array:
 									stack = append(stack, v)
 								default:
@@ -482,15 +467,14 @@ func (x Expr) remove(data any, max int) any {
 						if 0 <= i && i < len(tv) {
 							v = tv[i]
 							if int(fi) == len(wx)-1 { // last one
-								if nv, mx := removeLast(last, v, max); max != mx {
+								if nv, changed := removeLast(last, v, one); changed {
 									tv[i] = nv
-									max = mx
+									if one && changed {
+										break done
+									}
 								}
 							} else {
 								switch v.(type) {
-								case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-									bool, string, float64, float32,
-									int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 								case map[string]any, []any, gen.Object, gen.Array:
 									stack = append(stack, v)
 								default:
@@ -511,9 +495,11 @@ func (x Expr) remove(data any, max int) any {
 						}
 						if 0 <= i && i < len(tv) {
 							if int(fi) == len(wx)-1 { // last one
-								if nv, mx := removeNodeLast(last, tv[i], max); max != mx {
+								if nv, changed := removeNodeLast(last, tv[i], one); changed {
 									tv[i] = nv
-									max = mx
+									if one && changed {
+										break done
+									}
 								}
 							} else {
 								v = tv[i]
@@ -533,11 +519,10 @@ func (x Expr) remove(data any, max int) any {
 								}
 								if 0 <= i && i < cnt {
 									iv := rv.Index(i)
-									if nv, mx := removeLast(last, iv.Interface(), max); max != mx {
+									if nv, changed := removeLast(last, iv.Interface(), one); changed {
 										iv.Set(reflect.ValueOf(nv))
-										max = mx
-										if max <= 0 {
-											break
+										if one && changed {
+											break done
 										}
 									}
 								}
@@ -546,9 +531,6 @@ func (x Expr) remove(data any, max int) any {
 							var has bool
 							if v, has = wx.reflectGetNth(tv, i); has {
 								switch v.(type) {
-								case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-									bool, string, float64, float32,
-									int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 								case map[string]any, []any, gen.Object, gen.Array:
 									stack = append(stack, v)
 								default:
@@ -564,9 +546,6 @@ func (x Expr) remove(data any, max int) any {
 							}
 						}
 					}
-				}
-				if max <= 0 {
-					break
 				}
 			}
 		case Slice:
@@ -590,7 +569,7 @@ func (x Expr) remove(data any, max int) any {
 				if end < 0 {
 					end = len(tv) + end
 				}
-				if len(tv) < end {
+				if len(tv) <= end {
 					end = len(tv) - 1
 				}
 				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
@@ -600,12 +579,11 @@ func (x Expr) remove(data any, max int) any {
 					for i := start; i <= end; i += step {
 						v = tv[i]
 						if int(fi) == len(wx)-1 { // last one
-							if nv, mx := removeLast(last, v, max); max != mx {
+							if nv, changed := removeLast(last, v, one); changed {
 								tv[i] = nv
-								max = mx
-							}
-							if max <= 0 {
-								break
+								if one && changed {
+									break done
+								}
 							}
 						} else {
 							switch v.(type) {
@@ -618,12 +596,11 @@ func (x Expr) remove(data any, max int) any {
 					for i := start; end <= i; i += step {
 						v = tv[i]
 						if int(fi) == len(wx)-1 { // last one
-							if nv, mx := removeLast(last, v, max); max != mx {
+							if nv, changed := removeLast(last, v, one); changed {
 								tv[i] = nv
-								max = mx
-							}
-							if max <= 0 {
-								break
+								if one && changed {
+									break done
+								}
 							}
 						} else {
 							switch v.(type) {
@@ -640,7 +617,7 @@ func (x Expr) remove(data any, max int) any {
 				if end < 0 {
 					end = len(tv) + end
 				}
-				if len(tv) < end {
+				if len(tv) <= end {
 					end = len(tv) - 1
 				}
 				if start < 0 || end < 0 || len(tv) <= start || len(tv) <= end || step == 0 {
@@ -649,12 +626,11 @@ func (x Expr) remove(data any, max int) any {
 				if 0 < step {
 					for i := start; i <= end; i += step {
 						if int(fi) == len(wx)-1 { // last one
-							if nv, mx := removeNodeLast(last, tv[i], max); max != mx {
+							if nv, changed := removeNodeLast(last, tv[i], one); changed {
 								tv[i] = nv
-								max = mx
-							}
-							if max <= 0 {
-								break
+								if one && changed {
+									break done
+								}
 							}
 						} else {
 							v = tv[i]
@@ -667,12 +643,11 @@ func (x Expr) remove(data any, max int) any {
 				} else {
 					for i := start; end <= i; i += step {
 						if int(fi) == len(wx)-1 { // last one
-							if nv, mx := removeNodeLast(last, tv[i], max); max != mx {
+							if nv, changed := removeNodeLast(last, tv[i], one); changed {
 								tv[i] = nv
-								max = mx
-							}
-							if max <= 0 {
-								break
+								if one && changed {
+									break done
+								}
 							}
 						} else {
 							v = tv[i]
@@ -685,13 +660,46 @@ func (x Expr) remove(data any, max int) any {
 				}
 			default:
 				if int(fi) == len(wx)-1 {
-					// TBD
+					rv := reflect.ValueOf(tv)
+					if rv.Kind() == reflect.Slice {
+						cnt := rv.Len()
+						if start < 0 {
+							start = cnt + start
+						}
+						if end < 0 {
+							end = cnt + end
+						}
+						if cnt <= end {
+							end = cnt - 1
+						}
+						if start < 0 || end < 0 || cnt <= start || cnt <= end || step == 0 {
+							continue
+						}
+						if 0 < step {
+							for i := start; i <= end; i += step {
+								iv := rv.Index(i)
+								if nv, changed := removeLast(last, iv.Interface(), one); changed {
+									iv.Set(reflect.ValueOf(nv))
+									if one && changed {
+										break done
+									}
+								}
+							}
+						} else {
+							for i := start; end <= i; i += step {
+								iv := rv.Index(i)
+								if nv, changed := removeLast(last, iv.Interface(), one); changed {
+									iv.Set(reflect.ValueOf(nv))
+									if one && changed {
+										break done
+									}
+								}
+							}
+						}
+					}
 				} else {
 					for _, v := range wx.reflectGetSlice(tv, start, end, step) {
 						switch v.(type) {
-						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-							bool, string, float64, float32,
-							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
 						default:
@@ -709,7 +717,7 @@ func (x Expr) remove(data any, max int) any {
 			}
 		case *Filter:
 
-			// TBD prev is a sliceslice?
+			// TBD prev is a slice
 			// iterate and match each, remember i
 
 			fmt.Printf("*** filter - %v\n", prev)
@@ -717,18 +725,22 @@ func (x Expr) remove(data any, max int) any {
 			stack, _ = tf.Eval(stack, prev).([]any)
 		case Root:
 			if int(fi) == len(wx)-1 { // last one
-				if nv, mx := removeLast(last, data, max); max != mx {
+				if nv, changed := removeLast(last, data, one); changed {
 					wrap[0] = nv
-					max = mx
+					if one && changed {
+						break done
+					}
 				}
 			} else {
 				stack = append(stack, data)
 			}
 		case At, Bracket:
 			if int(fi) == len(wx)-1 { // last one
-				if nv, mx := removeLast(last, data, max); max != mx {
+				if nv, changed := removeLast(last, data, one); changed {
 					wrap[0] = nv
-					max = mx
+					if one && changed {
+						break done
+					}
 				}
 			}
 			stack = append(stack, prev)
@@ -744,20 +756,19 @@ func (x Expr) remove(data any, max int) any {
 	return wrap[0]
 }
 
-func removeLast(f Frag, value any, max int) (any, int) {
+func removeLast(f Frag, value any, one bool) (out any, changed bool) {
+	out = value
 	switch tf := f.(type) {
 	case Child:
 		key := string(tf)
 		switch tv := value.(type) {
 		case map[string]any:
-			if _, has := tv[key]; has {
+			if _, changed = tv[key]; changed {
 				delete(tv, key)
-				max--
 			}
 		case gen.Object:
-			if _, has := tv[key]; has {
+			if _, changed = tv[key]; changed {
 				delete(tv, string(tf))
-				max--
 			}
 		default:
 			if rt := reflect.TypeOf(value); rt != nil {
@@ -767,7 +778,7 @@ func removeLast(f Frag, value any, max int) (any, int) {
 					rk := reflect.ValueOf(key)
 					if rv.MapIndex(rk).IsValid() {
 						rv.SetMapIndex(rk, reflect.Value{})
-						max--
+						changed = true
 					}
 				}
 			}
@@ -780,16 +791,16 @@ func removeLast(f Frag, value any, max int) (any, int) {
 				i = len(tv) + i
 			}
 			if 0 <= i && i < len(tv) {
-				value = append(tv[:i], tv[i+1:]...)
-				max--
+				out = append(tv[:i], tv[i+1:]...)
+				changed = true
 			}
 		case gen.Array:
 			if i < 0 {
 				i = len(tv) + i
 			}
 			if 0 <= i && i < len(tv) {
-				value = append(tv[:i], tv[i+1:]...)
-				max--
+				out = append(tv[:i], tv[i+1:]...)
+				changed = true
 			}
 		default:
 			if rt := reflect.TypeOf(value); rt != nil {
@@ -808,8 +819,8 @@ func removeLast(f Frag, value any, max int) (any, int) {
 							for j := i + 1; j < cnt; j++ {
 								nv.Index(j - 1).Set(rv.Index(j))
 							}
-							value = nv.Interface()
-							max--
+							out = nv.Interface()
+							changed = true
 						}
 					}
 				}
@@ -818,58 +829,52 @@ func removeLast(f Frag, value any, max int) (any, int) {
 	case Wildcard:
 		switch tv := value.(type) {
 		case []any:
-			if len(tv) <= max {
-				max -= len(tv)
-				value = []any{}
-			} else {
-				for ; 0 < max; max-- {
-					tv = tv[1:]
+			if 0 < len(tv) {
+				changed = true
+				if one {
+					out = tv[1:]
+				} else {
+					out = []any{}
 				}
-				value = tv
 			}
 		case map[string]any:
-			if len(tv) <= max {
-				max -= len(tv)
-				value = map[string]any{}
-			} else {
+			if 0 < len(tv) {
+				changed = true
 				keys := make([]string, 0, len(tv))
 				for k := range tv {
 					keys = append(keys, k)
 				}
 				sort.Strings(keys)
-				for _, k := range keys {
-					delete(tv, k)
-					max--
-					if max <= 0 {
-						break
+				if one {
+					delete(tv, keys[0])
+				} else {
+					for _, k := range keys {
+						delete(tv, k)
 					}
 				}
 			}
 		case gen.Array:
-			if len(tv) <= max {
-				max -= len(tv)
-				value = gen.Array{}
-			} else {
-				for ; 0 < max; max-- {
-					tv = tv[1:]
+			if 0 < len(tv) {
+				changed = true
+				if one {
+					out = tv[1:]
+				} else {
+					out = gen.Array{}
 				}
-				value = tv
 			}
 		case gen.Object:
-			if len(tv) <= max {
-				max -= len(tv)
-				value = gen.Object{}
-			} else {
+			if 0 < len(tv) {
+				changed = true
 				keys := make([]string, 0, len(tv))
 				for k := range tv {
 					keys = append(keys, k)
 				}
 				sort.Strings(keys)
-				for _, k := range keys {
-					delete(tv, k)
-					max--
-					if max <= 0 {
-						break
+				if one {
+					delete(tv, keys[0])
+				} else {
+					for _, k := range keys {
+						delete(tv, k)
 					}
 				}
 			}
@@ -883,16 +888,16 @@ func removeLast(f Frag, value any, max int) (any, int) {
 	case *Filter:
 		// TBD find indices then remove those until max
 	}
-	return value, max
+	return
 }
 
-func removeNodeLast(f Frag, value gen.Node, max int) (gen.Node, int) {
+func removeNodeLast(f Frag, value gen.Node, one bool) (out gen.Node, changed bool) {
+	out = value
 	switch tf := f.(type) {
 	case Child:
 		if tv, ok := value.(gen.Object); ok {
-			if _, has := tv[string(tf)]; has {
+			if _, changed = tv[string(tf)]; changed {
 				delete(tv, string(tf))
-				max--
 			}
 		}
 	case Nth:
@@ -902,37 +907,34 @@ func removeNodeLast(f Frag, value gen.Node, max int) (gen.Node, int) {
 				i = len(tv) + i
 			}
 			if 0 <= i && i < len(tv) {
-				value = append(tv[:i], tv[i+1:]...)
-				max--
+				out = append(tv[:i], tv[i+1:]...)
+				changed = true
 			}
 		}
 	case Wildcard:
 		switch tv := value.(type) {
 		case gen.Array:
-			if len(tv) <= max {
-				max -= len(tv)
-				value = gen.Array{}
-			} else {
-				for ; 0 < max; max-- {
-					tv = tv[1:]
+			if 0 < len(tv) {
+				changed = true
+				if one {
+					out = tv[1:]
+				} else {
+					out = gen.Array{}
 				}
-				value = tv
 			}
 		case gen.Object:
-			if len(tv) <= max {
-				max -= len(tv)
-				value = gen.Object{}
-			} else {
+			if 0 < len(tv) {
+				changed = true
 				keys := make([]string, 0, len(tv))
 				for k := range tv {
 					keys = append(keys, k)
 				}
 				sort.Strings(keys)
-				for _, k := range keys {
-					delete(tv, k)
-					max--
-					if max <= 0 {
-						break
+				if one {
+					delete(tv, keys[0])
+				} else {
+					for _, k := range keys {
+						delete(tv, k)
 					}
 				}
 			}
@@ -944,5 +946,5 @@ func removeNodeLast(f Frag, value gen.Node, max int) (gen.Node, int) {
 	case *Filter:
 		// TBD find indices then remove those until max
 	}
-	return value, max
+	return
 }

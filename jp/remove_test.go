@@ -67,7 +67,11 @@ var (
 		{path: "[1:3:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6 7] [8 9]]"},
 		{path: "[3:1:-2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 2 3] [4 5] [6] [8 9]]"},
 		{path: "[-4:-2:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6 7] [8 9]]"},
-		// {path: "", data: "", expect: ""},
+		{path: "@[2]", data: `[1,2,3,4]`, expect: `[1 2 4]`},
+		{path: "$[2]", data: `[1,2,3,4]`, expect: `[1 2 4]`},
+		{path: "$[1][2]", data: `[1 [1,2,3,4]]`, expect: `[1 [1 2 4]]`},
+		{path: "['a','b']['x','y'][1]", data: `{a:[] b:{x:[1,2,3]}}`, expect: `{a: [] b: {x: [1 3]}}`},
+		{path: "[0,1][0,-1][1]", data: `[[[][1,2,3]]]`, expect: `[[[] [1 3]]]`},
 	}
 )
 
@@ -155,6 +159,11 @@ func TestExprRemoveReflect(t *testing.T) {
 	tt.Equal(t, "{field: [1 3 4]}", string(pw.Encode(result)))
 	tt.Equal(t, "{field: [1 3 4]}", string(pw.Encode(obj)))
 
+	obj = &RemObj{Field: []any{1, 2, 3, 4}}
+	result = x.MustRemoveOne(obj)
+	tt.Equal(t, "{field: [1 3 4]}", string(pw.Encode(result)))
+	tt.Equal(t, "{field: [1 3 4]}", string(pw.Encode(obj)))
+
 	x, err = jp.ParseString("field[1][0]")
 	tt.Nil(t, err)
 	obj = &RemObj{Field: []any{1, []any{2, 3}, 4}}
@@ -225,6 +234,11 @@ func TestExprRemoveNthReflect(t *testing.T) {
 	result := x.MustRemove(data)
 	tt.Equal(t, "[{field: null} {field: [1]}]", string(pw.Encode(result)))
 	tt.Equal(t, "[{field: null} {field: [1]}]", string(pw.Encode(data)))
+
+	data = []*RemObj{{}, {Field: []any{1, 2}}}
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, "[{field: null} {field: [1]}]", string(pw.Encode(result)))
+	tt.Equal(t, "[{field: null} {field: [1]}]", string(pw.Encode(data)))
 }
 
 func TestExprRemoveNthReflectLast(t *testing.T) {
@@ -250,6 +264,11 @@ func TestExprRemoveNthReflectLastSlice(t *testing.T) {
 	tt.Nil(t, err)
 	data := [][]int{{}, {1, 2, 3}}
 	result := x.MustRemove(data)
+	tt.Equal(t, "[[] [1 3]]", string(pw.Encode(result)))
+	tt.Equal(t, "[[] [1 3]]", string(pw.Encode(data)))
+
+	data = [][]int{{}, {1, 2, 3}}
+	result = x.MustRemoveOne(data)
 	tt.Equal(t, "[[] [1 3]]", string(pw.Encode(result)))
 	tt.Equal(t, "[[] [1 3]]", string(pw.Encode(data)))
 }
@@ -391,6 +410,11 @@ func TestExprRemoveUnionReflectMap(t *testing.T) {
 	result = x.MustRemove(data2)
 	tt.Equal(t, "{field: {field: [1 3]}}", string(pw.Encode(result)))
 	tt.Equal(t, "{field: {field: [1 3]}}", string(pw.Encode(data2)))
+
+	data2 = &RemObj{Field: &RemObj{Field: []any{1, 2, 3}}}
+	result = x.MustRemoveOne(data2)
+	tt.Equal(t, "{field: {field: [1 3]}}", string(pw.Encode(result)))
+	tt.Equal(t, "{field: {field: [1 3]}}", string(pw.Encode(data2)))
 }
 
 func TestExprRemoveUnionReflectSlice(t *testing.T) {
@@ -424,6 +448,52 @@ func TestExprRemoveUnionReflectSlice(t *testing.T) {
 	result = x.MustRemove(data4)
 	tt.Equal(t, "[[[1 3]]]", string(pw.Encode(result)))
 	tt.Equal(t, "[[[1 3]]]", string(pw.Encode(data4)))
+}
+
+func TestExprRemoveSliceReflect(t *testing.T) {
+	x, err := jp.ParseString("[0:3].field[0]")
+	tt.Nil(t, err)
+	data := []*RemObj{{Field: []any{1, 2, 3}}}
+	result := x.MustRemove(data)
+	tt.Equal(t, "[{field: [2 3]}]", string(pw.Encode(result)))
+	tt.Equal(t, "[{field: [2 3]}]", string(pw.Encode(data)))
+
+	data2 := []map[string]any{{"field": []any{1, 2, 3}}}
+	result = x.MustRemove(data2)
+	tt.Equal(t, "[{field: [2 3]}]", string(pw.Encode(result)))
+	tt.Equal(t, "[{field: [2 3]}]", string(pw.Encode(data2)))
+
+	x, err = jp.ParseString("[0:3][0]")
+	tt.Nil(t, err)
+	data3 := [][]any{{1, 2, 3}, {4, 5, 6}}
+	result = x.MustRemove(data3)
+	tt.Equal(t, "[[2 3] [5 6]]", string(pw.Encode(result)))
+	tt.Equal(t, "[[2 3] [5 6]]", string(pw.Encode(data3)))
+
+	data3 = [][]any{{1, 2, 3}, {4, 5, 6}}
+	result = x.MustRemoveOne(data3)
+	tt.Equal(t, "[[2 3] [4 5 6]]", string(pw.Encode(result)))
+	tt.Equal(t, "[[2 3] [4 5 6]]", string(pw.Encode(data3)))
+
+	x, err = jp.ParseString("[-1:-2:-1][0]")
+	tt.Nil(t, err)
+	data3 = [][]any{{1, 2, 3}, {4, 5, 6}}
+	result = x.MustRemove(data3)
+	tt.Equal(t, "[[2 3] [5 6]]", string(pw.Encode(result)))
+	tt.Equal(t, "[[2 3] [5 6]]", string(pw.Encode(data3)))
+
+	data3 = [][]any{{1, 2, 3}, {4, 5, 6}}
+	result = x.MustRemoveOne(data3)
+	tt.Equal(t, "[[1 2 3] [5 6]]", string(pw.Encode(result)))
+	tt.Equal(t, "[[1 2 3] [5 6]]", string(pw.Encode(data3)))
+
+	x, err = jp.ParseString("[3:][0]")
+	tt.Nil(t, err)
+	data3 = [][]any{{1, 2, 3}, {4, 5, 6}}
+	result = x.MustRemove(data3)
+	tt.Equal(t, "[[1 2 3] [4 5 6]]", string(pw.Encode(result)))
+	tt.Equal(t, "[[1 2 3] [4 5 6]]", string(pw.Encode(data3)))
+
 }
 
 func xTestExprRemoveDev(t *testing.T) {

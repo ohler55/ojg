@@ -2,6 +2,10 @@
 
  - delete and set with filter, union, and slice
 
+- jp.Set
+ - combine all and one
+ - support Union, Slice, *Filter
+
 - parse
  - add discover option
   - 3 states
