@@ -935,14 +935,159 @@ func removeLast(f Frag, value any, one bool) (out any, changed bool) {
 				}
 			}
 		default:
-			// TBD reflect
+			rv := reflect.ValueOf(value)
+			switch rv.Kind() {
+			case reflect.Slice:
+				if 0 < rv.Len() {
+					changed = true
+					if one {
+						out = rv.Slice(1, rv.Len()).Interface()
+					} else {
+						out = reflect.MakeSlice(rv.Type(), 0, 0).Interface()
+					}
+				}
+			case reflect.Map:
+				if 0 < rv.Len() {
+					changed = true
+					if one {
+						keys := rv.MapKeys()
+						sort.Slice(keys, func(i, j int) bool {
+							return strings.Compare(keys[i].String(), keys[j].String()) < 0
+						})
+						rv.SetMapIndex(keys[0], reflect.Value{})
+					} else {
+						out = reflect.MakeMap(rv.Type()).Interface()
+					}
+				}
+			}
 		}
 	case Union:
-		// TBD
+		switch tv := value.(type) {
+		case []any:
+			ns := make([]any, 0, len(tv))
+			for i, v := range tv {
+				if !(one && changed) && tf.hasN(int64(i)) {
+					changed = true
+				} else {
+					ns = append(ns, v)
+				}
+			}
+			if changed {
+				out = ns
+			}
+		case map[string]any:
+			if one {
+				if 0 < len(tv) {
+					keys := make([]string, 0, len(tv))
+					for k := range tv {
+						keys = append(keys, k)
+					}
+					sort.Strings(keys)
+					for _, k := range keys {
+						if tf.hasKey(k) {
+							delete(tv, k)
+							changed = true
+							break
+						}
+					}
+				}
+			} else {
+				for k := range tv {
+					if tf.hasKey(k) {
+						delete(tv, k)
+						changed = true
+					}
+				}
+			}
+		case gen.Array:
+			ns := make(gen.Array, 0, len(tv))
+			for i, v := range tv {
+				if !(one && changed) && tf.hasN(int64(i)) {
+					changed = true
+				} else {
+					ns = append(ns, v)
+				}
+			}
+			if changed {
+				out = ns
+			}
+		case gen.Object:
+			if one {
+				if 0 < len(tv) {
+					keys := make([]string, 0, len(tv))
+					for k := range tv {
+						keys = append(keys, k)
+					}
+					sort.Strings(keys)
+					for _, k := range keys {
+						if tf.hasKey(k) {
+							delete(tv, k)
+							changed = true
+							break
+						}
+					}
+				}
+			} else {
+				for k := range tv {
+					if tf.hasKey(k) {
+						delete(tv, k)
+						changed = true
+					}
+				}
+			}
+		default:
+			rv := reflect.ValueOf(value)
+			switch rv.Kind() {
+			case reflect.Slice:
+				// You would think that ns.SetLen() would work in a case like
+				// this but it panics as unaddressable so instead the length
+				// is calculated and then a second pass is made to assign the
+				// new slice values.
+				cnt := rv.Len()
+				nc := 0
+				for i := 0; i < cnt; i++ {
+					if !(one && changed) && tf.hasN(int64(i)) {
+						changed = true
+					} else {
+						nc++
+					}
+				}
+				if changed {
+					ni := 0
+					ns := reflect.MakeSlice(rv.Type(), nc, nc)
+					for i := 0; i < cnt; i++ {
+						if !(one && changed) && tf.hasN(int64(i)) {
+							changed = true
+						} else {
+							ns.Index(ni).Set(rv.Index(i))
+							ni++
+						}
+					}
+					out = ns.Interface()
+				}
+			case reflect.Map:
+				keys := rv.MapKeys()
+				sort.Slice(keys, func(i, j int) bool {
+					return strings.Compare(keys[i].String(), keys[j].String()) < 0
+				})
+				for _, k := range keys {
+					if tf.hasKey(k.String()) {
+						rv.SetMapIndex(k, reflect.Value{})
+						changed = true
+						if one {
+							break
+						}
+					}
+				}
+			}
+		}
 	case Slice:
 		// TBD
+		// must be slice
+		// copy to new slice
 	case *Filter:
-		// TBD find indices then remove those until max
+		// TBD slice or map or reflect slice or map
+		//
 	}
 	return
 }

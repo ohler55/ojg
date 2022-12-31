@@ -44,3 +44,21 @@ func NewUnion(keys ...any) (u Union) {
 	}
 	return
 }
+
+func (f Union) hasN(n int64) bool {
+	for _, x := range f {
+		if ix, ok := x.(int64); ok && ix == n {
+			return true
+		}
+	}
+	return false
+}
+
+func (f Union) hasKey(key string) bool {
+	for _, x := range f {
+		if sx, ok := x.(string); ok && sx == key {
+			return true
+		}
+	}
+	return false
+}
