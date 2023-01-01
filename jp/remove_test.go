@@ -635,12 +635,3 @@ func TestExprRemoveFilterMap(t *testing.T) {
 	result = x.MustRemoveOne(data)
 	tt.Equal(t, "{b: {x: 2} c: {x: 3}}", string(pw.Encode(result)))
 }
-
-func xTestExprRemoveDev(t *testing.T) {
-	x, err := jp.ParseString("[?(@.x == 1)].y")
-	tt.Nil(t, err)
-	data := []map[string]any{{"x": 1, "y": 2}}
-	result := x.MustRemove(data)
-	fmt.Printf("*** %s\n", pw.Encode(result))
-	fmt.Printf("*** %s\n", pw.Encode(data))
-}

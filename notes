@@ -1,10 +1,9 @@
 
 
- - delete and set with filter, union, and slice
-
 - jp.Set
  - combine all and one
  - support Union, Slice, *Filter
+ - remove case for int,int16, ... where possible
 
 - parse
  - add discover option
