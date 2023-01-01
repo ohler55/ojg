@@ -31,8 +31,8 @@ var (
 		{path: "a[0]", data: `{}`, expect: `{}`},
 
 		{path: "", data: `{}`, err: "can not delete with an empty expression"},
-		{path: "$", data: `{}`, err: "can not delete the root"},
-		{path: "@", data: `{}`, err: "can not delete an empty expression"},
+		{path: "$", data: `{}`, err: "can not delete with an expression ending with a Root"},
+		{path: "@", data: `{}`, err: "can not delete with an expression ending with a At"},
 		{path: "a[1,2]", data: `{}`, err: "can not delete with an expression ending with a Union"},
 		{path: "a.b", data: `{"a":4}`, err: "/can not follow a .+ at 'a'/"},
 		{path: "[0].1", data: `[1]`, err: "/can not follow a .+ at '\\[0\\]'/"},
@@ -48,8 +48,8 @@ var (
 		{path: "a[0]", data: `{}`, expect: `{}`},
 
 		{path: "", data: `{}`, err: "can not delete with an empty expression"},
-		{path: "$", data: `{}`, err: "can not delete the root"},
-		{path: "@", data: `{}`, err: "can not delete an empty expression"},
+		{path: "$", data: `{}`, err: "can not delete with an expression ending with a Root"},
+		{path: "@", data: `{}`, err: "can not delete with an expression ending with a At"},
 		{path: "a[1,2]", data: `{}`, err: "can not delete with an expression ending with a Union"},
 		{path: "a.b", data: `{"a":4}`, err: "/can not follow a .+ at 'a'/"},
 		{path: "[0].1", data: `[1]`, err: "/can not follow a .+ at '\\[0\\]'/"},
@@ -129,4 +129,14 @@ func TestExprDelOne(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestExprMustDel(t *testing.T) {
+	data := map[string]any{"a": 1, "b": 2, "c": 3}
+	tt.Panic(t, func() { jp.C("b").N(0).MustDel(data) })
+}
+
+func TestExprMustDelOne(t *testing.T) {
+	data := map[string]any{"a": 1, "b": 2, "c": 3}
+	tt.Panic(t, func() { jp.C("b").N(0).MustDelOne(data) })
 }

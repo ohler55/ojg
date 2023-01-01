@@ -1,9 +1,7 @@
 
 
 - jp.Set
- - combine all and one
- - support Union, Slice, *Filter
- - remove case for int,int16, ... where possible
+ - allow union for last
 
 - parse
  - add discover option
