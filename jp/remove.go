@@ -1225,8 +1225,128 @@ func removeLast(f Frag, value any, one bool) (out any, changed bool) {
 			}
 		}
 	case *Filter:
-		// TBD slice or map or reflect slice or map
-		//
+		switch tv := value.(type) {
+		case []any:
+			ns := make([]any, 0, len(tv))
+			for _, v := range tv {
+				if !(one && changed) && tf.Match(v) {
+					changed = true
+				} else {
+					ns = append(ns, v)
+				}
+			}
+			if changed {
+				out = ns
+			}
+		case map[string]any:
+			if one {
+				if 0 < len(tv) {
+					keys := make([]string, 0, len(tv))
+					for k := range tv {
+						keys = append(keys, k)
+					}
+					sort.Strings(keys)
+					for _, k := range keys {
+						if tf.Match(tv[k]) {
+							delete(tv, k)
+							changed = true
+							break
+						}
+					}
+				}
+			} else {
+				for k, v := range tv {
+					if tf.Match(v) {
+						delete(tv, k)
+						changed = true
+					}
+				}
+			}
+		case gen.Array:
+			ns := make(gen.Array, 0, len(tv))
+			for _, v := range tv {
+				if !(one && changed) && tf.Match(v) {
+					changed = true
+				} else {
+					ns = append(ns, v)
+				}
+			}
+			if changed {
+				out = ns
+			}
+		case gen.Object:
+			if one {
+				if 0 < len(tv) {
+					keys := make([]string, 0, len(tv))
+					for k := range tv {
+						keys = append(keys, k)
+					}
+					sort.Strings(keys)
+					for _, k := range keys {
+						if tf.Match(tv[k]) {
+							delete(tv, k)
+							changed = true
+							break
+						}
+					}
+				}
+			} else {
+				for k, v := range tv {
+					if tf.Match(v) {
+						delete(tv, k)
+						changed = true
+					}
+				}
+			}
+		default:
+			rv := reflect.ValueOf(value)
+			switch rv.Kind() {
+			case reflect.Slice:
+				// You would think that ns.SetLen() would work in a case like
+				// this but it panics as unaddressable so instead the length
+				// is calculated and then a second pass is made to assign the
+				// new slice values.
+				cnt := rv.Len()
+				nc := 0
+				for i := 0; i < cnt; i++ {
+					if !(one && changed) && tf.Match(rv.Index(i).Interface()) {
+						changed = true
+					} else {
+						nc++
+					}
+				}
+				if changed {
+					changed = false
+					ni := 0
+					ns := reflect.MakeSlice(rv.Type(), nc, nc)
+					for i := 0; i < cnt; i++ {
+						iv := rv.Index(i)
+						if !(one && changed) && tf.Match(iv.Interface()) {
+							changed = true
+						} else {
+							ns.Index(ni).Set(iv)
+							ni++
+						}
+					}
+					out = ns.Interface()
+				}
+			case reflect.Map:
+				keys := rv.MapKeys()
+				sort.Slice(keys, func(i, j int) bool {
+					return strings.Compare(keys[i].String(), keys[j].String()) < 0
+				})
+				for _, k := range keys {
+					mv := rv.MapIndex(k)
+					if tf.Match(mv.Interface()) {
+						rv.SetMapIndex(k, reflect.Value{})
+						changed = true
+						if one {
+							break
+						}
+					}
+				}
+			}
+		}
 	}
 	return
 }
@@ -1371,7 +1491,44 @@ func removeNodeLast(f Frag, value gen.Node, one bool) (out gen.Node, changed boo
 			}
 		}
 	case *Filter:
-		// TBD find indices then remove those until max
+		switch tv := value.(type) {
+		case gen.Array:
+			ns := make(gen.Array, 0, len(tv))
+			for _, v := range tv {
+				if !(one && changed) && tf.Match(v) {
+					changed = true
+				} else {
+					ns = append(ns, v)
+				}
+			}
+			if changed {
+				out = ns
+			}
+		case gen.Object:
+			if one {
+				if 0 < len(tv) {
+					keys := make([]string, 0, len(tv))
+					for k := range tv {
+						keys = append(keys, k)
+					}
+					sort.Strings(keys)
+					for _, k := range keys {
+						if tf.Match(tv[k]) {
+							delete(tv, k)
+							changed = true
+							break
+						}
+					}
+				}
+			} else {
+				for k, v := range tv {
+					if tf.Match(v) {
+						delete(tv, k)
+						changed = true
+					}
+				}
+			}
+		}
 	}
 	return
 }
