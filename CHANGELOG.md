@@ -7,6 +7,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.16.0] - not released
 ### Added
 - Remove() functions added to the jp package.
+- jp.Set() operations now allow a union as the last fragment in an expression.
 
 ## [1.15.0] - 2022-12-16
 ### Added

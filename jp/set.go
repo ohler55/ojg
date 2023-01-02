@@ -73,7 +73,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 		return fmt.Errorf("can not %s with an empty expression", fun)
 	}
 	switch x[len(x)-1].(type) {
-	case Root, At, Bracket, Descent, Union, Slice, *Filter:
+	case Root, At, Bracket, Descent, Slice, *Filter:
 		ta := strings.Split(fmt.Sprintf("%T", x[len(x)-1]), ".")
 		return fmt.Errorf("can not %s with an expression ending with a %s", fun, ta[len(ta)-1])
 	}
@@ -196,8 +196,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 			default:
 				if int(fi) == len(x)-1 { // last one
 					if value != delFlag {
-						x.reflectSetChild(tv, string(tf), value)
-						if one {
+						if x.reflectSetChild(tv, string(tf), value) && one {
 							return nil
 						}
 					}
@@ -293,10 +292,9 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 				var has bool
 				if int(fi) == len(x)-1 { // last one
 					if value != delFlag {
-						x.reflectSetNth(tv, i, value)
-					}
-					if one {
-						return nil
+						if x.reflectSetNth(tv, i, value) && one {
+							return nil
+						}
 					}
 				} else if v, has = x.reflectGetNth(tv, i); has {
 					switch v.(type) {
@@ -556,7 +554,16 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 					var has bool
 					switch tv := prev.(type) {
 					case map[string]any:
-						if v, has = tv[tu]; has {
+						if int(fi) == len(x)-1 { // last one
+							if value == delFlag {
+								delete(tv, tu)
+							} else {
+								tv[tu] = value
+							}
+							if one {
+								return nil
+							}
+						} else if v, has = tv[tu]; has {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
@@ -574,7 +581,16 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 							}
 						}
 					case gen.Object:
-						if v, has = tv[tu]; has {
+						if int(fi) == len(x)-1 { // last one
+							if value == delFlag {
+								delete(tv, tu)
+							} else {
+								tv[tu] = nodeValue
+							}
+							if one {
+								return nil
+							}
+						} else if v, has = tv[tu]; has {
 							switch v.(type) {
 							case map[string]any, []any, gen.Object, gen.Array:
 								stack = append(stack, v)
@@ -582,7 +598,14 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 						}
 					default:
 						var has bool
-						if v, has = x.reflectGetChild(tv, tu); has {
+						if int(fi) == len(x)-1 { // last one
+							if value != delFlag {
+								if x.reflectSetChild(tv, tu, value) && one {
+									return nil
+								}
+							}
+
+						} else if v, has = x.reflectGetChild(tv, tu); has {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
@@ -609,19 +632,30 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 						}
 						if 0 <= i && i < len(tv) {
 							v = tv[i]
-							switch v.(type) {
-							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
-								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-							case map[string]any, []any, gen.Object, gen.Array:
-								stack = append(stack, v)
-							default:
-								kind := reflect.Invalid
-								if rt := reflect.TypeOf(v); rt != nil {
-									kind = rt.Kind()
+							if int(fi) == len(x)-1 { // last one
+								if value == delFlag {
+									tv[i] = nil
+								} else {
+									tv[i] = value
 								}
-								switch kind {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								if one {
+									return nil
+								}
+							} else {
+								switch v.(type) {
+								case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+									bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+								case map[string]any, []any, gen.Object, gen.Array:
 									stack = append(stack, v)
+								default:
+									kind := reflect.Invalid
+									if rt := reflect.TypeOf(v); rt != nil {
+										kind = rt.Kind()
+									}
+									switch kind {
+									case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+										stack = append(stack, v)
+									}
 								}
 							}
 						}
@@ -632,13 +666,30 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 						if 0 <= i && i < len(tv) {
 							v = tv[i]
 						}
-						switch v.(type) {
-						case map[string]any, []any, gen.Object, gen.Array:
-							stack = append(stack, v)
+						if int(fi) == len(x)-1 { // last one
+							if value == delFlag {
+								tv[i] = nil
+							} else {
+								tv[i] = nodeValue
+							}
+							if one {
+								return nil
+							}
+						} else {
+							switch v.(type) {
+							case map[string]any, []any, gen.Object, gen.Array:
+								stack = append(stack, v)
+							}
 						}
 					default:
 						var has bool
-						if v, has = x.reflectGetNth(tv, i); has {
+						if int(fi) == len(x)-1 { // last one
+							if value != delFlag {
+								if x.reflectSetNth(tv, i, value) && one {
+									return nil
+								}
+							}
+						} else if v, has = x.reflectGetNth(tv, i); has {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
@@ -795,7 +846,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 	return nil
 }
 
-func (x Expr) reflectSetChild(data any, key string, v any) {
+func (x Expr) reflectSetChild(data any, key string, v any) bool {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
@@ -803,19 +854,20 @@ func (x Expr) reflectSetChild(data any, key string, v any) {
 			rt = rt.Elem()
 			rd = rd.Elem()
 		}
-		if rt.Kind() != reflect.Struct {
-			return
-		}
-		rv := rd.FieldByNameFunc(func(k string) bool { return strings.EqualFold(k, key) })
-		vv := reflect.ValueOf(v)
-		vt := vv.Type()
-		if rv.CanSet() && vt.AssignableTo(rv.Type()) {
-			rv.Set(vv)
+		if rt.Kind() == reflect.Struct {
+			rv := rd.FieldByNameFunc(func(k string) bool { return strings.EqualFold(k, key) })
+			vv := reflect.ValueOf(v)
+			vt := vv.Type()
+			if rv.CanSet() && vt.AssignableTo(rv.Type()) {
+				rv.Set(vv)
+				return true
+			}
 		}
 	}
+	return false
 }
 
-func (x Expr) reflectSetNth(data any, i int, v any) {
+func (x Expr) reflectSetNth(data any, i int, v any) bool {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
@@ -831,8 +883,10 @@ func (x Expr) reflectSetNth(data any, i int, v any) {
 				vt := vv.Type()
 				if rv.CanSet() && vt.AssignableTo(rv.Type()) {
 					rv.Set(vv)
+					return true
 				}
 			}
 		}
 	}
+	return false
 }

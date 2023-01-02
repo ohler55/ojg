@@ -57,11 +57,12 @@ var (
 		{path: "[0,1].x", data: "[null]", value: 3, expect: `[null]`},
 		{path: "['a','b'].x", data: "[null]", value: 3, expect: `[null]`},
 		{path: "['a','b'].x", data: `{"a":null}`, value: 3, expect: `{"a":null}`},
+		{path: "a[1,2]", data: `{"a":[0,1,2,3]}`, value: 5, expect: `{"a":[0,5,5,3]}`},
+		{path: "['a','b']", data: `{"a":1,"b":2,"c":3}`, value: 5, expect: `{"a":5,"b":5,"c":3}`},
 
 		{path: "", data: `{}`, value: 3, err: "can not set with an empty expression"},
 		{path: "$", data: `{}`, value: 3, err: "can not set with an expression ending with a Root"},
 		{path: "@", data: `{}`, value: 3, err: "can not set with an expression ending with a At"},
-		{path: "a[1,2]", data: `{}`, value: 3, err: "can not set with an expression ending with a Union"},
 		{path: "a", data: `{}`, value: func() {}, err: "can not set a func() in a gen.Object", noSimple: true},
 		{path: "a.b", data: `{"a":4}`, value: 3, err: "/can not follow a .+ at 'a'/"},
 		{path: "a[-1]", data: `{}`, value: 3, err: "can not deduce the length of the array to add at 'a'"},
@@ -98,11 +99,12 @@ var (
 		{path: "[0,1].x", data: "[null]", value: 3, expect: `[null]`},
 		{path: "['a','b'].x", data: "[null]", value: 3, expect: `[null]`},
 		{path: "['a','b'].x", data: `{"a":null}`, value: 3, expect: `{"a":null}`},
+		{path: "a[1,2]", data: `{"a":[0,1,2,3]}`, value: 5, expect: `{"a":[0,5,2,3]}`},
+		{path: "['a','b']", data: `{"a":1,"b":2,"c":3}`, value: 5, expect: `{"a":5,"b":2,"c":3}`},
 
 		{path: "", data: `{}`, value: 3, err: "can not set with an empty expression"},
 		{path: "$", data: `{}`, value: 3, err: "can not set with an expression ending with a Root"},
 		{path: "@", data: `{}`, value: 3, err: "can not set with an expression ending with a At"},
-		{path: "a[1,2]", data: `{}`, value: 3, err: "can not set with an expression ending with a Union"},
 		{path: "a", data: `{}`, value: func() {}, err: "can not set a func() in a gen.Object", noSimple: true},
 		{path: "a.b", data: `{"a":4}`, value: 3, err: "/can not follow a .+ at 'a'/"},
 		{path: "a[-1]", data: `{}`, value: 3, err: "can not deduce the length of the array to add at 'a'"},
@@ -212,6 +214,9 @@ var (
 		{path: "[1,'a'].x",
 			data: []*Any{{X: 1}, {X: 2}, {X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":1},{"^":"Any","x":5},{"^":"Any","x":3}]`},
+		{path: "[1,'a']",
+			data: []*Any{{X: 1}, {X: 2}, {X: 3}}, value: &Any{X: 5},
+			expect: `[{"^":"Any","x":1},{"^":"Any","x":5},{"^":"Any","x":3}]`},
 		{path: "[1,'a'].x",
 			data: []map[string]any{
 				{"x": 1},
@@ -227,6 +232,7 @@ var (
 			value: 5, expect: `{"a":{"^":"Any","x":5},"b":{"^":"Any","x":2},"c":{"^":"Any","x":3}}`},
 		{path: "[1,'x'].x", data: &Any{X: &Any{X: 1}}, value: 5, expect: `{"^":"Any","x":{"^":"Any","x":5}}`},
 		{path: "[1,'x'].x", data: &Any{X: map[string]any{"x": 1}}, value: 5, expect: `{"^":"Any","x":{"x":5}}`},
+		{path: "[1,'x']", data: &Any{X: 1}, value: 5, expect: `{"^":"Any","x":5}`},
 
 		{path: "[1].x", data: []any{&Any{X: 1}, &Any{X: 2}, &Any{X: 3}}, value: 5,
 			expect: `[{"^":"Any","x":1},{"^":"Any","x":5},{"^":"Any","x":3}]`},
@@ -392,4 +398,12 @@ func TestExprMustSet(t *testing.T) {
 func TestExprMustSetOne(t *testing.T) {
 	data := map[string]any{"a": 1, "b": 2, "c": 3}
 	tt.Panic(t, func() { jp.C("b").N(0).MustSetOne(data, 7) })
+}
+
+func TestExprSetDev(t *testing.T) {
+	data := &Any{X: 1}
+	x := jp.MustParseString("[1,'x']")
+	x.SetOne(data, 5)
+
+	fmt.Printf("*** %s\n", oj.JSON(data, &oj.Options{Sort: true, CreateKey: "^"}))
 }
