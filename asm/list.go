@@ -10,8 +10,8 @@ func init() {
 	})
 }
 
-func list(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
-	var a []interface{}
+func list(root map[string]any, at any, args ...any) any {
+	var a []any
 	for _, arg := range args {
 		a = append(a, evalArg(root, at, arg))
 	}

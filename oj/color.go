@@ -12,7 +12,7 @@ import (
 	"github.com/ohler55/ojg/alt"
 )
 
-func (wr *Writer) colorJSON(data interface{}, depth int) {
+func (wr *Writer) colorJSON(data any, depth int) {
 	switch td := data.(type) {
 	case nil:
 		wr.buf = append(wr.buf, wr.NullColor...)
@@ -72,10 +72,10 @@ func (wr *Writer) colorJSON(data interface{}, depth int) {
 		wr.buf = append(wr.buf, wr.TimeColor...)
 		wr.buf = wr.AppendTime(wr.buf, td, false)
 
-	case []interface{}:
+	case []any:
 		wr.colorArray(td, depth)
 
-	case map[string]interface{}:
+	case map[string]any:
 		wr.colorObject(td, depth)
 
 	default:
@@ -106,7 +106,7 @@ func (wr *Writer) colorJSON(data interface{}, depth int) {
 	}
 }
 
-func (wr *Writer) colorArray(n []interface{}, depth int) {
+func (wr *Writer) colorArray(n []any, depth int) {
 	wr.buf = append(wr.buf, wr.SyntaxColor...)
 	wr.buf = append(wr.buf, '[')
 	wr.buf = append(wr.buf, wr.NoColor...)
@@ -151,7 +151,7 @@ func (wr *Writer) colorArray(n []interface{}, depth int) {
 	wr.buf = append(wr.buf, ']')
 }
 
-func (wr *Writer) colorObject(n map[string]interface{}, depth int) {
+func (wr *Writer) colorObject(n map[string]any, depth int) {
 	wr.buf = append(wr.buf, wr.SyntaxColor...)
 	wr.buf = append(wr.buf, '{')
 	wr.buf = append(wr.buf, wr.NoColor...)

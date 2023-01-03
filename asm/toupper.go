@@ -16,7 +16,7 @@ string argument.`,
 	})
 }
 
-func toupper(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func toupper(root map[string]any, at any, args ...any) any {
 	if len(args) != 1 {
 		panic(fmt.Errorf("toupper expects exactly one arguments. %d given", len(args)))
 	}

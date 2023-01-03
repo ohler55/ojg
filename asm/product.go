@@ -23,7 +23,7 @@ raised.`,
 	})
 }
 
-func product(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func product(root map[string]any, at any, args ...any) any {
 	var ip int64
 	var fp float64
 	isFloat := false

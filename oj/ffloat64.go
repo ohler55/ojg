@@ -19,14 +19,14 @@ var float64AppendFuncs = [8]appendFunc{
 	iappendFloat64NotEmptyAsString,
 }
 
-func appendFloat64(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendFloat64(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = strconv.AppendFloat(buf, *(*float64)(unsafe.Pointer(addr + fi.offset)), 'g', -1, 64)
 
 	return buf, nil, aWrote
 }
 
-func appendFloat64AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendFloat64AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = append(buf, '"')
 	buf = strconv.AppendFloat(buf, *(*float64)(unsafe.Pointer(addr + fi.offset)), 'g', -1, 64)
@@ -35,7 +35,7 @@ func appendFloat64AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr
 	return buf, nil, aWrote
 }
 
-func appendFloat64NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendFloat64NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	v := *(*float64)(unsafe.Pointer(addr + fi.offset))
 	if v == 0.0 {
 		return buf, nil, aSkip
@@ -46,7 +46,7 @@ func appendFloat64NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr
 	return buf, nil, aWrote
 }
 
-func appendFloat64NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendFloat64NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	v := *(*float64)(unsafe.Pointer(addr + fi.offset))
 	if v == 0.0 {
 		return buf, nil, aSkip
@@ -59,14 +59,14 @@ func appendFloat64NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr
 	return buf, nil, aWrote
 }
 
-func iappendFloat64(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func iappendFloat64(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = strconv.AppendFloat(buf, rv.FieldByIndex(fi.index).Interface().(float64), 'g', -1, 64)
 
 	return buf, nil, aWrote
 }
 
-func iappendFloat64AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func iappendFloat64AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = append(buf, '"')
 	buf = strconv.AppendFloat(buf, rv.FieldByIndex(fi.index).Interface().(float64), 'g', -1, 64)
@@ -75,7 +75,7 @@ func iappendFloat64AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintpt
 	return buf, nil, aWrote
 }
 
-func iappendFloat64NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func iappendFloat64NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	v := rv.FieldByIndex(fi.index).Interface().(float64)
 	if v == 0.0 {
 		return buf, nil, aSkip
@@ -86,7 +86,7 @@ func iappendFloat64NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintpt
 	return buf, nil, aWrote
 }
 
-func iappendFloat64NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func iappendFloat64NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	v := rv.FieldByIndex(fi.index).Interface().(float64)
 	if v == 0.0 {
 		return buf, nil, aSkip

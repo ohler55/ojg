@@ -24,11 +24,11 @@ var DefaultRecomposer = Recomposer{
 
 // RecomposeFunc should build an object from data in a map returning the
 // recomposed object or an error.
-type RecomposeFunc func(map[string]interface{}) (interface{}, error)
+type RecomposeFunc func(map[string]any) (any, error)
 
-// RecomposeAnyFunc should build an object from data in an interface{}
+// RecomposeAnyFunc should build an object from data in an any
 // returning the recomposed object or an error.
-type RecomposeAnyFunc func(interface{}) (interface{}, error)
+type RecomposeAnyFunc func(any) (any, error)
 
 // Recomposer is used to recompose simple data into structs.
 type Recomposer struct {
@@ -48,7 +48,7 @@ func init() {
 
 // RegisterComposer regsiters a composer function for a value type. A nil
 // function will still register the default composer which uses reflection.
-func (r *Recomposer) RegisterComposer(val interface{}, fun RecomposeFunc) error {
+func (r *Recomposer) RegisterComposer(val any, fun RecomposeFunc) error {
 	_, err := r.registerComposer(reflect.TypeOf(val), fun)
 
 	return err
@@ -56,7 +56,7 @@ func (r *Recomposer) RegisterComposer(val interface{}, fun RecomposeFunc) error 
 
 // RegisterAnyComposer regsiters a composer function for a value type. A nil
 // function will still register the default composer which uses reflection.
-func (r *Recomposer) RegisterAnyComposer(val interface{}, fun RecomposeAnyFunc) error {
+func (r *Recomposer) RegisterAnyComposer(val any, fun RecomposeAnyFunc) error {
 	_, err := r.registerAnyComposer(reflect.TypeOf(val), fun)
 
 	return err
@@ -146,7 +146,7 @@ func (r *Recomposer) registerAnyComposer(rt reflect.Type, fun RecomposeAnyFunc) 
 }
 
 // Recompose simple data into more complex go types.
-func (r *Recomposer) Recompose(v interface{}, tv ...interface{}) (out interface{}, err error) {
+func (r *Recomposer) Recompose(v any, tv ...any) (out any, err error) {
 	defer func() {
 		if rec := recover(); rec != nil {
 			err = ojg.NewError(rec)
@@ -158,7 +158,7 @@ func (r *Recomposer) Recompose(v interface{}, tv ...interface{}) (out interface{
 }
 
 // MustRecompose simple data into more complex go types.
-func (r *Recomposer) MustRecompose(v interface{}, tv ...interface{}) (out interface{}) {
+func (r *Recomposer) MustRecompose(v any, tv ...any) (out any) {
 	if 0 < len(tv) {
 		if um, ok := tv[0].(json.Unmarshaler); ok {
 			if comp := r.composers["json.Unmarshaler"]; comp != nil {
@@ -193,7 +193,7 @@ func (r *Recomposer) MustRecompose(v interface{}, tv ...interface{}) (out interf
 	return
 }
 
-func (r *Recomposer) recompAny(v interface{}) interface{} {
+func (r *Recomposer) recompAny(v any) any {
 	switch tv := v.(type) {
 	case nil, bool, int64, float64, string, time.Time:
 	case int:
@@ -220,13 +220,13 @@ func (r *Recomposer) recompAny(v interface{}) interface{} {
 		f, i := math.Frexp(float64(tv))
 		f = float64(int64(f*fracMax)) / fracMax
 		v = math.Ldexp(f, i)
-	case []interface{}:
-		a := make([]interface{}, len(tv))
+	case []any:
+		a := make([]any, len(tv))
 		for i, m := range tv {
 			a[i] = r.recompAny(m)
 		}
 		v = a
-	case map[string]interface{}:
+	case map[string]any:
 		if cv := tv[r.CreateKey]; cv != nil {
 			tn, _ := cv.(string)
 			if c := r.composers[tn]; c != nil {
@@ -242,7 +242,7 @@ func (r *Recomposer) recompAny(v interface{}) interface{} {
 				return rv.Interface()
 			}
 		}
-		o := map[string]interface{}{}
+		o := map[string]any{}
 		for k, m := range tv {
 			o[k] = r.recompAny(m)
 		}
@@ -261,7 +261,7 @@ func (r *Recomposer) recompAny(v interface{}) interface{} {
 	case gen.Big:
 		v = string(tv)
 	case gen.Array:
-		a := make([]interface{}, len(tv))
+		a := make([]any, len(tv))
 		for i, m := range tv {
 			a[i] = r.recompAny(m)
 		}
@@ -271,7 +271,7 @@ func (r *Recomposer) recompAny(v interface{}) interface{} {
 			gn, _ := cv.(gen.String)
 			tn := string(gn)
 			if c := r.composers[tn]; c != nil {
-				simple, _ := tv.Simplify().(map[string]interface{})
+				simple, _ := tv.Simplify().(map[string]any)
 				if c.fun != nil {
 					val, err := c.fun(simple)
 					if err != nil {
@@ -284,7 +284,7 @@ func (r *Recomposer) recompAny(v interface{}) interface{} {
 				return rv.Interface()
 			}
 		}
-		o := map[string]interface{}{}
+		o := map[string]any{}
 		for k, m := range tv {
 			o[k] = r.recompAny(m)
 		}
@@ -296,7 +296,7 @@ func (r *Recomposer) recompAny(v interface{}) interface{} {
 	return v
 }
 
-func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
+func (r *Recomposer) recomp(v any, rv reflect.Value) {
 	as, _ := rv.Interface().(AttrSetter)
 	if rv.Kind() == reflect.Ptr {
 		if v == nil {
@@ -306,13 +306,13 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 	}
 	switch rv.Kind() {
 	case reflect.Array, reflect.Slice:
-		va, ok := (v).([]interface{})
+		va, ok := (v).([]any)
 		if !ok {
 			vv := reflect.ValueOf(v)
 			if vv.Kind() != reflect.Slice {
-				panic(fmt.Errorf("can only recompose a %s from a []interface{}, not a %T", rv.Type(), v))
+				panic(fmt.Errorf("can only recompose a %s from a []any, not a %T", rv.Type(), v))
 			}
-			va = make([]interface{}, vv.Len())
+			va = make([]any, vv.Len())
 			for i := len(va) - 1; 0 <= i; i-- {
 				va[i] = vv.Index(i).Interface()
 			}
@@ -338,13 +338,13 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 			return
 		}
 		et := rv.Type().Elem()
-		vm, ok := (v).(map[string]interface{})
+		vm, ok := (v).(map[string]any)
 		if !ok {
 			vv := reflect.ValueOf(v)
 			if vv.Kind() != reflect.Map {
-				panic(fmt.Errorf("can only recompose a map from a map[string]interface{}, not a %T", v))
+				panic(fmt.Errorf("can only recompose a map from a map[string]any, not a %T", v))
 			}
-			vm = map[string]interface{}{}
+			vm = map[string]any{}
 			iter := vv.MapRange()
 			for iter.Next() {
 				k := iter.Key().Interface().(string)
@@ -374,7 +374,7 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 			}
 		}
 	case reflect.Struct:
-		vm, ok := (v).(map[string]interface{})
+		vm, ok := (v).(map[string]any)
 		if !ok {
 			if c := r.composers[rv.Type().Name()]; c != nil && c.any != nil {
 				if val, err := c.any(v); err == nil {
@@ -394,9 +394,9 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 
 			vv := reflect.ValueOf(v)
 			if vv.Kind() != reflect.Map {
-				panic(fmt.Errorf("can only recompose a %s from a map[string]interface{}, not a %T", rv.Type(), v))
+				panic(fmt.Errorf("can only recompose a %s from a map[string]any, not a %T", rv.Type(), v))
 			}
-			vm = map[string]interface{}{}
+			vm = map[string]any{}
 			iter := vv.MapRange()
 			for iter.Next() {
 				k := iter.Key().Interface().(string)
@@ -436,7 +436,7 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 		for k := range im {
 			sf := im[k]
 			f := rv.FieldByIndex(sf.Index)
-			var m interface{}
+			var m any
 			var has bool
 			if m, has = vm[k]; !has {
 				if m, has = vm[sf.Name]; !has {
@@ -468,7 +468,7 @@ func (r *Recomposer) recomp(v interface{}, rv reflect.Value) {
 	}
 }
 
-func (r *Recomposer) setValue(v interface{}, rv reflect.Value, sf *reflect.StructField) {
+func (r *Recomposer) setValue(v any, rv reflect.Value, sf *reflect.StructField) {
 	switch rv.Kind() {
 	case reflect.Bool:
 		if s, ok := v.(string); ok && sf != nil && strings.Contains(sf.Tag.Get("json"), ",string") {

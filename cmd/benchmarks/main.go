@@ -64,7 +64,7 @@ func (w noWriter) Write(b []byte) (int, error) {
 }
 
 func main() {
-	if len([]interface{}{&Patient{}, &Catalog{}}) == 3 {
+	if len([]any{&Patient{}, &Catalog{}}) == 3 {
 		// Dummy to avoid linter complaints when not using one set of types.
 		fmt.Println("how did we get here?")
 	}
@@ -126,7 +126,7 @@ func main() {
 		{pkg: "oj", name: "TokenizeLoad", fun: ojTokenizeLoad},
 		{pkg: "sen", name: "TokenizeLoad", fun: senTokenizeLoad},
 	})
-	benchSuite("Parse chan interface{}", []*bench{
+	benchSuite("Parse chan any", []*bench{
 		{pkg: "json", name: "Parse-chan", fun: goParseChan},
 		{pkg: "oj", name: "Parse", fun: ojParseChan},
 		{pkg: "gen", name: "Parse", fun: genParseChan},
@@ -200,7 +200,7 @@ func main() {
 	fmt.Println()
 	fmt.Println(" The Benchmarks reflect a use case where JSON is either provided as a string or")
 	fmt.Println(" read from a file (io.Reader) then parsed into simple go types of nil, bool, int64")
-	fmt.Println(" float64, string, []interface{}, or map[string]interface{}. When supported, an")
+	fmt.Println(" float64, string, []any, or map[string]any. When supported, an")
 	fmt.Println(" io.Writer benchmark is also included along with some miscellaneous operations.")
 	fmt.Println()
 	if s := getSpecs(); s != nil {
@@ -252,20 +252,20 @@ func benchSuite(title string, suite []*bench) {
 }
 
 // data
-func benchmarkData(tm time.Time) interface{} {
-	return map[string]interface{}{
-		"a": []interface{}{1, 2, true, tm},
+func benchmarkData(tm time.Time) any {
+	return map[string]any{
+		"a": []any{1, 2, true, tm},
 		"b": 2.3,
-		"c": map[string]interface{}{
+		"c": map[string]any{
 			"x": "xxx",
 		},
 		"d": nil,
 	}
 }
 
-func buildTree(size, depth, iv int) interface{} {
+func buildTree(size, depth, iv int) any {
 	if depth%2 == 0 {
-		list := []interface{}{}
+		list := []any{}
 		for i := 0; i < size; i++ {
 			nv := iv*10 + i + 1
 			if 1 < depth {
@@ -276,7 +276,7 @@ func buildTree(size, depth, iv int) interface{} {
 		}
 		return list
 	}
-	obj := map[string]interface{}{}
+	obj := map[string]any{}
 	for i := 0; i < size; i++ {
 		k := string([]byte{'a' + byte(i)})
 		nv := iv*10 + i + 1
@@ -289,7 +289,7 @@ func buildTree(size, depth, iv int) interface{} {
 	return obj
 }
 
-func loadSample() (data interface{}) {
+func loadSample() (data any) {
 	f, err := os.Open(filename)
 	if err != nil {
 		log.Fatalf("Failed to load %s. %s\n", filename, err)
@@ -307,7 +307,7 @@ func getSpecs() (s *specs) {
 	// Assume MacOS and try system_profiler. If that fails assume linux and check /proc.
 	out, err := exec.Command("system_profiler", "-json", "SPHardwareDataType").Output()
 	if err == nil {
-		var js interface{}
+		var js any
 		if js, err = oj.Parse(out); err == nil {
 			s = &specs{
 				model:     alt.String(jp.C("SPHardwareDataType").N(0).C("machine_model").First(js)),

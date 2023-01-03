@@ -15,11 +15,11 @@ otherwise false is returned.`,
 	})
 }
 
-func arrayEval(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func arrayEval(root map[string]any, at any, args ...any) any {
 	if len(args) != 1 {
 		panic(fmt.Errorf("array? expects exactly one arguments. %d given", len(args)))
 	}
-	_, ok := evalArg(root, at, args[0]).([]interface{})
+	_, ok := evalArg(root, at, args[0]).([]any)
 
 	return ok
 }

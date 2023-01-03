@@ -20,17 +20,17 @@ type returned or a type mismatch will raise an error.`,
 	})
 }
 
-func sortEval(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func sortEval(root map[string]any, at any, args ...any) any {
 	if len(args) != 2 {
 		panic(fmt.Errorf("sort expects exactly two argument. %d given", len(args)))
 	}
 	v := evalArg(root, at, args[0])
-	list, ok := v.([]interface{})
+	list, ok := v.([]any)
 	if !ok {
 		panic(fmt.Errorf("sort expects an array argument, not a %T", v))
 	}
 	// Make a copy so not to change the original.
-	list2 := make([]interface{}, len(list))
+	list2 := make([]any, len(list))
 	_ = copy(list2, list)
 
 	var x jp.Expr

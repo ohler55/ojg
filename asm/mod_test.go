@@ -28,25 +28,25 @@ func TestMod(t *testing.T) {
 }
 
 func TestModArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"mod", 1, 2, 3},
+	p := asm.NewPlan([]any{
+		[]any{"mod", 1, 2, 3},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestModArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"mod", 1, true},
+	p := asm.NewPlan([]any{
+		[]any{"mod", 1, true},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestModArgType2(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"mod", true, 1},
+	p := asm.NewPlan([]any{
+		[]any{"mod", true, 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

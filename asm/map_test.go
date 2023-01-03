@@ -23,9 +23,9 @@ func TestMap(t *testing.T) {
 }
 
 func TestMapArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"map?", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"map?", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

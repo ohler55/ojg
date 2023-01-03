@@ -13,7 +13,7 @@ import (
 )
 
 func TestUnmarshal(t *testing.T) {
-	var obj map[string]interface{}
+	var obj map[string]any
 	src := `{"x":3}`
 	err := oj.Unmarshal([]byte(src), &obj)
 	tt.Nil(t, err)
@@ -35,7 +35,7 @@ func TestUnmarshal(t *testing.T) {
 func TestUnmarshalError(t *testing.T) {
 	type Query struct {
 		Level  string
-		Query  map[string]interface{}
+		Query  map[string]any
 		Expand bool
 		Limit  int
 	}
@@ -52,15 +52,15 @@ func TestUnmarshalError(t *testing.T) {
 	tt.Equal(t, true, strings.Contains(err.Error(), "value of type bool cannot be converted to type int"))
 }
 
-type TagMap map[string]interface{}
+type TagMap map[string]any
 
 func (tm *TagMap) UnmarshalJSON(data []byte) error {
-	*tm = map[string]interface{}{}
+	*tm = map[string]any{}
 	simple, err := oj.Parse(data)
 	if err != nil {
 		return err
 	}
-	for _, kv := range simple.([]interface{}) {
+	for _, kv := range simple.([]any) {
 		(*tm)[jp.C("key").First(kv).(string)] = jp.C("value").First(kv)
 	}
 	return nil

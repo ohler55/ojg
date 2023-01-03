@@ -23,25 +23,25 @@ func TestSplit(t *testing.T) {
 }
 
 func TestSplitArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"split", "x", "y", 1},
+	p := asm.NewPlan([]any{
+		[]any{"split", "x", "y", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSplitArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"split", 1, "x"},
+	p := asm.NewPlan([]any{
+		[]any{"split", 1, "x"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSplitArgType2(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"split", "x", 1},
+	p := asm.NewPlan([]any{
+		[]any{"split", "x", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

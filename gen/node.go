@@ -13,10 +13,10 @@ type Node interface {
 	// Alter converts the node into it's native type. Note this will modify
 	// Objects and Arrays in place making them no longer usable as the
 	// original type. Use with care!
-	Alter() interface{}
+	Alter() any
 
 	// Simplify makes a copy of the node but as simple types.
-	Simplify() interface{}
+	Simplify() any
 
 	// Dup returns a deep duplicate of the node.
 	Dup() Node

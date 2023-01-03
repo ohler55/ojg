@@ -11,9 +11,9 @@ import (
 )
 
 func TestInspect(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
+	p := asm.NewPlan([]any{
 		"asm",
-		[]interface{}{"inspect", "test", "$"},
+		[]any{"inspect", "test", "$"},
 	})
 	tt.Equal(t, "[asm [inspect test $]]", sen.String(p), "inspect plan simplify")
 	fn, _ := p.Args[0].(*asm.Fn)

@@ -29,7 +29,7 @@ func TestArrayAlter(t *testing.T) {
 
 	tt.Equal(t, "[]interface {} [3 7 <nil>]", fmt.Sprintf("%T %v", alt, alt))
 
-	aa := alt.([]interface{})
+	aa := alt.([]any)
 	tt.Equal(t, "int64 3  int64 7", fmt.Sprintf("%T %v  %T %v", aa[0], aa[0], aa[1], aa[1]))
 }
 

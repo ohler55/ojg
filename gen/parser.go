@@ -47,7 +47,7 @@ type Parser struct {
 }
 
 // Parse a JSON string in to simple types. An error is returned if not valid JSON.
-func (p *Parser) Parse(buf []byte, args ...interface{}) (Node, error) {
+func (p *Parser) Parse(buf []byte, args ...any) (Node, error) {
 	p.cb = nil
 	p.resultChan = nil
 	p.OnlyOne = true
@@ -103,7 +103,7 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (Node, error) {
 }
 
 // ParseReader a JSON io.Reader. An error is returned if not valid JSON.
-func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data Node, err error) {
+func (p *Parser) ParseReader(r io.Reader, args ...any) (data Node, err error) {
 	p.cb = nil
 	p.resultChan = nil
 	p.OnlyOne = true
@@ -574,7 +574,7 @@ func (p *Parser) add(n Node) {
 	p.stack = append(p.stack, n)
 }
 
-func (p *Parser) newError(off int, format string, args ...interface{}) error {
+func (p *Parser) newError(off int, format string, args ...any) error {
 	return &ParseError{
 		Message: fmt.Sprintf(format, args...),
 		Line:    p.line,

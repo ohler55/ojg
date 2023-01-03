@@ -15,7 +15,7 @@ import (
 // second default value is returned. This approach keeps the return as a
 // single value and gives the caller the choice of how to indicate a bad
 // value.
-func Bool(v interface{}, defaults ...bool) (b bool) {
+func Bool(v any, defaults ...bool) (b bool) {
 	switch tv := v.(type) {
 	case nil:
 		if 1 < len(defaults) {

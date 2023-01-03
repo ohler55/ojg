@@ -18,12 +18,12 @@ func (i index) String() string {
 // Alter converts the node into it's native type. Note this will modify
 // Objects and Arrays in place making them no longer usable as the
 // original type. Use with care!
-func (i index) Alter() interface{} {
+func (i index) Alter() any {
 	return i
 }
 
 // Simplify makes a copy of the node but as simple types.
-func (i index) Simplify() interface{} {
+func (i index) Simplify() any {
 	return int64(i)
 }
 

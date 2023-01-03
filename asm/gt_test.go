@@ -44,12 +44,12 @@ func TestGtString(t *testing.T) {
 }
 
 func TestGtIntOthers(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", "$.asm.i", []interface{}{"gt", 9, int8(8), int16(7), int32(6), int64(5)}},
-		[]interface{}{"set", "$.asm.u", []interface{}{"gt", uint(9), uint8(8), uint16(7), uint32(6), uint64(5)}},
+	p := asm.NewPlan([]any{
+		[]any{"set", "$.asm.i", []any{"gt", 9, int8(8), int16(7), int32(6), int64(5)}},
+		[]any{"set", "$.asm.u", []any{"gt", uint(9), uint8(8), uint16(7), uint32(6), uint64(5)}},
 	})
-	root := map[string]interface{}{
-		"src": []interface{}{},
+	root := map[string]any{
+		"src": []any{},
 	}
 	err := p.Execute(root)
 	tt.Nil(t, err)
@@ -58,19 +58,19 @@ func TestGtIntOthers(t *testing.T) {
 }
 
 func TestGtWrongType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", "$.asm.i", []interface{}{"gt", true, false}},
+	p := asm.NewPlan([]any{
+		[]any{"set", "$.asm.i", []any{"gt", true, false}},
 	})
-	root := map[string]interface{}{}
+	root := map[string]any{}
 	err := p.Execute(root)
 	tt.NotNil(t, err)
 }
 
 func TestGtWrongType2(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"set", "$.asm.i", []interface{}{"gt", 1, false}},
+	p := asm.NewPlan([]any{
+		[]any{"set", "$.asm.i", []any{"gt", 1, false}},
 	})
-	root := map[string]interface{}{}
+	root := map[string]any{}
 	err := p.Execute(root)
 	tt.NotNil(t, err)
 }

@@ -238,19 +238,19 @@ func TestSENTagPtrOmitEmpty(t *testing.T) {
 	type Bare struct {
 	}
 	type Sample struct {
-		Ptr    *Bare         `json:"p,omitempty"`
-		NilPtr *Bare         `json:"np,omitempty"`
-		Slice  []interface{} `json:"s,omitempty"`
-		Empty  []interface{} `json:"e,omitempty"`
-		Any    interface{}   `json:"a,omitempty"`
-		NilAny interface{}   `json:"na,omitempty"`
-		Bar    **Bare        `json:"bar"`
+		Ptr    *Bare  `json:"p,omitempty"`
+		NilPtr *Bare  `json:"np,omitempty"`
+		Slice  []any  `json:"s,omitempty"`
+		Empty  []any  `json:"e,omitempty"`
+		Any    any    `json:"a,omitempty"`
+		NilAny any    `json:"na,omitempty"`
+		Bar    **Bare `json:"bar"`
 	}
 	sample := Sample{
 		Ptr:    &Bare{},
 		NilPtr: nil,
-		Slice:  []interface{}{true},
-		Empty:  []interface{}{},
+		Slice:  []any{true},
+		Empty:  []any{},
 		Any:    &Bare{},
 		NilAny: nil,
 	}
@@ -278,18 +278,18 @@ func TestSENTagPtr(t *testing.T) {
 	type Bare struct {
 	}
 	type Sample struct {
-		Ptr    *Bare         `json:"p"`
-		NilPtr *Bare         `json:"np"`
-		Slice  []interface{} `json:"s"`
-		Empty  []interface{} `json:"e"`
-		Any    interface{}   `json:"a"`
-		NilAny interface{}   `json:"na"`
+		Ptr    *Bare `json:"p"`
+		NilPtr *Bare `json:"np"`
+		Slice  []any `json:"s"`
+		Empty  []any `json:"e"`
+		Any    any   `json:"a"`
+		NilAny any   `json:"na"`
 	}
 	sample := Sample{
 		Ptr:    &Bare{},
 		NilPtr: nil,
-		Slice:  []interface{}{true},
-		Empty:  []interface{}{},
+		Slice:  []any{true},
+		Empty:  []any{},
 		Any:    &Bare{},
 		NilAny: nil,
 	}
@@ -304,10 +304,10 @@ func TestSENTagPtr(t *testing.T) {
 
 func TestSENTagOther(t *testing.T) {
 	type Sample struct {
-		AsIs int         `json:",omitempty"`
-		Dash int         `json:"-,"`
-		Skip int         `json:"-"`
-		Nil  interface{} `json:"nil"`
+		AsIs int `json:",omitempty"`
+		Dash int `json:"-,"`
+		Skip int `json:"-"`
+		Nil  any `json:"nil"`
 		x    int
 	}
 	sample := Sample{
@@ -410,8 +410,8 @@ type Silly struct {
 	val int
 }
 
-func (s *Silly) Simplify() interface{} {
-	return map[string]interface{}{"val": s.val}
+func (s *Silly) Simplify() any {
+	return map[string]any{"val": s.val}
 }
 
 func TestBytesStructSimplifier(t *testing.T) {

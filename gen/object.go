@@ -61,12 +61,12 @@ func (n Object) String() string {
 	return string(b)
 }
 
-// Alter the Object into a simple map[string]interface{}.
-func (n Object) Alter() interface{} {
-	var simple map[string]interface{}
+// Alter the Object into a simple map[string]any.
+func (n Object) Alter() any {
+	var simple map[string]any
 
 	if n != nil {
-		simple = *(*map[string]interface{})(unsafe.Pointer(&n))
+		simple = *(*map[string]any)(unsafe.Pointer(&n))
 		for k, m := range n {
 			if m == nil {
 				simple[k] = nil
@@ -79,12 +79,12 @@ func (n Object) Alter() interface{} {
 }
 
 // Simplify creates a simplified version of the Node as a
-// map[string]interface{}.
-func (n Object) Simplify() interface{} {
-	var dup map[string]interface{}
+// map[string]any.
+func (n Object) Simplify() any {
+	var dup map[string]any
 
 	if n != nil {
-		dup = map[string]interface{}{}
+		dup = map[string]any{}
 		for k, m := range n {
 			if m == nil {
 				dup[k] = m

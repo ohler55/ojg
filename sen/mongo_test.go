@@ -23,7 +23,7 @@ func TestParserMongo(t *testing.T) {
   badInt: NumberInt("1234zz")
   badDecimal: NumberDecimal("1e2e3")
 }`
-	v := p.MustParse([]byte(src)).(map[string]interface{})
+	v := p.MustParse([]byte(src)).(map[string]any)
 
 	tt.Equal(t, "60c02af61528f028e174d95c", v["_id"])
 	tm := time.Unix(0, 1624932184005000000).UTC()

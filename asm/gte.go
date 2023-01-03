@@ -19,7 +19,7 @@ subsequent argument. An alias is gte.`,
 	})
 }
 
-func gte(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func gte(root map[string]any, at any, args ...any) any {
 	answer := true
 	if 0 < len(args) {
 		switch t0 := args[0].(type) {

@@ -15,7 +15,7 @@ func init() {
 	})
 }
 
-func neq(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func neq(root map[string]any, at any, args ...any) any {
 	b, _ := equal(root, at, args...).(bool)
 
 	return !b

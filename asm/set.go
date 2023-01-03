@@ -19,7 +19,7 @@ jp.SetOne() function.`,
 	})
 }
 
-func set(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func set(root map[string]any, at any, args ...any) any {
 	if len(args) != 2 {
 		panic(fmt.Errorf("set expects exactly two arguments. %d given", len(args)))
 	}

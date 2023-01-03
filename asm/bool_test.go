@@ -23,9 +23,9 @@ func TestBool(t *testing.T) {
 }
 
 func TestBoolArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"bool?", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"bool?", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

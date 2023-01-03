@@ -15,7 +15,7 @@ is expected and it must be a boolean.`,
 	})
 }
 
-func not(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func not(root map[string]any, at any, args ...any) any {
 	if len(args) != 1 {
 		panic(fmt.Errorf("not expects exactly one arguments. %d given", len(args)))
 	}

@@ -13,7 +13,7 @@ import (
 // portion of the float and the 10ths sets the maximum depth per line. A bool
 // sets the align option and a *ojg.Options replaces the options portion of
 // the writer.
-func JSON(data interface{}, args ...interface{}) string {
+func JSON(data any, args ...any) string {
 	w := Writer{
 		Options:  ojg.DefaultOptions,
 		Width:    80,
@@ -31,7 +31,7 @@ func JSON(data interface{}, args ...interface{}) string {
 // portion of the float and the 10ths sets the maximum depth per line. A bool
 // sets the align option and a *ojg.Options replaces the options portion of
 // the writer.
-func SEN(data interface{}, args ...interface{}) string {
+func SEN(data any, args ...any) string {
 	w := Writer{
 		Options:  ojg.DefaultOptions,
 		Width:    80,
@@ -49,7 +49,7 @@ func SEN(data interface{}, args ...interface{}) string {
 // separated into a width as the integer portion of the float and the 10ths
 // sets the maximum depth per line. A bool sets the align option and a
 // *ojg.Options replaces the options portion of the writer.
-func WriteJSON(w io.Writer, data interface{}, args ...interface{}) (err error) {
+func WriteJSON(w io.Writer, data any, args ...any) (err error) {
 	pw := Writer{
 		Options:  ojg.DefaultOptions,
 		Width:    80,
@@ -68,7 +68,7 @@ func WriteJSON(w io.Writer, data interface{}, args ...interface{}) (err error) {
 // separated into a width as the integer portion of the float and the 10ths
 // sets the maximum depth per line. A bool sets the align option and a
 // *ojg.Options replaces the options portion of the writer.
-func WriteSEN(w io.Writer, data interface{}, args ...interface{}) (err error) {
+func WriteSEN(w io.Writer, data any, args ...any) (err error) {
 	pw := Writer{
 		Options:  ojg.DefaultOptions,
 		Width:    80,

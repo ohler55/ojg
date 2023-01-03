@@ -27,7 +27,7 @@ func TestObjectSimplify(t *testing.T) {
 	simple := o.Simplify()
 
 	tt.Equal(t, "map[string]interface {}", fmt.Sprintf("%T", simple))
-	no := simple.(map[string]interface{})
+	no := simple.(map[string]any)
 	tt.Equal(t, "int64 3  int64 7", fmt.Sprintf("%T %v  %T %v", no["a"], no["a"], no["b"], no["b"]))
 }
 
@@ -37,7 +37,7 @@ func TestObjectAlter(t *testing.T) {
 
 	tt.Equal(t, "map[string]interface {}", fmt.Sprintf("%T", alt))
 
-	ao := alt.(map[string]interface{})
+	ao := alt.(map[string]any)
 	tt.Equal(t, "int64 3  int64 7", fmt.Sprintf("%T %v  %T %v", ao["a"], ao["a"], ao["b"], ao["b"]))
 }
 

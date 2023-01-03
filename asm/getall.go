@@ -20,7 +20,7 @@ the results`,
 	})
 }
 
-func getall(root map[string]interface{}, at interface{}, args ...interface{}) (list interface{}) {
+func getall(root map[string]any, at any, args ...any) (list any) {
 	if len(args) < 1 || 2 < len(args) {
 		panic(fmt.Errorf("getall expects one or two arguments. %d given", len(args)))
 	}

@@ -34,9 +34,9 @@ func TestProduct(t *testing.T) {
 }
 
 func TestProductArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"product", 1, true},
+	p := asm.NewPlan([]any{
+		[]any{"product", 1, true},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

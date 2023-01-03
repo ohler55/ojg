@@ -12,8 +12,8 @@ type simmer struct {
 	val int
 }
 
-func (s *simmer) Simplify() interface{} {
-	return map[string]interface{}{"type": "simmer", "val": s.val}
+func (s *simmer) Simplify() any {
+	return map[string]any{"type": "simmer", "val": s.val}
 }
 
 func ExampleSimplifier() {

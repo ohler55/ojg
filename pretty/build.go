@@ -13,7 +13,7 @@ import (
 	"github.com/ohler55/ojg/gen"
 )
 
-func (w *Writer) build(data interface{}) (n *node) {
+func (w *Writer) build(data any) (n *node) {
 	switch td := data.(type) {
 	case nil:
 		n = w.buildNull()
@@ -58,7 +58,7 @@ func (w *Writer) build(data interface{}) (n *node) {
 		case ojg.BytesAsBase64:
 			n = w.buildStringNode(base64.StdEncoding.EncodeToString(td))
 		case ojg.BytesAsArray:
-			a := make([]interface{}, len(td))
+			a := make([]any, len(td))
 			for i, m := range td {
 				a[i] = int64(m)
 			}
@@ -70,11 +70,11 @@ func (w *Writer) build(data interface{}) (n *node) {
 		n = w.buildTimeNode(td)
 	case gen.Time:
 		n = w.buildTimeNode(time.Time(td))
-	case []interface{}:
+	case []any:
 		n = w.buildArrayNode(td)
 	case gen.Array:
 		n = w.buildGenArrayNode(td)
-	case map[string]interface{}:
+	case map[string]any:
 		n = w.buildMapNode(td)
 	case gen.Object:
 		n = w.buildGenMapNode(td)
@@ -186,7 +186,7 @@ func (w *Writer) buildTimeNode(v time.Time) (n *node) {
 	return
 }
 
-func (w *Writer) buildArrayNode(v []interface{}) (n *node) {
+func (w *Writer) buildArrayNode(v []any) (n *node) {
 	n = &node{
 		members: make([]*node, 0, len(v)),
 		size:    2, // []
@@ -232,7 +232,7 @@ func (w *Writer) buildGenArrayNode(v gen.Array) (n *node) {
 	return
 }
 
-func (w *Writer) buildMapNode(v map[string]interface{}) (n *node) {
+func (w *Writer) buildMapNode(v map[string]any) (n *node) {
 	n = &node{
 		members: make([]*node, 0, len(v)),
 		size:    2, // {}

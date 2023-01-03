@@ -22,17 +22,17 @@ func TestAt(t *testing.T) {
 }
 
 func TestAtArgNotString(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"at", 1},
+	p := asm.NewPlan([]any{
+		[]any{"at", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestAtArgParseError(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"at", "[[["},
+	p := asm.NewPlan([]any{
+		[]any{"at", "[[["},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

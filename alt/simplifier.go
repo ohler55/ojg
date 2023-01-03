@@ -7,7 +7,7 @@ package alt
 type Simplifier interface {
 
 	// Simplify should return one of the simple types which are: nil, bool,
-	// int64, float64, string, time.Time, []interface{}, or
-	// map[string]interface{}.
-	Simplify() interface{}
+	// int64, float64, string, time.Time, []any, or
+	// map[string]any.
+	Simplify() any
 }

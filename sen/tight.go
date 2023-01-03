@@ -13,7 +13,7 @@ import (
 	"github.com/ohler55/ojg/alt"
 )
 
-func tightDefault(wr *Writer, data interface{}, _ int) {
+func tightDefault(wr *Writer, data any, _ int) {
 	if !wr.NoReflect {
 		rv := reflect.ValueOf(data)
 		kind := rv.Kind()
@@ -40,7 +40,7 @@ func tightDefault(wr *Writer, data interface{}, _ int) {
 	}
 }
 
-func tightArray(wr *Writer, n []interface{}, _ int) {
+func tightArray(wr *Writer, n []any, _ int) {
 	if 0 < len(n) {
 		space := false
 		wr.buf = append(wr.buf, '[')
@@ -63,7 +63,7 @@ func tightArray(wr *Writer, n []interface{}, _ int) {
 	}
 }
 
-func tightObject(wr *Writer, n map[string]interface{}, _ int) {
+func tightObject(wr *Writer, n map[string]any, _ int) {
 	comma := false
 	wr.buf = append(wr.buf, '{')
 	for k, m := range n {
@@ -83,7 +83,7 @@ func tightObject(wr *Writer, n map[string]interface{}, _ int) {
 	}
 }
 
-func tightSortObject(wr *Writer, n map[string]interface{}, _ int) {
+func tightSortObject(wr *Writer, n map[string]any, _ int) {
 	comma := false
 	wr.buf = append(wr.buf, '{')
 	keys := make([]string, 0, len(n))
@@ -115,7 +115,7 @@ func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
 	}
 	fields := si.fields[wr.findex]
 	wr.buf = append(wr.buf, '{')
-	var v interface{}
+	var v any
 	comma := false
 	if 0 < len(wr.CreateKey) {
 		wr.buf = wr.appendString(wr.buf, wr.CreateKey, !wr.HTMLUnsafe)

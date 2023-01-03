@@ -36,9 +36,9 @@ func TestFloat(t *testing.T) {
 }
 
 func TestFloatArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"float", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"float", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

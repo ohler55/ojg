@@ -21,7 +21,7 @@ or nil (golang) otherwise false is returned.`,
 	})
 }
 
-func null(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func null(root map[string]any, at any, args ...any) any {
 	if len(args) != 1 {
 		panic(fmt.Errorf("null? / nil? expects exactly one arguments. %d given", len(args)))
 	}

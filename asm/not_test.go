@@ -31,17 +31,17 @@ func TestNotFalse(t *testing.T) {
 }
 
 func TestNotArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"not", true, false},
+	p := asm.NewPlan([]any{
+		[]any{"not", true, false},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestNotNotBool(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"not", 1},
+	p := asm.NewPlan([]any{
+		[]any{"not", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

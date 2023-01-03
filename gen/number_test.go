@@ -26,7 +26,7 @@ func TestNumber(t *testing.T) {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.src)
 		}
-		var v interface{}
+		var v any
 		var n gen.Number
 		n.Reset()
 		frac := false

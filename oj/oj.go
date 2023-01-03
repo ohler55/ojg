@@ -27,24 +27,24 @@ var (
 
 	goOptions  = ojg.GoOptions
 	writerPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return &Writer{Options: DefaultOptions, buf: make([]byte, 0, 1024)}
 		},
 	}
 	marshalPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return &Writer{Options: goOptions, buf: make([]byte, 0, 1024), strict: true}
 		},
 	}
 	parserPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return &Parser{}
 		},
 	}
 )
 
 // Parse JSON into a simple type. Arguments are optional and can be a bool,
-// func(interface{}) bool for callbacks, or a chan interface{} for chan based
+// func(any) bool for callbacks, or a chan any for chan based
 // result delivery.
 //
 // A bool indicates the NoComment parser attribute should be set to the bool
@@ -55,14 +55,14 @@ var (
 // only one JSON.
 //
 // A chan argument will be used to deliver parse results.
-func Parse(b []byte, args ...interface{}) (n interface{}, err error) {
+func Parse(b []byte, args ...any) (n any, err error) {
 	p := parserPool.Get().(*Parser)
 	defer parserPool.Put(p)
 	return p.Parse(b, args...)
 }
 
 // MustParse JSON into a simple type. Arguments are optional and can be a bool,
-// func(interface{}) bool for callbacks, or a chan interface{} for chan based
+// func(any) bool for callbacks, or a chan any for chan based
 // result delivery. Panics on error
 //
 // A bool indicates the NoComment parser attribute should be set to the bool
@@ -73,7 +73,7 @@ func Parse(b []byte, args ...interface{}) (n interface{}, err error) {
 // only one JSON.
 //
 // A chan argument will be used to deliver parse results.
-func MustParse(b []byte, args ...interface{}) (n interface{}) {
+func MustParse(b []byte, args ...any) (n any) {
 	p := parserPool.Get().(*Parser)
 	defer parserPool.Put(p)
 	var err error
@@ -85,7 +85,7 @@ func MustParse(b []byte, args ...interface{}) (n interface{}) {
 
 // ParseString is similar to Parse except it takes a string
 // argument to be parsed instead of a []byte.
-func ParseString(s string, args ...interface{}) (n interface{}, err error) {
+func ParseString(s string, args ...any) (n any, err error) {
 	p := parserPool.Get().(*Parser)
 	defer parserPool.Put(p)
 	return p.Parse([]byte(s), args...)
@@ -93,7 +93,7 @@ func ParseString(s string, args ...interface{}) (n interface{}, err error) {
 
 // MustParseString is similar to MustParse except it takes a string
 // argument to be parsed instead of a []byte.
-func MustParseString(s string, args ...interface{}) (n interface{}) {
+func MustParseString(s string, args ...any) (n any) {
 	p := parserPool.Get().(*Parser)
 	defer parserPool.Put(p)
 	var err error
@@ -105,14 +105,14 @@ func MustParseString(s string, args ...interface{}) (n interface{}) {
 
 // Load a JSON from a io.Reader into a simple type. An error is returned
 // if not valid JSON.
-func Load(r io.Reader, args ...interface{}) (interface{}, error) {
+func Load(r io.Reader, args ...any) (any, error) {
 	p := parserPool.Get().(*Parser)
 	defer parserPool.Put(p)
 	return p.ParseReader(r, args...)
 }
 
 // MustLoad a JSON from a io.Reader into a simple type. Panics on error.
-func MustLoad(r io.Reader, args ...interface{}) (n interface{}) {
+func MustLoad(r io.Reader, args ...any) (n any) {
 	p := parserPool.Get().(*Parser)
 	defer parserPool.Put(p)
 	var err error
@@ -142,10 +142,10 @@ func ValidateReader(r io.Reader) error {
 
 // Unmarshal parses the provided JSON and stores the result in the value
 // pointed to by vp.
-func Unmarshal(data []byte, vp interface{}, recomposer ...*alt.Recomposer) (err error) {
+func Unmarshal(data []byte, vp any, recomposer ...*alt.Recomposer) (err error) {
 	p := Parser{}
 	p.num.ForceFloat = true
-	var v interface{}
+	var v any
 	if v, err = p.Parse(data); err == nil {
 		if 0 < len(recomposer) {
 			_, err = recomposer[0].Recompose(v, vp)
@@ -157,10 +157,10 @@ func Unmarshal(data []byte, vp interface{}, recomposer ...*alt.Recomposer) (err 
 }
 
 // JSON returns a JSON string for the data provided. The data can be a
-// simple type of nil, bool, int, floats, time.Time, []interface{}, or
-// map[string]interface{} or a Node type, The args, if supplied can be an
+// simple type of nil, bool, int, floats, time.Time, []any, or
+// map[string]any or a Node type, The args, if supplied can be an
 // int as an indent or a *Options.
-func JSON(data interface{}, args ...interface{}) string {
+func JSON(data any, args ...any) string {
 	var wr *Writer
 	if 0 < len(args) {
 		wr = pickWriter(args[0], false)
@@ -173,12 +173,12 @@ func JSON(data interface{}, args ...interface{}) string {
 }
 
 // Marshal returns a JSON string for the data provided. The data can be a
-// simple type of nil, bool, int, floats, time.Time, []interface{}, or
-// map[string]interface{} or a gen.Node type, The args, if supplied can be an
+// simple type of nil, bool, int, floats, time.Time, []any, or
+// map[string]any or a gen.Node type, The args, if supplied can be an
 // int as an indent, *ojg.Options, or a *Writer. An error will be returned if
 // the Option.Strict flag is true and a value is encountered that can not be
 // encoded other than by using the %v format of the fmt package.
-func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
+func Marshal(data any, args ...any) (out []byte, err error) {
 	var wr *Writer
 	if 0 < len(args) {
 		wr = pickWriter(args[0], true)
@@ -203,10 +203,10 @@ func Marshal(data interface{}, args ...interface{}) (out []byte, err error) {
 }
 
 // Write a JSON string for the data provided. The data can be a simple type of
-// nil, bool, int, floats, time.Time, []interface{}, or map[string]interface{}
+// nil, bool, int, floats, time.Time, []any, or map[string]any
 // or a Node type, The args, if supplied can be an int as an indent or a
 // *Options.
-func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
+func Write(w io.Writer, data any, args ...any) (err error) {
 	var wr *Writer
 	if 0 < len(args) {
 		wr = pickWriter(args[0], false)
@@ -218,7 +218,7 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 	return wr.Write(w, data)
 }
 
-func pickWriter(arg interface{}, strict bool) (wr *Writer) {
+func pickWriter(arg any, strict bool) (wr *Writer) {
 	switch ta := arg.(type) {
 	case int:
 		wr = &Writer{

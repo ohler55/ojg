@@ -31,33 +31,33 @@ func TestEachFromRoot(t *testing.T) {
 }
 
 func TestEachArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"each", 1},
+	p := asm.NewPlan([]any{
+		[]any{"each", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestEachArgList(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"each", 1, []interface{}{"list"}},
+	p := asm.NewPlan([]any{
+		[]any{"each", 1, []any{"list"}},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestEachArgSecond(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"each", []interface{}{1, 2, 3}, true},
+	p := asm.NewPlan([]any{
+		[]any{"each", []any{1, 2, 3}, true},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestEachArgThird(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"each", []interface{}{1, 2, 3}, []interface{}{"+"}, true},
+	p := asm.NewPlan([]any{
+		[]any{"each", []any{1, 2, 3}, []any{"+"}, true},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

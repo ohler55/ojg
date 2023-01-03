@@ -18,7 +18,7 @@ func TestBuilderArray(t *testing.T) {
 	tt.Nil(t, err, "b.Array()")
 	b.Pop()
 	v := b.Result()
-	tt.Equal(t, []interface{}{}, v)
+	tt.Equal(t, []any{}, v)
 
 	b.Reset()
 	tt.Nil(t, b.Result(), "b.Result() after reset")
@@ -34,7 +34,7 @@ func TestBuilderArray(t *testing.T) {
 	b.PopAll()
 
 	v = b.Result()
-	tt.Equal(t, []interface{}{true, []interface{}{false}}, v)
+	tt.Equal(t, []any{true, []any{false}}, v)
 }
 
 func TestBuilderObject(t *testing.T) {
@@ -44,7 +44,7 @@ func TestBuilderObject(t *testing.T) {
 	tt.Nil(t, err, "b.Object()")
 	b.Pop()
 	v := b.Result()
-	tt.Equal(t, map[string]interface{}{}, v)
+	tt.Equal(t, map[string]any{}, v)
 
 	b.Reset()
 	tt.Nil(t, b.Result(), "b.Result() after reset")
@@ -66,7 +66,7 @@ func TestBuilderObject(t *testing.T) {
 	b.PopAll()
 
 	v = b.Result()
-	tt.Equal(t, map[string]interface{}{"a": true, "b": map[string]interface{}{"c": false}, "d": nil}, v)
+	tt.Equal(t, map[string]any{"a": true, "b": map[string]any{"c": false}, "d": nil}, v)
 }
 
 func TestBuilderMixed(t *testing.T) {
@@ -90,7 +90,7 @@ func TestBuilderMixed(t *testing.T) {
 	b.PopAll()
 
 	v := b.Result()
-	tt.Equal(t, map[string]interface{}{"a": []interface{}{true, map[string]interface{}{"x": 123}, nil}}, v)
+	tt.Equal(t, map[string]any{"a": []any{true, map[string]any{"x": 123}, nil}}, v)
 }
 
 func TestBuilderErrors(t *testing.T) {
@@ -118,12 +118,15 @@ func TestBuilderErrors(t *testing.T) {
 	tt.Equal(t, "must have a key when pushing to an object", err.Error())
 }
 
-// This test can be runned with this command:
+// This test can be run with this command:
 //
 //	$ go test -fuzz=FuzzBuilder -fuzztime=1s
 //
 // Contributed by nono (Bruno Michel)
-func FuzzBuilder(f *testing.F) {
+//
+// Commented out since the default time uses too much memory for most (all?)
+// machines.
+func xFuzzBuilder(f *testing.F) {
 	defer func() {
 		if recover() != nil {
 			debug.PrintStack()
@@ -142,7 +145,7 @@ func FuzzBuilder(f *testing.F) {
 	})
 }
 
-func valueFromFuzzingInput(input []byte) interface{} {
+func valueFromFuzzingInput(input []byte) any {
 	switch {
 	case len(input) == 0 || input[0] == 0:
 		return nil
@@ -154,7 +157,7 @@ func valueFromFuzzingInput(input []byte) interface{} {
 		return string(input[0])
 	case input[0] <= 160:
 		l := int(input[0] / 16)
-		array := make([]interface{}, 0, l)
+		array := make([]any, 0, l)
 		for i := 0; i < l; i++ {
 			if len(input) > 0 {
 				input = input[1:]
@@ -165,7 +168,7 @@ func valueFromFuzzingInput(input []byte) interface{} {
 		return array
 	default:
 		l := int(input[0]/16 - 10)
-		obj := make(map[string]interface{})
+		obj := make(map[string]any)
 		for i := 0; i < l; i++ {
 			if len(input) > 0 {
 				input = input[1:]
@@ -177,16 +180,16 @@ func valueFromFuzzingInput(input []byte) interface{} {
 	}
 }
 
-func buildFromValue(t *testing.T, b *alt.Builder, value interface{}, key ...string) {
+func buildFromValue(t *testing.T, b *alt.Builder, value any, key ...string) {
 	switch value := value.(type) {
-	case map[string]interface{}:
+	case map[string]any:
 		err := b.Object(key...)
 		tt.Nil(t, err, "b.Object()")
 		for k, v := range value {
 			buildFromValue(t, b, v, k)
 		}
 		b.Pop()
-	case []interface{}:
+	case []any:
 		err := b.Array(key...)
 		for _, v := range value {
 			buildFromValue(t, b, v)

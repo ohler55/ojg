@@ -43,57 +43,57 @@ func TestSortTime(t *testing.T) {
 }
 
 func TestSortArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"sort", []interface{}{}, "@", 1},
+	p := asm.NewPlan([]any{
+		[]any{"sort", []any{}, "@", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSortArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"sort", 1, "@"},
+	p := asm.NewPlan([]any{
+		[]any{"sort", 1, "@"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSortArgType2(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"sort", []interface{}{}, 1},
+	p := asm.NewPlan([]any{
+		[]any{"sort", []any{}, 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSortMixedString(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"sort", []interface{}{"x", 1}, "@"},
+	p := asm.NewPlan([]any{
+		[]any{"sort", []any{"x", 1}, "@"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSortMixedNum(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"sort", []interface{}{1, "x"}, "@"},
+	p := asm.NewPlan([]any{
+		[]any{"sort", []any{1, "x"}, "@"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSortMixedTime(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"sort", []interface{}{1, time.Now(), time.Now().Add(time.Hour)}, "@"},
+	p := asm.NewPlan([]any{
+		[]any{"sort", []any{1, time.Now(), time.Now().Add(time.Hour)}, "@"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSortWrongType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"sort", []interface{}{true, false}, "@"},
+	p := asm.NewPlan([]any{
+		[]any{"sort", []any{true, false}, "@"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.16.0] - 2023-01-02
+### Added
+- Remove() functions added to the jp package.
+- jp.Set() operations now allow a union as the last fragment in an expression.
+
 ## [1.15.0] - 2022-12-16
 ### Added
 - Added `jp.Script.Inspect()` to be able to get the details of a script.

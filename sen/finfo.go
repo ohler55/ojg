@@ -25,7 +25,7 @@ const (
 
 type appendStatus byte
 
-type appendFunc func(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus)
+type appendFunc func(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus)
 
 // Field hold information about a struct field.
 type finfo struct {
@@ -44,13 +44,13 @@ func (f *finfo) keyLen() int {
 	return len(f.jkey)
 }
 
-func appendJustKey(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendJustKey(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	v := rv.FieldByIndex(fi.index).Interface()
 	buf = append(buf, fi.jkey...)
 	return buf, v, aJustKey
 }
 
-func appendPtrNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendPtrNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	v := rv.FieldByIndex(fi.index).Interface()
 	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 { // real nil check
 		return buf, nil, aSkip
@@ -59,7 +59,7 @@ func appendPtrNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, sa
 	return buf, v, aJustKey
 }
 
-func appendSliceNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendSliceNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	fv := rv.FieldByIndex(fi.index)
 	if fv.Len() == 0 {
 		return buf, nil, aSkip
@@ -68,7 +68,7 @@ func appendSliceNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, 
 	return buf, fv.Interface(), aJustKey
 }
 
-func appendSENString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendSENString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	v := rv.FieldByIndex(fi.index).String()
 	buf = append(buf, fi.jkey...)
 	buf = ojg.AppendSENString(buf, v, safe)
@@ -76,7 +76,7 @@ func appendSENString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe
 	return buf, nil, aWrote
 }
 
-func appendSENStringNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendSENStringNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	s := rv.FieldByIndex(fi.index).String()
 	if len(s) == 0 {
 		return buf, nil, aSkip

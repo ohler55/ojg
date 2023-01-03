@@ -111,7 +111,7 @@ func (n *Number) FillBig() {
 }
 
 // AsNum returns the number as best fit.
-func (n *Number) AsNum() (num interface{}) {
+func (n *Number) AsNum() (num any) {
 	switch {
 	case 0 < len(n.BigBuf):
 		num = json.Number(n.BigBuf)

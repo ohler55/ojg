@@ -15,7 +15,7 @@ import (
 // default then that second default value is returned. This approach keeps the
 // return as a single value and gives the caller the choice of how to indicate
 // a bad value.
-func Time(v interface{}, defaults ...time.Time) (t time.Time) {
+func Time(v any, defaults ...time.Time) (t time.Time) {
 	switch tt := v.(type) {
 	case time.Time:
 		t = tt

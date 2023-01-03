@@ -29,11 +29,12 @@ var (
 		{path: "a.*", data: `{"a":{"x":1,"y":2}}`, expect: `{"a":{}}`},
 		{path: "[*]", data: `[1,2,3]`, expect: `[null,null,null]`},
 		{path: "a[0]", data: `{}`, expect: `{}`},
+		{path: "a[1,2]", data: `{"a":[0,1,2,3]}`, expect: `{"a":[0,null,null,3]}`},
+		{path: "['a','b']", data: `{"a":1,"b":2,"c":3}`, expect: `{"c":3}`},
 
 		{path: "", data: `{}`, err: "can not delete with an empty expression"},
-		{path: "$", data: `{}`, err: "can not delete the root"},
-		{path: "@", data: `{}`, err: "can not delete an empty expression"},
-		{path: "a[1,2]", data: `{}`, err: "can not delete with an expression ending with a Union"},
+		{path: "$", data: `{}`, err: "can not delete with an expression ending with a Root"},
+		{path: "@", data: `{}`, err: "can not delete with an expression ending with a At"},
 		{path: "a.b", data: `{"a":4}`, err: "/can not follow a .+ at 'a'/"},
 		{path: "[0].1", data: `[1]`, err: "/can not follow a .+ at '\\[0\\]'/"},
 		{path: "[1]", data: `[1]`, err: "can not follow out of bounds array index at '[1]'"},
@@ -46,11 +47,12 @@ var (
 		{path: "[*]", data: `[1,2,3]`, expect: `[null,2,3]`},
 		{path: "..a", data: `{"x":{"a":1,"b":2}}`, expect: `{"x":{"b":2}}`},
 		{path: "a[0]", data: `{}`, expect: `{}`},
+		{path: "a[1,2]", data: `{"a":[0,1,2,3]}`, expect: `{"a":[0,null,2,3]}`},
+		{path: "['a','b']", data: `{"a":1,"b":2,"c":3}`, expect: `{"b":2,"c":3}`},
 
 		{path: "", data: `{}`, err: "can not delete with an empty expression"},
-		{path: "$", data: `{}`, err: "can not delete the root"},
-		{path: "@", data: `{}`, err: "can not delete an empty expression"},
-		{path: "a[1,2]", data: `{}`, err: "can not delete with an expression ending with a Union"},
+		{path: "$", data: `{}`, err: "can not delete with an expression ending with a Root"},
+		{path: "@", data: `{}`, err: "can not delete with an expression ending with a At"},
 		{path: "a.b", data: `{"a":4}`, err: "/can not follow a .+ at 'a'/"},
 		{path: "[0].1", data: `[1]`, err: "/can not follow a .+ at '\\[0\\]'/"},
 		{path: "[1]", data: `[1]`, err: "can not follow out of bounds array index at '[1]'"},
@@ -65,7 +67,7 @@ func TestExprDel(t *testing.T) {
 		x, err := jp.ParseString(d.path)
 		tt.Nil(t, err, i, " : ", x)
 
-		var data interface{}
+		var data any
 		if !d.noSimple {
 			data, err = oj.ParseString(d.data)
 			tt.Nil(t, err, i, " : ", x)
@@ -102,7 +104,7 @@ func TestExprDelOne(t *testing.T) {
 		x, err := jp.ParseString(d.path)
 		tt.Nil(t, err, i, " : ", x)
 
-		var data interface{}
+		var data any
 		if !d.noSimple {
 			data, err = oj.ParseString(d.data)
 			tt.Nil(t, err, i, " : ", x)
@@ -129,4 +131,14 @@ func TestExprDelOne(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestExprMustDel(t *testing.T) {
+	data := map[string]any{"a": 1, "b": 2, "c": 3}
+	tt.Panic(t, func() { jp.C("b").N(0).MustDel(data) })
+}
+
+func TestExprMustDelOne(t *testing.T) {
+	data := map[string]any{"a": 1, "b": 2, "c": 3}
+	tt.Panic(t, func() { jp.C("b").N(0).MustDelOne(data) })
 }

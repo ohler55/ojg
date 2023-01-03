@@ -16,7 +16,7 @@ import (
 // 10 so that numbers look correct when displayed in base 10.
 const fracMax = 10000000.0
 
-func decompose(v interface{}, opt *Options) interface{} {
+func decompose(v any, opt *Options) any {
 	switch tv := v.(type) {
 	case nil, bool, int64, float64, string:
 	case int:
@@ -43,14 +43,14 @@ func decompose(v interface{}, opt *Options) interface{} {
 		f, i := math.Frexp(float64(tv))
 		f = float64(int64(f*fracMax)) / fracMax
 		v = math.Ldexp(f, i)
-	case []interface{}:
-		a := make([]interface{}, len(tv))
+	case []any:
+		a := make([]any, len(tv))
 		for i, m := range tv {
 			a[i] = decompose(m, opt)
 		}
 		v = a
-	case map[string]interface{}:
-		o := map[string]interface{}{}
+	case map[string]any:
+		o := map[string]any{}
 		for k, m := range tv {
 			if mv := decompose(m, opt); mv != nil || !opt.OmitNil {
 				if mv != nil || !opt.OmitNil {
@@ -64,7 +64,7 @@ func decompose(v interface{}, opt *Options) interface{} {
 		case ojg.BytesAsBase64:
 			v = base64.StdEncoding.EncodeToString(tv)
 		case ojg.BytesAsArray:
-			a := make([]interface{}, len(tv))
+			a := make([]any, len(tv))
 			for i, m := range tv {
 				a[i] = decompose(m, opt)
 			}
@@ -83,7 +83,7 @@ func decompose(v interface{}, opt *Options) interface{} {
 	return v
 }
 
-func alter(v interface{}, opt *Options) interface{} {
+func alter(v any, opt *Options) any {
 	switch tv := v.(type) {
 	case bool, nil, int64, float64, string, time.Time:
 	case int:
@@ -110,11 +110,11 @@ func alter(v interface{}, opt *Options) interface{} {
 		f, i := math.Frexp(float64(tv))
 		f = float64(int64(f*fracMax)) / fracMax
 		v = math.Ldexp(f, i)
-	case []interface{}:
+	case []any:
 		for i, m := range tv {
 			tv[i] = alter(m, opt)
 		}
-	case map[string]interface{}:
+	case map[string]any:
 		for k, m := range tv {
 			if mv := alter(m, opt); mv != nil || !opt.OmitNil {
 				if mv != nil || !opt.OmitNil {
@@ -127,7 +127,7 @@ func alter(v interface{}, opt *Options) interface{} {
 		case ojg.BytesAsBase64:
 			v = base64.StdEncoding.EncodeToString(tv)
 		case ojg.BytesAsArray:
-			a := make([]interface{}, len(tv))
+			a := make([]any, len(tv))
 			for i, m := range tv {
 				a[i] = decompose(m, opt)
 			}
@@ -144,7 +144,7 @@ func alter(v interface{}, opt *Options) interface{} {
 	return v
 }
 
-func reflectValue(rv reflect.Value, val interface{}, opt *Options) (v interface{}) {
+func reflectValue(rv reflect.Value, val any, opt *Options) (v any) {
 	switch rv.Kind() {
 	case reflect.Invalid, reflect.Uintptr, reflect.UnsafePointer, reflect.Chan, reflect.Func, reflect.Interface:
 		v = nil
@@ -177,11 +177,11 @@ func reflectValue(rv reflect.Value, val interface{}, opt *Options) (v interface{
 	return
 }
 
-func reflectStruct(rv reflect.Value, val interface{}, opt *Options) interface{} {
+func reflectStruct(rv reflect.Value, val any, opt *Options) any {
 	if !rv.CanAddr() {
 		return reflectEmbed(rv, val, opt)
 	}
-	obj := map[string]interface{}{}
+	obj := map[string]any{}
 	si := getSinfo(val)
 	t := si.rt
 	if 0 < len(opt.CreateKey) {
@@ -212,8 +212,8 @@ func reflectStruct(rv reflect.Value, val interface{}, opt *Options) interface{} 
 	return obj
 }
 
-func reflectEmbed(rv reflect.Value, val interface{}, opt *Options) interface{} {
-	obj := map[string]interface{}{}
+func reflectEmbed(rv reflect.Value, val any, opt *Options) any {
+	obj := map[string]any{}
 	si := getSinfo(val)
 	t := si.rt
 	if 0 < len(opt.CreateKey) {
@@ -243,9 +243,9 @@ func reflectEmbed(rv reflect.Value, val interface{}, opt *Options) interface{} {
 	return obj
 }
 
-func reflectComplex(rv reflect.Value, opt *Options) interface{} {
+func reflectComplex(rv reflect.Value, opt *Options) any {
 	c := rv.Complex()
-	obj := map[string]interface{}{
+	obj := map[string]any{
 		"real": real(c),
 		"imag": imag(c),
 	}
@@ -255,12 +255,12 @@ func reflectComplex(rv reflect.Value, opt *Options) interface{} {
 	return obj
 }
 
-func reflectMap(rv reflect.Value, opt *Options) interface{} {
-	obj := map[string]interface{}{}
+func reflectMap(rv reflect.Value, opt *Options) any {
+	obj := map[string]any{}
 	it := rv.MapRange()
 	for it.Next() {
 		k := it.Key().Interface()
-		var g interface{}
+		var g any
 		vv := it.Value()
 		if !isNil(vv) {
 			g = decompose(vv.Interface(), opt)
@@ -276,9 +276,9 @@ func reflectMap(rv reflect.Value, opt *Options) interface{} {
 	return obj
 }
 
-func reflectArray(rv reflect.Value, opt *Options) interface{} {
+func reflectArray(rv reflect.Value, opt *Options) any {
 	size := rv.Len()
-	a := make([]interface{}, size)
+	a := make([]any, size)
 	for i := size - 1; 0 <= i; i-- {
 		a[i] = decompose(rv.Index(i).Interface(), opt)
 	}

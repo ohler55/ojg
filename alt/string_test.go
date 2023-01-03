@@ -12,7 +12,7 @@ import (
 )
 
 type stringData struct {
-	value    interface{}
+	value    any
 	defaults []string
 	expect   string
 }
@@ -62,8 +62,8 @@ func TestString(t *testing.T) {
 		{value: tm, expect: "2020-04-12T16:34:04.123456789Z"},
 		{value: gen.Time(tm), expect: "2020-04-12T16:34:04.123456789Z"},
 
-		{value: []interface{}{}, expect: ""},
-		{value: []interface{}{}, expect: "empty", defaults: []string{"empty"}},
+		{value: []any{}, expect: ""},
+		{value: []any{}, expect: "empty", defaults: []string{"empty"}},
 	} {
 		result := alt.String(d.value, d.defaults...)
 		tt.Equal(t, d.expect, result, "String(", d.value, d.defaults, ")")

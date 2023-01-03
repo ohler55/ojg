@@ -65,7 +65,7 @@ type precBuf struct {
 
 // Script represents JSON Path script used in filters as well.
 type Script struct {
-	template []interface{}
+	template []any
 }
 
 // NewScript parses the string argument and returns a script or an error.
@@ -96,7 +96,7 @@ func MustNewScript(str string) (s *Script) {
 func (s *Script) Append(buf []byte) []byte {
 	buf = append(buf, '(')
 	if 0 < len(s.template) {
-		bstack := make([]interface{}, len(s.template))
+		bstack := make([]any, len(s.template))
 		copy(bstack, s.template)
 
 		for i := len(bstack) - 1; 0 <= i; i-- {
@@ -104,8 +104,8 @@ func (s *Script) Append(buf []byte) []byte {
 			if o == nil {
 				continue
 			}
-			var left interface{}
-			var right interface{}
+			var left any
+			var right any
 			if 1 < len(bstack)-i {
 				left = bstack[i+1]
 			}
@@ -133,30 +133,30 @@ func (s *Script) String() string {
 
 // Match returns true if the script returns true when evaluated against the
 // data argument.
-func (s *Script) Match(data interface{}) bool {
-	stack := []interface{}{}
+func (s *Script) Match(data any) bool {
+	stack := []any{}
 	if node, ok := data.(gen.Node); ok {
-		stack, _ = s.Eval(stack, gen.Array{node}).([]interface{})
+		stack, _ = s.Eval(stack, gen.Array{node}).([]any)
 	} else {
-		stack, _ = s.Eval(stack, []interface{}{data}).([]interface{})
+		stack, _ = s.Eval(stack, []any{data}).([]any)
 	}
 	return 0 < len(stack)
 }
 
 // Eval is primarily used by the Expr parser but is public for testing.
-func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
+func (s *Script) Eval(stack any, data any) any {
 	// Checking the type each iteration adds 2.5% but allows code not to be
 	// duplicated and not to call a separate function. Using just one more
 	// function call for each iteration adds 6.5%.
 	var dlen int
 	switch td := data.(type) {
-	case []interface{}:
+	case []any:
 		dlen = len(td)
 	case gen.Array:
 		dlen = len(td)
-	case map[string]interface{}:
+	case map[string]any:
 		dlen = len(td)
-		da := make([]interface{}, 0, dlen)
+		da := make([]any, 0, dlen)
 		for _, v := range td {
 			da = append(da, v)
 		}
@@ -174,17 +174,17 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 			return stack
 		}
 		dlen = rv.Len()
-		da := make([]interface{}, 0, dlen)
+		da := make([]any, 0, dlen)
 		for i := 0; i < dlen; i++ {
 			da = append(da, rv.Index(i).Interface())
 		}
 		data = da
 	}
-	sstack := make([]interface{}, len(s.template))
-	var v interface{}
+	sstack := make([]any, len(s.template))
+	var v any
 	for vi := 0; vi < dlen; vi++ {
 		switch td := data.(type) {
-		case []interface{}:
+		case []any:
 			v = td[vi]
 		case gen.Array:
 			v = td[vi]
@@ -203,7 +203,7 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 				// most widely used. For that reason an optimization is
 				// included for that inclusion of a one level child lookup
 				// path.
-				if m, ok := v.(map[string]interface{}); ok && len(x) == 2 {
+				if m, ok := v.(map[string]any); ok && len(x) == 2 {
 					if _, ok = x[0].(At); ok {
 						var c Child
 						if c, ok = x[1].(Child); ok {
@@ -256,8 +256,8 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 				// a value, not an op
 				continue
 			}
-			var left interface{}
-			var right interface{}
+			var left any
+			var right any
 			if 1 < len(sstack)-i {
 				left = sstack[i+1]
 			}
@@ -479,7 +479,7 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 				}
 			case in.code:
 				sstack[i] = false
-				if list, ok := right.([]interface{}); ok {
+				if list, ok := right.([]any); ok {
 					for _, ev := range list {
 						if left == ev {
 							sstack[i] = true
@@ -493,9 +493,9 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 					switch tl := left.(type) {
 					case string:
 						sstack[i] = boo == (len(tl) == 0)
-					case []interface{}:
+					case []any:
 						sstack[i] = boo == (len(tl) == 0)
-					case map[string]interface{}:
+					case map[string]any:
 						sstack[i] = boo == (len(tl) == 0)
 					}
 				}
@@ -520,7 +520,7 @@ func (s *Script) Eval(stack interface{}, data interface{}) interface{} {
 		}
 		if b, _ := sstack[0].(bool); b {
 			switch tstack := stack.(type) {
-			case []interface{}:
+			case []any:
 				tstack = append(tstack, v)
 				stack = tstack
 			case []gen.Node:
@@ -559,7 +559,7 @@ func nextForm(st []any) (any, []any) {
 	return v, st
 }
 
-func (s *Script) appendOp(o *op, left, right interface{}) (pb *precBuf) {
+func (s *Script) appendOp(o *op, left, right any) (pb *precBuf) {
 	pb = &precBuf{prec: o.prec}
 	switch o.code {
 	case not.code:
@@ -575,7 +575,7 @@ func (s *Script) appendOp(o *op, left, right interface{}) (pb *precBuf) {
 	return
 }
 
-func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
+func (s *Script) appendValue(buf []byte, v any, prec byte) []byte {
 	switch tv := v.(type) {
 	case nil:
 		buf = append(buf, "null"...)
@@ -596,7 +596,7 @@ func (s *Script) appendValue(buf []byte, v interface{}, prec byte) []byte {
 		} else {
 			buf = append(buf, "false"...)
 		}
-	case []interface{}:
+	case []any:
 		buf = append(buf, '[')
 		for i, v := range tv {
 			if 0 < i {

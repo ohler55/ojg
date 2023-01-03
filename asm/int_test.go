@@ -36,9 +36,9 @@ func TestInt(t *testing.T) {
 }
 
 func TestIntArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"int", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"int", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

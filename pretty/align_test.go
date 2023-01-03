@@ -15,10 +15,10 @@ func TestWriteAlignArrayNumbers(t *testing.T) {
 		MaxDepth: 3,
 		Align:    true,
 	}
-	data := []interface{}{
-		[]interface{}{1, 2, 3},
-		[]interface{}{10, 20, 30},
-		[]interface{}{100, 200, 300},
+	data := []any{
+		[]any{1, 2, 3},
+		[]any{10, 20, 30},
+		[]any{100, 200, 300},
 	}
 	out, err := w.Marshal(data)
 	tt.Nil(t, err)
@@ -43,10 +43,10 @@ func TestWriteAlignArrayStrings(t *testing.T) {
 		MaxDepth: 3,
 		Align:    true,
 	}
-	data := []interface{}{
-		[]interface{}{"alpha", "bravo", "charlie"},
-		[]interface{}{"a", "b", "c"},
-		[]interface{}{"andy", "betty"},
+	data := []any{
+		[]any{"alpha", "bravo", "charlie"},
+		[]any{"a", "b", "c"},
+		[]any{"andy", "betty"},
 	}
 	out, err := w.Marshal(data)
 	tt.Nil(t, err)
@@ -71,10 +71,10 @@ func TestWriteAlignArrayNested(t *testing.T) {
 		MaxDepth: 3,
 		Align:    true,
 	}
-	data := []interface{}{
-		[]interface{}{1, 2, 3, []interface{}{100, 200, 300}},
-		[]interface{}{1, 2, 3, "fourth"},
-		[]interface{}{10, 20, 30, []interface{}{1, 20, 300}},
+	data := []any{
+		[]any{1, 2, 3, []any{100, 200, 300}},
+		[]any{1, 2, 3, "fourth"},
+		[]any{10, 20, 30, []any{1, 20, 300}},
 	}
 	out := w.Encode(data)
 	tt.Equal(t, `[
@@ -99,9 +99,9 @@ func TestWriteAlignMixed(t *testing.T) {
 		Align:    true,
 		SEN:      true,
 	}
-	out, err := w.Marshal([]interface{}{
-		[]interface{}{1, 2, 3},
-		map[string]interface{}{"x": 1, "y": 2},
+	out, err := w.Marshal([]any{
+		[]any{1, 2, 3},
+		map[string]any{"x": 1, "y": 2},
 	})
 	tt.Nil(t, err)
 	tt.Equal(t, `[
@@ -116,11 +116,11 @@ func TestWriteAlignMapNumber(t *testing.T) {
 		MaxDepth: 3,
 		Align:    true,
 	}
-	data := []interface{}{
-		map[string]interface{}{"x": 1, "y": 2},
-		map[string]interface{}{"z": 3, "y": 2},
-		map[string]interface{}{"x": 100, "y": 200, "z": 300},
-		map[string]interface{}{"x": 10, "z": 30},
+	data := []any{
+		map[string]any{"x": 1, "y": 2},
+		map[string]any{"z": 3, "y": 2},
+		map[string]any{"x": 100, "y": 200, "z": 300},
+		map[string]any{"x": 10, "z": 30},
 	}
 	out := w.Encode(data)
 	tt.Equal(t, `[
@@ -146,10 +146,10 @@ func TestWriteAlignMapString(t *testing.T) {
 		MaxDepth: 3,
 		Align:    true,
 	}
-	data := []interface{}{
-		map[string]interface{}{"x": true, "y": false},
-		map[string]interface{}{"z": nil, "y": "yoda"},
-		map[string]interface{}{"x": "x-ray", "y": "yellow", "z": "zoo"},
+	data := []any{
+		map[string]any{"x": true, "y": false},
+		map[string]any{"z": nil, "y": "yoda"},
+		map[string]any{"x": "x-ray", "y": "yellow", "z": "zoo"},
 	}
 	out := w.Encode(data)
 	tt.Equal(t, `[
@@ -173,9 +173,9 @@ func TestWriteAlignMapNested(t *testing.T) {
 		MaxDepth: 3,
 		Align:    true,
 	}
-	data := []interface{}{
-		map[string]interface{}{"x": 1, "y": 2, "z": map[string]interface{}{"a": 1, "b": 2, "c": 3}},
-		map[string]interface{}{"x": 100, "y": 200, "z": map[string]interface{}{"a": 10, "b": 20, "c": 30}},
+	data := []any{
+		map[string]any{"x": 1, "y": 2, "z": map[string]any{"a": 1, "b": 2, "c": 3}},
+		map[string]any{"x": 100, "y": 200, "z": map[string]any{"a": 10, "b": 20, "c": 30}},
 	}
 	out := w.Encode(data)
 	tt.Equal(t, `[
@@ -197,9 +197,9 @@ func TestWriteAlignMapArray(t *testing.T) {
 		MaxDepth: 3,
 		Align:    true,
 	}
-	data := []interface{}{
-		map[string]interface{}{"x": 1, "y": 2, "z": []interface{}{1, 2, 3}},
-		map[string]interface{}{"x": 10, "y": 20, "z": []interface{}{10, 200, 3000}},
+	data := []any{
+		map[string]any{"x": 1, "y": 2, "z": []any{1, 2, 3}},
+		map[string]any{"x": 10, "y": 20, "z": []any{10, 200, 3000}},
 	}
 	out := w.Encode(data)
 	tt.Equal(t, `[
@@ -221,9 +221,9 @@ func TestWriteAlignArrayMap(t *testing.T) {
 		MaxDepth: 3,
 		Align:    true,
 	}
-	data := []interface{}{
-		[]interface{}{1, 2, 3, map[string]interface{}{"x": 1, "y": 2, "z": 3}},
-		[]interface{}{100, 200, 300, map[string]interface{}{"x": 1, "y": 20, "z": 300}},
+	data := []any{
+		[]any{1, 2, 3, map[string]any{"x": 1, "y": 2, "z": 3}},
+		[]any{100, 200, 300, map[string]any{"x": 1, "y": 20, "z": 300}},
 	}
 	out := w.Encode(data)
 	tt.Equal(t, `[
@@ -246,9 +246,9 @@ func TestWriteAlignColor(t *testing.T) {
 		MaxDepth: 3,
 		Align:    true,
 	}
-	data := []interface{}{
-		[]interface{}{1, 2, 3, map[string]interface{}{"x": 1, "y": 2, "z": 3}},
-		[]interface{}{100, 200, 300, map[string]interface{}{"x": 1, "y": 20, "z": 300}},
+	data := []any{
+		[]any{1, 2, 3, map[string]any{"x": 1, "y": 2, "z": 3}},
+		[]any{100, 200, 300, map[string]any{"x": 1, "y": 20, "z": 300}},
 	}
 	out := w.Encode(data)
 	tt.Equal(t, `s[x
@@ -266,7 +266,7 @@ s]x`, string(out))
 
 type simplyPanic int
 
-func (sp simplyPanic) Simplify() interface{} {
+func (sp simplyPanic) Simplify() any {
 	panic("no can do")
 }
 

@@ -29,12 +29,12 @@ func (n Array) String() string {
 	return string(b)
 }
 
-// Alter the array into a simple []interface{}.
-func (n Array) Alter() interface{} {
-	var simple []interface{}
+// Alter the array into a simple []any.
+func (n Array) Alter() any {
+	var simple []any
 
 	if n != nil {
-		simple = *(*[]interface{})(unsafe.Pointer(&n))
+		simple = *(*[]any)(unsafe.Pointer(&n))
 		for i, m := range n {
 			if m == nil {
 				simple[i] = nil
@@ -46,12 +46,12 @@ func (n Array) Alter() interface{} {
 	return simple
 }
 
-// Simplify creates a simplified version of the Node as a []interface{}.
-func (n Array) Simplify() interface{} {
-	var dup []interface{}
+// Simplify creates a simplified version of the Node as a []any.
+func (n Array) Simplify() any {
+	var dup []any
 
 	if n != nil {
-		dup = make([]interface{}, 0, len(n))
+		dup = make([]any, 0, len(n))
 		for _, m := range n {
 			if m == nil {
 				dup = append(dup, nil)

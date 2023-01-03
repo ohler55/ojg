@@ -22,17 +22,17 @@ func TestReverse(t *testing.T) {
 }
 
 func TestReverseArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"reverse", []interface{}{}, 1},
+	p := asm.NewPlan([]any{
+		[]any{"reverse", []any{}, 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestReverseArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"reverse", 1},
+	p := asm.NewPlan([]any{
+		[]any{"reverse", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

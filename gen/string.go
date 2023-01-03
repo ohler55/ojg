@@ -11,12 +11,12 @@ func (n String) String() string {
 }
 
 // Alter returns the backing float64 value of the Node.
-func (n String) Alter() interface{} {
+func (n String) Alter() any {
 	return string(n)
 }
 
 // Simplify returns the backing float64 value of the Node.
-func (n String) Simplify() interface{} {
+func (n String) Simplify() any {
 	return string(n)
 }
 

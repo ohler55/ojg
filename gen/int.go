@@ -15,12 +15,12 @@ func (n Int) String() string {
 }
 
 // Alter returns the backing int64 value of the Node.
-func (n Int) Alter() interface{} {
+func (n Int) Alter() any {
 	return int64(n)
 }
 
 // Simplify returns the backing int64 value of the Node.
-func (n Int) Simplify() interface{} {
+func (n Int) Simplify() any {
 	return int64(n)
 }
 

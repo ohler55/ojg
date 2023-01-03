@@ -10,11 +10,12 @@ import (
 // AddMongoFuncs adds TokenFuncs for the common mongo Javascript functions
 // that appear in the output from mongosh for some types. They functions
 // included are:
-//  ISODate(arg) returns time.Time when given either a RFC3339 string or milliseconds
-//  ObjectId(arg) returns the arg as a string
-//  NumberInt(arg)  returns the string argument as an int64 or if too large the original string
-//  NumberLong(arg)  returns the string argument as an int64 or if too large the original string
-//  NumberDecimal(arg)  returns the string argument as a float64 or if too large the original string
+//
+//	ISODate(arg) returns time.Time when given either a RFC3339 string or milliseconds
+//	ObjectId(arg) returns the arg as a string
+//	NumberInt(arg)  returns the string argument as an int64 or if too large the original string
+//	NumberLong(arg)  returns the string argument as an int64 or if too large the original string
+//	NumberDecimal(arg)  returns the string argument as a float64 or if too large the original string
 func (p *Parser) AddMongoFuncs() {
 	if p.tokenFuncs == nil {
 		p.tokenFuncs = map[string]TokenFunc{}
@@ -26,7 +27,7 @@ func (p *Parser) AddMongoFuncs() {
 	p.tokenFuncs["NumberDecimal"] = numberDecimal
 }
 
-func isoDate(args ...interface{}) (t interface{}) {
+func isoDate(args ...any) (t any) {
 	if 0 < len(args) {
 		switch ta := args[0].(type) {
 		case string:
@@ -38,14 +39,14 @@ func isoDate(args ...interface{}) (t interface{}) {
 	return
 }
 
-func objectID(args ...interface{}) (v interface{}) {
+func objectID(args ...any) (v any) {
 	if 0 < len(args) {
 		v = args[0]
 	}
 	return
 }
 
-func numberInt64(args ...interface{}) (v interface{}) {
+func numberInt64(args ...any) (v any) {
 	if 0 < len(args) {
 		s, _ := args[0].(string)
 		var err error
@@ -56,7 +57,7 @@ func numberInt64(args ...interface{}) (v interface{}) {
 	return
 }
 
-func numberDecimal(args ...interface{}) (v interface{}) {
+func numberDecimal(args ...any) (v any) {
 	if 0 < len(args) {
 		s, _ := args[0].(string)
 		var err error

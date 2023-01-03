@@ -11,7 +11,7 @@ import (
 )
 
 type boolData struct {
-	value    interface{}
+	value    any
 	defaults []bool
 	expect   bool
 }

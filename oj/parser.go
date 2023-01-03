@@ -21,7 +21,7 @@ const (
 	readBufSize   = 4096
 )
 
-var emptySlice = []interface{}{}
+var emptySlice = []any{}
 
 // Parser is a reusable JSON parser. It can be reused for multiple parsings
 // which allows buffer reuse for a performance advantage.
@@ -29,16 +29,16 @@ type Parser struct {
 	tracker
 	tmp        []byte // used for numbers and strings
 	runeBytes  []byte
-	stack      []interface{}
+	stack      []any
 	starts     []int
-	maps       []map[string]interface{}
-	cb         func(interface{})
-	resultChan chan interface{}
+	maps       []map[string]any
+	cb         func(any)
+	resultChan chan any
 	ri         int // read index for null, false, and true
 	mi         int
 	num        gen.Number
 	rn         rune
-	result     interface{}
+	result     any
 	mode       string
 	nextMode   string
 
@@ -47,7 +47,7 @@ type Parser struct {
 	Reuse bool
 }
 
-func recomposeToJSON(v interface{}) (interface{}, error) {
+func recomposeToJSON(v any) (any, error) {
 	return []byte(JSON(v)), nil
 }
 
@@ -57,8 +57,8 @@ func init() {
 
 // Unmarshal parses the provided JSON and stores the result in the value
 // pointed to by vp.
-func (p *Parser) Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomposer) (err error) {
-	var v interface{}
+func (p *Parser) Unmarshal(data []byte, vp any, recomposer ...alt.Recomposer) (err error) {
+	var v any
 	orig := p.num.ForceFloat
 	p.num.ForceFloat = true
 	if v, err = p.Parse(data); err == nil {
@@ -69,19 +69,19 @@ func (p *Parser) Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomp
 }
 
 // Parse a JSON string in to simple types. An error is returned if not valid JSON.
-func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
+func (p *Parser) Parse(buf []byte, args ...any) (any, error) {
 	p.cb = nil
 	p.resultChan = nil
 	p.OnlyOne = true
 	for _, a := range args {
 		switch ta := a.(type) {
-		case func(interface{}) bool:
+		case func(any) bool:
 			p.cb = func(x any) { _ = ta(x) }
 			p.OnlyOne = false
-		case func(interface{}):
+		case func(any):
 			p.cb = ta
 			p.OnlyOne = false
-		case chan interface{}:
+		case chan any:
 			p.resultChan = ta
 			p.OnlyOne = false
 			p.Reuse = false
@@ -90,10 +90,10 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 		}
 	}
 	if p.stack == nil {
-		p.stack = make([]interface{}, 0, stackInitSize)
+		p.stack = make([]any, 0, stackInitSize)
 		p.tmp = make([]byte, 0, tmpInitSize)
 		p.starts = make([]int, 0, 16)
-		p.maps = make([]map[string]interface{}, 0, 16)
+		p.maps = make([]map[string]any, 0, 16)
 	} else {
 		p.stack = p.stack[:0]
 		p.tmp = p.tmp[:0]
@@ -126,19 +126,19 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 
 // ParseReader reads JSON from an io.Reader. An error is returned if not valid
 // JSON.
-func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}, err error) {
+func (p *Parser) ParseReader(r io.Reader, args ...any) (data any, err error) {
 	p.cb = nil
 	p.resultChan = nil
 	p.OnlyOne = true
 	for _, a := range args {
 		switch ta := a.(type) {
-		case func(interface{}) bool:
+		case func(any) bool:
 			p.cb = func(x any) { _ = ta(x) }
 			p.OnlyOne = false
-		case func(interface{}):
+		case func(any):
 			p.cb = ta
 			p.OnlyOne = false
-		case chan interface{}:
+		case chan any:
 			p.resultChan = ta
 			p.OnlyOne = false
 			p.Reuse = false
@@ -147,10 +147,10 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}
 		}
 	}
 	if p.stack == nil {
-		p.stack = make([]interface{}, 0, stackInitSize)
+		p.stack = make([]any, 0, stackInitSize)
 		p.tmp = make([]byte, 0, tmpInitSize)
 		p.starts = make([]int, 0, 16)
-		p.maps = make([]map[string]interface{}, 0, 16)
+		p.maps = make([]map[string]any, 0, 16)
 	} else {
 		p.stack = p.stack[:0]
 		p.tmp = p.tmp[:0]
@@ -310,7 +310,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 		case openObject:
 			p.starts = append(p.starts, -1)
 			p.mode = key1Map
-			var m map[string]interface{}
+			var m map[string]any
 			if p.Reuse {
 				if p.mi < len(p.maps) {
 					m = p.maps[p.mi]
@@ -318,12 +318,12 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 						delete(m, k)
 					}
 				} else {
-					m = make(map[string]interface{}, mapInitSize)
+					m = make(map[string]any, mapInitSize)
 					p.maps = append(p.maps, m)
 				}
 				p.mi++
 			} else {
-				m = make(map[string]interface{}, mapInitSize)
+				m = make(map[string]any, mapInitSize)
 			}
 			p.stack = append(p.stack, m)
 			depth++
@@ -391,7 +391,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			start := p.starts[len(p.starts)-1] + 1
 			p.starts = p.starts[:len(p.starts)-1]
 			size := len(p.stack) - start
-			n := make([]interface{}, size)
+			n := make([]any, size)
 			copy(n, p.stack[start:len(p.stack)])
 			p.stack = p.stack[0 : start-1]
 			p.add(n)
@@ -584,10 +584,10 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 	return nil
 }
 
-func (p *Parser) add(n interface{}) {
+func (p *Parser) add(n any) {
 	if 2 <= len(p.stack) {
 		if k, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
-			obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
+			obj, _ := p.stack[len(p.stack)-2].(map[string]any)
 			obj[string(k)] = n
 			p.stack = p.stack[0 : len(p.stack)-1]
 

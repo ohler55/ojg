@@ -148,7 +148,7 @@ func ojUnmarshalCatalog(b *testing.B) {
 
 func ojParseChan(b *testing.B) {
 	sample, _ := ioutil.ReadFile(filename)
-	rc := make(chan interface{}, b.N)
+	rc := make(chan any, b.N)
 	ready := make(chan bool)
 	go func() {
 		ready <- true

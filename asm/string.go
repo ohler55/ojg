@@ -23,7 +23,7 @@ otherwise false is returned.`,
 	})
 }
 
-func stringCheck(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func stringCheck(root map[string]any, at any, args ...any) any {
 	if len(args) != 1 {
 		panic(fmt.Errorf("string? expects exactly one argument. %d given", len(args)))
 	}
@@ -32,7 +32,7 @@ func stringCheck(root map[string]interface{}, at interface{}, args ...interface{
 	return ok
 }
 
-func stringConv(root map[string]interface{}, at interface{}, args ...interface{}) (s interface{}) {
+func stringConv(root map[string]any, at any, args ...any) (s any) {
 	if len(args) < 1 || 2 < len(args) {
 		panic(fmt.Errorf("string? expects one or two arguments. %d given", len(args)))
 	}
@@ -64,7 +64,7 @@ func stringConv(root map[string]interface{}, at interface{}, args ...interface{}
 			format = time.RFC3339Nano
 		}
 		s = v.Format(format)
-	case []interface{}, map[string]interface{}:
+	case []any, map[string]any:
 		s = sen.String(v, &sen.Options{Sort: true})
 	default:
 		s = fmt.Sprintf("%v", v)

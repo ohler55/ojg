@@ -26,25 +26,25 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"get"},
+	p := asm.NewPlan([]any{
+		[]any{"get"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestGetArgNotExpr(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"get", 1},
+	p := asm.NewPlan([]any{
+		[]any{"get", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestGetArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"get", []interface{}{"sum"}},
+	p := asm.NewPlan([]any{
+		[]any{"get", []any{"sum"}},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

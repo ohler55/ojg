@@ -19,14 +19,14 @@ var uintAppendFuncs = [8]appendFunc{
 	iappendUintNotEmptyAsString,
 }
 
-func appendUint(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendUint(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = strconv.AppendUint(buf, uint64(*(*uint)(unsafe.Pointer(addr + fi.offset))), 10)
 
 	return buf, nil, aWrote
 }
 
-func appendUintAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendUintAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = append(buf, '"')
 	buf = strconv.AppendUint(buf, uint64(*(*uint)(unsafe.Pointer(addr + fi.offset))), 10)
@@ -35,7 +35,7 @@ func appendUintAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, s
 	return buf, nil, aWrote
 }
 
-func appendUintNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendUintNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	v := *(*uint)(unsafe.Pointer(addr + fi.offset))
 	if v == 0 {
 		return buf, nil, aSkip
@@ -46,7 +46,7 @@ func appendUintNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, s
 	return buf, nil, aWrote
 }
 
-func appendUintNotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendUintNotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	v := *(*uint)(unsafe.Pointer(addr + fi.offset))
 	if v == 0 {
 		return buf, nil, aSkip
@@ -59,14 +59,14 @@ func appendUintNotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr ui
 	return buf, nil, aWrote
 }
 
-func iappendUint(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func iappendUint(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = strconv.AppendUint(buf, uint64(rv.FieldByIndex(fi.index).Interface().(uint)), 10)
 
 	return buf, nil, aWrote
 }
 
-func iappendUintAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func iappendUintAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = append(buf, '"')
 	buf = strconv.AppendUint(buf, uint64(rv.FieldByIndex(fi.index).Interface().(uint)), 10)
@@ -75,7 +75,7 @@ func iappendUintAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, 
 	return buf, nil, aWrote
 }
 
-func iappendUintNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func iappendUintNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	v := rv.FieldByIndex(fi.index).Interface().(uint)
 	if v == 0 {
 		return buf, nil, aSkip
@@ -86,7 +86,7 @@ func iappendUintNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, 
 	return buf, nil, aWrote
 }
 
-func iappendUintNotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func iappendUintNotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	v := rv.FieldByIndex(fi.index).Interface().(uint)
 	if v == 0 {
 		return buf, nil, aSkip

@@ -22,33 +22,33 @@ func TestReplace(t *testing.T) {
 }
 
 func TestReplaceArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"replace", "x", "y", "z", 1},
+	p := asm.NewPlan([]any{
+		[]any{"replace", "x", "y", "z", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestReplaceArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"replace", 1, "x", "y"},
+	p := asm.NewPlan([]any{
+		[]any{"replace", 1, "x", "y"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestReplaceArgType2(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"replace", "x", 1, "y"},
+	p := asm.NewPlan([]any{
+		[]any{"replace", "x", 1, "y"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestReplaceArgType3(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"replace", "x", "y", 1},
+	p := asm.NewPlan([]any{
+		[]any{"replace", "x", "y", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

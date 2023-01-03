@@ -51,9 +51,9 @@ func TestSizeOther(t *testing.T) {
 }
 
 func TestSizeArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"size", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"size", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

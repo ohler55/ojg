@@ -23,19 +23,19 @@ var (
 	HTMLOptions = ojg.HTMLOptions
 
 	writerPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return &Writer{Options: DefaultOptions, buf: make([]byte, 0, 1024)}
 		},
 	}
 	parserPool = sync.Pool{
-		New: func() interface{} {
+		New: func() any {
 			return &Parser{}
 		},
 	}
 )
 
 // Parse SEN into a simple type. Arguments are optional and can be a
-// func(interface{}) bool for callbacks or a chan interface{} for chan based
+// func(any) bool for callbacks or a chan any for chan based
 // result delivery. The SEN parser will also Parse JSON.
 //
 // A func argument is the callback for the parser if processing multiple
@@ -43,7 +43,7 @@ var (
 // only one SEN.
 //
 // A chan argument will be used to deliver parse results.
-func Parse(buf []byte, args ...interface{}) (interface{}, error) {
+func Parse(buf []byte, args ...any) (any, error) {
 	p, _ := parserPool.Get().(*Parser)
 	p.cb = nil
 	p.resultChan = nil
@@ -54,7 +54,7 @@ func Parse(buf []byte, args ...interface{}) (interface{}, error) {
 }
 
 // MustParse SEN into a simple type. Arguments are optional and can be a
-// func(interface{}) bool for callbacks or a chan interface{} for chan based
+// func(any) bool for callbacks or a chan any for chan based
 // result delivery. The SEN parser will also Parse JSON. Panics on error.
 //
 // A func argument is the callback for the parser if processing multiple
@@ -62,7 +62,7 @@ func Parse(buf []byte, args ...interface{}) (interface{}, error) {
 // only one SEN.
 //
 // A chan argument will be used to deliver parse results.
-func MustParse(buf []byte, args ...interface{}) interface{} {
+func MustParse(buf []byte, args ...any) any {
 	p := parserPool.Get().(*Parser)
 	p.cb = nil
 	p.resultChan = nil
@@ -77,7 +77,7 @@ func MustParse(buf []byte, args ...interface{}) interface{} {
 }
 
 // ParseReader reads and parses SEN into a simple type. Arguments are optional
-// and can be a func(interface{}) bool for callbacks or a chan interface{} for
+// and can be a func(any) bool for callbacks or a chan any for
 // chan based result delivery. The SEN parser will also Parse JSON.
 //
 // A func argument is the callback for the parser if processing multiple
@@ -85,7 +85,7 @@ func MustParse(buf []byte, args ...interface{}) interface{} {
 // only one SEN.
 //
 // A chan argument will be used to deliver parse results.
-func ParseReader(r io.Reader, args ...interface{}) (data interface{}, err error) {
+func ParseReader(r io.Reader, args ...any) (data any, err error) {
 	p, _ := parserPool.Get().(*Parser)
 	p.cb = nil
 	p.resultChan = nil
@@ -96,8 +96,8 @@ func ParseReader(r io.Reader, args ...interface{}) (data interface{}, err error)
 }
 
 // MustParseReader reads and parses SEN into a simple type. Arguments are
-// optional and can be a func(interface{}) bool for callbacks or a chan
-// interface{} for chan based result delivery. The SEN parser will also Parse
+// optional and can be a func(any) bool for callbacks or a chan
+// any for chan based result delivery. The SEN parser will also Parse
 // JSON. Panics on error.
 //
 // A func argument is the callback for the parser if processing multiple
@@ -105,7 +105,7 @@ func ParseReader(r io.Reader, args ...interface{}) (data interface{}, err error)
 // only one SEN.
 //
 // A chan argument will be used to deliver parse results.
-func MustParseReader(r io.Reader, args ...interface{}) (data interface{}) {
+func MustParseReader(r io.Reader, args ...any) (data any) {
 	p := parserPool.Get().(*Parser)
 	p.cb = nil
 	p.resultChan = nil
@@ -121,9 +121,9 @@ func MustParseReader(r io.Reader, args ...interface{}) (data interface{}) {
 
 // Unmarshal parses the provided JSON and stores the result in the value
 // pointed to by vp.
-func Unmarshal(data []byte, vp interface{}, recomposer ...*alt.Recomposer) (err error) {
+func Unmarshal(data []byte, vp any, recomposer ...*alt.Recomposer) (err error) {
 	p := Parser{}
-	var v interface{}
+	var v any
 	if v, err = p.Parse(data); err == nil {
 		if 0 < len(recomposer) {
 			_, err = recomposer[0].Recompose(v, vp)
@@ -135,10 +135,10 @@ func Unmarshal(data []byte, vp interface{}, recomposer ...*alt.Recomposer) (err 
 }
 
 // String returns a SEN string for the data provided. The data can be a simple
-// type of nil, bool, int, floats, time.Time, []interface{}, or
-// map[string]interface{} or a Node type, The args, if supplied can be an int
+// type of nil, bool, int, floats, time.Time, []any, or
+// map[string]any or a Node type, The args, if supplied can be an int
 // as an indent, *ojg.Options, or a *Writer.
-func String(data interface{}, args ...interface{}) string {
+func String(data any, args ...any) string {
 	var wr *Writer
 	if 0 < len(args) {
 		wr = pickWriter(args[0])
@@ -151,12 +151,12 @@ func String(data interface{}, args ...interface{}) string {
 }
 
 // Bytes returns a SEN []byte for the data provided. The data can be a simple
-// type of nil, bool, int, floats, time.Time, []interface{}, or
-// map[string]interface{} or a Node type, The args, if supplied can be an int
+// type of nil, bool, int, floats, time.Time, []any, or
+// map[string]any or a Node type, The args, if supplied can be an int
 // as an indent, *ojg.Options, or a *Writer. The returned buffer is the Writer
 // buffer and is reused on the next call to write. If returned value is to be
 // preserved past a second invocation then the buffer should be copied.
-func Bytes(data interface{}, args ...interface{}) []byte {
+func Bytes(data any, args ...any) []byte {
 	var wr *Writer
 	if 0 < len(args) {
 		wr = pickWriter(args[0])
@@ -169,10 +169,10 @@ func Bytes(data interface{}, args ...interface{}) []byte {
 }
 
 // Write SEN for the data provided. The data can be a simple type of nil,
-// bool, int, floats, time.Time, []interface{}, or map[string]interface{} or a
+// bool, int, floats, time.Time, []any, or map[string]any or a
 // Node type, The args, if supplied can be an int as an indent, *ojg.Options,
 // or a *Writer.
-func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
+func Write(w io.Writer, data any, args ...any) (err error) {
 	var wr *Writer
 	if 0 < len(args) {
 		wr = pickWriter(args[0])
@@ -185,16 +185,16 @@ func Write(w io.Writer, data interface{}, args ...interface{}) (err error) {
 }
 
 // MustWrite SEN for the data provided. The data can be a simple type of nil,
-// bool, int, floats, time.Time, []interface{}, or map[string]interface{} or a
+// bool, int, floats, time.Time, []any, or map[string]any or a
 // Node type, The args, if supplied can be an int as an indent, *ojg.Options,
 // or a *Writer. Panics on error.
-func MustWrite(w io.Writer, data interface{}, args ...interface{}) {
+func MustWrite(w io.Writer, data any, args ...any) {
 	if err := Write(w, data, args...); err != nil {
 		panic(err)
 	}
 }
 
-func pickWriter(arg interface{}) (wr *Writer) {
+func pickWriter(arg any) (wr *Writer) {
 	switch ta := arg.(type) {
 	case int:
 		wr = &Writer{

@@ -12,8 +12,8 @@ import (
 
 func ExampleDiff() {
 	diffs := alt.Diff(
-		map[string]interface{}{"x": 1, "y": 2, "z": []interface{}{1, 2, 3}},
-		map[string]interface{}{"x": 1, "y": 4, "z": []interface{}{1, 3, 5}},
+		map[string]any{"x": 1, "y": 2, "z": []any{1, 2, 3}},
+		map[string]any{"x": 1, "y": 4, "z": []any{1, 3, 5}},
 	)
 	sort.Slice(diffs, func(i, j int) bool {
 		return 0 < strings.Compare(fmt.Sprintf("%v", diffs[j]), fmt.Sprintf("%v", diffs[i]))
@@ -25,8 +25,8 @@ func ExampleDiff() {
 
 func ExampleCompare() {
 	diff := alt.Compare(
-		map[string]interface{}{"x": 1, "y": 2, "z": []interface{}{1, 2, 3}},
-		map[string]interface{}{"x": 1, "y": 2, "z": []interface{}{1, 3, 5}},
+		map[string]any{"x": 1, "y": 2, "z": []any{1, 2, 3}},
+		map[string]any{"x": 1, "y": 2, "z": []any{1, 3, 5}},
 	)
 	fmt.Printf("diff: %v\n", diff)
 
@@ -34,10 +34,10 @@ func ExampleCompare() {
 }
 
 func ExampleMatch() {
-	fingerprint := map[string]interface{}{"x": 1, "z": 3}
+	fingerprint := map[string]any{"x": 1, "z": 3}
 	match := alt.Match(
 		fingerprint,
-		map[string]interface{}{"x": 1, "y": 2, "z": 3},
+		map[string]any{"x": 1, "y": 2, "z": 3},
 	)
 	fmt.Printf("match: %t\n", match)
 

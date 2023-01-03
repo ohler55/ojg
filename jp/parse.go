@@ -279,7 +279,7 @@ func (p *parser) readInt(b byte) (int, byte) {
 	return i, b
 }
 
-func (p *parser) readNum(b byte) interface{} {
+func (p *parser) readNum(b byte) any {
 	var num []byte
 
 	num = append(num, b)
@@ -393,7 +393,7 @@ func (p *parser) readSlice(i int) Frag {
 	return f
 }
 
-func (p *parser) readUnion(v interface{}, b byte) Frag {
+func (p *parser) readUnion(v any, b byte) Frag {
 	if len(p.buf) <= p.pos {
 		p.raise("not terminated")
 	}
@@ -527,7 +527,7 @@ func (p *parser) readEqValue() (eq *Equation) {
 	b := p.nextNonSpace()
 	switch b {
 	case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-		var v interface{}
+		var v any
 		p.pos++
 		v = p.readNum(b)
 		eq = &Equation{result: v}
@@ -572,7 +572,7 @@ func (p *parser) readEqToken(token []byte) {
 	}
 }
 
-func (p *parser) readEqList() (list []interface{}) {
+func (p *parser) readEqList() (list []any) {
 	p.pos++
 List:
 	for p.pos < len(p.buf) {
@@ -648,7 +648,7 @@ func (p *parser) nextNonSpace() (b byte) {
 	return
 }
 
-func (p *parser) raise(format string, args ...interface{}) {
+func (p *parser) raise(format string, args ...any) {
 	msg := fmt.Sprintf(format, args...)
 	panic(fmt.Errorf("%s at %d in %s", msg, p.pos+1, p.buf))
 }

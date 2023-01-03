@@ -49,7 +49,7 @@ func (g *genny) Generic() gen.Node {
 
 type Pan int
 
-func (p Pan) Simplify() interface{} {
+func (p Pan) Simplify() any {
 	panic("force fail")
 }
 
@@ -215,7 +215,7 @@ func TestInit(t *testing.T) {
 
 func TestTypes(t *testing.T) {
 	when := time.Date(2021, 2, 9, 10, 11, 12, 111, time.UTC)
-	val := []interface{}{nil, 1.25, float32(1.5), "abc", when, map[string]interface{}{}}
+	val := []any{nil, 1.25, float32(1.5), "abc", when, map[string]any{}}
 	opt := ojg.DefaultOptions
 	opt.TimeFormat = time.RFC3339Nano
 	s := pretty.JSON(val, &opt)
@@ -227,7 +227,7 @@ func TestTypes(t *testing.T) {
 }
 
 func TestQuotedString(t *testing.T) {
-	val := []interface{}{"\\\t\n\r\b\f\"&<>\u2028\u2029\x07\U0001D122 ぴーたー"}
+	val := []any{"\\\t\n\r\b\f\"&<>\u2028\u2029\x07\U0001D122 ぴーたー"}
 	s := pretty.JSON(val, &ojg.Options{HTMLUnsafe: false})
 	tt.Equal(t, `["\\\t\n\r\b\f\"\u0026\u003c\u003e\u2028\u2029\u0007𝄢 ぴーたー"]`, s)
 	s = pretty.JSON(val, &ojg.Options{HTMLUnsafe: true})
@@ -245,9 +245,9 @@ func TestByteSlice(t *testing.T) {
 }
 
 func TestIntTypes(t *testing.T) {
-	val := []interface{}{
-		[]interface{}{int8(-8), int16(-16), int32(-32), int64(-64), int(-1)},
-		[]interface{}{uint8(8), uint16(16), uint32(32), uint64(64), uint(1)},
+	val := []any{
+		[]any{int8(-8), int16(-16), int32(-32), int64(-64), int(-1)},
+		[]any{uint8(8), uint16(16), uint32(32), uint64(64), uint(1)},
 	}
 	s := pretty.JSON(val, 80.2)
 	tt.Equal(t, `[
@@ -288,7 +288,7 @@ func TestSEN(t *testing.T) {
 	when := time.Date(2021, 2, 9, 10, 11, 12, 111, time.UTC)
 	p := sen.Parser{}
 	val, err := p.Parse([]byte(`[true {abc: 123 def: null} 1.25, xyz]`))
-	a, _ := val.([]interface{})
+	a, _ := val.([]any)
 	a = append(a, when)
 	tt.Nil(t, err)
 	opt := testColor
@@ -311,9 +311,9 @@ func TestSENGenMap(t *testing.T) {
 }
 
 func TestDeep(t *testing.T) {
-	val := []interface{}{}
+	val := []any{}
 	for i := 0; i < 10; i++ {
-		val = []interface{}{val}
+		val = []any{val}
 	}
 	opt := ojg.DefaultOptions
 	s := pretty.SEN(val, &opt, 10.1)
@@ -342,15 +342,15 @@ func TestDeep(t *testing.T) {
 
 	// Deeper still to hit the max indent.
 	for i := 0; i < 120; i++ {
-		val = []interface{}{val}
+		val = []any{val}
 	}
 	s = pretty.SEN(val, &opt, 120.1)
 	tt.Equal(t, 16902, len(s))
 
 	// Deep map
-	m := map[string]interface{}{}
+	m := map[string]any{}
 	for i := 0; i < 130; i++ {
-		m = map[string]interface{}{"o": m}
+		m = map[string]any{"o": m}
 	}
 	s = pretty.SEN(m, &opt, 120.1)
 	tt.Equal(t, 17292, len(s))
@@ -409,7 +409,7 @@ func TestWritePanic(t *testing.T) {
 func TestWriteShort(t *testing.T) {
 	opt := ojg.DefaultOptions
 	opt.WriteLimit = 2
-	err := pretty.WriteJSON(&shortWriter{max: 3}, []interface{}{"abcdef"}, &opt)
+	err := pretty.WriteJSON(&shortWriter{max: 3}, []any{"abcdef"}, &opt)
 	tt.NotNil(t, err)
 }
 
@@ -433,16 +433,16 @@ func TestAsString(t *testing.T) {
 func TestJSONMaxWidth(t *testing.T) {
 	var b strings.Builder
 	w := pretty.Writer{Width: 200, MaxDepth: 3}
-	err := w.Write(&b, []interface{}{1, 2, 3})
+	err := w.Write(&b, []any{1, 2, 3})
 	tt.Nil(t, err)
 	tt.Equal(t, `[1, 2, 3]`, b.String())
 	tt.Equal(t, 128, w.Width)
 }
 
 func TestAlignArg(t *testing.T) {
-	out := pretty.SEN([]interface{}{
-		[]interface{}{1, 2, 3},
-		[]interface{}{100, 200, 300},
+	out := pretty.SEN([]any{
+		[]any{1, 2, 3},
+		[]any{100, 200, 300},
 	}, true, 20.3)
 	tt.Equal(t, `[
   [  1   2   3]
@@ -451,7 +451,7 @@ func TestAlignArg(t *testing.T) {
 }
 
 func TestAlignMap(t *testing.T) {
-	out := pretty.JSON(map[string]interface{}{
+	out := pretty.JSON(map[string]any{
 		"longer key": 1,
 		"medium":     2,
 		"short":      3,

@@ -34,6 +34,6 @@ func (x Expr) Append(buf []byte) []byte {
 	return buf
 }
 
-func isNil(v interface{}) bool {
+func isNil(v any) bool {
 	return (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0
 }

@@ -46,7 +46,7 @@ var (
 	planDef     = ""
 	showVersion bool
 	plan        *asm.Plan
-	root        = map[string]interface{}{}
+	root        = map[string]any{}
 	showRoot    bool
 	prettyOpt   = ""
 	width       = 80
@@ -217,8 +217,8 @@ func run() (err error) {
 		default:
 			if strings.ContainsAny(convName, "0123456789") {
 				conv = &alt.Converter{
-					String: []func(val string) (interface{}, bool){
-						func(val string) (interface{}, bool) {
+					String: []func(val string) (any, bool){
+						func(val string) (any, bool) {
 							if len(val) == len(convName) {
 								if t, err := time.ParseInLocation(convName, val, time.UTC); err == nil {
 									return t, true
@@ -230,8 +230,8 @@ func run() (err error) {
 				}
 			} else {
 				conv = &alt.Converter{
-					Map: []func(val map[string]interface{}) (interface{}, bool){
-						func(val map[string]interface{}) (interface{}, bool) {
+					Map: []func(val map[string]any) (any, bool){
+						func(val map[string]any) (any, bool) {
 							if len(val) == 1 {
 								switch tv := val[convName].(type) {
 								case string:
@@ -274,11 +274,11 @@ func run() (err error) {
 			}
 			planDef = string(b)
 		}
-		var pd interface{}
+		var pd any
 		if pd, err = (&sen.Parser{}).Parse([]byte(planDef)); err != nil {
 			panic(err)
 		}
-		plist, _ := pd.([]interface{})
+		plist, _ := pd.([]any)
 		if len(plist) == 0 {
 			panic(fmt.Errorf("assembly plan not an array"))
 		}
@@ -315,7 +315,7 @@ func run() (err error) {
 	return
 }
 
-func write(v interface{}) bool {
+func write(v any) bool {
 	if conv != nil {
 		v = conv.Convert(v)
 	}
@@ -337,7 +337,7 @@ func write(v interface{}) bool {
 	switch {
 	case 0 < len(extracts):
 		if wrapExtract {
-			var w []interface{}
+			var w []any
 			for _, x := range extracts {
 				w = append(w, x.Get(v)...)
 			}
@@ -374,7 +374,7 @@ func write(v interface{}) bool {
 	return false
 }
 
-func writeJSON(v interface{}) {
+func writeJSON(v any) {
 	if options == nil {
 		o := ojg.Options{}
 		if bright {
@@ -416,7 +416,7 @@ func writeJSON(v interface{}) {
 	_, _ = os.Stdout.Write([]byte{'\n'})
 }
 
-func writeSEN(v interface{}) {
+func writeSEN(v any) {
 	if options == nil {
 		o := ojg.Options{}
 		switch {
@@ -524,7 +524,7 @@ func (dv delValue) Set(s string) error {
 }
 
 func loadConfig() {
-	var conf interface{}
+	var conf any
 	if 0 < len(confFile) {
 		if confFile == "-" { // special case
 			return
@@ -555,7 +555,7 @@ func loadConfig() {
 	}
 }
 
-func applyConf(conf interface{}) {
+func applyConf(conf any) {
 	bright, _ = jp.C("bright").First(conf).(bool)
 	color, _ = jp.C("color").First(conf).(bool)
 	for _, v := range jp.C("format").C("indent").Get(conf) {
@@ -604,7 +604,7 @@ func applyConf(conf interface{}) {
 	setHTMLColor(conf, "syntax", &sen.HTMLOptions.SyntaxColor)
 }
 
-func setOptionsColor(conf interface{}, key string, fun func(color string)) {
+func setOptionsColor(conf any, key string, fun func(color string)) {
 	for _, v := range jp.C("colors").C(key).Get(conf) {
 		fun(pickColor(alt.String(v)))
 	}
@@ -650,7 +650,7 @@ func setSyntaxColor(color string) {
 	ojg.BrightOptions.SyntaxColor = color
 }
 
-func setHTMLColor(conf interface{}, key string, sp *string) {
+func setHTMLColor(conf any, key string, sp *string) {
 	for _, v := range jp.C("colors").C(key).Get(conf) {
 		*sp = pickColor(alt.String(v))
 	}

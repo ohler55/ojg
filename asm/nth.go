@@ -17,12 +17,12 @@ the array.`,
 	})
 }
 
-func nth(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func nth(root map[string]any, at any, args ...any) any {
 	if len(args) != 2 {
 		panic(fmt.Errorf("nth expects exactly two arguments. %d given", len(args)))
 	}
 	v := evalArg(root, at, args[0])
-	list, ok := v.([]interface{})
+	list, ok := v.([]any)
 	if !ok {
 		panic(fmt.Errorf("nth expected an array argument, not a %T", v))
 	}

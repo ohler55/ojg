@@ -23,9 +23,9 @@ func TestNum(t *testing.T) {
 }
 
 func TestNumArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"num?", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"num?", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

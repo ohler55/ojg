@@ -50,7 +50,7 @@ func ExampleParser_ParseReader() {
 
 func ExampleParser_Parse_callback() {
 	var results []byte
-	cb := func(n interface{}) bool {
+	cb := func(n any) bool {
 		if 0 < len(results) {
 			results = append(results, ' ')
 		}
@@ -178,8 +178,8 @@ func ExampleMustLoad() {
 
 func ExampleWrite() {
 	var b strings.Builder
-	data := []interface{}{
-		map[string]interface{}{
+	data := []any{
+		map[string]any{
 			"x": 1,
 			"y": 2,
 		},
@@ -194,8 +194,8 @@ func ExampleWrite() {
 
 func ExampleWriter_MustWrite() {
 	var b strings.Builder
-	data := []interface{}{
-		map[string]interface{}{
+	data := []any{
+		map[string]any{
 			"x": 1,
 			"y": 2,
 		},
@@ -208,8 +208,8 @@ func ExampleWriter_MustWrite() {
 }
 
 func ExampleWriter_JSON() {
-	data := []interface{}{
-		map[string]interface{}{
+	data := []any{
+		map[string]any{
 			"x": 1,
 			"y": 2,
 		},

@@ -28,17 +28,17 @@ func TestToupper(t *testing.T) {
 }
 
 func TestToupperArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"toupper", "x", "y"},
+	p := asm.NewPlan([]any{
+		[]any{"toupper", "x", "y"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestToupperArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"toupper", 1},
+	p := asm.NewPlan([]any{
+		[]any{"toupper", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

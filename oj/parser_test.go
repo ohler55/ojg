@@ -55,39 +55,39 @@ func TestParserParseString(t *testing.T) {
 		{src: "\xef\xbb\xbf\"xyz\"", value: "xyz"},
 		{src: `"Bénédicte"`, value: "Bénédicte"},
 
-		{src: "[]", value: []interface{}{}},
-		{src: "[0,\ntrue , false,null]", value: []interface{}{0, true, false, nil}},
-		{src: `[0.1e3,"x",-1,{}]`, value: []interface{}{100.0, "x", -1, map[string]interface{}{}}},
-		{src: "[1.2,0]", value: []interface{}{1.2, 0}},
-		{src: "[1.2e2,0.1]", value: []interface{}{1.2e2, 0.1}},
-		{src: "[1.2e2,0]", value: []interface{}{1.2e2, 0}},
-		{src: "[true]", value: []interface{}{true}},
-		{src: "[true,false]", value: []interface{}{true, false}},
-		{src: "[[]]", value: []interface{}{[]interface{}{}}},
-		{src: "[true,[]]", value: []interface{}{true, []interface{}{}}},
-		{src: "[[true]]", value: []interface{}{[]interface{}{true}}},
+		{src: "[]", value: []any{}},
+		{src: "[0,\ntrue , false,null]", value: []any{0, true, false, nil}},
+		{src: `[0.1e3,"x",-1,{}]`, value: []any{100.0, "x", -1, map[string]any{}}},
+		{src: "[1.2,0]", value: []any{1.2, 0}},
+		{src: "[1.2e2,0.1]", value: []any{1.2e2, 0.1}},
+		{src: "[1.2e2,0]", value: []any{1.2e2, 0}},
+		{src: "[true]", value: []any{true}},
+		{src: "[true,false]", value: []any{true, false}},
+		{src: "[[]]", value: []any{[]any{}}},
+		{src: "[true,[]]", value: []any{true, []any{}}},
+		{src: "[[true]]", value: []any{[]any{true}}},
 		{src: `"x\t\n\"\b\f\r\u0041\\\/y"`, value: "x\t\n\"\b\f\r\u0041\\/y"},
 		{src: `"x\u004a\u004Ay"`, value: "xJJy"},
 
-		{src: `[1,"a\tb"]`, value: []interface{}{1, "a\tb"}},
-		{src: `{"a\tb":1}`, value: map[string]interface{}{"a\tb": 1}},
-		{src: `{"x":1,"a\tb":2}`, value: map[string]interface{}{"x": 1, "a\tb": 2}},
-		{src: "[0\n,3\n,5.0e2\n]", value: []interface{}{0, 3, 500.0}},
+		{src: `[1,"a\tb"]`, value: []any{1, "a\tb"}},
+		{src: `{"a\tb":1}`, value: map[string]any{"a\tb": 1}},
+		{src: `{"x":1,"a\tb":2}`, value: map[string]any{"x": 1, "a\tb": 2}},
+		{src: "[0\n,3\n,5.0e2\n]", value: []any{0, 3, 500.0}},
 
-		{src: "{}", value: map[string]interface{}{}},
-		{src: `{"abc":true}`, value: map[string]interface{}{"abc": true}},
-		{src: "{\"z\":0,\n\"z2\":0}", value: map[string]interface{}{"z": 0, "z2": 0}},
-		{src: `{"z":1.2,"z2":0}`, value: map[string]interface{}{"z": 1.2, "z2": 0}},
-		{src: `{"abc":{"def":3}}`, value: map[string]interface{}{"abc": map[string]interface{}{"def": 3}}},
-		{src: `{"x":1.2e3,"y":true}`, value: map[string]interface{}{"x": 1200.0, "y": true}},
+		{src: "{}", value: map[string]any{}},
+		{src: `{"abc":true}`, value: map[string]any{"abc": true}},
+		{src: "{\"z\":0,\n\"z2\":0}", value: map[string]any{"z": 0, "z2": 0}},
+		{src: `{"z":1.2,"z2":0}`, value: map[string]any{"z": 1.2, "z2": 0}},
+		{src: `{"abc":{"def":3}}`, value: map[string]any{"abc": map[string]any{"def": 3}}},
+		{src: `{"x":1.2e3,"y":true}`, value: map[string]any{"x": 1200.0, "y": true}},
 
 		{src: `{"abc": [{"x": {"y": [{"b": true}]},"z": 7}]}`,
-			value: map[string]interface{}{
-				"abc": []interface{}{
-					map[string]interface{}{
-						"x": map[string]interface{}{
-							"y": []interface{}{
-								map[string]interface{}{
+			value: map[string]any{
+				"abc": []any{
+					map[string]any{
+						"x": map[string]any{
+							"y": []any{
+								map[string]any{
 									"b": true,
 								},
 							},
@@ -146,7 +146,7 @@ func TestParserParseString(t *testing.T) {
 			fmt.Printf("... %d: %s\n", i, d.src)
 		}
 		var err error
-		var v interface{}
+		var v any
 		if d.onlyOne {
 			p := oj.Parser{}
 			v, err = p.Parse([]byte(d.src))
@@ -165,7 +165,7 @@ func TestParserParseString(t *testing.T) {
 
 func TestParserParseCallback(t *testing.T) {
 	var results []byte
-	cb := func(n interface{}) {
+	cb := func(n any) {
 		if 0 < len(results) {
 			results = append(results, ' ')
 		}
@@ -188,7 +188,7 @@ func TestParserParseCallback(t *testing.T) {
 
 func TestParserParseCallbackAlt(t *testing.T) {
 	var results []byte
-	cb := func(n interface{}) bool {
+	cb := func(n any) bool {
 		if 0 < len(results) {
 			results = append(results, ' ')
 		}
@@ -212,7 +212,7 @@ func TestParserParseCallbackAlt(t *testing.T) {
 
 func TestParserParseReaderCallback(t *testing.T) {
 	var results []byte
-	cb := func(n interface{}) {
+	cb := func(n any) {
 		if 0 < len(results) {
 			results = append(results, ' ')
 		}
@@ -233,7 +233,7 @@ func TestParserParseReaderCallback(t *testing.T) {
 
 func TestParserParseReaderCallbackAlt(t *testing.T) {
 	var results []byte
-	cb := func(n interface{}) bool {
+	cb := func(n any) bool {
 		if 0 < len(results) {
 			results = append(results, ' ')
 		}
@@ -255,7 +255,7 @@ func TestParserParseReaderCallbackAlt(t *testing.T) {
 
 func TestNumberReset(t *testing.T) {
 	var p oj.Parser
-	_, err := p.Parse([]byte("123456789012345678901234567890 1234567890"), func(interface{}) bool { return false })
+	_, err := p.Parse([]byte("123456789012345678901234567890 1234567890"), func(any) bool { return false })
 	tt.Nil(t, err)
 }
 
@@ -299,7 +299,7 @@ func TestParserParseReaderMany(t *testing.T) {
 		{src: strings.Repeat(" ", 4094) + "null ", value: nil},
 		{src: strings.Repeat(" ", 4094) + "true ", value: true},
 		{src: strings.Repeat(" ", 4094) + "false ", value: false},
-		{src: strings.Repeat(" ", 4094) + `{"x":1}`, value: map[string]interface{}{"x": 1}},
+		{src: strings.Repeat(" ", 4094) + `{"x":1}`, value: map[string]any{"x": 1}},
 		{src: strings.Repeat(" ", 4095) + `"x"`, value: "x"},
 	} {
 		p := oj.Parser{}
@@ -312,7 +312,7 @@ func TestParserParseReaderMany(t *testing.T) {
 
 func TestParserParseChan(t *testing.T) {
 	var results []byte
-	rc := make(chan interface{}, 10)
+	rc := make(chan any, 10)
 	var p oj.Parser
 	_, err := p.Parse([]byte(callbackJSON), rc)
 	tt.Nil(t, err)
@@ -332,7 +332,7 @@ func TestParserParseChan(t *testing.T) {
 
 func TestParserParseReaderChan(t *testing.T) {
 	var results []byte
-	rc := make(chan interface{}, 10)
+	rc := make(chan any, 10)
 	var p oj.Parser
 	_, err := p.ParseReader(strings.NewReader(callbackJSON), rc)
 	tt.Nil(t, err)

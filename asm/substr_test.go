@@ -36,33 +36,33 @@ func TestSubstr(t *testing.T) {
 }
 
 func TestSubstrArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"substr", "x", 1, 1, 1},
+	p := asm.NewPlan([]any{
+		[]any{"substr", "x", 1, 1, 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSubstrArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"substr", 1, 1, 1},
+	p := asm.NewPlan([]any{
+		[]any{"substr", 1, 1, 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSubstrArgType2(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"substr", "x", true, 1},
+	p := asm.NewPlan([]any{
+		[]any{"substr", "x", true, 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSubstrArgType3(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"substr", "x", 1, true},
+	p := asm.NewPlan([]any{
+		[]any{"substr", "x", 1, true},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

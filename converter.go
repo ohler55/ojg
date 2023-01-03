@@ -17,27 +17,27 @@ const fracMax = 10000000.0
 // dates to time.Time.
 type Converter struct {
 	// Int are a slice of functions to match and convert Ints.
-	Int []func(val int64) (interface{}, bool)
+	Int []func(val int64) (any, bool)
 
 	// Float are a slice of functions to match and convert Floats.
-	Float []func(val float64) (interface{}, bool)
+	Float []func(val float64) (any, bool)
 
 	// String are a slice of functions to match and convert Strings.
-	String []func(val string) (interface{}, bool)
+	String []func(val string) (any, bool)
 
 	// Map are a slice of functions to match and convert Maps.
-	Map []func(val map[string]interface{}) (interface{}, bool)
+	Map []func(val map[string]any) (any, bool)
 
 	// Array are a slice of functions to match and convert Arrays.
-	Array []func(val []interface{}) (interface{}, bool)
+	Array []func(val []any) (any, bool)
 }
 
 var (
 	// TimeRFC3339Converter converts strings matching time.RFC3339Nano,
 	// time.RFC3339, or 2006-01-02 to time.Time.
 	TimeRFC3339Converter = Converter{
-		String: []func(val string) (interface{}, bool){
-			func(val string) (interface{}, bool) {
+		String: []func(val string) (any, bool){
+			func(val string) (any, bool) {
 				if 20 <= len(val) && len(val) <= 35 {
 					for _, layout := range []string{time.RFC3339Nano, time.RFC3339} {
 						if t, err := time.ParseInLocation(layout, val, time.UTC); err == nil {
@@ -57,8 +57,8 @@ var (
 	// TimeNanoConverter converts large integers, 946684800000000000
 	// (2000-01-01) and above to time.Time.
 	TimeNanoConverter = Converter{
-		Int: []func(val int64) (interface{}, bool){
-			func(val int64) (interface{}, bool) {
+		Int: []func(val int64) (any, bool){
+			func(val int64) (any, bool) {
 				if 946684800000000000 <= val { // 2000-01-01
 					return time.Unix(0, val), true
 				}
@@ -72,8 +72,8 @@ var (
 	// member value is a string. These patterns are found in mongodb JSON
 	// exports.
 	MongoConverter = Converter{
-		Map: []func(val map[string]interface{}) (interface{}, bool){
-			func(val map[string]interface{}) (interface{}, bool) {
+		Map: []func(val map[string]any) (any, bool){
+			func(val map[string]any) (any, bool) {
 				if len(val) != 1 {
 					return val, false
 				}
@@ -109,12 +109,12 @@ var (
 // the value is a map or slice and not converted itself the provided value
 // will remain the same but will be modified if any of it's members are
 // converted.
-func (c *Converter) Convert(v interface{}) interface{} {
+func (c *Converter) Convert(v any) any {
 	v, _ = c.convert(v)
 	return v
 }
 
-func (c *Converter) convert(v interface{}) (interface{}, bool) {
+func (c *Converter) convert(v any) (any, bool) {
 	switch tv := v.(type) {
 	case int64:
 		for _, fun := range c.Int {
@@ -134,7 +134,7 @@ func (c *Converter) convert(v interface{}) (interface{}, bool) {
 				return cv, true
 			}
 		}
-	case []interface{}:
+	case []any:
 		for _, fun := range c.Array {
 			if cv, ok := fun(tv); ok {
 				return cv, true
@@ -145,7 +145,7 @@ func (c *Converter) convert(v interface{}) (interface{}, bool) {
 				tv[i] = cv
 			}
 		}
-	case map[string]interface{}:
+	case map[string]any:
 		for _, fun := range c.Map {
 			if cv, ok := fun(tv); ok {
 				return cv, true
@@ -188,19 +188,19 @@ func (c *Converter) convert(v interface{}) (interface{}, bool) {
 // Convert a value according to the conversion functions provided. If the
 // value is a map or slice and not converted itself the provided value will
 // remain the same but will be modified if any of it's members are converted.
-func Convert(v interface{}, funcs ...interface{}) interface{} {
+func Convert(v any, funcs ...any) any {
 	c := Converter{}
 	for _, fun := range funcs {
 		switch tf := fun.(type) {
-		case func(val int64) (interface{}, bool):
+		case func(val int64) (any, bool):
 			c.Int = append(c.Int, tf)
-		case func(val float64) (interface{}, bool):
+		case func(val float64) (any, bool):
 			c.Float = append(c.Float, tf)
-		case func(val string) (interface{}, bool):
+		case func(val string) (any, bool):
 			c.String = append(c.String, tf)
-		case func(val map[string]interface{}) (interface{}, bool):
+		case func(val map[string]any) (any, bool):
 			c.Map = append(c.Map, tf)
-		case func(val []interface{}) (interface{}, bool):
+		case func(val []any) (any, bool):
 			c.Array = append(c.Array, tf)
 		}
 	}

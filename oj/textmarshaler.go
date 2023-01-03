@@ -10,7 +10,7 @@ import (
 	"github.com/ohler55/ojg"
 )
 
-func appendTextMarshaler(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendTextMarshaler(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	v := rv.FieldByIndex(fi.index).Interface()
 	buf = append(buf, fi.jkey...)
 	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 { // real nil check
@@ -19,13 +19,13 @@ func appendTextMarshaler(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, 
 	return appendTextMarshalerVal(buf, v, safe)
 }
 
-func appendTextMarshalerAddr(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendTextMarshalerAddr(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	v := rv.FieldByIndex(fi.index).Addr().Interface()
 	buf = append(buf, fi.jkey...)
 	return appendTextMarshalerVal(buf, v, safe)
 }
 
-func appendTextMarshalerNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, interface{}, appendStatus) {
+func appendTextMarshalerNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	v := rv.FieldByIndex(fi.index).Interface()
 	if (*[2]uintptr)(unsafe.Pointer(&v))[1] == 0 { // real nil check
 		return buf, nil, aSkip
@@ -34,7 +34,7 @@ func appendTextMarshalerNotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr u
 	return appendTextMarshalerVal(buf, v, safe)
 }
 
-func appendTextMarshalerVal(buf []byte, v interface{}, safe bool) ([]byte, interface{}, appendStatus) {
+func appendTextMarshalerVal(buf []byte, v any, safe bool) ([]byte, any, appendStatus) {
 	m := v.(encoding.TextMarshaler)
 	j, err := m.MarshalText()
 	if err != nil {

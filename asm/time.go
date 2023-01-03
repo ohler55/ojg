@@ -28,7 +28,7 @@ or string and are converted as follows:
 	})
 }
 
-func timeCheck(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func timeCheck(root map[string]any, at any, args ...any) any {
 	if len(args) != 1 {
 		panic(fmt.Errorf("time? expects exactly one arguments. %d given", len(args)))
 	}
@@ -37,7 +37,7 @@ func timeCheck(root map[string]interface{}, at interface{}, args ...interface{})
 	return ok
 }
 
-func timeConv(root map[string]interface{}, at interface{}, args ...interface{}) (t interface{}) {
+func timeConv(root map[string]any, at any, args ...any) (t any) {
 	if len(args) < 1 || 2 < len(args) {
 		panic(fmt.Errorf("time expects one or two arguments. %d given", len(args)))
 	}

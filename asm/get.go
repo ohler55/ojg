@@ -20,7 +20,7 @@ get the results`,
 	})
 }
 
-func get(root map[string]interface{}, at interface{}, args ...interface{}) (val interface{}) {
+func get(root map[string]any, at any, args ...any) (val any) {
 	if len(args) < 1 || 2 < len(args) {
 		panic(fmt.Errorf("get expects one or two arguments. %d given", len(args)))
 	}

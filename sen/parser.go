@@ -24,30 +24,30 @@ const (
 )
 
 var (
-	emptySlice = []interface{}{}
+	emptySlice = []any{}
 )
 
 // TokenFunc is a function that can be used to evaluate functions embedded in
 // a SEN file.
-type TokenFunc func(args ...interface{}) interface{}
+type TokenFunc func(args ...any) any
 
 // Parser is a reusable JSON parser. It can be reused for multiple parsings
 // which allows buffer reuse for a performance advantage.
 type Parser struct {
 	tmp        []byte // used for numbers and strings
 	runeBytes  []byte
-	stack      []interface{}
+	stack      []any
 	starts     []int
-	maps       []map[string]interface{}
-	cb         func(interface{})
-	resultChan chan interface{}
+	maps       []map[string]any
+	cb         func(any)
+	resultChan chan any
 	line       int
 	noff       int // Offset of last newline from start of buf. Can be negative when using a reader.
 	ri         int // read index for null, false, and true
 	mi         int
 	num        gen.Number
 	rn         rune
-	result     interface{}
+	result     any
 	mode       string
 	lastKey    gen.Key
 	lastStrKey gen.Key
@@ -76,8 +76,8 @@ func (p *Parser) AddTokenFunc(name string, tf TokenFunc) {
 
 // Unmarshal parses the provided JSON and stores the result in the value
 // pointed to by vp.
-func (p *Parser) Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomposer) (err error) {
-	var v interface{}
+func (p *Parser) Unmarshal(data []byte, vp any, recomposer ...alt.Recomposer) (err error) {
+	var v any
 	if v, err = p.Parse(data); err == nil {
 		_, err = alt.Recompose(v, vp)
 	}
@@ -85,7 +85,7 @@ func (p *Parser) Unmarshal(data []byte, vp interface{}, recomposer ...alt.Recomp
 }
 
 // MustParse a JSON string in to simple types. Panics on error.
-func (p *Parser) MustParse(buf []byte, args ...interface{}) interface{} {
+func (p *Parser) MustParse(buf []byte, args ...any) any {
 	val, err := p.Parse(buf, args...)
 	if err != nil {
 		panic(err)
@@ -94,7 +94,7 @@ func (p *Parser) MustParse(buf []byte, args ...interface{}) interface{} {
 }
 
 // Parse a SEN string in to simple types. An error is returned if not valid SEN.
-func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
+func (p *Parser) Parse(buf []byte, args ...any) (any, error) {
 	p.cb = nil
 	p.resultChan = nil
 	p.OnlyOne = true
@@ -106,7 +106,7 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 		case func(any):
 			p.cb = ta
 			p.OnlyOne = false
-		case chan interface{}:
+		case chan any:
 			p.resultChan = ta
 			p.OnlyOne = false
 			p.Reuse = false
@@ -115,10 +115,10 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 		}
 	}
 	if p.stack == nil {
-		p.stack = make([]interface{}, 0, stackInitSize)
+		p.stack = make([]any, 0, stackInitSize)
 		p.tmp = make([]byte, 0, tmpInitSize)
 		p.starts = make([]int, 0, 16)
-		p.maps = make([]map[string]interface{}, 0, 16)
+		p.maps = make([]map[string]any, 0, 16)
 	} else {
 		p.stack = p.stack[:0]
 		p.tmp = p.tmp[:0]
@@ -150,7 +150,7 @@ func (p *Parser) Parse(buf []byte, args ...interface{}) (interface{}, error) {
 }
 
 // MustParseReader a JSON io.Reader. Panics on error.
-func (p *Parser) MustParseReader(r io.Reader, args ...interface{}) (data interface{}) {
+func (p *Parser) MustParseReader(r io.Reader, args ...any) (data any) {
 	var err error
 	if data, err = p.ParseReader(r, args...); err != nil {
 		panic(err)
@@ -159,7 +159,7 @@ func (p *Parser) MustParseReader(r io.Reader, args ...interface{}) (data interfa
 }
 
 // ParseReader a SEN io.Reader. An error is returned if not valid SEN.
-func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}, err error) {
+func (p *Parser) ParseReader(r io.Reader, args ...any) (data any, err error) {
 	p.cb = nil
 	p.resultChan = nil
 	p.OnlyOne = true
@@ -171,7 +171,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}
 		case func(any):
 			p.cb = ta
 			p.OnlyOne = false
-		case chan interface{}:
+		case chan any:
 			p.resultChan = ta
 			p.OnlyOne = false
 			p.Reuse = false
@@ -180,10 +180,10 @@ func (p *Parser) ParseReader(r io.Reader, args ...interface{}) (data interface{}
 		}
 	}
 	if p.stack == nil {
-		p.stack = make([]interface{}, 0, stackInitSize)
+		p.stack = make([]any, 0, stackInitSize)
 		p.tmp = make([]byte, 0, tmpInitSize)
 		p.starts = make([]int, 0, 16)
-		p.maps = make([]map[string]interface{}, 0, 16)
+		p.maps = make([]map[string]any, 0, 16)
 	} else {
 		p.stack = p.stack[:0]
 		p.tmp = p.tmp[:0]
@@ -310,7 +310,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 				}
 			}
 			p.starts = append(p.starts, -1)
-			var m map[string]interface{}
+			var m map[string]any
 			if p.Reuse {
 				if p.mi < len(p.maps) {
 					m = p.maps[p.mi]
@@ -318,12 +318,12 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 						delete(m, k)
 					}
 				} else {
-					m = make(map[string]interface{}, mapInitSize)
+					m = make(map[string]any, mapInitSize)
 					p.maps = append(p.maps, m)
 				}
 				p.mi++
 			} else {
-				m = make(map[string]interface{}, mapInitSize)
+				m = make(map[string]any, mapInitSize)
 			}
 			p.stack = append(p.stack, m)
 			depth++
@@ -448,7 +448,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			start := p.starts[len(p.starts)-1] + 1
 			p.starts = p.starts[:len(p.starts)-1]
 			size := len(p.stack) - start
-			n := make([]interface{}, size)
+			n := make([]any, size)
 			copy(n, p.stack[start:len(p.stack)])
 			p.stack = p.stack[0 : start-1]
 			if err = p.add(n, off); err != nil {
@@ -677,12 +677,12 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 }
 
 // only for non-string
-func (p *Parser) add(n interface{}, off int) error {
+func (p *Parser) add(n any, off int) error {
 	p.mode = valueMap
 	if 0 < len(p.starts) {
 		if p.starts[len(p.starts)-1] == -1 { // object
 			if k, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
-				obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
+				obj, _ := p.stack[len(p.stack)-2].(map[string]any)
 				obj[string(k)] = n
 				p.lastKey = k
 				p.stack = p.stack[0 : len(p.stack)-1]
@@ -704,7 +704,7 @@ func (p *Parser) addToken(off int) {
 	if 0 < len(p.starts) {
 		if p.starts[len(p.starts)-1] == -1 { // object
 			if k, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
-				obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
+				obj, _ := p.stack[len(p.stack)-2].(map[string]any)
 				switch s {
 				case "null":
 					obj[string(k)] = nil
@@ -742,7 +742,7 @@ func (p *Parser) addTokenWith(s string, off int) {
 	if 0 < len(p.starts) {
 		if p.starts[len(p.starts)-1] == -1 { // object
 			if k, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
-				obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
+				obj, _ := p.stack[len(p.stack)-2].(map[string]any)
 				switch s {
 				case "null":
 					obj[string(k)] = nil
@@ -779,7 +779,7 @@ func (p *Parser) addString(s string, off int) {
 	p.mode = valueMap
 	if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 { // object
 		if p.plus {
-			obj, _ := p.stack[len(p.stack)-1].(map[string]interface{})
+			obj, _ := p.stack[len(p.stack)-1].(map[string]any)
 			prev := obj[string(p.lastStrKey)].(string)
 			obj[string(p.lastStrKey)] = prev + s
 			p.lastStrKey = emptyKey
@@ -787,7 +787,7 @@ func (p *Parser) addString(s string, off int) {
 			return
 		}
 		if k, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
-			obj, _ := p.stack[len(p.stack)-2].(map[string]interface{})
+			obj, _ := p.stack[len(p.stack)-2].(map[string]any)
 			obj[string(k)] = s
 			p.lastKey = k
 			p.stack = p.stack[0 : len(p.stack)-1]
@@ -812,7 +812,7 @@ func (p *Parser) addString(s string, off int) {
 	p.stack = append(p.stack, s)
 }
 
-func (p *Parser) newError(off int, format string, args ...interface{}) error {
+func (p *Parser) newError(off int, format string, args ...any) error {
 	return &oj.ParseError{
 		Message: fmt.Sprintf(format, args...),
 		Line:    p.line,
@@ -844,7 +844,7 @@ func (p *Parser) byteError(off int, mode string, b byte, r rune) error {
 	return err
 }
 
-func defaultTokenFunc(args ...interface{}) (result interface{}) {
+func defaultTokenFunc(args ...any) (result any) {
 	if 0 < len(args) {
 		result = args[0]
 	}

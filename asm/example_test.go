@@ -10,12 +10,12 @@ import (
 )
 
 func ExamplePlan() {
-	p := asm.NewPlan([]interface{}{
+	p := asm.NewPlan([]any{
 		"asm",
-		[]interface{}{"inspect", 0, "one", []interface{}{1}, "@", jp.C("src").N(1), "test", "$"},
+		[]any{"inspect", 0, "one", []any{1}, "@", jp.C("src").N(1), "test", "$"},
 	})
-	root := map[string]interface{}{
-		"src": []interface{}{1, int64(2), 3},
+	root := map[string]any{
+		"src": []any{1, int64(2), 3},
 	}
 	if err := p.Execute(root); err != nil {
 		fmt.Println(err.Error())

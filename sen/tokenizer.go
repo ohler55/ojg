@@ -492,7 +492,7 @@ func (t *Tokenizer) addString(s string) {
 	}
 }
 
-func (t *Tokenizer) newError(off int, format string, args ...interface{}) {
+func (t *Tokenizer) newError(off int, format string, args ...any) {
 	panic(&oj.ParseError{
 		Message: fmt.Sprintf(format, args...),
 		Line:    t.line,

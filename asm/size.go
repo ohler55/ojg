@@ -15,7 +15,7 @@ For all other types zero is returned`,
 	})
 }
 
-func size(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func size(root map[string]any, at any, args ...any) any {
 	if len(args) != 1 {
 		panic(fmt.Errorf("size expects exactly one arguments. %d given", len(args)))
 	}
@@ -23,9 +23,9 @@ func size(root map[string]interface{}, at interface{}, args ...interface{}) inte
 	switch tv := evalArg(root, at, args[0]).(type) {
 	case string:
 		length = len(tv)
-	case []interface{}:
+	case []any:
 		length = len(tv)
-	case map[string]interface{}:
+	case map[string]any:
 		length = len(tv)
 	}
 	return length

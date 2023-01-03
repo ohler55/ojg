@@ -22,12 +22,12 @@ func (n Bool) String() (s string) {
 }
 
 // Alter returns the backing boolean value of the Node.
-func (n Bool) Alter() interface{} {
+func (n Bool) Alter() any {
 	return bool(n)
 }
 
 // Simplify returns the backing boolean value.
-func (n Bool) Simplify() interface{} {
+func (n Bool) Simplify() any {
 	return bool(n)
 }
 

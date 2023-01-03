@@ -17,7 +17,7 @@ import (
 func goParse(b *testing.B) {
 	sample, _ := ioutil.ReadFile(filename)
 	b.ResetTimer()
-	var result interface{}
+	var result any
 	for n := 0; n < b.N; n++ {
 		if err := json.Unmarshal(sample, &result); err != nil {
 			panic(err)
@@ -57,7 +57,7 @@ func goDecodeReader(b *testing.B) {
 		_, _ = f.Seek(0, 0)
 		dec := json.NewDecoder(f)
 		for {
-			var data interface{}
+			var data any
 			if err := dec.Decode(&data); errors.Is(err, io.EOF) {
 				break
 			} else if err != nil {
@@ -85,7 +85,7 @@ func goDecode(b *testing.B) {
 
 func goParseChan(b *testing.B) {
 	sample, _ := ioutil.ReadFile(filename)
-	rc := make(chan interface{}, b.N)
+	rc := make(chan any, b.N)
 	ready := make(chan bool)
 	go func() {
 		ready <- true
@@ -98,7 +98,7 @@ func goParseChan(b *testing.B) {
 	<-ready
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		var result interface{}
+		var result any
 		// The go json package does not have a chan based result handler so
 		// fake it to set the baseline for others.
 		if err := json.Unmarshal(sample, &result); err != nil {

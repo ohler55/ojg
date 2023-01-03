@@ -24,35 +24,35 @@ func TestSetall(t *testing.T) {
 }
 
 func TestSetallExprError(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		map[string]interface{}{}, // Sets @
-		[]interface{}{"setall", jp.D(), 1},
-		[]interface{}{"setall", "$.asm", "@"},
+	p := asm.NewPlan([]any{
+		map[string]any{}, // Sets @
+		[]any{"setall", jp.D(), 1},
+		[]any{"setall", "$.asm", "@"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSetallArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"setall", "@.x"},
+	p := asm.NewPlan([]any{
+		[]any{"setall", "@.x"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSetallArgNotExpr(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"setall", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"setall", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestSetallArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"setall", []interface{}{"sum"}, 1},
+	p := asm.NewPlan([]any{
+		[]any{"setall", []any{"sum"}, 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

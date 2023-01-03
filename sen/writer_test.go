@@ -19,7 +19,7 @@ type wdata struct {
 	// Empty means no error expected while non empty should be compared
 	// err.Error().
 	expect  string
-	value   interface{}
+	value   any
 	options *sen.Options
 	indent  int
 }
@@ -29,8 +29,8 @@ type simon struct {
 	x int
 }
 
-func (s *simon) Simplify() interface{} {
-	return map[string]interface{}{
+func (s *simon) Simplify() any {
+	return map[string]any{
 		"type": "simon",
 		"x":    s.x,
 	}
@@ -55,7 +55,7 @@ func (d *Dummy) String() string {
 type Panik struct {
 }
 
-func (p *Panik) Simplify() interface{} {
+func (p *Panik) Simplify() any {
 	panic("force panic")
 }
 
@@ -91,48 +91,48 @@ func TestString(t *testing.T) {
 		{value: "<x>", expect: `"\u003cx\u003e"`, options: &sen.Options{HTMLUnsafe: false}},
 		{value: "ぴーたー", expect: "ぴーたー", options: &sen.Options{}},
 		{value: gen.String("string"), expect: "string"},
-		{value: []interface{}{true, nil}, expect: "[true null]"},
+		{value: []any{true, nil}, expect: "[true null]"},
 		{value: gen.Array{gen.Bool(true), nil}, expect: "[true null]"},
-		{value: []interface{}{true, false}, indent: 2, expect: "[\n  true\n  false\n]"},
-		{value: []interface{}{}, indent: 2, expect: "[]"},
-		{value: []interface{}{[]interface{}{}, []interface{}{}}, expect: "[[][]]"},
-		{value: []interface{}{map[string]interface{}{}, map[string]interface{}{}}, expect: "[{}{}]"},
-		{value: map[string]interface{}{}, indent: 0, expect: "{}", options: &sen.Options{Sort: true}},
+		{value: []any{true, false}, indent: 2, expect: "[\n  true\n  false\n]"},
+		{value: []any{}, indent: 2, expect: "[]"},
+		{value: []any{[]any{}, []any{}}, expect: "[[][]]"},
+		{value: []any{map[string]any{}, map[string]any{}}, expect: "[{}{}]"},
+		{value: map[string]any{}, indent: 0, expect: "{}", options: &sen.Options{Sort: true}},
 		{value: gen.Array{gen.True, gen.False}, indent: 2, expect: "[\n  true\n  false\n]"},
-		{value: map[string]interface{}{"t": true, "f": false}, expect: `{f:false t:true}`, options: &sen.Options{Sort: true}},
+		{value: map[string]any{"t": true, "f": false}, expect: `{f:false t:true}`, options: &sen.Options{Sort: true}},
 		{value: gen.Object{"t": gen.True, "f": gen.False}, expect: `{f:false t:true}`, options: &sen.Options{Sort: true}},
 		{value: gen.Array{gen.True, gen.False}, expect: "[true false]", options: opt},
 		{value: gen.Array{gen.False, gen.True}, expect: "[false true]", options: opt},
-		{value: []interface{}{-1, int8(2), int16(-3), int32(4), int64(-5)}, expect: "[-1 2 -3 4 -5]"},
-		{value: []interface{}{uint(1), 'A', uint8(2), uint16(3), uint32(4), uint64(5)}, expect: "[1 65 2 3 4 5]"},
+		{value: []any{-1, int8(2), int16(-3), int32(4), int64(-5)}, expect: "[-1 2 -3 4 -5]"},
+		{value: []any{uint(1), 'A', uint8(2), uint16(3), uint32(4), uint64(5)}, expect: "[1 65 2 3 4 5]"},
 		{value: gen.Array{gen.Int(1), gen.Float(1.2)}, expect: "[1 1.2]"},
-		{value: []interface{}{float32(1.2), float64(2.1)}, expect: "[1.2 2.1]"},
-		{value: []interface{}{tm}, expect: "[1588879759123456789]"},
-		{value: []interface{}{tm}, expect: `[{^:Time value:"2020-05-07T19:29:19.123456789Z"}]`,
+		{value: []any{float32(1.2), float64(2.1)}, expect: "[1.2 2.1]"},
+		{value: []any{tm}, expect: "[1588879759123456789]"},
+		{value: []any{tm}, expect: `[{^:Time value:"2020-05-07T19:29:19.123456789Z"}]`,
 			options: &sen.Options{TimeMap: true, CreateKey: "^", TimeFormat: time.RFC3339Nano}},
-		{value: []interface{}{tm}, expect: `[{^:"time/Time" value:"2020-05-07T19:29:19.123456789Z"}]`,
+		{value: []any{tm}, expect: `[{^:"time/Time" value:"2020-05-07T19:29:19.123456789Z"}]`,
 			options: &sen.Options{TimeMap: true, CreateKey: "^", TimeFormat: time.RFC3339Nano, FullTypePath: true}},
 		{value: tm2, expect: "-10.100000000", options: &sen.Options{TimeFormat: "second"}},
 		{value: gen.Array{gen.Time(tm)}, expect: "[1588879759123456789]"},
 		{value: gen.Array{gen.Time(tm)}, expect: `["2020-05-07T19:29:19.123456789Z"]`, options: &sen.Options{TimeFormat: time.RFC3339Nano}},
 		{value: gen.Array{gen.Time(tm)}, expect: "[1588879759.123456789]", options: &sen.Options{TimeFormat: "second"}},
 		{value: gen.Array{gen.Time(tm)}, expect: `[{@:1588879759123456789}]`, options: &sen.Options{TimeWrap: "@"}},
-		{value: map[string]interface{}{"t": true, "x": nil}, expect: "{t:true}", options: &sen.Options{OmitNil: true}},
-		{value: map[string]interface{}{"t": true, "f": false}, expect: "{\n  f: false\n  t: true\n}", options: &sen.Options{Sort: true, Indent: 2}},
+		{value: map[string]any{"t": true, "x": nil}, expect: "{t:true}", options: &sen.Options{OmitNil: true}},
+		{value: map[string]any{"t": true, "f": false}, expect: "{\n  f: false\n  t: true\n}", options: &sen.Options{Sort: true, Indent: 2}},
 
-		{value: map[string]interface{}{"t": true}, expect: "{\n  t: true\n}", options: &sen.Options{Indent: 2}},
-		{value: map[string]interface{}{"t": true, "n": nil, "f": false}, expect: "{f:false t:true}",
+		{value: map[string]any{"t": true}, expect: "{\n  t: true\n}", options: &sen.Options{Indent: 2}},
+		{value: map[string]any{"t": true, "n": nil, "f": false}, expect: "{f:false t:true}",
 			options: &sen.Options{OmitNil: true, Sort: true}},
-		{value: map[string]interface{}{"t": true, "n": nil, "f": false}, expect: "{\n  f: false\n  t: true\n}",
+		{value: map[string]any{"t": true, "n": nil, "f": false}, expect: "{\n  f: false\n  t: true\n}",
 			options: &sen.Options{OmitNil: true, Sort: true, Indent: 2}},
-		{value: map[string]interface{}{"t": true, "n": nil, "f": false}, expect: "{\n  f: false\n  n: null\n  t: true\n}",
+		{value: map[string]any{"t": true, "n": nil, "f": false}, expect: "{\n  f: false\n  n: null\n  t: true\n}",
 			options: &sen.Options{OmitNil: false, Sort: true, Indent: 2}},
-		{value: map[string]interface{}{"t": true, "n": nil, "f": false}, expect: "{f:false t:true}",
+		{value: map[string]any{"t": true, "n": nil, "f": false}, expect: "{f:false t:true}",
 			options: &sen.Options{OmitNil: true, Sort: true}},
-		{value: map[string]interface{}{"t": true, "n": nil, "f": false}, expect: "{f:false n:null t:true}",
+		{value: map[string]any{"t": true, "n": nil, "f": false}, expect: "{f:false n:null t:true}",
 			options: &sen.Options{OmitNil: false, Sort: true}},
-		{value: map[string]interface{}{"n": nil}, expect: "{n:null}"},
-		{value: map[string]interface{}{"n": nil}, expect: "{\n}", options: &sen.Options{OmitNil: true, Sort: false, Indent: 2}},
+		{value: map[string]any{"n": nil}, expect: "{n:null}"},
+		{value: map[string]any{"n": nil}, expect: "{\n}", options: &sen.Options{OmitNil: true, Sort: false, Indent: 2}},
 
 		{value: gen.Object{"t": gen.True, "x": nil}, expect: "{t:true}", options: &sen.Options{OmitNil: true}},
 		{value: gen.Object{"t": gen.True}, expect: "{\n  t: true\n}", options: &sen.Options{Indent: 2}},
@@ -183,24 +183,24 @@ func TestString(t *testing.T) {
 func TestWriteBasic(t *testing.T) {
 	var b strings.Builder
 
-	err := sen.Write(&b, []interface{}{true, false})
+	err := sen.Write(&b, []any{true, false})
 	tt.Nil(t, err)
 	tt.Equal(t, "[true false]", b.String())
 
 	opt := sen.Options{WriteLimit: 8}
 	b.Reset()
-	err = sen.Write(&b, []interface{}{true, false}, &opt)
+	err = sen.Write(&b, []any{true, false}, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, "[true false]", b.String())
 
 	// A second time.
 	b.Reset()
-	err = sen.Write(&b, []interface{}{true, false}, &opt)
+	err = sen.Write(&b, []any{true, false}, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, "[true false]", b.String())
 
 	b.Reset()
-	err = sen.Write(&b, []interface{}{false, true}, 2)
+	err = sen.Write(&b, []any{false, true}, 2)
 	tt.Nil(t, err)
 	tt.Equal(t, "[\n  false\n  true\n]", b.String())
 
@@ -212,7 +212,7 @@ func TestWriteBasic(t *testing.T) {
 
 	// Make sure a comma separator is added in unsorted-unindent mode.
 	b.Reset()
-	err = sen.Write(&b, map[string]interface{}{"t": true, "f": false})
+	err = sen.Write(&b, map[string]any{"t": true, "f": false})
 	tt.Nil(t, err)
 	tt.Equal(t, 16, len(b.String()))
 	b.Reset()
@@ -222,7 +222,7 @@ func TestWriteBasic(t *testing.T) {
 
 	b.Reset()
 	opt.Sort = true
-	err = sen.Write(&b, map[string]interface{}{"t": true, "f": false}, &opt)
+	err = sen.Write(&b, map[string]any{"t": true, "f": false}, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, 16, len(b.String()))
 	b.Reset()
@@ -234,7 +234,7 @@ func TestWriteBasic(t *testing.T) {
 func TestWriteWide(t *testing.T) {
 	var b strings.Builder
 	opt := ojg.Options{Indent: 300}
-	err := sen.Write(&b, []interface{}{[]interface{}{true, nil}}, &opt)
+	err := sen.Write(&b, []any{[]any{true, nil}}, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, 529, len(b.String()))
 
@@ -244,7 +244,7 @@ func TestWriteWide(t *testing.T) {
 	tt.Equal(t, 529, len(b.String()))
 
 	b.Reset()
-	err = sen.Write(&b, map[string]interface{}{"x": map[string]interface{}{"y": true, "z": nil}}, &opt)
+	err = sen.Write(&b, map[string]any{"x": map[string]any{"y": true, "z": nil}}, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, 538, len(b.String()))
 
@@ -255,7 +255,7 @@ func TestWriteWide(t *testing.T) {
 
 	opt = ojg.Options{Indent: 300, Sort: true}
 	b.Reset()
-	err = sen.Write(&b, map[string]interface{}{"x": map[string]interface{}{"y": true, "z": nil}}, &opt)
+	err = sen.Write(&b, map[string]any{"x": map[string]any{"y": true, "z": nil}}, &opt)
 	tt.Nil(t, err)
 	tt.Equal(t, 538, len(b.String()))
 }
@@ -263,9 +263,9 @@ func TestWriteWide(t *testing.T) {
 func TestWriteDeep(t *testing.T) {
 	var b strings.Builder
 	opt := sen.Options{Tab: true}
-	a := []interface{}{map[string]interface{}{"x": true}}
+	a := []any{map[string]any{"x": true}}
 	for i := 40; 0 < i; i-- {
-		a = []interface{}{a}
+		a = []any{a}
 	}
 	err := sen.Write(&b, a, &opt)
 	tt.Nil(t, err)
@@ -289,18 +289,18 @@ func TestWriteDeep(t *testing.T) {
 
 func TestWriteShort(t *testing.T) {
 	opt := sen.Options{Indent: 2, WriteLimit: 2}
-	err := sen.Write(&shortWriter{max: 3}, []interface{}{true, nil}, &opt)
+	err := sen.Write(&shortWriter{max: 3}, []any{true, nil}, &opt)
 	tt.NotNil(t, err)
 	err = sen.Write(&shortWriter{max: 3}, gen.Array{gen.True, nil}, &opt)
 	tt.NotNil(t, err)
 
 	opt.Indent = 0
-	err = sen.Write(&shortWriter{max: 3}, []interface{}{true, nil}, &opt)
+	err = sen.Write(&shortWriter{max: 3}, []any{true, nil}, &opt)
 	tt.NotNil(t, err)
 	err = sen.Write(&shortWriter{max: 3}, gen.Array{gen.True, nil}, &opt)
 	tt.NotNil(t, err)
 
-	obj := map[string]interface{}{"t": true, "n": nil}
+	obj := map[string]any{"t": true, "n": nil}
 	sobj := gen.Object{"t": gen.True, "n": nil}
 	opt.Indent = 0
 	for i := 2; i < 15; i += 2 {
@@ -332,22 +332,22 @@ func TestWriteShort(t *testing.T) {
 
 func TestWriteBad(t *testing.T) {
 	var b strings.Builder
-	err := sen.Write(&b, []interface{}{true, &Panik{}})
+	err := sen.Write(&b, []any{true, &Panik{}})
 	tt.NotNil(t, err)
 }
 
 func TestStringBad(t *testing.T) {
-	out := sen.String([]interface{}{true, &Panik{}})
+	out := sen.String([]any{true, &Panik{}})
 	tt.Equal(t, 0, len(out))
 }
 
 func TestMustWritePanic(t *testing.T) {
-	tt.Panic(t, func() { sen.MustWrite(&shortWriter{max: 3}, []interface{}{func() {}}) })
+	tt.Panic(t, func() { sen.MustWrite(&shortWriter{max: 3}, []any{func() {}}) })
 }
 
 func TestBytes(t *testing.T) {
 	wr := sen.Writer{Options: ojg.Options{Sort: true}}
-	obj := map[string]interface{}{"t": true, "n": nil}
+	obj := map[string]any{"t": true, "n": nil}
 	b := sen.Bytes(obj, &wr)
 	tt.Equal(t, "{n:null t:true}", string(b))
 }

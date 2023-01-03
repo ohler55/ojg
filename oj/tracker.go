@@ -12,7 +12,7 @@ type tracker struct {
 	OnlyOne bool
 }
 
-func (t *tracker) newError(off int, format string, args ...interface{}) error {
+func (t *tracker) newError(off int, format string, args ...any) error {
 	return &ParseError{
 		Message: fmt.Sprintf(format, args...),
 		Line:    t.line,

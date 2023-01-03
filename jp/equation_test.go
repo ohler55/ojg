@@ -53,10 +53,10 @@ func TestEquation(t *testing.T) {
 	eq = jp.Divide(jp.ConstInt(3), jp.ConstInt(4))
 	tt.Equal(t, "(3 / 4)", eq.String())
 
-	eq = jp.In(jp.ConstInt(3), jp.ConstList([]interface{}{int64(1), int64(2), int64(3)}))
+	eq = jp.In(jp.ConstInt(3), jp.ConstList([]any{int64(1), int64(2), int64(3)}))
 	tt.Equal(t, "(3 in [1,2,3])", eq.String())
 
-	eq = jp.Empty(jp.ConstList([]interface{}{int64(1)}), jp.ConstBool(true))
+	eq = jp.Empty(jp.ConstList([]any{int64(1)}), jp.ConstBool(true))
 	tt.Equal(t, "([1] empty true)", eq.String())
 
 	eq = jp.Regex(jp.ConstString("abc"), jp.ConstRegex(regexp.MustCompile("a.c")))

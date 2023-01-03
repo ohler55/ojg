@@ -17,7 +17,7 @@ joined with a '.' and parsed to form a jp.Expr.`,
 	})
 }
 
-func root(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func root(root map[string]any, at any, args ...any) any {
 	var b []byte
 	for i, arg := range args {
 		v := evalArg(root, at, arg)

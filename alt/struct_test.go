@@ -49,7 +49,7 @@ func TestDecomposeTagPrimitive(t *testing.T) {
 	opt := ojg.Options{UseTags: true}
 	out := alt.Decompose(&sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
+		map[string]any{
 			"a":   1,
 			"a16": 3,
 			"a32": 4,
@@ -69,7 +69,7 @@ func TestDecomposeTagPrimitive(t *testing.T) {
 
 	out = alt.Decompose(sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
+		map[string]any{
 			"a":   1,
 			"a16": 3,
 			"a32": 4,
@@ -90,7 +90,7 @@ func TestDecomposeTagPrimitive(t *testing.T) {
 	opt.UseTags = false
 	out = alt.Decompose(&sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
+		map[string]any{
 			"f32": 11.5,
 			"f64": 12.5,
 			"i":   1,
@@ -109,7 +109,7 @@ func TestDecomposeTagPrimitive(t *testing.T) {
 		}, out)
 	out = alt.Decompose(sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
+		map[string]any{
 			"f32": 11.5,
 			"f64": 12.5,
 			"i":   1,
@@ -130,7 +130,7 @@ func TestDecomposeTagPrimitive(t *testing.T) {
 	opt.KeyExact = true
 	out = alt.Decompose(&sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
+		map[string]any{
 			"F32": 11.5,
 			"F64": 12.5,
 			"I":   1,
@@ -149,7 +149,7 @@ func TestDecomposeTagPrimitive(t *testing.T) {
 		}, out)
 	out = alt.Decompose(sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
+		map[string]any{
 			"F32": 11.5,
 			"F64": 12.5,
 			"I":   1,
@@ -207,7 +207,7 @@ func TestDecomposeTagAsString(t *testing.T) {
 
 	out := alt.Decompose(&sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
+		map[string]any{
 			"a":   "1",
 			"a16": "3",
 			"a32": "4",
@@ -226,7 +226,7 @@ func TestDecomposeTagAsString(t *testing.T) {
 		}, out)
 	out = alt.Decompose(sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
+		map[string]any{
 			"a":   "1",
 			"a16": "3",
 			"a32": "4",
@@ -284,7 +284,7 @@ func TestDecomposeTagOmitEmpty(t *testing.T) {
 
 	out := alt.Decompose(&sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
+		map[string]any{
 			"a":   1,
 			"a16": 3,
 			"a32": 4,
@@ -302,7 +302,7 @@ func TestDecomposeTagOmitEmpty(t *testing.T) {
 		}, out)
 	out = alt.Decompose(sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
+		map[string]any{
 			"a":   1,
 			"a16": 3,
 			"a32": 4,
@@ -320,10 +320,10 @@ func TestDecomposeTagOmitEmpty(t *testing.T) {
 		}, out)
 
 	out = alt.Decompose(&Sample{}, &opt)
-	tt.Equal(t, map[string]interface{}{}, out)
+	tt.Equal(t, map[string]any{}, out)
 
 	out = alt.Decompose(Sample{}, &opt)
-	tt.Equal(t, map[string]interface{}{}, out)
+	tt.Equal(t, map[string]any{}, out)
 }
 
 func TestDecomposeTagOmitEmptyAsString(t *testing.T) {
@@ -365,7 +365,7 @@ func TestDecomposeTagOmitEmptyAsString(t *testing.T) {
 
 	out := alt.Decompose(&sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
+		map[string]any{
 			"a":   "1",
 			"a16": "3",
 			"a32": "4",
@@ -383,7 +383,7 @@ func TestDecomposeTagOmitEmptyAsString(t *testing.T) {
 		}, out)
 	out = alt.Decompose(sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
+		map[string]any{
 			"a":   "1",
 			"a16": "3",
 			"a32": "4",
@@ -401,29 +401,29 @@ func TestDecomposeTagOmitEmptyAsString(t *testing.T) {
 		}, out)
 
 	out = alt.Decompose(&Sample{}, &opt)
-	tt.Equal(t, map[string]interface{}{}, out)
+	tt.Equal(t, map[string]any{}, out)
 
 	out = alt.Decompose(Sample{}, &opt)
-	tt.Equal(t, map[string]interface{}{}, out)
+	tt.Equal(t, map[string]any{}, out)
 }
 
 func TestDecomposeTagPtrOmitEmpty(t *testing.T) {
 	type Bare struct {
 	}
 	type Sample struct {
-		Ptr    *Bare         `json:"p,omitempty"`
-		NilPtr *Bare         `json:"np,omitempty"`
-		Slice  []interface{} `json:"s,omitempty"`
-		Empty  []interface{} `json:"e,omitempty"`
-		Any    interface{}   `json:"a,omitempty"`
-		NilAny interface{}   `json:"na,omitempty"`
-		Bar    **Bare        `json:"bar"`
+		Ptr    *Bare  `json:"p,omitempty"`
+		NilPtr *Bare  `json:"np,omitempty"`
+		Slice  []any  `json:"s,omitempty"`
+		Empty  []any  `json:"e,omitempty"`
+		Any    any    `json:"a,omitempty"`
+		NilAny any    `json:"na,omitempty"`
+		Bar    **Bare `json:"bar"`
 	}
 	sample := Sample{
 		Ptr:    &Bare{},
 		NilPtr: nil,
-		Slice:  []interface{}{true},
-		Empty:  []interface{}{},
+		Slice:  []any{true},
+		Empty:  []any{},
 		Any:    &Bare{},
 		NilAny: nil,
 	}
@@ -431,29 +431,29 @@ func TestDecomposeTagPtrOmitEmpty(t *testing.T) {
 
 	out := alt.Decompose(&sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
-			"a":   map[string]interface{}{},
+		map[string]any{
+			"a":   map[string]any{},
 			"bar": nil,
-			"p":   map[string]interface{}{},
-			"s":   []interface{}{true},
+			"p":   map[string]any{},
+			"s":   []any{true},
 		}, out)
 	out = alt.Decompose(sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
-			"a":   map[string]interface{}{},
+		map[string]any{
+			"a":   map[string]any{},
 			"bar": nil,
-			"p":   map[string]interface{}{},
-			"s":   []interface{}{true},
+			"p":   map[string]any{},
+			"s":   []any{true},
 		}, out)
 
 	opt.Indent = 2
 	out = alt.Decompose(&sample, &opt)
 	tt.Equal(t,
-		map[string]interface{}{
-			"a":   map[string]interface{}{},
+		map[string]any{
+			"a":   map[string]any{},
 			"bar": nil,
-			"p":   map[string]interface{}{},
-			"s":   []interface{}{true},
+			"p":   map[string]any{},
+			"s":   []any{true},
 		}, out)
 }
 
@@ -466,7 +466,7 @@ func TestDecomposeEmbedded(t *testing.T) {
 	}
 	sample := Sample{In: In{X: 3}}
 	out := alt.Decompose(&sample, &ojg.Options{CreateKey: ""})
-	tt.Equal(t, map[string]interface{}{"in": map[string]interface{}{"x": 3}}, out)
+	tt.Equal(t, map[string]any{"in": map[string]any{"x": 3}}, out)
 }
 
 func TestDecomposeStructSimplifier(t *testing.T) {
@@ -477,17 +477,17 @@ func TestDecomposeStructSimplifier(t *testing.T) {
 	sw := SillyWrap{Sill: silly{val: 3}, Ptr: &silly{val: 4}}
 	out := alt.Decompose(&sw, &ojg.Options{CreateKey: ""})
 	tt.Equal(t,
-		map[string]interface{}{
-			"ptr":  map[string]interface{}{"type": "silly", "val": 4},
-			"sill": map[string]interface{}{"type": "silly", "val": 3},
+		map[string]any{
+			"ptr":  map[string]any{"type": "silly", "val": 4},
+			"sill": map[string]any{"type": "silly", "val": 3},
 		}, out)
 
 	sw = SillyWrap{Sill: silly{val: 3}, Ptr: nil}
 	out = alt.Decompose(&sw, &ojg.Options{CreateKey: ""})
 	tt.Equal(t,
-		map[string]interface{}{
+		map[string]any{
 			"ptr":  nil,
-			"sill": map[string]interface{}{"type": "silly", "val": 3},
+			"sill": map[string]any{"type": "silly", "val": 3},
 		}, out)
 }
 
@@ -510,20 +510,20 @@ func TestDecomposeStructGenericer(t *testing.T) {
 	gw := GenWrap{Gen: geni{val: 3}, Ptr: &geni{val: 4}}
 	out := alt.Decompose(&gw, &ojg.Options{CreateKey: ""})
 	tt.Equal(t,
-		map[string]interface{}{
-			"ptr": map[string]interface{}{"type": "geni", "val": 4},
-			"gen": map[string]interface{}{"type": "geni", "val": 3},
+		map[string]any{
+			"ptr": map[string]any{"type": "geni", "val": 4},
+			"gen": map[string]any{"type": "geni", "val": 3},
 		}, out)
 
 	gw = GenWrap{Gen: geni{val: 3}, Ptr: nil}
 	out = alt.Decompose(&gw, &ojg.Options{CreateKey: ""})
 	tt.Equal(t,
-		map[string]interface{}{
+		map[string]any{
 			"ptr": nil,
-			"gen": map[string]interface{}{"type": "geni", "val": 3},
+			"gen": map[string]any{"type": "geni", "val": 3},
 		}, out)
 
 	gw = GenWrap{Gen: geni{val: 0}, Ptr: &geni{val: 0}}
 	out = alt.Decompose(&gw, &ojg.Options{CreateKey: ""})
-	tt.Equal(t, map[string]interface{}{"ptr": nil, "gen": nil}, out)
+	tt.Equal(t, map[string]any{"ptr": nil, "gen": nil}, out)
 }

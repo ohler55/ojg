@@ -10,7 +10,7 @@ import (
 )
 
 // SameType returns true if the actual and expected values are of the same type.
-func SameType(t *testing.T, expect, actual interface{}, args ...interface{}) (eq bool) {
+func SameType(t *testing.T, expect, actual any, args ...any) (eq bool) {
 	eq = reflect.TypeOf(expect) == reflect.TypeOf(actual)
 	if !eq {
 		var b strings.Builder

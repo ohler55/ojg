@@ -18,10 +18,10 @@ is returned.`,
 	})
 }
 
-func cond(root map[string]interface{}, at interface{}, args ...interface{}) interface{} {
+func cond(root map[string]any, at any, args ...any) any {
 	for _, arg := range args {
 		v := evalArg(root, at, arg)
-		list, ok := v.([]interface{})
+		list, ok := v.([]any)
 		if !ok {
 			panic(fmt.Errorf("cond expects array arguments, not a %T", v))
 		}

@@ -16,7 +16,7 @@ import (
 // that second default value is returned. This approach keeps the return as a
 // single value and gives the caller the choice of how to indicate a bad
 // value.
-func Float(v interface{}, defaults ...float64) (f float64) {
+func Float(v any, defaults ...float64) (f float64) {
 	switch tf := v.(type) {
 	case float64:
 		f = tf

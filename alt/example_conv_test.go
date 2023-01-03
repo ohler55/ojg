@@ -10,7 +10,7 @@ import (
 )
 
 func ExampleBool() {
-	for _, src := range []interface{}{true, "tRuE", "x", 1, nil} {
+	for _, src := range []any{true, "tRuE", "x", 1, nil} {
 		fmt.Printf("alt.Bool(%T(%v)) = %t  alt.Bool(%T(%v), false) = %t   alt.Bool(%T(%v), false, true) = %t\n",
 			src, src, alt.Bool(src),
 			src, src, alt.Bool(src, false),
@@ -25,7 +25,7 @@ func ExampleBool() {
 }
 
 func ExampleInt() {
-	for _, src := range []interface{}{1, "1", "x", 1.5, []interface{}{}} {
+	for _, src := range []any{1, "1", "x", 1.5, []any{}} {
 		fmt.Printf("alt.Int(%T(%v)) = %d  alt.Int(%T(%v), 2) = %d   alt.Int(%T(%v), 2, 3) = %d\n",
 			src, src, alt.Int(src),
 			src, src, alt.Int(src, 2),
@@ -40,7 +40,7 @@ func ExampleInt() {
 }
 
 func ExampleFloat() {
-	for _, src := range []interface{}{1, "1,5", "x", 1.5, true} {
+	for _, src := range []any{1, "1,5", "x", 1.5, true} {
 		fmt.Printf("alt.Float(%T(%v)) = %.1f  alt.Float(%T(%v), 2.5) = %.1f   alt.Float(%T(%v), 2.5, 3.5) = %.1f\n",
 			src, src, alt.Float(src),
 			src, src, alt.Float(src, 2.5),
@@ -56,7 +56,7 @@ func ExampleFloat() {
 
 func ExampleString() {
 	tm := time.Date(2021, time.February, 9, 12, 13, 14, 0, time.UTC)
-	for _, src := range []interface{}{"xyz", 1, 1.5, true, tm, []interface{}{}} {
+	for _, src := range []any{"xyz", 1, 1.5, true, tm, []any{}} {
 		fmt.Printf("alt.String(%T(%v)) = %s  alt.String(%T(%v), default) = %s   alt.String(%T(%v), default, picky) = %s\n",
 			src, src, alt.String(src),
 			src, src, alt.String(src, "default"),
@@ -76,7 +76,7 @@ func ExampleTime() {
 	td := time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC) // default
 	tp := time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC) // picky default
 
-	for _, src := range []interface{}{tm, 1612872711000000000, "2021-02-09T01:02:03Z", "x", 1612872722.0, true} {
+	for _, src := range []any{tm, 1612872711000000000, "2021-02-09T01:02:03Z", "x", 1612872722.0, true} {
 		fmt.Printf("alt.Time(%T(%v)) = %s\nalt.Time(%T(%v), td) = %s\nalt.Time(%T(%v), td, tp) = %s\n",
 			src, src, alt.Time(src).Format(time.RFC3339),
 			src, src, alt.Time(src, td).Format(time.RFC3339),

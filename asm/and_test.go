@@ -41,9 +41,9 @@ func TestAndNull(t *testing.T) {
 }
 
 func TestAndNotBool(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"and", 1, 2},
+	p := asm.NewPlan([]any{
+		[]any{"and", 1, 2},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }

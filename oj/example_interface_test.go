@@ -47,14 +47,14 @@ func ExampleUnmarshal_interface() {
 	// the types with a nil creation function to let reflection do the work
 	// since the types are exported.
 	var r *alt.Recomposer
-	if r, err = alt.NewRecomposer("^", map[interface{}]alt.RecomposeFunc{&Dog{}: nil, &Cat{}: nil}); err != nil {
+	if r, err = alt.NewRecomposer("^", map[any]alt.RecomposeFunc{&Dog{}: nil, &Cat{}: nil}); err != nil {
 		panic(err)
 	}
-	var result interface{}
+	var result any
 	if err = oj.Unmarshal(b, &result, r); err != nil {
 		panic(err)
 	}
-	list, _ := result.([]interface{})
+	list, _ := result.([]any)
 	for _, item := range list {
 		animal, _ := item.(Animal)
 		fmt.Printf("  %s\n", animal.Kind())

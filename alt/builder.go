@@ -8,13 +8,13 @@ import (
 	"github.com/ohler55/ojg/gen"
 )
 
-var emptySlice = []interface{}{}
+var emptySlice = []any{}
 
 // Builder is a basic type builder. It uses a stack model to build where maps
 // (objects) and slices (arrays) add pushed on the stack and closed with a
 // pop.
 type Builder struct {
-	stack  []interface{}
+	stack  []any
 	starts []int
 }
 
@@ -24,21 +24,21 @@ func (b *Builder) Reset() {
 		b.stack = b.stack[:0]
 		b.starts = b.starts[:0]
 	} else {
-		b.stack = make([]interface{}, 0, 64)
+		b.stack = make([]any, 0, 64)
 		b.starts = make([]int, 0, 16)
 	}
 }
 
-// Object pushs a map[string]interface{} onto the stack. A key must be
+// Object pushs a map[string]any onto the stack. A key must be
 // provided if the top of the stack is an object (map) and must not be
 // provided if the op of the stack is an array or slice.
 func (b *Builder) Object(key ...string) error {
-	newObj := map[string]interface{}{}
+	newObj := map[string]any{}
 	if 0 < len(key) {
 		if len(b.starts) == 0 || 0 <= b.starts[len(b.starts)-1] {
 			return fmt.Errorf("can not use a key when pushing to an array")
 		}
-		if obj, _ := b.stack[len(b.stack)-1].(map[string]interface{}); obj != nil {
+		if obj, _ := b.stack[len(b.stack)-1].(map[string]any); obj != nil {
 			obj[key[0]] = newObj
 		}
 	} else if 0 < len(b.starts) && b.starts[len(b.starts)-1] < 0 {
@@ -50,7 +50,7 @@ func (b *Builder) Object(key ...string) error {
 	return nil
 }
 
-// Array pushs a []interface{} onto the stack. A key must be provided if the
+// Array pushs a []any onto the stack. A key must be provided if the
 // top of the stack is an object (map) and must not be provided if the op of
 // the stack is an array or slice.
 func (b *Builder) Array(key ...string) error {
@@ -71,13 +71,13 @@ func (b *Builder) Array(key ...string) error {
 // Value pushs a value onto the stack. A key must be provided if the top of
 // the stack is an object (map) and must not be provided if the op of the
 // stack is an array or slice.
-func (b *Builder) Value(value interface{}, key ...string) error {
+func (b *Builder) Value(value any, key ...string) error {
 	switch {
 	case 0 < len(key):
 		if len(b.starts) == 0 || 0 <= b.starts[len(b.starts)-1] {
 			return fmt.Errorf("can not use a key when pushing to an array")
 		}
-		if obj, _ := b.stack[len(b.stack)-1].(map[string]interface{}); obj != nil {
+		if obj, _ := b.stack[len(b.stack)-1].(map[string]any); obj != nil {
 			obj[key[0]] = value
 		}
 	case 0 < len(b.starts) && b.starts[len(b.starts)-1] < 0:
@@ -95,13 +95,13 @@ func (b *Builder) Pop() {
 		if 0 <= start { // array
 			start++
 			size := len(b.stack) - start
-			a := make([]interface{}, size)
+			a := make([]any, size)
 			copy(a, b.stack[start:len(b.stack)])
 			b.stack = b.stack[:start]
 			b.stack[start-1] = a
 			if 2 < len(b.stack) {
 				if k, ok := b.stack[len(b.stack)-2].(gen.Key); ok {
-					if obj, _ := b.stack[len(b.stack)-3].(map[string]interface{}); obj != nil {
+					if obj, _ := b.stack[len(b.stack)-3].(map[string]any); obj != nil {
 						obj[string(k)] = a
 						b.stack = b.stack[:len(b.stack)-2]
 					}
@@ -123,7 +123,7 @@ func (b *Builder) PopAll() {
 
 // Result of the builder is returned. This is the first item pushed on to the
 // stack.
-func (b *Builder) Result() (result interface{}) {
+func (b *Builder) Result() (result any) {
 	if 0 < len(b.stack) {
 		result = b.stack[0]
 	}

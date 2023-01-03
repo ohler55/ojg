@@ -28,33 +28,33 @@ func TestJoin(t *testing.T) {
 }
 
 func TestJoinArgCount(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"join", []interface{}{}, "x", 1},
+	p := asm.NewPlan([]any{
+		[]any{"join", []any{}, "x", 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestJoinArgType(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"join", 1, "x"},
+	p := asm.NewPlan([]any{
+		[]any{"join", 1, "x"},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestJoinArgType2(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"join", []interface{}{}, 1},
+	p := asm.NewPlan([]any{
+		[]any{"join", []any{}, 1},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
 
 func TestJoinArgType3(t *testing.T) {
-	p := asm.NewPlan([]interface{}{
-		[]interface{}{"join", []interface{}{"x", 3}},
+	p := asm.NewPlan([]any{
+		[]any{"join", []any{"x", 3}},
 	})
-	err := p.Execute(map[string]interface{}{})
+	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
