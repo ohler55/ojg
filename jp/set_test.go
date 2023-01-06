@@ -399,11 +399,3 @@ func TestExprMustSetOne(t *testing.T) {
 	data := map[string]any{"a": 1, "b": 2, "c": 3}
 	tt.Panic(t, func() { jp.C("b").N(0).MustSetOne(data, 7) })
 }
-
-func TestExprSetDev(t *testing.T) {
-	data := &Any{X: 1}
-	x := jp.MustParseString("[1,'x']")
-	x.SetOne(data, 5)
-
-	fmt.Printf("*** %s\n", oj.JSON(data, &oj.Options{Sort: true, CreateKey: "^"}))
-}

@@ -4,8 +4,12 @@ package jp
 
 import (
 	"fmt"
+	"reflect"
+	"sort"
+	"strings"
 
 	"github.com/ohler55/ojg"
+	"github.com/ohler55/ojg/gen"
 )
 
 // Filter is a script used as a filter.
@@ -51,4 +55,198 @@ func (f Filter) Append(buf []byte, _, _ bool) []byte {
 	buf = append(buf, ']')
 
 	return buf
+}
+
+func (f Filter) remove(value any) (out any, changed bool) {
+	out = value
+	switch tv := value.(type) {
+	case []any:
+		ns := make([]any, 0, len(tv))
+		for _, v := range tv {
+			if f.Match(v) {
+				changed = true
+			} else {
+				ns = append(ns, v)
+			}
+		}
+		if changed {
+			out = ns
+		}
+	case map[string]any:
+		for k, v := range tv {
+			if f.Match(v) {
+				delete(tv, k)
+				changed = true
+			}
+		}
+	case gen.Array:
+		ns := make(gen.Array, 0, len(tv))
+		for _, v := range tv {
+			if f.Match(v) {
+				changed = true
+			} else {
+				ns = append(ns, v)
+			}
+		}
+		if changed {
+			out = ns
+		}
+	case gen.Object:
+		for k, v := range tv {
+			if f.Match(v) {
+				delete(tv, k)
+				changed = true
+			}
+		}
+	default:
+		rv := reflect.ValueOf(value)
+		switch rv.Kind() {
+		case reflect.Slice:
+			// You would think that ns.SetLen() would work in a case like
+			// this but it panics as unaddressable so instead the length
+			// is calculated and then a second pass is made to assign the
+			// new slice values.
+			cnt := rv.Len()
+			nc := 0
+			for i := 0; i < cnt; i++ {
+				if f.Match(rv.Index(i).Interface()) {
+					changed = true
+				} else {
+					nc++
+				}
+			}
+			if changed {
+				changed = false
+				ni := 0
+				ns := reflect.MakeSlice(rv.Type(), nc, nc)
+				for i := 0; i < cnt; i++ {
+					iv := rv.Index(i)
+					if f.Match(iv.Interface()) {
+						changed = true
+					} else {
+						ns.Index(ni).Set(iv)
+						ni++
+					}
+				}
+				out = ns.Interface()
+			}
+		case reflect.Map:
+			keys := rv.MapKeys()
+			for _, k := range keys {
+				mv := rv.MapIndex(k)
+				if f.Match(mv.Interface()) {
+					rv.SetMapIndex(k, reflect.Value{})
+					changed = true
+				}
+			}
+		}
+	}
+	return
+}
+
+func (f Filter) removeOne(value any) (out any, changed bool) {
+	out = value
+	switch tv := value.(type) {
+	case []any:
+		ns := make([]any, 0, len(tv))
+		for _, v := range tv {
+			if !changed && f.Match(v) {
+				changed = true
+			} else {
+				ns = append(ns, v)
+			}
+		}
+		if changed {
+			out = ns
+		}
+	case map[string]any:
+		if 0 < len(tv) {
+			keys := make([]string, 0, len(tv))
+			for k := range tv {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			for _, k := range keys {
+				if f.Match(tv[k]) {
+					delete(tv, k)
+					changed = true
+					break
+				}
+			}
+		}
+	case gen.Array:
+		ns := make(gen.Array, 0, len(tv))
+		for _, v := range tv {
+			if !changed && f.Match(v) {
+				changed = true
+			} else {
+				ns = append(ns, v)
+			}
+		}
+		if changed {
+			out = ns
+		}
+	case gen.Object:
+		if 0 < len(tv) {
+			keys := make([]string, 0, len(tv))
+			for k := range tv {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			for _, k := range keys {
+				if f.Match(tv[k]) {
+					delete(tv, k)
+					changed = true
+					break
+				}
+			}
+		}
+	default:
+		rv := reflect.ValueOf(value)
+		switch rv.Kind() {
+		case reflect.Slice:
+			// You would think that ns.SetLen() would work in a case like
+			// this but it panics as unaddressable so instead the length
+			// is calculated and then a second pass is made to assign the
+			// new slice values.
+			cnt := rv.Len()
+			nc := 0
+			for i := 0; i < cnt; i++ {
+				if !changed && f.Match(rv.Index(i).Interface()) {
+					changed = true
+				} else {
+					nc++
+				}
+			}
+			if changed {
+				changed = false
+				ni := 0
+				ns := reflect.MakeSlice(rv.Type(), nc, nc)
+				for i := 0; i < cnt; i++ {
+					iv := rv.Index(i)
+					if !changed && f.Match(iv.Interface()) {
+						changed = true
+					} else {
+						ns.Index(ni).Set(iv)
+						ni++
+					}
+				}
+				out = ns.Interface()
+			}
+		case reflect.Map:
+			keys := rv.MapKeys()
+			sort.Slice(keys, func(i, j int) bool {
+				return strings.Compare(keys[i].String(), keys[j].String()) < 0
+			})
+			for _, k := range keys {
+				mv := rv.MapIndex(k)
+				if f.Match(mv.Interface()) {
+					rv.SetMapIndex(k, reflect.Value{})
+					changed = true
+					break
+				}
+			}
+		}
+	}
+	return
 }

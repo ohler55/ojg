@@ -2,7 +2,14 @@
 
 package jp
 
-import "strconv"
+import (
+	"reflect"
+	"sort"
+	"strconv"
+	"strings"
+
+	"github.com/ohler55/ojg/gen"
+)
 
 // Union is a union operation for a JSON path expression which is a union of a
 // Child and Nth fragment.
@@ -61,4 +68,194 @@ func (f Union) hasKey(key string) bool {
 		}
 	}
 	return false
+}
+
+func (f Union) removeOne(value any) (out any, changed bool) {
+	out = value
+	switch tv := value.(type) {
+	case []any:
+		ns := make([]any, 0, len(tv))
+		for i, v := range tv {
+			if !changed && f.hasN(int64(i)) {
+				changed = true
+			} else {
+				ns = append(ns, v)
+			}
+		}
+		if changed {
+			out = ns
+		}
+	case map[string]any:
+		if 0 < len(tv) {
+			keys := make([]string, 0, len(tv))
+			for k := range tv {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			for _, k := range keys {
+				if f.hasKey(k) {
+					delete(tv, k)
+					changed = true
+					break
+				}
+			}
+		}
+	case gen.Array:
+		ns := make(gen.Array, 0, len(tv))
+		for i, v := range tv {
+			if !changed && f.hasN(int64(i)) {
+				changed = true
+			} else {
+				ns = append(ns, v)
+			}
+		}
+		if changed {
+			out = ns
+		}
+	case gen.Object:
+		if 0 < len(tv) {
+			keys := make([]string, 0, len(tv))
+			for k := range tv {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			for _, k := range keys {
+				if f.hasKey(k) {
+					delete(tv, k)
+					changed = true
+					break
+				}
+			}
+		}
+	default:
+		rv := reflect.ValueOf(value)
+		switch rv.Kind() {
+		case reflect.Slice:
+			// You would think that ns.SetLen() would work in a case like
+			// this but it panics as unaddressable so instead the length
+			// is calculated and then a second pass is made to assign the
+			// new slice values.
+			cnt := rv.Len()
+			nc := 0
+			for i := 0; i < cnt; i++ {
+				if !changed && f.hasN(int64(i)) {
+					changed = true
+				} else {
+					nc++
+				}
+			}
+			if changed {
+				changed = false
+				ni := 0
+				ns := reflect.MakeSlice(rv.Type(), nc, nc)
+				for i := 0; i < cnt; i++ {
+					if !changed && f.hasN(int64(i)) {
+						changed = true
+					} else {
+						ns.Index(ni).Set(rv.Index(i))
+						ni++
+					}
+				}
+				out = ns.Interface()
+			}
+		case reflect.Map:
+			keys := rv.MapKeys()
+			sort.Slice(keys, func(i, j int) bool {
+				return strings.Compare(keys[i].String(), keys[j].String()) < 0
+			})
+			for _, k := range keys {
+				if f.hasKey(k.String()) {
+					rv.SetMapIndex(k, reflect.Value{})
+					changed = true
+					break
+				}
+			}
+		}
+	}
+	return
+}
+
+func (f Union) remove(value any) (out any, changed bool) {
+	out = value
+	switch tv := value.(type) {
+	case []any:
+		ns := make([]any, 0, len(tv))
+		for i, v := range tv {
+			if f.hasN(int64(i)) {
+				changed = true
+			} else {
+				ns = append(ns, v)
+			}
+		}
+		if changed {
+			out = ns
+		}
+	case map[string]any:
+		for k := range tv {
+			if f.hasKey(k) {
+				delete(tv, k)
+				changed = true
+			}
+		}
+	case gen.Array:
+		ns := make(gen.Array, 0, len(tv))
+		for i, v := range tv {
+			if f.hasN(int64(i)) {
+				changed = true
+			} else {
+				ns = append(ns, v)
+			}
+		}
+		if changed {
+			out = ns
+		}
+	case gen.Object:
+		for k := range tv {
+			if f.hasKey(k) {
+				delete(tv, k)
+				changed = true
+			}
+		}
+	default:
+		rv := reflect.ValueOf(value)
+		switch rv.Kind() {
+		case reflect.Slice:
+			// You would think that ns.SetLen() would work in a case like
+			// this but it panics as unaddressable so instead the length
+			// is calculated and then a second pass is made to assign the
+			// new slice values.
+			cnt := rv.Len()
+			nc := 0
+			for i := 0; i < cnt; i++ {
+				if f.hasN(int64(i)) {
+					changed = true
+				} else {
+					nc++
+				}
+			}
+			if changed {
+				changed = false
+				ni := 0
+				ns := reflect.MakeSlice(rv.Type(), nc, nc)
+				for i := 0; i < cnt; i++ {
+					if f.hasN(int64(i)) {
+						changed = true
+					} else {
+						ns.Index(ni).Set(rv.Index(i))
+						ni++
+					}
+				}
+				out = ns.Interface()
+			}
+		case reflect.Map:
+			keys := rv.MapKeys()
+			for _, k := range keys {
+				if f.hasKey(k.String()) {
+					rv.SetMapIndex(k, reflect.Value{})
+					changed = true
+				}
+			}
+		}
+	}
+	return
 }

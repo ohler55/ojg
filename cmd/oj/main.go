@@ -761,6 +761,9 @@ supported are:
  empty returns true if the left empty condition (length is zero) matches the
        right which must be a boolean.
 
+ has   returns true if the left has condition is null or missing matches the
+       right which must be a boolean.
+
  +     returns the sum of left and right.
 
  -     returns the difference of left and right. (left - right)

@@ -4,6 +4,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.17.0] - 2023-01-05
+### Added
+- Modify() functions added to the jp package.
+- Added the `has` operator to the jp package scripts.
+
 ## [1.16.0] - 2023-01-02
 ### Added
 - Remove() functions added to the jp package.

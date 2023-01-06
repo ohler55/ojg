@@ -146,6 +146,11 @@ func Empty(left, right *Equation) *Equation {
 	return &Equation{o: empty, left: left, right: right}
 }
 
+// Has creates and returns an Equation for a has operator.
+func Has(left, right *Equation) *Equation {
+	return &Equation{o: has, left: left, right: right}
+}
+
 // Regex creates and returns an Equation for a regex operator.
 func Regex(left, right *Equation) *Equation {
 	return &Equation{o: rx, left: left, right: right}
