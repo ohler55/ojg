@@ -80,6 +80,7 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@.x in [1,2,3])", expect: "(@.x in [1,2,3])"},
 		{src: "(@.x in ['a' , 'b', 'c'])", expect: "(@.x in ['a','b','c'])"},
 		{src: "(@ empty true)", expect: "(@ empty true)"},
+		{src: "(@ has true)", expect: "(@ has true)"},
 		{src: "(@ =~ /abc/)", expect: "(@ =~ /abc/)"},
 		{src: "(@ =~ /a\\/c/)", expect: "(@ =~ /a\\/c/)"},
 
@@ -203,6 +204,9 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@ empty true)", value: map[string]any{"x": 1}, noMatch: true},
 		{src: "(@ empty true)", value: "x", noMatch: true},
 
+		{src: "(@ has true)", value: 5},
+		{src: "(@ has false)", value: nil},
+
 		{src: "(@ =~ /a.c/)", value: "abc"},
 		{src: "(@ =~ 'a.c')", value: "abc"},
 		{src: "(@ =~ 'a.c')", value: "abb", noMatch: true},
@@ -255,7 +259,11 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@.x / @.y == null)", value: map[string]any{"x": 1, "y": 0}},
 	} {
 		if testing.Verbose() {
-			fmt.Printf("... %d: %s in %s\n", i, d.src, oj.JSON(d.value))
+			if d.value == nil {
+				fmt.Printf("... %d: %s in nil\n", i, d.src)
+			} else {
+				fmt.Printf("... %d: %s in %s\n", i, d.src, oj.JSON(d.value))
+			}
 		}
 		s, err := jp.NewScript(d.src)
 		tt.Nil(t, err)

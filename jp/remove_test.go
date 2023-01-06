@@ -56,6 +56,7 @@ var (
 		{path: "[-6:-2:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 2 3] [4 5] [6 7] [8 9]]"},
 		{path: "[:3][1:3:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6] [8 9]]]"},
 		{path: "[-1:0:-1][1:3:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6] [8 9]]]"},
+
 		{path: "[?(@.x == 1)].y", data: `[{x:1 y:2}]`, expect: `[{x: 1}]`},
 		{path: "[?(@[0] != 0)][?(@.x == 1)].y", data: `[[{x:1 y:2}]]`, expect: `[[{x: 1}]]`},
 		{path: "['a','b']", data: `{a:1 b:2 c:3}`, expect: `{c: 3}`},
@@ -83,6 +84,12 @@ var (
 		{path: "[1:3:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6 7] [8 9]]"},
 		{path: "[3:1:-2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 2 3] [4 5] [6] [8 9]]"},
 		{path: "[-4:-2:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6 7] [8 9]]"},
+		{path: "[-6:-2:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 2 3] [4 5] [6 7] [8 9]]"},
+		{path: "[:3][1:3:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6 7] [8 9]]]"},
+		{path: "[-1:0:-1][1:3:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6 7] [8 9]]]"},
+		{path: "[0][1:9:2][1:4:2]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6 7] [8 9]]]"},
+		{path: "[1:3:2][-9:4:2]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 2 3] [4 5] [6 7] [8 9]]"},
+
 		{path: "@[2]", data: `[1,2,3,4]`, expect: `[1 2 4]`},
 		{path: "$[2]", data: `[1,2,3,4]`, expect: `[1 2 4]`},
 		{path: "$[1][2]", data: `[1 [1,2,3,4]]`, expect: `[1 [1 2 4]]`},
@@ -432,6 +439,18 @@ func TestExprRemoveDescent(t *testing.T) {
 	tt.Nil(t, err)
 	data := sen.MustParse([]byte(`[[1,2,[1,2,3,4]]]`))
 	tt.Panic(t, func() { _ = x.MustRemove(data) })
+
+	x, err = jp.ParseString("$..")
+	tt.Nil(t, err)
+	tt.Panic(t, func() { _ = x.MustRemove(data) })
+}
+
+func TestExprRemoveEmptyExpr(t *testing.T) {
+	x, err := jp.ParseString("")
+	tt.Nil(t, err)
+	data := []any{}
+	tt.Panic(t, func() { _ = x.MustRemove(data) })
+	tt.Panic(t, func() { _ = x.MustRemoveOne(data) })
 }
 
 func TestExprRemoveUnionReflectMap(t *testing.T) {
@@ -519,6 +538,11 @@ func TestExprRemoveUnionReflectSlice(t *testing.T) {
 	result = x.MustRemove(data4)
 	tt.Equal(t, "[[2]]", string(pw.Encode(result)))
 	tt.Equal(t, "[[1] [2] [3]]", string(pw.Encode(data4))) // should be unchanged
+
+	data4 = [][]any{{1}, {2}, {3}}
+	result = x.MustRemoveOne(data4)
+	tt.Equal(t, "[[2] [3]]", string(pw.Encode(result)))
+	tt.Equal(t, "[[1] [2] [3]]", string(pw.Encode(data4))) // should be unchanged
 }
 
 func TestExprRemoveSliceReflect(t *testing.T) {
@@ -581,10 +605,18 @@ func TestExprRemoveSliceReflect(t *testing.T) {
 	result = x.MustRemove(data3)
 	tt.Equal(t, "[[1] [4]]", string(pw.Encode(result)))
 
+	data3 = [][]any{{1}, {2}, {3}, {4}}
+	result = x.MustRemoveOne(data3)
+	tt.Equal(t, "[[1] [2] [4]]", string(pw.Encode(result)))
+
 	x, err = jp.ParseString("[5:6]")
 	tt.Nil(t, err)
 	data3 = [][]any{{1}, {2}, {3}, {4}}
 	result = x.MustRemove(data3)
+	tt.Equal(t, "[[1] [2] [3] [4]]", string(pw.Encode(result)))
+
+	data3 = [][]any{{1}, {2}, {3}, {4}}
+	result = x.MustRemoveOne(data3)
 	tt.Equal(t, "[[1] [2] [3] [4]]", string(pw.Encode(result)))
 }
 

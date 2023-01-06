@@ -1,5 +1,13 @@
 
 
+- future enhancements
+ - jp.Modify(data, func(element any) (newElement any, changed bool)) any
+
+ - jp.Script
+  - add has or exists operator (different than empty)
+
+
+
 - parse
  - add discover option to find JSON or SEN in a string or file
   - 3 states
@@ -36,19 +44,6 @@
   - check added condition of whether keys should be checked. If too high then copy code
  - or separate stack in func for key maps along with dip code
 
-- regex op =~
-  - /^xyz&/
- - in addition to parse callback support chan for results
- - cmd/oj
-  - read args from file (SEN format)
-   - also check ~/.oj.fin or ~/.oj - graphql emacs mode works well
-  - palette in cfg file
-  - build or restructure json
-   - use a template based approach along with JSONPath
-- advanced ops
- - in - a in [1,2,3]
- - exists, empty, or has
- - size or length - [?(@.x size > 3)] or [?(size @.x > 3)]
 -------------
 
 - Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)]

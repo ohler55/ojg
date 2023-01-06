@@ -2,6 +2,12 @@
 
 package jp
 
+import (
+	"reflect"
+
+	"github.com/ohler55/ojg/gen"
+)
+
 // Child is a child operation for a JSON path expression.
 type Child string
 
@@ -28,4 +34,32 @@ func (f Child) tokenOk() bool {
 		}
 	}
 	return true
+}
+
+func (f Child) remove(value any) (out any, changed bool) {
+	out = value
+	key := string(f)
+	switch tv := value.(type) {
+	case map[string]any:
+		if _, changed = tv[key]; changed {
+			delete(tv, key)
+		}
+	case gen.Object:
+		if _, changed = tv[key]; changed {
+			delete(tv, key)
+		}
+	default:
+		if rt := reflect.TypeOf(value); rt != nil {
+			// Can't remove a field from a struct so only a map can be modified.
+			if rt.Kind() == reflect.Map {
+				rv := reflect.ValueOf(value)
+				rk := reflect.ValueOf(key)
+				if rv.MapIndex(rk).IsValid() {
+					rv.SetMapIndex(rk, reflect.Value{})
+					changed = true
+				}
+			}
+		}
+	}
+	return
 }

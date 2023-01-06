@@ -30,6 +30,7 @@ var (
 	in     = &op{prec: 3, code: 'i', name: "in", cnt: 2}
 	empty  = &op{prec: 3, code: 'e', name: "empty", cnt: 2}
 	rx     = &op{prec: 0, code: '~', name: "=~", cnt: 2}
+	has    = &op{prec: 3, code: 'h', name: "has", cnt: 2}
 
 	opMap = map[string]*op{
 		eq.name:     eq,
@@ -47,6 +48,7 @@ var (
 		divide.name: divide,
 		in.name:     in,
 		empty.name:  empty,
+		has.name:    has,
 		rx.name:     rx,
 	}
 )
@@ -498,6 +500,11 @@ func (s *Script) Eval(stack any, data any) any {
 					case map[string]any:
 						sstack[i] = boo == (len(tl) == 0)
 					}
+				}
+			case has.code:
+				sstack[i] = false
+				if boo, ok := right.(bool); ok {
+					sstack[i] = boo == (left != nil)
 				}
 			case rx.code:
 				sstack[i] = false

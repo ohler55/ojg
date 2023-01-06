@@ -59,6 +59,9 @@ func TestEquation(t *testing.T) {
 	eq = jp.Empty(jp.ConstList([]any{int64(1)}), jp.ConstBool(true))
 	tt.Equal(t, "([1] empty true)", eq.String())
 
+	eq = jp.Has(jp.ConstList([]any{int64(1)}), jp.ConstBool(true))
+	tt.Equal(t, "([1] has true)", eq.String())
+
 	eq = jp.Regex(jp.ConstString("abc"), jp.ConstRegex(regexp.MustCompile("a.c")))
 	tt.Equal(t, "('abc' =~ /a.c/)", eq.String())
 }
