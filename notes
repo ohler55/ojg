@@ -1,13 +1,5 @@
 
 
-- future enhancements
- - jp.Modify(data, func(element any) (newElement any, changed bool)) any
-
- - jp.Script
-  - add has or exists operator (different than empty)
-
-
-
 - parse
  - add discover option to find JSON or SEN in a string or file
   - 3 states

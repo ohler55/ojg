@@ -111,49 +111,54 @@ done:
 		switch tf := f.(type) {
 		case Child:
 			var has bool
+			key := string(tf)
 			switch tv := prev.(type) {
 			case map[string]any:
-				if int(fi) == len(wx)-1 { // last one
-					if nv, changed := modifier(tv[string(tf)]); changed {
-						tv[string(tf)] = nv
-						if one && changed {
-							break done
+				if v, has = tv[key]; has {
+					if int(fi) == len(wx)-1 { // last one
+						if nv, changed := modifier(v); changed {
+							tv[key] = nv
+							if one && changed {
+								break done
+							}
 						}
-					}
-				} else if v, has = tv[string(tf)]; has {
-					switch v.(type) {
-					case map[string]any, []any, gen.Object, gen.Array:
-						stack = append(stack, v)
-					default:
-						kind := reflect.Invalid
-						if rt := reflect.TypeOf(v); rt != nil {
-							kind = rt.Kind()
-						}
-						switch kind {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+					} else {
+						switch v.(type) {
+						case map[string]any, []any, gen.Object, gen.Array:
 							stack = append(stack, v)
+						default:
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								stack = append(stack, v)
+							}
 						}
 					}
 				}
 			case gen.Object:
-				if int(fi) == len(wx)-1 { // last one
-					if nv, changed := modifier(tv[string(tf)]); changed {
-						tv[string(tf)] = nv.(gen.Node)
-						if one && changed {
-							break done
+				if v, has = tv[key]; has {
+					if int(fi) == len(wx)-1 { // last one
+						if nv, changed := modifier(v); changed {
+							tv[key] = nv.(gen.Node)
+							if one && changed {
+								break done
+							}
 						}
-					}
-				} else if v, has = tv[string(tf)]; has {
-					switch v.(type) {
-					case gen.Object, gen.Array:
-						stack = append(stack, v)
+					} else {
+						switch v.(type) {
+						case gen.Object, gen.Array:
+							stack = append(stack, v)
+						}
 					}
 				}
 			default:
-				if v, has = wx.reflectGetChild(tv, string(tf)); has {
+				if v, has = wx.reflectGetChild(tv, key); has {
 					if int(fi) == len(wx)-1 { // last one
 						if nv, changed := modifier(v); changed {
-							wx.reflectSetChild(tv, string(tf), nv)
+							wx.reflectSetChild(tv, key, nv)
 							if one && changed {
 								break done
 							}
@@ -403,40 +408,44 @@ done:
 					var has bool
 					switch tv := prev.(type) {
 					case map[string]any:
-						if int(fi) == len(wx)-1 { // last one
-							if nv, changed := modifier(tv[tu]); changed {
-								tv[tu] = nv
-								if one && changed {
-									break done
+						if v, has = tv[tu]; has {
+							if int(fi) == len(wx)-1 { // last one
+								if nv, changed := modifier(v); changed {
+									tv[tu] = nv
+									if one && changed {
+										break done
+									}
 								}
-							}
-						} else if v, has = tv[tu]; has {
-							switch v.(type) {
-							case map[string]any, []any, gen.Object, gen.Array:
-								stack = append(stack, v)
-							default:
-								kind := reflect.Invalid
-								if rt := reflect.TypeOf(v); rt != nil {
-									kind = rt.Kind()
-								}
-								switch kind {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+							} else {
+								switch v.(type) {
+								case map[string]any, []any, gen.Object, gen.Array:
 									stack = append(stack, v)
+								default:
+									kind := reflect.Invalid
+									if rt := reflect.TypeOf(v); rt != nil {
+										kind = rt.Kind()
+									}
+									switch kind {
+									case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+										stack = append(stack, v)
+									}
 								}
 							}
 						}
 					case gen.Object:
-						if int(fi) == len(wx)-1 { // last one
-							if nv, changed := modifier(tv[tu]); changed {
-								tv[tu] = nv.(gen.Node)
-								if one && changed {
-									break done
+						if v, has = tv[tu]; has {
+							if int(fi) == len(wx)-1 { // last one
+								if nv, changed := modifier(v); changed {
+									tv[tu] = nv.(gen.Node)
+									if one && changed {
+										break done
+									}
 								}
-							}
-						} else if v, has = tv[tu]; has {
-							switch v.(type) {
-							case gen.Object, gen.Array:
-								stack = append(stack, v)
+							} else {
+								switch v.(type) {
+								case gen.Object, gen.Array:
+									stack = append(stack, v)
+								}
 							}
 						}
 					default:
@@ -787,6 +796,83 @@ done:
 				}
 			} else {
 				stack, _ = tf.Eval(stack, prev).([]any)
+			}
+		case Descent:
+			di, _ := stack[len(stack)-1].(fragIndex)
+			// first pass expands, second continues evaluation
+			if (di & descentFlag) == 0 {
+				switch tv := prev.(type) {
+				case map[string]any:
+					// Put prev back and slide fi.
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					for _, v = range tv {
+						switch v.(type) {
+						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+						case map[string]any, []any, gen.Object, gen.Array:
+							stack = append(stack, v)
+							stack = append(stack, fi|descentChildFlag)
+						default:
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								stack = append(stack, v)
+							}
+						}
+					}
+				case []any:
+					// Put prev back and slide fi.
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					for i := len(tv) - 1; 0 <= i; i-- {
+						v = tv[i]
+						switch v.(type) {
+						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+						case map[string]any, []any, gen.Object, gen.Array:
+							stack = append(stack, v)
+							stack = append(stack, fi|descentChildFlag)
+						default:
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								stack = append(stack, v)
+							}
+						}
+					}
+				case gen.Object:
+					// Put prev back and slide fi.
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					for _, v = range tv {
+						switch v.(type) {
+						case map[string]any, []any, gen.Object, gen.Array:
+							stack = append(stack, v)
+							stack = append(stack, fi|descentChildFlag)
+						}
+					}
+				case gen.Array:
+					// Put prev back and slide fi.
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					for i := len(tv) - 1; 0 <= i; i-- {
+						v = tv[i]
+						switch v.(type) {
+						case map[string]any, []any, gen.Object, gen.Array:
+							stack = append(stack, v)
+							stack = append(stack, fi|descentChildFlag)
+						}
+					}
+				}
+			} else {
+				stack = append(stack, prev)
 			}
 		case Root:
 			if int(fi) == len(wx)-1 { // last one

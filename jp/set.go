@@ -854,12 +854,21 @@ func (x Expr) reflectSetChild(data any, key string, v any) bool {
 			rt = rt.Elem()
 			rd = rd.Elem()
 		}
-		if rt.Kind() == reflect.Struct {
+		switch rt.Kind() {
+		case reflect.Struct:
 			rv := rd.FieldByNameFunc(func(k string) bool { return strings.EqualFold(k, key) })
 			vv := reflect.ValueOf(v)
 			vt := vv.Type()
 			if rv.CanSet() && vt.AssignableTo(rv.Type()) {
 				rv.Set(vv)
+				return true
+			}
+		case reflect.Map:
+			rk := reflect.ValueOf(key)
+			vv := reflect.ValueOf(v)
+			vt := vv.Type()
+			if vt.AssignableTo(rt.Elem()) {
+				rd.SetMapIndex(rk, vv)
 				return true
 			}
 		}

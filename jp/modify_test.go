@@ -6,6 +6,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/tt"
 )
@@ -86,4 +87,40 @@ func TestExprModifyEmpty(t *testing.T) {
 		return element, false
 	})
 	tt.NotNil(t, err)
+}
+
+func TestExprModifyDescent(t *testing.T) {
+	x := jp.MustParseString("$..key")
+	var data any
+	data = map[string]any{"a": []any{map[string]any{"key": 1}}}
+	result, err := x.Modify(data, func(_ any) (any, bool) {
+		return 4, true
+	})
+	tt.Nil(t, err)
+	tt.Equal(t, "{a: [{key: 4}]}", string(pw.Encode(result)))
+	tt.Equal(t, "{a: [{key: 4}]}", string(pw.Encode(data)))
+
+	data = gen.Object{"a": gen.Array{gen.Object{"key": gen.Int(1)}}}
+	result, err = x.Modify(data, func(_ any) (any, bool) {
+		return gen.Int(4), true
+	})
+	tt.Nil(t, err)
+	tt.Equal(t, "{a: [{key: 4}]}", string(pw.Encode(result)))
+	tt.Equal(t, "{a: [{key: 4}]}", string(pw.Encode(data)))
+
+	data = map[string]any{"a": []any{map[string]int{"key": 1}}}
+	result, err = x.Modify(data, func(_ any) (any, bool) {
+		return 4, true
+	})
+	tt.Nil(t, err)
+	tt.Equal(t, "{a: [{key: 4}]}", string(pw.Encode(result)))
+	tt.Equal(t, "{a: [{key: 4}]}", string(pw.Encode(data)))
+
+	data = map[string]any{"a": map[string]int{"key": 1}}
+	result, err = x.Modify(data, func(_ any) (any, bool) {
+		return 4, true
+	})
+	tt.Nil(t, err)
+	tt.Equal(t, "{a: {key: 4}}", string(pw.Encode(result)))
+	tt.Equal(t, "{a: {key: 4}}", string(pw.Encode(data)))
 }
