@@ -1177,13 +1177,19 @@ func (x Expr) reflectGetChild(data any, key string) (v any, has bool) {
 			rt = rt.Elem()
 			rd = rd.Elem()
 		}
-		if rt.Kind() != reflect.Struct {
-			return
-		}
-		rv := rd.FieldByNameFunc(func(k string) bool { return strings.EqualFold(k, key) })
-		if rv.IsValid() && rv.CanInterface() {
-			v = rv.Interface()
-			has = true
+		switch rt.Kind() {
+		case reflect.Struct:
+			rv := rd.FieldByNameFunc(func(k string) bool { return strings.EqualFold(k, key) })
+			if rv.IsValid() && rv.CanInterface() {
+				v = rv.Interface()
+				has = true
+			}
+		case reflect.Map:
+			rv := rd.MapIndex(reflect.ValueOf(key))
+			if rv.IsValid() && rv.CanInterface() {
+				v = rv.Interface()
+				has = true
+			}
 		}
 	}
 	return
