@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"unicode/utf8"
 
 	"github.com/ohler55/ojg/alt"
@@ -358,11 +357,12 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 				if digitMap[b] != numDigit {
 					break
 				}
-				p.num.I = p.num.I*10 + uint64(b-'0')
-				if math.MaxInt64 < p.num.I {
+				if gen.BigLimit <= p.num.I {
 					p.num.FillBig()
+					p.num.AddDigit(b)
 					break
 				}
+				p.num.I = p.num.I*10 + uint64(b-'0')
 			}
 			if digitMap[b] == numDigit {
 				off++
@@ -467,7 +467,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 				}
 				p.num.Frac = p.num.Frac*10 + uint64(b-'0')
 				p.num.Div *= 10.0
-				if math.MaxInt64 < p.num.Frac {
+				if gen.BigLimit <= p.num.Div {
 					p.num.FillBig()
 					break
 				}
