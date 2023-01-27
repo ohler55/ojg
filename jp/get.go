@@ -588,7 +588,7 @@ func (x Expr) Get(data any) (results []any) {
 			before := len(stack)
 			stack, _ = tf.Eval(stack, prev).([]any)
 			if int(fi) == len(x)-1 { // last one
-				for i := before; i < len(stack); i++ {
+				for i := len(stack) - 1; before <= i; i-- {
 					results = append(results, stack[i])
 				}
 				if before < len(stack) {
@@ -1152,7 +1152,7 @@ func (x Expr) First(data any) any {
 			stack, _ = tf.Eval(stack, prev).([]any)
 			if int(fi) == len(x)-1 { // last one
 				if before < len(stack) {
-					result := stack[before]
+					result := stack[len(stack)-1]
 					stack = stack[:before]
 					return result
 				}

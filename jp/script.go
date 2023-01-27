@@ -184,7 +184,7 @@ func (s *Script) Eval(stack any, data any) any {
 	}
 	sstack := make([]any, len(s.template))
 	var v any
-	for vi := 0; vi < dlen; vi++ {
+	for vi := dlen - 1; 0 <= vi; vi-- {
 		switch td := data.(type) {
 		case []any:
 			v = td[vi]

@@ -11,6 +11,7 @@ import (
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
+	"github.com/ohler55/ojg/pretty"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -695,4 +696,28 @@ func TestAncesterFilter(t *testing.T) {
 	x := jp.MustParseString(`$..subs[?(@.x == 'a')].y`)
 	result := x.Get(doc)
 	tt.Equal(t, []any{"c"}, result)
+}
+
+func TestGetFilterOrder(t *testing.T) {
+	jsondoc := `[
+			{
+				"id": "item1",
+				"type": "good"
+			},
+			{
+				"id": "item2",
+				"type": "good"
+			}
+		]`
+	store := oj.MustParseString(jsondoc)
+
+	x := jp.MustParseString(`$[?(@.type == 'good')]`)
+	result := x.Get(store)
+	tt.Equal(t, "[{id: item1 type: good} {id: item2 type: good}]", pretty.SEN(result))
+	tt.Equal(t, "{id: item1 type: good}", pretty.SEN(x.First(store)))
+
+	x = jp.MustParseString(`$[?(@.type == 'good')].id`)
+	result = x.Get(store)
+	tt.Equal(t, "[item1 item2]", pretty.SEN(result))
+	tt.Equal(t, "item1", pretty.SEN(x.First(store)))
 }
