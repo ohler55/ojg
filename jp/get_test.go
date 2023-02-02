@@ -721,3 +721,26 @@ func TestGetFilterOrder(t *testing.T) {
 	tt.Equal(t, "[item1 item2]", pretty.SEN(result))
 	tt.Equal(t, "item1", pretty.SEN(x.First(store)))
 }
+
+func TestGetWildReflectOrder(t *testing.T) {
+	type Element struct {
+		Value string
+	}
+	type Root struct {
+		Elements []Element
+	}
+	data := Root{
+		Elements: []Element{
+			{Value: "e1"},
+			{Value: "e2"},
+			{Value: "e3"},
+		},
+	}
+	path := jp.MustParseString("$.elements[*]")
+	tt.Equal(t, "[{value: e1} {value: e2} {value: e3}]", pretty.SEN(path.Get(data)))
+	tt.Equal(t, "{value: e1}", pretty.SEN(path.First(data)))
+
+	path = jp.MustParseString("$.elements[*].value")
+	tt.Equal(t, "[e1 e2 e3]", pretty.SEN(path.Get(data)))
+	tt.Equal(t, "e1", pretty.SEN(path.First(data)))
+}

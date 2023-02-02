@@ -203,10 +203,13 @@ func (x Expr) Get(data any) (results []any) {
 					}
 				}
 			default:
-				for _, v := range x.reflectGetWild(tv) {
-					if int(fi) == len(x)-1 { // last one
-						results = append(results, v)
-					} else {
+				got := x.reflectGetWild(tv)
+				if int(fi) == len(x)-1 { // last one
+					for i := len(got) - 1; 0 <= i; i-- {
+						results = append(results, got[i])
+					}
+				} else {
+					for _, v := range got {
 						switch v.(type) {
 						case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 							int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
