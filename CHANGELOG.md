@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.17.4] - unreleased
+## [1.17.4] - 2023-02-02
 ### Fixed
 - Fixed (preserve) order of JSONPath wildcard reflect elements.
 
