@@ -18,7 +18,7 @@ types.
 # Oj
 
 Package oj contains functions and types for parsing JSON as well as support
-for building building simple types. Included in the oj package are:
+for building simple types. Included in the oj package are:
 
 	Parser for parsing JSON strings and streams into simple types.
 
@@ -41,7 +41,7 @@ types are:
 	Time
 
 The collection types are Array and Object. All the types implement the Node
-interface which is relatively simple interface defined primarily to restrict
+interface which is a relatively simple interface defined primarily to restrict
 what can be in the collection types. The Node interface should not be used to
 define new generic types.
 
@@ -71,7 +71,7 @@ The alt package contains functions and types for altering values. It includes fu
 # Asm
 
 The asm package provides a means of building JSON or the corresponding simple
-types bases on a JSON script represented by the Plan type.
+types based on a JSON script represented by the Plan type.
 
 # Cmd oj
 
