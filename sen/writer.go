@@ -362,8 +362,23 @@ func appendObject(wr *Writer, n map[string]any, depth int) {
 	}
 	wr.buf = append(wr.buf, '{')
 	for k, m := range n {
-		if m == nil && wr.OmitNil {
-			continue
+		switch tm := m.(type) {
+		case nil:
+			if wr.OmitNil {
+				continue
+			}
+		case string:
+			if wr.OmitEmpty && len(tm) == 0 {
+				continue
+			}
+		case map[string]any:
+			if wr.OmitEmpty && len(tm) == 0 {
+				continue
+			}
+		case []any:
+			if wr.OmitEmpty && len(tm) == 0 {
+				continue
+			}
 		}
 		wr.buf = append(wr.buf, cs...)
 		wr.buf = wr.appendString(wr.buf, k, !wr.HTMLUnsafe)
@@ -409,8 +424,23 @@ func appendSortObject(wr *Writer, n map[string]any, depth int) {
 	wr.buf = append(wr.buf, '{')
 	for _, k := range keys {
 		m := n[k]
-		if m == nil && wr.OmitNil {
-			continue
+		switch tm := m.(type) {
+		case nil:
+			if wr.OmitNil {
+				continue
+			}
+		case string:
+			if wr.OmitEmpty && len(tm) == 0 {
+				continue
+			}
+		case map[string]any:
+			if wr.OmitEmpty && len(tm) == 0 {
+				continue
+			}
+		case []any:
+			if wr.OmitEmpty && len(tm) == 0 {
+				continue
+			}
 		}
 		wr.buf = append(wr.buf, cs...)
 		wr.buf = wr.appendString(wr.buf, k, !wr.HTMLUnsafe)
@@ -423,7 +453,7 @@ func appendSortObject(wr *Writer, n map[string]any, depth int) {
 
 func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 	if si == nil {
-		si = getSinfo(rv.Interface())
+		si = getSinfo(rv.Interface(), wr.OmitEmpty)
 	}
 	d2 := depth + 1
 	fields := si.fields[wr.findex]
@@ -658,7 +688,7 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, si *sinfo) {
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendStruct(rm, d2, si)
 		case reflect.Slice, reflect.Array:
-			if wr.OmitNil && rm.Len() == 0 {
+			if (wr.OmitNil || wr.OmitEmpty) && rm.Len() == 0 {
 				continue
 			}
 			wr.buf = append(wr.buf, cs...)
@@ -666,13 +696,21 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, si *sinfo) {
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendSlice(rm, d2, si)
 		case reflect.Map:
-			if wr.OmitNil && rm.Len() == 0 {
+			if (wr.OmitNil || wr.OmitEmpty) && rm.Len() == 0 {
 				continue
 			}
 			wr.buf = append(wr.buf, cs...)
 			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendMap(rm, d2, si)
+		case reflect.String:
+			if (wr.OmitEmpty) && rm.Len() == 0 {
+				continue
+			}
+			wr.buf = append(wr.buf, cs...)
+			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = append(wr.buf, ": "...)
+			wr.appendSEN(rm.Interface(), d2)
 		default:
 			wr.buf = append(wr.buf, cs...)
 			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)

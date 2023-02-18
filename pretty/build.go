@@ -75,8 +75,10 @@ func (w *Writer) build(data any) (n *node) {
 	case gen.Array:
 		n = w.buildGenArrayNode(td)
 	case map[string]any:
+		// TBD OmitNil and OmitEmpty
 		n = w.buildMapNode(td)
 	case gen.Object:
+		// TBD OmitNil and OmitEmpty
 		n = w.buildGenMapNode(td)
 	default:
 		if simp, _ := data.(alt.Simplifier); simp != nil {
@@ -95,6 +97,7 @@ func (w *Writer) buildNull() *node {
 		buf:  []byte(nullStr),
 		size: 4,
 		kind: strNode,
+		skip: w.OmitNil,
 	}
 	if w.Color {
 		n.buf = append(append([]byte(w.NullColor), n.buf...), w.NoColor...)
@@ -165,7 +168,11 @@ func (w *Writer) buildStringNode(v string) (n *node) {
 	} else {
 		w.buf = ojg.AppendJSONString(w.buf, v, !w.HTMLUnsafe)
 	}
-	n = &node{size: len(w.buf), kind: strNode}
+	n = &node{
+		size: len(w.buf),
+		kind: strNode,
+		skip: w.OmitEmpty && len(v) == 0,
+	}
 	n.buf = make([]byte, len(w.buf))
 	copy(n.buf, w.buf)
 	if w.Color {
@@ -191,6 +198,7 @@ func (w *Writer) buildArrayNode(v []any) (n *node) {
 		members: make([]*node, 0, len(v)),
 		size:    2, // []
 		kind:    arrayNode,
+		skip:    (w.OmitNil || w.OmitEmpty) && len(v) == 0,
 	}
 	for i, m := range v {
 		mn := w.build(m)
@@ -214,6 +222,7 @@ func (w *Writer) buildGenArrayNode(v gen.Array) (n *node) {
 		members: make([]*node, 0, len(v)),
 		size:    2, // []
 		kind:    arrayNode,
+		skip:    (w.OmitNil || w.OmitEmpty) && len(v) == 0,
 	}
 	for i, m := range v {
 		mn := w.build(m)
@@ -245,6 +254,9 @@ func (w *Writer) buildMapNode(v map[string]any) (n *node) {
 	sort.Strings(keys)
 	for _, k := range keys {
 		mn := w.build(v[k])
+		if mn.skip {
+			continue
+		}
 		n.members = append(n.members, mn)
 		// build key
 		w.buf = w.buf[:0]
@@ -269,6 +281,8 @@ func (w *Writer) buildMapNode(v map[string]any) (n *node) {
 			mn.key = append(append([]byte(w.KeyColor), mn.key...), w.NoColor...)
 		}
 	}
+	n.skip = (w.OmitNil || w.OmitEmpty) && len(n.members) == 0
+
 	return
 }
 
@@ -285,6 +299,9 @@ func (w *Writer) buildGenMapNode(v gen.Object) (n *node) {
 	sort.Strings(keys)
 	for _, k := range keys {
 		mn := w.build(v[k])
+		if mn.skip {
+			continue
+		}
 		n.members = append(n.members, mn)
 		// build key
 		w.buf = w.buf[:0]
@@ -309,5 +326,7 @@ func (w *Writer) buildGenMapNode(v gen.Object) (n *node) {
 			mn.key = append(append([]byte(w.KeyColor), mn.key...), w.NoColor...)
 		}
 	}
+	n.skip = (w.OmitNil || w.OmitEmpty) && len(n.members) == 0
+
 	return
 }
