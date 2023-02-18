@@ -7,6 +7,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.17.5] - unreleased
 ### Added
 - Added alt.Filter, a variation on alt.Match.
+- Added the OmitEmpty option to oj, sen, pretty, and alt packages.
 
 ## [1.17.4] - 2023-02-02
 ### Fixed

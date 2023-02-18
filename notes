@@ -1,5 +1,12 @@
 
 
+- OmitEmpty
+ - oj
+  - setup field in sinfo.go
+ - sen
+ - pretty
+ - alt
+
 - parse
  - add discover option to find JSON or SEN in a string or file
   - 3 states

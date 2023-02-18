@@ -108,6 +108,7 @@ var (
 		CreateKey:    "",
 		FullTypePath: false,
 		OmitNil:      false,
+		OmitEmpty:    false,
 		UseTags:      true,
 		KeyExact:     true,
 		NestEmbed:    false,
@@ -146,6 +147,10 @@ type Options struct {
 
 	// OmitNil skips the writing of nil values in an object.
 	OmitNil bool
+
+	// OmitEmpty skips the writing of empty string, slices, maps, and structs
+	// although maps with all empty members will not be skipped.
+	OmitEmpty bool
 
 	// InitSize is the initial buffer size.
 	InitSize int

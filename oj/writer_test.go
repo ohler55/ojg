@@ -141,6 +141,13 @@ func TestString(t *testing.T) {
 			options: &oj.Options{OmitNil: false, Sort: true, Tab: true}},
 		{value: map[string]any{"n": nil}, expect: "{\"n\":null}"},
 		{value: map[string]any{"n": nil}, expect: "{}", options: &oj.Options{OmitNil: true, Sort: false, Indent: 2}},
+		{value: map[string]any{"x": "", "y": []any{}, "z": map[string]any{}}, expect: "{}", options: &oj.Options{OmitEmpty: true}},
+		{value: map[string]any{"x": "", "y": []any{}, "z": map[string]any{}}, expect: "{}",
+			options: &oj.Options{OmitEmpty: true, Sort: true}},
+		{value: map[string]any{"x": "", "y": []any{}, "z": map[string]any{}}, expect: "{}",
+			options: &oj.Options{OmitEmpty: true, Indent: 2}},
+		{value: map[string]any{"x": "", "y": []any{}, "z": map[string]any{}}, expect: "{}",
+			options: &oj.Options{OmitEmpty: true, Sort: true, Indent: 2}},
 
 		{value: gen.Object{"t": gen.True, "x": nil}, expect: "{\"t\":true}", options: &oj.Options{OmitNil: true}},
 		{value: gen.Object{"t": gen.True}, expect: "{\n  \"t\": true\n}", options: &oj.Options{Indent: 2}},
@@ -618,6 +625,63 @@ func TestWriteStructSkip(t *testing.T) {
 	tt.Equal(t, `{"a":1}`, s)
 }
 
+func TestWriteStructSkipEmpty(t *testing.T) {
+	opt := oj.Options{Indent: 2, OmitNil: true, OmitEmpty: true}
+	type empty struct {
+		X string
+		Y []any
+		Z map[string]any
+	}
+	s := oj.JSON(&empty{X: "", Y: []any{}, Z: map[string]any{}}, &opt)
+	tt.Equal(t, `{}`, s)
+}
+
+func TestWriteStructSkipReflectEmpty(t *testing.T) {
+	opt := oj.Options{Indent: 2, OmitNil: true, OmitEmpty: true}
+	type empty struct {
+		X string
+		Y []int
+		Z map[string]int
+	}
+	s := oj.JSON(&empty{X: "", Y: []int{}, Z: map[string]int{}}, &opt)
+	tt.Equal(t, `{}`, s)
+
+	opt.Indent = 0
+	s = oj.JSON(&empty{X: "", Y: []int{}, Z: map[string]int{}}, &opt)
+	tt.Equal(t, `{}`, s)
+}
+
+func TestWriteReflectMapEmpty(t *testing.T) {
+	opt := oj.Options{Indent: 2, OmitNil: true, OmitEmpty: true}
+
+	type str string
+	s := oj.JSON(map[string]str{"x": str("abc")}, &opt)
+	tt.Equal(t, `{
+  "x": "abc"
+}`, s)
+	s = oj.JSON(map[string]str{"x": str("")}, &opt)
+	tt.Equal(t, `{}`, s)
+
+	s = oj.JSON(map[string][]int{"x": {}}, &opt)
+	tt.Equal(t, `{}`, s)
+
+	s = oj.JSON(map[string]map[string]int{"x": {}}, &opt)
+	tt.Equal(t, `{}`, s)
+
+	opt.Indent = 0
+	s = oj.JSON(map[string]str{"x": str("abc")}, &opt)
+	tt.Equal(t, `{"x":"abc"}`, s)
+
+	s = oj.JSON(map[string]str{"x": str("")}, &opt)
+	tt.Equal(t, `{}`, s)
+
+	s = oj.JSON(map[string][]int{"x": {}}, &opt)
+	tt.Equal(t, `{}`, s)
+
+	s = oj.JSON(map[string]map[string]int{"x": {}}, &opt)
+	tt.Equal(t, `{}`, s)
+}
+
 func TestWriteSliceWide(t *testing.T) {
 	type Nest struct {
 		Dig []Nest
@@ -686,6 +750,10 @@ func TestWriteSliceMap(t *testing.T) {
 	opt.Indent = 0
 	s = oj.JSON(m, &opt)
 	tt.Equal(t, `{"maps":[{"x":1,"y":2}]}`, s)
+
+	opt.OmitEmpty = true
+	s = oj.JSON(&SMS{}, &opt)
+	tt.Equal(t, `{}`, s)
 }
 
 func TestWriteMapWide(t *testing.T) {
@@ -708,6 +776,10 @@ func TestWriteMapWide(t *testing.T) {
 	opt.Indent = 0
 	s = oj.JSON(n, &opt)
 	tt.Equal(t, 234, len(s))
+
+	opt.OmitEmpty = true
+	s = oj.JSON(&Nest{}, &opt)
+	tt.Equal(t, "{}", s)
 }
 
 func TestWriteMapSlice(t *testing.T) {
@@ -977,4 +1049,11 @@ func BenchmarkMarshalMap(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
+}
+
+func TestWriteDev(t *testing.T) {
+	data := map[string]any{"x": "", "y": []any{}, "z": map[string]any{}}
+	opt := oj.Options{OmitEmpty: true}
+	s := oj.JSON(data, &opt)
+	tt.Equal(t, `{}`, s)
 }
