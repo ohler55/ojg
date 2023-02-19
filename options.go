@@ -148,8 +148,9 @@ type Options struct {
 	// OmitNil skips the writing of nil values in an object.
 	OmitNil bool
 
-	// OmitEmpty skips the writing of empty string, slices, maps, and structs
-	// although maps with all empty members will not be skipped.
+	// OmitEmpty skips the writing of empty string, slices, maps, and zero
+	// values although maps with all empty members will not be skipped on
+	// writing but will be with alt.Decompose and alter.
 	OmitEmpty bool
 
 	// InitSize is the initial buffer size.

@@ -29,7 +29,8 @@ type sinfo struct {
 var (
 	structMut sync.Mutex
 	// Keyed by the pointer to the type.
-	structMap = map[uintptr]*sinfo{}
+	structMap      = map[uintptr]*sinfo{}
+	structEmptyMap = map[uintptr]*sinfo{}
 )
 
 func (si *sinfo) getFields(o *ojg.Options) []*finfo {
@@ -47,44 +48,51 @@ func (si *sinfo) getFields(o *ojg.Options) []*finfo {
 
 // getSinfo gets the struct information for the provided value. This is use
 // internally and is not expected to be used externally.
-func getSinfo(v any) (st *sinfo) {
+func getSinfo(v any, omitEmpty bool) (st *sinfo) {
 	x := (*[2]uintptr)(unsafe.Pointer(&v))[0]
+	sm := structMap
+	if omitEmpty {
+		sm = structEmptyMap
+	}
 	structMut.Lock()
 	defer structMut.Unlock()
-	if st = structMap[x]; st != nil {
+	if st = sm[x]; st != nil {
 		return
 	}
-	return buildStruct(reflect.TypeOf(v), x)
+	return buildStruct(reflect.TypeOf(v), x, omitEmpty)
 }
 
-func buildStruct(rt reflect.Type, x uintptr) (st *sinfo) {
+func buildStruct(rt reflect.Type, x uintptr, omitEmpty bool) (st *sinfo) {
 	st = &sinfo{rt: rt}
-	structMap[x] = st
-
+	if omitEmpty {
+		structEmptyMap[x] = st
+	} else {
+		structMap[x] = st
+	}
 	for u := byte(0); u < maskSet; u++ {
 		if (maskByTag&u) != 0 && (maskExact&u) != 0 { // reuse previously built
 			st.fields[u] = st.fields[u & ^maskExact]
 			continue
 		}
-		st.fields[u] = buildFields(st.rt, u)
+		st.fields[u] = buildFields(st.rt, u, omitEmpty)
 	}
 	return
 }
 
-func buildFields(rt reflect.Type, u byte) (fa []*finfo) {
+func buildFields(rt reflect.Type, u byte, omitEmpty bool) (fa []*finfo) {
 	switch {
 	case (maskByTag & u) != 0:
-		fa = buildTagFields(rt, (maskNested&u) == 0)
+		fa = buildTagFields(rt, (maskNested&u) == 0, omitEmpty)
 	case (maskExact & u) != 0:
-		fa = buildExactFields(rt, (maskNested&u) == 0)
+		fa = buildExactFields(rt, (maskNested&u) == 0, omitEmpty)
 	default:
-		fa = buildLowFields(rt, (maskNested&u) == 0)
+		fa = buildLowFields(rt, (maskNested&u) == 0, omitEmpty)
 	}
 	sort.Slice(fa, func(i, j int) bool { return 0 > strings.Compare(fa[i].key, fa[j].key) })
 	return
 }
 
-func buildTagFields(rt reflect.Type, nested bool) (fa []*finfo) {
+func buildTagFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
@@ -94,13 +102,13 @@ func buildTagFields(rt reflect.Type, nested bool) (fa []*finfo) {
 		var fx byte
 		if f.Anonymous && nested {
 			if f.Type.Kind() == reflect.Ptr {
-				for _, fi := range buildTagFields(f.Type.Elem(), nested) {
+				for _, fi := range buildTagFields(f.Type.Elem(), nested, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
 					fi.value = fi.ivalue
 					fa = append(fa, fi)
 				}
 			} else {
-				for _, fi := range buildTagFields(f.Type, nested) {
+				for _, fi := range buildTagFields(f.Type, nested, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
 					fi.offset += f.Offset
 					fa = append(fa, fi)
@@ -137,52 +145,53 @@ func buildTagFields(rt reflect.Type, nested bool) (fa []*finfo) {
 	return
 }
 
-func buildExactFields(rt reflect.Type, nested bool) (fa []*finfo) {
+func buildExactFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
 		if len(name) == 0 || 'a' <= name[0] {
 			continue
 		}
-		var fx byte
-		if f.Anonymous && nested {
+		switch {
+		case f.Anonymous && nested:
 			if f.Type.Kind() == reflect.Ptr {
-				for _, fi := range buildExactFields(f.Type.Elem(), nested) {
+				for _, fi := range buildExactFields(f.Type.Elem(), nested, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
 					fi.value = fi.ivalue
 					fa = append(fa, fi)
 				}
 			} else {
-				for _, fi := range buildExactFields(f.Type, nested) {
+				for _, fi := range buildExactFields(f.Type, nested, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
 					fi.offset += f.Offset
 					fa = append(fa, fi)
 				}
 			}
-		} else {
-			fa = append(fa, newFinfo(&f, f.Name, fx))
+		case omitEmpty:
+			fa = append(fa, newFinfo(&f, f.Name, omitMask))
+		default:
+			fa = append(fa, newFinfo(&f, f.Name, 0x00))
 		}
 	}
 	return
 }
 
-func buildLowFields(rt reflect.Type, nested bool) (fa []*finfo) {
+func buildLowFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
 		if len(name) == 0 || 'a' <= name[0] {
 			continue
 		}
-		var fx byte
 		if f.Anonymous && nested {
 			if f.Type.Kind() == reflect.Ptr {
-				for _, fi := range buildLowFields(f.Type.Elem(), nested) {
+				for _, fi := range buildLowFields(f.Type.Elem(), nested, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
 					fi.value = fi.ivalue
 					fa = append(fa, fi)
 				}
 			} else {
-				for _, fi := range buildLowFields(f.Type, nested) {
+				for _, fi := range buildLowFields(f.Type, nested, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
 					fi.offset += f.Offset
 					fa = append(fa, fi)
@@ -196,7 +205,11 @@ func buildLowFields(rt reflect.Type, nested bool) (fa []*finfo) {
 			} else {
 				name = bytes.ToLower(name)
 			}
-			fa = append(fa, newFinfo(&f, string(name), fx))
+			if omitEmpty {
+				fa = append(fa, newFinfo(&f, string(name), omitMask))
+			} else {
+				fa = append(fa, newFinfo(&f, string(name), 0x00))
+			}
 		}
 	}
 	return

@@ -80,6 +80,7 @@ func Generify(v any, options ...*Options) (n gen.Node) {
 			o := gen.Object{}
 			for k, m := range tv {
 				g := Generify(m, opt)
+				// TBD OmitEmpty
 				if g != nil || !opt.OmitNil {
 					o[k] = g
 				}
@@ -159,11 +160,13 @@ func GenAlter(v any, options ...*Options) (n gen.Node) {
 		case map[string]any:
 			o := *(*gen.Object)(unsafe.Pointer(&tv))
 			var delKeys []string
+			// TBD OmitEmpty
 			for k, m := range tv {
 				g := GenAlter(m, opt)
 				if g != nil || !opt.OmitNil {
 					o[k] = g
 				} else {
+					// TBD delete in place
 					delKeys = append(delKeys, k)
 				}
 			}
@@ -228,6 +231,7 @@ func reflectGenStruct(rv reflect.Value, opt *Options) gen.Node {
 		}
 		name[0] |= 0x20
 		g := Generify(rv.Field(i).Interface(), opt)
+		// TBD OmitEmpty
 		if g != nil || !opt.OmitNil {
 			obj[string(name)] = g
 		}
@@ -253,6 +257,7 @@ func reflectGenMap(rv reflect.Value, opt *Options) gen.Node {
 	for it.Next() {
 		k := it.Key().Interface()
 		g := Generify(it.Value().Interface(), opt)
+		// TBD OmitEmpty
 		if g != nil || !opt.OmitNil {
 			if ks, ok := k.(string); ok {
 				obj[ks] = g

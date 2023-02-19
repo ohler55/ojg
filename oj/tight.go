@@ -214,18 +214,10 @@ func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
 			if !fv.IsValid() {
 				fv = reflect.ValueOf(v)
 			}
-			if wr.OmitEmpty && fv.Len() == 0 {
-				wr.buf = wr.buf[:len(wr.buf)-fi.keyLen()]
-				continue
-			}
 			wr.tightSlice(fv, fi.elem)
 		case reflect.Map:
 			if !fv.IsValid() {
 				fv = reflect.ValueOf(v)
-			}
-			if wr.OmitEmpty && fv.Len() == 0 {
-				wr.buf = wr.buf[:len(wr.buf)-fi.keyLen()]
-				continue
 			}
 			wr.tightMap(fv, fi.elem)
 		default:

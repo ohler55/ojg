@@ -52,11 +52,7 @@ func decompose(v any, opt *Options) any {
 	case map[string]any:
 		o := map[string]any{}
 		for k, m := range tv {
-			if mv := decompose(m, opt); mv != nil || !opt.OmitNil {
-				if mv != nil || !opt.OmitNil {
-					o[k] = mv
-				}
-			}
+			condMapSet(o, k, decompose(m, opt), opt)
 		}
 		v = o
 	case []byte:
@@ -116,11 +112,40 @@ func alter(v any, opt *Options) any {
 		}
 	case map[string]any:
 		for k, m := range tv {
-			if mv := alter(m, opt); mv != nil || !opt.OmitNil {
-				if mv != nil || !opt.OmitNil {
-					tv[k] = mv
+			mv := alter(m, opt)
+			switch tmv := mv.(type) {
+			case nil:
+				if opt.OmitNil || opt.OmitEmpty {
+					delete(tv, k)
+					continue
+				}
+			case string:
+				if opt.OmitEmpty && len(tmv) == 0 {
+					delete(tv, k)
+					continue
+				}
+			case []any:
+				if opt.OmitEmpty && len(tmv) == 0 {
+					delete(tv, k)
+					continue
+				}
+			case map[string]any:
+				if opt.OmitEmpty && len(tmv) == 0 {
+					delete(tv, k)
+					continue
+				}
+			case bool:
+				if opt.OmitEmpty && !tmv {
+					delete(tv, k)
+					continue
+				}
+			case int64:
+				if opt.OmitEmpty && tmv == 0 {
+					delete(tv, k)
+					continue
 				}
 			}
+			tv[k] = mv
 		}
 	case []byte:
 		switch opt.BytesAs {
@@ -182,7 +207,7 @@ func reflectStruct(rv reflect.Value, val any, opt *Options) any {
 		return reflectEmbed(rv, val, opt)
 	}
 	obj := map[string]any{}
-	si := getSinfo(val)
+	si := getSinfo(val, opt.OmitEmpty)
 	t := si.rt
 	if 0 < len(opt.CreateKey) {
 		if opt.FullTypePath {
@@ -201,12 +226,8 @@ func reflectStruct(rv reflect.Value, val any, opt *Options) any {
 				} else {
 					v = decompose(v, opt)
 				}
-				if !opt.OmitNil || v != nil {
-					obj[fi.key] = v
-				}
-			} else if !opt.OmitNil || v != nil {
-				obj[fi.key] = v
 			}
+			condMapSet(obj, fi.key, v, opt)
 		}
 	}
 	return obj
@@ -214,7 +235,7 @@ func reflectStruct(rv reflect.Value, val any, opt *Options) any {
 
 func reflectEmbed(rv reflect.Value, val any, opt *Options) any {
 	obj := map[string]any{}
-	si := getSinfo(val)
+	si := getSinfo(val, opt.OmitEmpty)
 	t := si.rt
 	if 0 < len(opt.CreateKey) {
 		if opt.FullTypePath {
@@ -232,12 +253,8 @@ func reflectEmbed(rv reflect.Value, val any, opt *Options) any {
 				} else {
 					v = decompose(v, opt)
 				}
-				if !opt.OmitNil || v != nil {
-					obj[fi.key] = v
-				}
-			} else if !opt.OmitNil || v != nil {
-				obj[fi.key] = v
 			}
+			condMapSet(obj, fi.key, v, opt)
 		}
 	}
 	return obj
@@ -265,13 +282,14 @@ func reflectMap(rv reflect.Value, opt *Options) any {
 		if !isNil(vv) {
 			g = decompose(vv.Interface(), opt)
 		}
-		if g != nil || !opt.OmitNil {
-			if ks, ok := k.(string); ok {
-				obj[ks] = g
-			} else {
-				obj[fmt.Sprint(k)] = g
-			}
+		var (
+			ks string
+			ok bool
+		)
+		if ks, ok = k.(string); !ok {
+			ks = fmt.Sprint(k)
 		}
+		condMapSet(obj, ks, g, opt)
 	}
 	return obj
 }
@@ -291,4 +309,34 @@ func isNil(rv reflect.Value) bool {
 		return rv.IsNil()
 	}
 	return false
+}
+
+func condMapSet(m map[string]any, key string, value any, opt *Options) {
+	switch tv := value.(type) {
+	case nil:
+		if opt.OmitNil || opt.OmitEmpty {
+			return
+		}
+	case string:
+		if opt.OmitEmpty && len(tv) == 0 {
+			return
+		}
+	case []any:
+		if opt.OmitEmpty && len(tv) == 0 {
+			return
+		}
+	case map[string]any:
+		if opt.OmitEmpty && len(tv) == 0 {
+			return
+		}
+	case bool:
+		if opt.OmitEmpty && !tv {
+			return
+		}
+	case int64:
+		if opt.OmitEmpty && tv == 0 {
+			return
+		}
+	}
+	m[key] = value
 }

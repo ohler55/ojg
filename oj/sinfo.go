@@ -27,7 +27,8 @@ type sinfo struct {
 var (
 	structMut sync.Mutex
 	// Keyed by the pointer to the type.
-	structMap = map[uintptr]*sinfo{}
+	structMap      = map[uintptr]*sinfo{}
+	structEmptyMap = map[uintptr]*sinfo{}
 )
 
 // Non-locking version used in field creation.
@@ -41,9 +42,13 @@ func getTypeStruct(rt reflect.Type, embedded, omitEmpty bool) (st *sinfo) {
 
 func getSinfo(v any, omitEmpty bool) (st *sinfo) {
 	x := (*[2]uintptr)(unsafe.Pointer(&v))[0]
+	sm := structMap
+	if omitEmpty {
+		sm = structEmptyMap
+	}
 	structMut.Lock()
 	defer structMut.Unlock()
-	if st = structMap[x]; st != nil {
+	if st = sm[x]; st != nil {
 		return
 	}
 	return buildStruct(reflect.TypeOf(v), x, false, omitEmpty)
@@ -51,8 +56,11 @@ func getSinfo(v any, omitEmpty bool) (st *sinfo) {
 
 func buildStruct(rt reflect.Type, x uintptr, embedded, omitEmpty bool) (st *sinfo) {
 	st = &sinfo{rt: rt}
-	structMap[x] = st
-
+	if omitEmpty {
+		structEmptyMap[x] = st
+	} else {
+		structMap[x] = st
+	}
 	for u := byte(0); u < maskMax; u++ {
 		if (maskByTag&u) != 0 && (maskExact&u) != 0 { // reuse previously built
 			st.fields[u] = st.fields[u & ^maskExact]
