@@ -55,11 +55,17 @@ func TestColor(t *testing.T) {
 			options: &sen.Options{OmitNil: true, Sort: true}},
 		{value: map[string]any{"t": true, "f": false}, expect: "s{x\n  kfxs:x bfalsex\n  ktxs:x btruex\ns}x",
 			options: &sen.Options{Sort: true, Indent: 2}},
+		{value: map[string]any{"x": "", "y": []any{}, "z": map[string]any{}}, expect: "s{xs}x",
+			options: &sen.Options{OmitEmpty: true}},
+		{value: map[string]any{"x": "", "y": []any{}, "z": map[string]any{}}, expect: "s{xs}x",
+			options: &sen.Options{OmitEmpty: true, Sort: true}},
+
 		{value: map[string]any{"t": true}, expect: "s{x\n  ktxs:x btruex\ns}x", options: &sen.Options{Indent: 2}},
 		{value: gen.Object{"t": gen.True, "x": nil}, expect: "s{xktxs:xbtruexs}x",
 			options: &sen.Options{OmitNil: true}},
 		{value: gen.Object{"t": gen.True, "x": nil}, expect: "s{xktxs:xbtruexs}x",
 			options: &sen.Options{OmitNil: true, Sort: true}},
+
 		{value: gen.Object{"t": gen.True}, expect: "s{x\n  ktxs:x btruex\ns}x", options: &sen.Options{Indent: 2}},
 		{value: gen.Object{"t": gen.True}, expect: "s{x\n  ktxs:x btruex\ns}x", options: &sen.Options{Indent: 2, Sort: true}},
 

@@ -146,6 +146,34 @@ func TestDecomposeEmbeddedStruct(t *testing.T) {
 	tt.Equal(t, map[string]any{"nest": map[string]any{"type": "silly", "val": 3}, "val": 0}, v)
 }
 
+func TestDecomposeStructEmpty(t *testing.T) {
+	type Empty struct {
+		A int
+		B bool
+		C string
+		D []any
+		E map[string]any
+	}
+	obj := &Empty{
+		A: 0,
+		B: false,
+		C: "",
+		D: []any{},
+		E: map[string]any{},
+	}
+	v := alt.Decompose(obj, &alt.Options{CreateKey: "", OmitNil: true, OmitEmpty: true})
+	tt.Equal(t, map[string]any{}, v)
+
+	v = alt.Decompose(obj, &alt.Options{CreateKey: "", Sort: true})
+	tt.Equal(t, map[string]any{
+		"a": 0,
+		"b": false,
+		"c": "",
+		"d": []any{},
+		"e": map[string]any{},
+	}, v)
+}
+
 func TestDecomposeNestedPtr(t *testing.T) {
 	type Inner struct {
 		X int
@@ -172,6 +200,13 @@ func TestDecomposeMap(t *testing.T) {
 	m2 := map[string]int{"1": 1, "2": 4, "3": 9}
 	v = alt.Decompose(m2)
 	tt.Equal(t, map[string]any{"1": 1, "2": 4, "3": 9}, v)
+}
+
+func TestDecomposeMapEmpty(t *testing.T) {
+	// remove empty and nil
+	m := map[string]any{"a": 0, "b": false, "c": map[string]any{"x": "", "y": []any{}, "z": nil}}
+	v := alt.Decompose(m, &ojg.Options{OmitNil: true, OmitEmpty: true})
+	tt.Equal(t, map[string]any{}, v)
 }
 
 func TestDecomposeArray(t *testing.T) {
@@ -269,6 +304,14 @@ func TestAlterMap(t *testing.T) {
 	m2 := map[string]int{"1": 1, "2": 4, "3": 9}
 	v = alt.Alter(m2)
 	tt.Equal(t, map[string]any{"1": 1, "2": 4, "3": 9}, v)
+}
+
+func TestAlterMapEmpty(t *testing.T) {
+	// remove empty and nil
+	m := map[string]any{"a": 0, "b": false, "c": map[string]any{"x": "", "y": []any{}, "z": nil}}
+	v := alt.Alter(m, &ojg.Options{OmitNil: true, OmitEmpty: true})
+	tt.Equal(t, map[string]any{}, v)
+	tt.Equal(t, map[string]any{}, m)
 }
 
 func TestAlterArray(t *testing.T) {

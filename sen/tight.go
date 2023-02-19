@@ -67,8 +67,23 @@ func tightObject(wr *Writer, n map[string]any, _ int) {
 	comma := false
 	wr.buf = append(wr.buf, '{')
 	for k, m := range n {
-		if m == nil && wr.OmitNil {
-			continue
+		switch tm := m.(type) {
+		case nil:
+			if wr.OmitNil {
+				continue
+			}
+		case string:
+			if wr.OmitEmpty && len(tm) == 0 {
+				continue
+			}
+		case map[string]any:
+			if wr.OmitEmpty && len(tm) == 0 {
+				continue
+			}
+		case []any:
+			if wr.OmitEmpty && len(tm) == 0 {
+				continue
+			}
 		}
 		wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, ':')
@@ -93,8 +108,23 @@ func tightSortObject(wr *Writer, n map[string]any, _ int) {
 	sort.Strings(keys)
 	for _, k := range keys {
 		m := n[k]
-		if m == nil && wr.OmitNil {
-			continue
+		switch tm := m.(type) {
+		case nil:
+			if wr.OmitNil {
+				continue
+			}
+		case string:
+			if wr.OmitEmpty && len(tm) == 0 {
+				continue
+			}
+		case map[string]any:
+			if wr.OmitEmpty && len(tm) == 0 {
+				continue
+			}
+		case []any:
+			if wr.OmitEmpty && len(tm) == 0 {
+				continue
+			}
 		}
 		wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, ':')
@@ -111,7 +141,7 @@ func tightSortObject(wr *Writer, n map[string]any, _ int) {
 
 func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
 	if si == nil {
-		si = getSinfo(rv.Interface())
+		si = getSinfo(rv.Interface(), wr.OmitEmpty)
 	}
 	fields := si.fields[wr.findex]
 	wr.buf = append(wr.buf, '{')
@@ -260,19 +290,26 @@ func (wr *Writer) tightMap(rv reflect.Value, si *sinfo) {
 			wr.buf = append(wr.buf, ':')
 			wr.tightStruct(rm, si)
 		case reflect.Slice, reflect.Array:
-			if wr.OmitNil && rm.Len() == 0 {
+			if (wr.OmitNil || wr.OmitEmpty) && rm.Len() == 0 {
 				continue
 			}
 			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
 			wr.tightSlice(rm, si)
 		case reflect.Map:
-			if wr.OmitNil && rm.Len() == 0 {
+			if (wr.OmitNil || wr.OmitEmpty) && rm.Len() == 0 {
 				continue
 			}
 			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
 			wr.tightMap(rm, si)
+		case reflect.String:
+			if (wr.OmitNil || wr.OmitEmpty) && rm.Len() == 0 {
+				continue
+			}
+			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = append(wr.buf, ':')
+			wr.appendSEN(rm.Interface(), 0)
 		default:
 			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')

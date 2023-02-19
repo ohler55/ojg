@@ -55,6 +55,11 @@ func TestColor(t *testing.T) {
 			options: &oj.Options{OmitNil: true}},
 		{value: map[string]any{"t": true, "x": nil}, expect: "s{xk\"t\"xs:xbtruexs}x",
 			options: &oj.Options{OmitNil: true, Sort: true}},
+		{value: map[string]any{"x": "", "y": []any{}, "z": map[string]any{}}, expect: "s{xs}x",
+			options: &oj.Options{OmitEmpty: true}},
+		{value: map[string]any{"x": "", "y": []any{}, "z": map[string]any{}}, expect: "s{xs}x",
+			options: &oj.Options{OmitEmpty: true, Sort: true}},
+
 		{value: map[string]any{"t": true, "f": false},
 			expect:  "s{x\n  k\"f\"xs:x bfalsexs,x\n  k\"t\"xs:x btruex\ns}x",
 			options: &oj.Options{Sort: true, Indent: 2}},

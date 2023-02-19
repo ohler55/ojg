@@ -462,3 +462,19 @@ func TestAlignMap(t *testing.T) {
   "short":      3
 }`, out)
 }
+
+func TestSENEmpty(t *testing.T) {
+	out := pretty.SEN(map[string]any{
+		"a": "",
+		"b": []any{},
+		"c": map[string]any{},
+	}, &ojg.Options{OmitEmpty: true})
+	tt.Equal(t, `{}`, out)
+
+	genOut := pretty.SEN(gen.Object{
+		"a": gen.String(""),
+		"b": gen.Array{},
+		"c": gen.Object{},
+	}, &ojg.Options{OmitEmpty: true})
+	tt.Equal(t, `{}`, genOut)
+}

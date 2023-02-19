@@ -1,5 +1,13 @@
 
 
+- OmitEmpty
+  - sinfo is shared so always using the omitEmpty will be a problem across calls/options
+   - maybe keep a omitEmpty version and a non-omitempty version
+ + oj
+ + sen
+ + pretty
+ + alt
+
 - parse
  - add discover option to find JSON or SEN in a string or file
   - 3 states

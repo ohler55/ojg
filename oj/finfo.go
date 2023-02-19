@@ -208,7 +208,7 @@ func newFinfo(f *reflect.StructField, key string, omitEmpty, asString, pretty, e
 			fi.iAppend = appendString
 		}
 	case reflect.Struct:
-		fi.elem = getTypeStruct(fi.rt, true)
+		fi.elem = getTypeStruct(fi.rt, true, omitEmpty)
 		fi.Append = appendJustKey
 		fi.iAppend = appendJustKey
 	case reflect.Ptr:
@@ -217,7 +217,7 @@ func newFinfo(f *reflect.StructField, key string, omitEmpty, asString, pretty, e
 			et = et.Elem()
 		}
 		if et.Kind() == reflect.Struct {
-			fi.elem = getTypeStruct(et, false)
+			fi.elem = getTypeStruct(et, false, omitEmpty)
 		}
 		if omitEmpty {
 			fi.Append = appendPtrNotEmpty
@@ -242,7 +242,7 @@ func newFinfo(f *reflect.StructField, key string, omitEmpty, asString, pretty, e
 			et = et.Elem()
 		}
 		if et.Kind() == reflect.Struct {
-			fi.elem = getTypeStruct(et, embedded)
+			fi.elem = getTypeStruct(et, embedded, omitEmpty)
 		}
 		if omitEmpty {
 			fi.Append = appendSliceNotEmpty

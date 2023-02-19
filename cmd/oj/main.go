@@ -37,6 +37,7 @@ var (
 	showConf       = false
 	safe           = false
 	mongo          = false
+	omit           = false
 
 	// If true wrap extracts with an array.
 	wrapExtract = false
@@ -66,6 +67,7 @@ func init() {
 	flag.BoolVar(&color, "c", color, "color")
 	flag.BoolVar(&sortKeys, "s", sortKeys, "sort")
 	flag.BoolVar(&bright, "b", bright, "bright color")
+	flag.BoolVar(&omit, "o", omit, "omit nil and empty")
 	flag.BoolVar(&wrapExtract, "w", wrapExtract, "wrap extracts in an array")
 	flag.BoolVar(&lazy, "z", lazy, "lazy mode accepts Simple Encoding Notation (quotes and commas mostly optional)")
 	flag.BoolVar(&senOut, "sen", senOut, "output in Simple Encoding Notation")
@@ -405,6 +407,10 @@ func writeJSON(v any) {
 		}
 		options = &o
 	}
+	if omit {
+		// Use alt.Alter to remove empty since it handles recursive removal.
+		v = alt.Alter(v, &ojg.Options{OmitNil: true, OmitEmpty: true})
+	}
 	if 0 < len(prettyOpt) {
 		parsePrettyOpt()
 	}
@@ -437,6 +443,10 @@ func writeSEN(v any) {
 		o.TimeFormat = time.RFC3339Nano
 		o.Sort = sortKeys
 		options = &o
+	}
+	if omit {
+		// Use alt.Alter to remove empty since it handles recursive removal.
+		v = alt.Alter(v, &ojg.Options{OmitNil: true, OmitEmpty: true})
 	}
 	if 0 < len(prettyOpt) {
 		parsePrettyOpt()

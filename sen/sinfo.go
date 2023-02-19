@@ -27,56 +27,64 @@ type sinfo struct {
 var (
 	structMut sync.Mutex
 	// Keyed by the pointer to the type.
-	structMap = map[uintptr]*sinfo{}
+	structMap      = map[uintptr]*sinfo{}
+	structEmptyMap = map[uintptr]*sinfo{}
 )
 
 // Non-locking version used in field creation.
-func getTypeStruct(rt reflect.Type, embedded bool) (st *sinfo) {
+func getTypeStruct(rt reflect.Type, embedded, omitEmpty bool) (st *sinfo) {
 	x := (*[2]uintptr)(unsafe.Pointer(&rt))[1]
 	if st = structMap[x]; st != nil {
 		return
 	}
-	return buildStruct(rt, x, embedded)
+	return buildStruct(rt, x, embedded, omitEmpty)
 }
 
-func getSinfo(v any) (st *sinfo) {
+func getSinfo(v any, omitEmpty bool) (st *sinfo) {
 	x := (*[2]uintptr)(unsafe.Pointer(&v))[0]
+	sm := structMap
+	if omitEmpty {
+		sm = structEmptyMap
+	}
 	structMut.Lock()
 	defer structMut.Unlock()
-	if st = structMap[x]; st != nil {
+	if st = sm[x]; st != nil {
 		return
 	}
-	return buildStruct(reflect.TypeOf(v), x, false)
+	return buildStruct(reflect.TypeOf(v), x, false, omitEmpty)
 }
 
-func buildStruct(rt reflect.Type, x uintptr, embedded bool) (st *sinfo) {
+func buildStruct(rt reflect.Type, x uintptr, embedded, omitEmpty bool) (st *sinfo) {
 	st = &sinfo{rt: rt}
-	structMap[x] = st
-
+	if omitEmpty {
+		structEmptyMap[x] = st
+	} else {
+		structMap[x] = st
+	}
 	for u := byte(0); u < maskMax; u++ {
 		if (maskByTag&u) != 0 && (maskExact&u) != 0 { // reuse previously built
 			st.fields[u] = st.fields[u & ^maskExact]
 			continue
 		}
-		st.fields[u] = buildFields(st.rt, u, embedded)
+		st.fields[u] = buildFields(st.rt, u, embedded, omitEmpty)
 	}
 	return
 }
 
-func buildFields(rt reflect.Type, u byte, embedded bool) (fa []*finfo) {
+func buildFields(rt reflect.Type, u byte, embedded, omitEmpty bool) (fa []*finfo) {
 	switch {
 	case (maskByTag & u) != 0:
-		fa = buildTagFields(rt, (maskNested&u) != 0, (maskPretty&u) != 0, embedded)
+		fa = buildTagFields(rt, (maskNested&u) != 0, (maskPretty&u) != 0, embedded, omitEmpty)
 	case (maskExact & u) != 0:
-		fa = buildExactFields(rt, (maskNested&u) != 0, (maskPretty&u) != 0, embedded)
+		fa = buildExactFields(rt, (maskNested&u) != 0, (maskPretty&u) != 0, embedded, omitEmpty)
 	default:
-		fa = buildLowFields(rt, (maskNested&u) != 0, (maskPretty&u) != 0, embedded)
+		fa = buildLowFields(rt, (maskNested&u) != 0, (maskPretty&u) != 0, embedded, omitEmpty)
 	}
 	sort.Slice(fa, func(i, j int) bool { return 0 > strings.Compare(fa[i].key, fa[j].key) })
 	return
 }
 
-func buildTagFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo) {
+func buildTagFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
@@ -85,20 +93,19 @@ func buildTagFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo) {
 		}
 		if f.Anonymous && !out {
 			if f.Type.Kind() == reflect.Ptr {
-				for _, fi := range buildTagFields(f.Type.Elem(), out, pretty, embedded) {
+				for _, fi := range buildTagFields(f.Type.Elem(), out, pretty, embedded, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
 					fi.Append = fi.iAppend
 					fa = append(fa, fi)
 				}
 			} else {
-				for _, fi := range buildTagFields(f.Type, out, pretty, embedded) {
+				for _, fi := range buildTagFields(f.Type, out, pretty, embedded, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
 					fi.offset += f.Offset
 					fa = append(fa, fi)
 				}
 			}
 		} else {
-			omitEmpty := false
 			asString := false
 			key := f.Name
 			if tag, ok := f.Tag.Lookup("json"); ok && 0 < len(tag) {
@@ -130,7 +137,7 @@ func buildTagFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo) {
 	return
 }
 
-func buildExactFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo) {
+func buildExactFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
@@ -139,26 +146,26 @@ func buildExactFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo)
 		}
 		if f.Anonymous && !out {
 			if f.Type.Kind() == reflect.Ptr {
-				for _, fi := range buildExactFields(f.Type.Elem(), out, pretty, embedded) {
+				for _, fi := range buildExactFields(f.Type.Elem(), out, pretty, embedded, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
 					fi.Append = fi.iAppend
 					fa = append(fa, fi)
 				}
 			} else {
-				for _, fi := range buildExactFields(f.Type, out, pretty, embedded) {
+				for _, fi := range buildExactFields(f.Type, out, pretty, embedded, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
 					fi.offset += f.Offset
 					fa = append(fa, fi)
 				}
 			}
 		} else {
-			fa = append(fa, newFinfo(&f, f.Name, false, false, pretty, embedded))
+			fa = append(fa, newFinfo(&f, f.Name, omitEmpty, false, pretty, embedded))
 		}
 	}
 	return
 }
 
-func buildLowFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo) {
+func buildLowFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
@@ -167,13 +174,13 @@ func buildLowFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo) {
 		}
 		if f.Anonymous && !out {
 			if f.Type.Kind() == reflect.Ptr {
-				for _, fi := range buildLowFields(f.Type.Elem(), out, pretty, embedded) {
+				for _, fi := range buildLowFields(f.Type.Elem(), out, pretty, embedded, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
 					fi.Append = fi.iAppend
 					fa = append(fa, fi)
 				}
 			} else {
-				for _, fi := range buildLowFields(f.Type, out, pretty, embedded) {
+				for _, fi := range buildLowFields(f.Type, out, pretty, embedded, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
 					fi.offset += f.Offset
 					fa = append(fa, fi)
@@ -187,7 +194,7 @@ func buildLowFields(rt reflect.Type, out, pretty, embedded bool) (fa []*finfo) {
 			} else {
 				name = bytes.ToLower(name)
 			}
-			fa = append(fa, newFinfo(&f, string(name), false, false, pretty, embedded))
+			fa = append(fa, newFinfo(&f, string(name), omitEmpty, false, pretty, embedded))
 		}
 	}
 	return

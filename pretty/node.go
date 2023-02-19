@@ -20,6 +20,7 @@ type node struct {
 	size    int
 	depth   int
 	kind    byte
+	skip    bool
 }
 
 type table struct {
