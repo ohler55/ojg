@@ -134,6 +134,15 @@ func TestString(t *testing.T) {
 		{value: map[string]any{"n": nil}, expect: "{n:null}"},
 		{value: map[string]any{"n": nil}, expect: "{\n}", options: &sen.Options{OmitNil: true, Sort: false, Indent: 2}},
 
+		{value: map[string]any{"x": "", "y": []any{}, "z": map[string]any{}}, expect: "{}",
+			options: &sen.Options{OmitEmpty: true}},
+		{value: map[string]any{"x": "", "y": []any{}, "z": map[string]any{}}, expect: "{}",
+			options: &sen.Options{OmitEmpty: true, Sort: true}},
+		{value: map[string]any{"x": "", "y": []any{}, "z": map[string]any{}}, expect: "{\n}",
+			options: &sen.Options{OmitEmpty: true, Indent: 2}},
+		{value: map[string]any{"x": "", "y": []any{}, "z": map[string]any{}}, expect: "{\n}",
+			options: &sen.Options{OmitEmpty: true, Sort: true, Indent: 2}},
+
 		{value: gen.Object{"t": gen.True, "x": nil}, expect: "{t:true}", options: &sen.Options{OmitNil: true}},
 		{value: gen.Object{"t": gen.True}, expect: "{\n  t: true\n}", options: &sen.Options{Indent: 2}},
 		{value: gen.Object{"t": gen.True}, expect: "{\n  t: true\n}", options: &sen.Options{Indent: 2, Sort: true}},
@@ -523,6 +532,10 @@ func TestWriteSliceMap(t *testing.T) {
 	opt.Indent = 0
 	s = sen.String(m, &opt)
 	tt.Equal(t, `{maps:[{x:1 y:2}]}`, s)
+
+	opt.OmitEmpty = true
+	s = sen.String(&SMS{}, &opt)
+	tt.Equal(t, `{}`, s)
 }
 
 func TestWriteMapWide(t *testing.T) {
@@ -545,6 +558,10 @@ func TestWriteMapWide(t *testing.T) {
 	opt.Indent = 0
 	s = sen.String(n, &opt)
 	tt.Equal(t, 168, len(s))
+
+	opt.OmitEmpty = true
+	s = sen.String(&Nest{}, &opt)
+	tt.Equal(t, "{}", s)
 }
 
 func TestWriteMapSlice(t *testing.T) {
@@ -593,6 +610,21 @@ func TestWriteMapMap(t *testing.T) {
 	opt.Indent = 0
 	s = sen.String(m, &opt)
 	tt.Equal(t, `{x:{y:3}}`, s)
+}
+
+func TestWriteMapString(t *testing.T) {
+	m := map[string]map[string]string{"x": {"y": "", "w": "xyz"}, "z": {}}
+	opt := sen.Options{Indent: 2, OmitNil: true, Sort: true, OmitEmpty: true}
+	s := sen.String(m, &opt)
+	tt.Equal(t, `{
+  x: {
+    w: xyz
+  }
+}`, s)
+
+	opt.Indent = 0
+	s = sen.String(m, &opt)
+	tt.Equal(t, `{x:{w:xyz}}`, s)
 }
 
 func TestWriteStructOther(t *testing.T) {

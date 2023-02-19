@@ -187,8 +187,23 @@ func (wr *Writer) colorObject(n map[string]any, depth int) {
 		sort.Strings(keys)
 		for _, k := range keys {
 			m := n[k]
-			if m == nil && wr.OmitNil {
-				continue
+			switch tm := m.(type) {
+			case nil:
+				if wr.OmitNil {
+					continue
+				}
+			case string:
+				if wr.OmitEmpty && len(tm) == 0 {
+					continue
+				}
+			case map[string]any:
+				if wr.OmitEmpty && len(tm) == 0 {
+					continue
+				}
+			case []any:
+				if wr.OmitEmpty && len(tm) == 0 {
+					continue
+				}
 			}
 			if first {
 				first = false
@@ -209,8 +224,23 @@ func (wr *Writer) colorObject(n map[string]any, depth int) {
 		}
 	} else {
 		for k, m := range n {
-			if m == nil && wr.OmitNil {
-				continue
+			switch tm := m.(type) {
+			case nil:
+				if wr.OmitNil {
+					continue
+				}
+			case string:
+				if wr.OmitEmpty && len(tm) == 0 {
+					continue
+				}
+			case map[string]any:
+				if wr.OmitEmpty && len(tm) == 0 {
+					continue
+				}
+			case []any:
+				if wr.OmitEmpty && len(tm) == 0 {
+					continue
+				}
 			}
 			if first {
 				first = false
