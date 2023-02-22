@@ -1,5 +1,12 @@
 
 
+- script.go
+ - add support for functions
+ - allow non-quoted union/segment names
+ - support [?foo
+ - support $ in script, seems to be broken
+ - support exists as well as has
+
 - parse
  - add discover option to find JSON or SEN in a string or file
   - 3 states

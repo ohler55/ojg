@@ -29,7 +29,8 @@ var (
 	get    = &op{prec: 0, code: 'G', name: "get", cnt: 1}
 	in     = &op{prec: 3, code: 'i', name: "in", cnt: 2}
 	empty  = &op{prec: 3, code: 'e', name: "empty", cnt: 2}
-	rx     = &op{prec: 0, code: '~', name: "=~", cnt: 2}
+	rx     = &op{prec: 0, code: '~', name: "~=", cnt: 2}
+	rxa    = &op{prec: 0, code: '~', name: "=~", cnt: 2}
 	has    = &op{prec: 3, code: 'h', name: "has", cnt: 2}
 
 	opMap = map[string]*op{
@@ -50,6 +51,7 @@ var (
 		empty.name:  empty,
 		has.name:    has,
 		rx.name:     rx,
+		rxa.name:    rx,
 	}
 )
 

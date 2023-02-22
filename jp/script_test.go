@@ -81,8 +81,8 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@.x in ['a' , 'b', 'c'])", expect: "(@.x in ['a','b','c'])"},
 		{src: "(@ empty true)", expect: "(@ empty true)"},
 		{src: "(@ has true)", expect: "(@ has true)"},
-		{src: "(@ =~ /abc/)", expect: "(@ =~ /abc/)"},
-		{src: "(@ =~ /a\\/c/)", expect: "(@ =~ /a\\/c/)"},
+		{src: "(@ =~ /abc/)", expect: "(@ ~= /abc/)"},
+		{src: "(@ ~= /a\\/c/)", expect: "(@ ~= /a\\/c/)"},
 
 		{src: "@.x == 4", err: "a script must start with a '('"},
 		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 8 in (@.x ++ 4)"},
@@ -207,9 +207,9 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@ has true)", value: 5},
 		{src: "(@ has false)", value: nil},
 
-		{src: "(@ =~ /a.c/)", value: "abc"},
+		{src: "(@ ~= /a.c/)", value: "abc"},
 		{src: "(@ =~ 'a.c')", value: "abc"},
-		{src: "(@ =~ 'a.c')", value: "abb", noMatch: true},
+		{src: "(@ ~= 'a.c')", value: "abb", noMatch: true},
 		{src: "(@ =~ 'a.c')", value: int64(3), noMatch: true},
 
 		{src: "(@.x || @.y)", value: map[string]any{"x": false, "y": false}, noMatch: true},
