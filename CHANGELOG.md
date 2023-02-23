@@ -4,6 +4,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.18.0] - unreleased
+### Added
+- Added support for root fragments in filters such as `$.data[?(@.id == $.key)]`.
+- TBD allow non-quoted union/segment names
+- TBD add support for functions
+- TBD support exists as well as has
+- TBD support [?foo
+
+
 ## [1.17.5] - 2023-02-19
 ### Added
 - Added alt.Filter, a variation on alt.Match.

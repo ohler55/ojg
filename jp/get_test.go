@@ -722,6 +722,21 @@ func TestGetFilterOrder(t *testing.T) {
 	tt.Equal(t, "item1", pretty.SEN(x.First(store)))
 }
 
+func TestGetFilterRoot(t *testing.T) {
+	jsondoc := `{
+  "key": "item2",
+  "data": [
+    {"id": "item1", "type": "good1"},
+    {"id": "item2", "type": "good2"}
+  ]
+}`
+	store := oj.MustParseString(jsondoc)
+
+	x := jp.MustParseString(`$.data[?(@.id == $.key)]`)
+	result := x.Get(store)
+	tt.Equal(t, "[{id: item2 type: good2}]", pretty.SEN(result))
+}
+
 func TestGetWildReflectOrder(t *testing.T) {
 	type Element struct {
 		Value string

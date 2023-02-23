@@ -56,6 +56,7 @@ func TestScriptBasicEval(t *testing.T) {
 
 func TestScriptParse(t *testing.T) {
 	for i, d := range []xdata{
+		{src: "($.x == 'abc')", expect: "($.x == 'abc')"},
 		{src: "(@.x == 'abc')", expect: "(@.x == 'abc')"},
 		{src: "(@.x<5)", expect: "(@.x < 5)"},
 		{src: "(@.x<123)", expect: "(@.x < 123)"},
@@ -257,6 +258,8 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@.x / @.y == null)", value: map[string]any{"x": 1.2, "y": "abc"}},
 		{src: "(@.x / @.y == null)", value: map[string]any{"x": 1, "y": "abc"}},
 		{src: "(@.x / @.y == null)", value: map[string]any{"x": 1, "y": 0}},
+
+		{src: "($.x + @.y == 0)", value: map[string]any{"x": 1, "y": 2}, noMatch: true},
 	} {
 		if testing.Verbose() {
 			if d.value == nil {

@@ -589,7 +589,7 @@ func (x Expr) Get(data any) (results []any) {
 			}
 		case *Filter:
 			before := len(stack)
-			stack, _ = tf.Eval(stack, prev).([]any)
+			stack, _ = tf.EvalWithRoot(stack, prev, data).([]any)
 			if int(fi) == len(x)-1 { // last one
 				for i := len(stack) - 1; before <= i; i-- {
 					results = append(results, stack[i])
@@ -1152,7 +1152,7 @@ func (x Expr) First(data any) any {
 			}
 		case *Filter:
 			before := len(stack)
-			stack, _ = tf.Eval(stack, prev).([]any)
+			stack, _ = tf.EvalWithRoot(stack, prev, data).([]any)
 			if int(fi) == len(x)-1 { // last one
 				if before < len(stack) {
 					result := stack[len(stack)-1]

@@ -829,7 +829,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 				}
 			}
 		case *Filter:
-			stack, _ = tf.Eval(stack, prev).([]any)
+			stack, _ = tf.EvalWithRoot(stack, prev, data).([]any)
 		case Root:
 			stack = append(stack, data)
 		case At, Bracket:

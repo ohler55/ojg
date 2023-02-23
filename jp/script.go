@@ -140,15 +140,20 @@ func (s *Script) String() string {
 func (s *Script) Match(data any) bool {
 	stack := []any{}
 	if node, ok := data.(gen.Node); ok {
-		stack, _ = s.Eval(stack, gen.Array{node}).([]any)
+		stack, _ = s.EvalWithRoot(stack, gen.Array{node}, data).([]any)
 	} else {
-		stack, _ = s.Eval(stack, []any{data}).([]any)
+		stack, _ = s.EvalWithRoot(stack, []any{data}, data).([]any)
 	}
 	return 0 < len(stack)
 }
 
 // Eval is primarily used by the Expr parser but is public for testing.
 func (s *Script) Eval(stack any, data any) any {
+	return s.EvalWithRoot(stack, data, nil)
+}
+
+// EvalWithRoot is primarily used by the Expr parser but is public for testing.
+func (s *Script) EvalWithRoot(stack any, data, root any) any {
 	// Checking the type each iteration adds 2.5% but allows code not to be
 	// duplicated and not to call a separate function. Using just one more
 	// function call for each iteration adds 6.5%.
@@ -207,8 +212,10 @@ func (s *Script) Eval(stack any, data any) any {
 				// most widely used. For that reason an optimization is
 				// included for that inclusion of a one level child lookup
 				// path.
-				if m, ok := v.(map[string]any); ok && len(x) == 2 {
-					if _, ok = x[0].(At); ok {
+
+				switch x[0].(type) {
+				case At:
+					if m, ok := v.(map[string]any); ok && len(x) == 2 {
 						var c Child
 						if c, ok = x[1].(Child); ok {
 							ev = m[string(c)]
@@ -216,6 +223,10 @@ func (s *Script) Eval(stack any, data any) any {
 							goto Normalize
 						}
 					}
+				case Root:
+					ev = x.First(root)
+					sstack[i] = ev
+					goto Normalize
 				}
 				ev = x.First(v)
 				sstack[i] = ev
