@@ -7,9 +7,9 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.18.0] - unreleased
 ### Added
 - Added support for root fragments in filters such as `$.data[?(@.id == $.key)]`.
-- TBD allow non-quoted union/segment names
+- "exists" is now an alias for the "has" filter operation.
+
 - TBD add support for functions
-- TBD support exists as well as has
 - TBD support [?foo
 
 

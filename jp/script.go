@@ -32,6 +32,7 @@ var (
 	rx     = &op{prec: 0, code: '~', name: "~=", cnt: 2}
 	rxa    = &op{prec: 0, code: '~', name: "=~", cnt: 2}
 	has    = &op{prec: 3, code: 'h', name: "has", cnt: 2}
+	exists = &op{prec: 3, code: 'x', name: "exists", cnt: 2}
 
 	opMap = map[string]*op{
 		eq.name:     eq,
@@ -50,6 +51,7 @@ var (
 		in.name:     in,
 		empty.name:  empty,
 		has.name:    has,
+		exists.name: exists,
 		rx.name:     rx,
 		rxa.name:    rx,
 	}
@@ -514,7 +516,7 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 						sstack[i] = boo == (len(tl) == 0)
 					}
 				}
-			case has.code:
+			case has.code, exists.code:
 				sstack[i] = false
 				if boo, ok := right.(bool); ok {
 					sstack[i] = boo == (left != nil)

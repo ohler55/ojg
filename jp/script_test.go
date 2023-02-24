@@ -82,6 +82,7 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@.x in ['a' , 'b', 'c'])", expect: "(@.x in ['a','b','c'])"},
 		{src: "(@ empty true)", expect: "(@ empty true)"},
 		{src: "(@ has true)", expect: "(@ has true)"},
+		{src: "(@ exists true)", expect: "(@ exists true)"},
 		{src: "(@ =~ /abc/)", expect: "(@ ~= /abc/)"},
 		{src: "(@ ~= /a\\/c/)", expect: "(@ ~= /a\\/c/)"},
 
@@ -207,6 +208,9 @@ func TestScriptEval(t *testing.T) {
 
 		{src: "(@ has true)", value: 5},
 		{src: "(@ has false)", value: nil},
+
+		{src: "(@ exists true)", value: 5},
+		{src: "(@ exists false)", value: nil},
 
 		{src: "(@ ~= /a.c/)", value: "abc"},
 		{src: "(@ =~ 'a.c')", value: "abc"},

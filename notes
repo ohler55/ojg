@@ -1,10 +1,10 @@
 
 
 - script.go
- - allow non-quoted union/segment names
  - add support for functions
  - support [?foo
- - support exists as well as has
+ - add a Nothing value for testing does not exist
+ - @.foo without a comparison indicates existance
 
 - parse
  - add discover option to find JSON or SEN in a string or file
