@@ -2,6 +2,20 @@
 
 - script.go
  - add support for functions
+  - equation should handle op as a function
+   - explicit check in equation append and buildScript (maybe)
+   - add func to build each
+  - script.go
+   - EvalWithRoot
+   - appendOp
+  - parse.go
+   - readEqValue
+  - functions
+   - length
+   - count
+   - match
+   - search
+
  - support [?foo
  - add a Nothing value for testing does not exist
  - @.foo without a comparison indicates existance

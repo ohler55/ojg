@@ -492,6 +492,9 @@ func (p *parser) readEquation() (eq *Equation) {
 	eq = &Equation{}
 
 	b := p.nextNonSpace()
+
+	// TBD length, count, match, search
+
 	if b == '!' {
 		eq.o = not
 		p.pos++

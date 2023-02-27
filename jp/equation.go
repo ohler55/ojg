@@ -151,14 +151,30 @@ func Has(left, right *Equation) *Equation {
 	return &Equation{o: has, left: left, right: right}
 }
 
+// Exists creates and returns an Equation for a exists operator.
+func Exists(left, right *Equation) *Equation {
+	return &Equation{o: exists, left: left, right: right}
+}
+
 // Regex creates and returns an Equation for a regex operator.
 func Regex(left, right *Equation) *Equation {
 	return &Equation{o: rx, left: left, right: right}
 }
 
+// Length creates and returns an Equation for a length function.
+func Length(x Expr) *Equation {
+	return &Equation{o: length, left: &Equation{result: x}}
+}
+
 // Append a fragment string representation of the fragment to the buffer
 // then returning the expanded buffer.
 func (e *Equation) Append(buf []byte, parens bool) []byte {
+	if e.o != nil {
+		switch e.o.code {
+		case not.code, length.code:
+			parens = false
+		}
+	}
 	if parens {
 		buf = append(buf, '(')
 	}
@@ -175,6 +191,11 @@ func (e *Equation) Append(buf []byte, parens bool) []byte {
 			if e.left != nil {
 				buf = e.appendValue(buf, e.left.result)
 			}
+		case length.code:
+			buf = append(buf, e.o.name...)
+			buf = append(buf, '(')
+			buf = e.appendValue(buf, e.left.result)
+			buf = append(buf, ')')
 		default:
 			if e.left != nil {
 				buf = e.left.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)
@@ -245,7 +266,7 @@ func (e *Equation) buildScript(stack []any) []any {
 		if e.left != nil {
 			stack = append(stack, e.left.result) // should always be an Expr
 		}
-	case not.code:
+	case not.code, length.code:
 		stack = append(stack, e.o)
 		if e.left == nil {
 			stack = append(stack, nil)

@@ -33,6 +33,8 @@ var (
 	rxa    = &op{prec: 0, code: '~', name: "=~", cnt: 2}
 	has    = &op{prec: 3, code: 'h', name: "has", cnt: 2}
 	exists = &op{prec: 3, code: 'x', name: "exists", cnt: 2}
+	// functions
+	length = &op{prec: 0, code: 'L', name: "length", cnt: 1}
 
 	opMap = map[string]*op{
 		eq.name:     eq,
@@ -54,6 +56,8 @@ var (
 		exists.name: exists,
 		rx.name:     rx,
 		rxa.name:    rx,
+
+		length.name: length,
 	}
 )
 

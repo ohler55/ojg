@@ -39,7 +39,7 @@ func TestEquation(t *testing.T) {
 	tt.Equal(t, "(true && false)", eq.String())
 
 	eq = jp.Not(jp.ConstBool(true))
-	tt.Equal(t, "(!true)", eq.String())
+	tt.Equal(t, "!true", eq.String())
 
 	eq = jp.Add(jp.ConstInt(3), jp.ConstInt(4))
 	tt.Equal(t, "(3 + 4)", eq.String())
@@ -62,8 +62,14 @@ func TestEquation(t *testing.T) {
 	eq = jp.Has(jp.ConstList([]any{int64(1)}), jp.ConstBool(true))
 	tt.Equal(t, "([1] has true)", eq.String())
 
+	eq = jp.Exists(jp.ConstList([]any{int64(1)}), jp.ConstBool(true))
+	tt.Equal(t, "([1] exists true)", eq.String())
+
 	eq = jp.Regex(jp.ConstString("abc"), jp.ConstRegex(regexp.MustCompile("a.c")))
 	tt.Equal(t, "('abc' ~= /a.c/)", eq.String())
+
+	eq = jp.Length(jp.A().C("xyz"))
+	tt.Equal(t, "length(@.xyz)", eq.String())
 }
 
 func TestEquationScript(t *testing.T) {
@@ -72,4 +78,9 @@ func TestEquationScript(t *testing.T) {
 
 	eq = jp.Not(nil)
 	tt.Equal(t, "(!null)", eq.Script().String())
+}
+
+func TestEquationDev(t *testing.T) {
+	eq := jp.Length(jp.A().C("xyz"))
+	tt.Equal(t, "length(@.xyz)", eq.String())
 }
