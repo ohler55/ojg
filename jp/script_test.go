@@ -85,6 +85,7 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@ exists true)", expect: "(@ exists true)"},
 		{src: "(@ =~ /abc/)", expect: "(@ ~= /abc/)"},
 		{src: "(@ ~= /a\\/c/)", expect: "(@ ~= /a\\/c/)"},
+		{src: "(length(@.xyz))", expect: "(length(@.xyz))"},
 
 		{src: "@.x == 4", err: "a script must start with a '('"},
 		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 8 in (@.x ++ 4)"},
@@ -316,3 +317,14 @@ func BenchmarkOjScriptDev(b *testing.B) {
 		stack, _ = s.Eval(stack, data).([]any)
 	}
 }
+
+/*
+func TestScriptDev(t *testing.T) {
+	src := "(3 == length(@.xyz))"
+	s, err := jp.NewScript(src)
+	tt.Nil(t, err, src)
+	fmt.Printf("*** %s\n", s.String())
+	result := s.Eval([]any{}, []any{map[string]any{"xyz": []any{1, 2, 3}}})
+	fmt.Printf("*** %v\n", result)
+}
+*/

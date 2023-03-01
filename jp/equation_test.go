@@ -79,8 +79,3 @@ func TestEquationScript(t *testing.T) {
 	eq = jp.Not(nil)
 	tt.Equal(t, "(!null)", eq.Script().String())
 }
-
-func TestEquationDev(t *testing.T) {
-	eq := jp.Length(jp.A().C("xyz"))
-	tt.Equal(t, "length(@.xyz)", eq.String())
-}

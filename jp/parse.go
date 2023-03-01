@@ -492,10 +492,20 @@ func (p *parser) readEquation() (eq *Equation) {
 	eq = &Equation{}
 
 	b := p.nextNonSpace()
-
-	// TBD length, count, match, search
-
-	if b == '!' {
+	switch b {
+	case 'l':
+		if bytes.HasPrefix(p.buf[p.pos:], []byte("length(")) {
+			p.pos += 7
+			eq.o = length
+			eq.left = p.readEqValue()
+			b := p.nextNonSpace()
+			if b != ')' {
+				p.raise("not terminated")
+			}
+			p.pos++
+			return
+		}
+	case '!':
 		eq.o = not
 		p.pos++
 		eq.left = p.readEqValue()
@@ -506,6 +516,8 @@ func (p *parser) readEquation() (eq *Equation) {
 		p.pos++
 		return
 	}
+	// TBD length, count, match, search
+
 	eq.left = p.readEqValue()
 	eq.o = p.readEqOp()
 	eq.right = p.readEqValue()

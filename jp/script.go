@@ -114,8 +114,10 @@ func (s *Script) Append(buf []byte) []byte {
 			if o == nil {
 				continue
 			}
-			var left any
-			var right any
+			var (
+				left  any
+				right any
+			)
 			if 1 < len(bstack)-i {
 				left = bstack[i+1]
 			}
@@ -539,6 +541,18 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 				case *regexp.Regexp:
 					sstack[i] = tr.MatchString(ls)
 				}
+			case length.code:
+				fmt.Printf("*** length eval %T %v\n", left, left)
+				sstack[i] = nil
+				switch tl := left.(type) {
+				case string:
+					sstack[i] = int64(len(tl))
+				case []any:
+					sstack[i] = int64(len(tl))
+				case map[string]any:
+					sstack[i] = int64(len(tl))
+				}
+				fmt.Printf("*** length  stack %T %v\n", sstack[0], sstack[0])
 			}
 			if i+int(o.cnt)+1 <= len(sstack) {
 				copy(sstack[i+1:], sstack[i+int(o.cnt)+1:])
@@ -591,6 +605,11 @@ func (s *Script) appendOp(o *op, left, right any) (pb *precBuf) {
 	case not.code:
 		pb.buf = append(pb.buf, o.name...)
 		pb.buf = s.appendValue(pb.buf, left, o.prec)
+	case length.code:
+		pb.buf = append(pb.buf, o.name...)
+		pb.buf = append(pb.buf, '(')
+		pb.buf = s.appendValue(pb.buf, left, o.prec)
+		pb.buf = append(pb.buf, ')')
 	default:
 		pb.buf = s.appendValue(pb.buf, left, o.prec)
 		pb.buf = append(pb.buf, ' ')
