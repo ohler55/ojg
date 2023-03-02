@@ -542,7 +542,6 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 					sstack[i] = tr.MatchString(ls)
 				}
 			case length.code:
-				fmt.Printf("*** length eval %T %v\n", left, left)
 				sstack[i] = nil
 				switch tl := left.(type) {
 				case string:
@@ -552,7 +551,6 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 				case map[string]any:
 					sstack[i] = int64(len(tl))
 				}
-				fmt.Printf("*** length  stack %T %v\n", sstack[0], sstack[0])
 			}
 			if i+int(o.cnt)+1 <= len(sstack) {
 				copy(sstack[i+1:], sstack[i+int(o.cnt)+1:])

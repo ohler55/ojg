@@ -492,19 +492,8 @@ func (p *parser) readEquation() (eq *Equation) {
 	eq = &Equation{}
 
 	b := p.nextNonSpace()
+	// TBD length, count, match, search
 	switch b {
-	case 'l':
-		if bytes.HasPrefix(p.buf[p.pos:], []byte("length(")) {
-			p.pos += 7
-			eq.o = length
-			eq.left = p.readEqValue()
-			b := p.nextNonSpace()
-			if b != ')' {
-				p.raise("not terminated")
-			}
-			p.pos++
-			return
-		}
 	case '!':
 		eq.o = not
 		p.pos++
@@ -515,12 +504,13 @@ func (p *parser) readEquation() (eq *Equation) {
 		}
 		p.pos++
 		return
+	case 'l':
+		p.readFunc(length, eq)
+	default:
+		eq.left = p.readEqValue()
+		eq.o = p.readEqOp()
+		eq.right = p.readEqValue()
 	}
-	// TBD length, count, match, search
-
-	eq.left = p.readEqValue()
-	eq.o = p.readEqOp()
-	eq.right = p.readEqValue()
 	for {
 		b = p.nextNonSpace()
 		if b == ')' {
@@ -572,10 +562,28 @@ func (p *parser) readEqValue() (eq *Equation) {
 		p.pos++
 		rx := p.readRegex()
 		eq = &Equation{result: rx}
+	case 'l': // TBD also c for count, s for search, and m for match
+		eq = &Equation{}
+		p.readFunc(length, eq)
 	default:
 		p.raise("expected a value")
 	}
 	return
+}
+
+func (p *parser) readFunc(o *op, eq *Equation) {
+	if bytes.HasPrefix(p.buf[p.pos:], []byte(o.name)) && p.buf[p.pos+len(o.name)] == '(' {
+		eq.o = o
+		p.pos += len(o.name) + 1
+		eq.left = p.readEqValue()
+		b := p.nextNonSpace()
+		if b != ')' {
+			p.raise("not terminated")
+		}
+		p.pos++
+		return
+	}
+	p.raise("expected a %s function", o.name)
 }
 
 func (p *parser) readEqToken(token []byte) {

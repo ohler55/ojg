@@ -86,6 +86,10 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@ =~ /abc/)", expect: "(@ ~= /abc/)"},
 		{src: "(@ ~= /a\\/c/)", expect: "(@ ~= /a\\/c/)"},
 		{src: "(length(@.xyz))", expect: "(length(@.xyz))"},
+		{src: "(3 == length(@.xyz))", expect: "(3 == length(@.xyz))"},
+		{src: "(length(@.xyz) == 3)", expect: "(length(@.xyz) == 3)"},
+		{src: "(length(@.xyz == 3)", err: "not terminated at 15 in (length(@.xyz == 3)"},
+		{src: "(leng(@.xyz) == 3)", err: "expected a length function at 2 in (leng(@.xyz) == 3)"},
 
 		{src: "@.x == 4", err: "a script must start with a '('"},
 		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 8 in (@.x ++ 4)"},
@@ -265,6 +269,11 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@.x / @.y == null)", value: map[string]any{"x": 1, "y": 0}},
 
 		{src: "($.x + @.y == 0)", value: map[string]any{"x": 1, "y": 2}, noMatch: true},
+
+		{src: "(length(@.x) == 3)", value: map[string]any{"x": []any{1, 2, 3}}},
+		{src: "(length(@.x) == 2)", value: map[string]any{"x": []any{1, 2, 3}}, noMatch: true},
+		{src: "(length(@.x) == 3)", value: map[string]any{"x": "abc"}},
+		{src: "(length(@.x) == 3)", value: map[string]any{"x": map[string]any{"a": 1, "b": 2, "c": 3}}},
 	} {
 		if testing.Verbose() {
 			if d.value == nil {
@@ -318,8 +327,8 @@ func BenchmarkOjScriptDev(b *testing.B) {
 	}
 }
 
-/*
-func TestScriptDev(t *testing.T) {
+func xTestScriptDev(t *testing.T) {
+	//src := "(length(@.xyz) == 3)"
 	src := "(3 == length(@.xyz))"
 	s, err := jp.NewScript(src)
 	tt.Nil(t, err, src)
@@ -327,4 +336,3 @@ func TestScriptDev(t *testing.T) {
 	result := s.Eval([]any{}, []any{map[string]any{"xyz": []any{1, 2, 3}}})
 	fmt.Printf("*** %v\n", result)
 }
-*/
