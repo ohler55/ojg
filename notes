@@ -2,19 +2,20 @@
 
 - script.go
  - add support for functions
-  - equation should handle op as a function
-   - explicit check in equation append and buildScript (maybe)
-   - add func to build each
-  - script.go
-   - EvalWithRoot
-   - appendOp
-  - parse.go
-   - readEqValue
   - functions
-   - length
-   - count
-   - match
-   - search
+   + length
+   + count
+   - match - regexp with ^ and & (entirety)
+   - search - any substring so as is
+  - Nothing special value
+  - API to add functions
+   - RegisterUnaryFunction(name string, get bool, f func(arg any) any)
+   - RegisterBinaryFunction(name string, getLeft, getRight bool, f func(left, right any) any)
+    - handle in EvalWithRoot
+    - get indicates using get and not first in eval of args
+    - no override of existing
+    - convert to lower case and validate
+    - how to indicate with stack
 
  - support [?foo
  - add a Nothing value for testing does not exist

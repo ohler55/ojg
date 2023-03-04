@@ -35,6 +35,7 @@ var (
 	exists = &op{prec: 3, code: 'x', name: "exists", cnt: 2}
 	// functions
 	length = &op{prec: 0, code: 'L', name: "length", cnt: 1}
+	count  = &op{prec: 0, code: 'C', name: "count", cnt: 1, getLeft: true}
 
 	opMap = map[string]*op{
 		eq.name:     eq,
@@ -58,14 +59,17 @@ var (
 		rxa.name:    rx,
 
 		length.name: length,
+		count.name:  count,
 	}
 )
 
 type op struct {
-	name string
-	prec byte
-	cnt  byte
-	code byte
+	name     string
+	prec     byte
+	cnt      byte
+	code     byte
+	getLeft  bool
+	getRight bool
 }
 
 type precBuf struct {
@@ -211,7 +215,19 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 		// resolve all expr members
 		for i, ev := range sstack {
 			// Normalize into nil, bool, int64, float64, and string early so
-			// that each comparison doen't have to.
+			// that each comparison doesn't have to.
+			if 0 < i {
+				if o, ok := sstack[i-1].(*op); ok && o.getLeft {
+					var x Expr
+					if x, ok = ev.(Expr); ok {
+						ev = x.Get(v)
+					} else {
+						ev = nil
+					}
+					sstack[i] = ev
+				}
+				// TBD one more for getRight
+			}
 		Normalize:
 			switch x := ev.(type) {
 			case Expr:
@@ -551,6 +567,11 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 				case map[string]any:
 					sstack[i] = int64(len(tl))
 				}
+			case count.code:
+				sstack[i] = nil
+				if nl, ok := left.([]any); ok {
+					sstack[i] = int64(len(nl))
+				}
 			}
 			if i+int(o.cnt)+1 <= len(sstack) {
 				copy(sstack[i+1:], sstack[i+int(o.cnt)+1:])
@@ -603,7 +624,7 @@ func (s *Script) appendOp(o *op, left, right any) (pb *precBuf) {
 	case not.code:
 		pb.buf = append(pb.buf, o.name...)
 		pb.buf = s.appendValue(pb.buf, left, o.prec)
-	case length.code:
+	case length.code, count.code:
 		pb.buf = append(pb.buf, o.name...)
 		pb.buf = append(pb.buf, '(')
 		pb.buf = s.appendValue(pb.buf, left, o.prec)

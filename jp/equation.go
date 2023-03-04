@@ -166,12 +166,17 @@ func Length(x Expr) *Equation {
 	return &Equation{o: length, left: &Equation{result: x}}
 }
 
+// Count creates and returns an Equation for a count function.
+func Count(x Expr) *Equation {
+	return &Equation{o: count, left: &Equation{result: x}}
+}
+
 // Append a fragment string representation of the fragment to the buffer
 // then returning the expanded buffer.
 func (e *Equation) Append(buf []byte, parens bool) []byte {
 	if e.o != nil {
 		switch e.o.code {
-		case not.code, length.code:
+		case not.code, length.code, count.code:
 			parens = false
 		}
 	}
@@ -191,7 +196,7 @@ func (e *Equation) Append(buf []byte, parens bool) []byte {
 			if e.left != nil {
 				buf = e.appendValue(buf, e.left.result)
 			}
-		case length.code:
+		case length.code, count.code:
 			buf = append(buf, e.o.name...)
 			buf = append(buf, '(')
 			buf = e.appendValue(buf, e.left.result)
@@ -266,7 +271,7 @@ func (e *Equation) buildScript(stack []any) []any {
 		if e.left != nil {
 			stack = append(stack, e.left.result) // should always be an Expr
 		}
-	case not.code, length.code:
+	case not.code, length.code, count.code:
 		stack = append(stack, e.o)
 		if e.left == nil {
 			stack = append(stack, nil)

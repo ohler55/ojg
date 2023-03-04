@@ -70,6 +70,9 @@ func TestEquation(t *testing.T) {
 
 	eq = jp.Length(jp.A().C("xyz"))
 	tt.Equal(t, "length(@.xyz)", eq.String())
+
+	eq = jp.Count(jp.A().C("xyz"))
+	tt.Equal(t, "count(@.xyz)", eq.String())
 }
 
 func TestEquationScript(t *testing.T) {

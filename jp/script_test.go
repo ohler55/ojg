@@ -85,11 +85,19 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@ exists true)", expect: "(@ exists true)"},
 		{src: "(@ =~ /abc/)", expect: "(@ ~= /abc/)"},
 		{src: "(@ ~= /a\\/c/)", expect: "(@ ~= /a\\/c/)"},
+
 		{src: "(length(@.xyz))", expect: "(length(@.xyz))"},
 		{src: "(3 == length(@.xyz))", expect: "(3 == length(@.xyz))"},
 		{src: "(length(@.xyz) == 3)", expect: "(length(@.xyz) == 3)"},
 		{src: "(length(@.xyz == 3)", err: "not terminated at 15 in (length(@.xyz == 3)"},
 		{src: "(leng(@.xyz) == 3)", err: "expected a length function at 2 in (leng(@.xyz) == 3)"},
+
+		{src: "(count(@.xyz))", expect: "(count(@.xyz))"},
+		{src: "(3 == count(@.xyz))", expect: "(3 == count(@.xyz))"},
+		{src: "(count(@.xyz) == 3)", expect: "(count(@.xyz) == 3)"},
+		{src: "(count(7) == 3)", expect: "(count(7) == 3)"},
+		{src: "(count(@.xyz == 3)", err: "not terminated at 14 in (count(@.xyz == 3)"},
+		{src: "(coun(@.xyz) == 3)", err: "expected a count function at 2 in (coun(@.xyz) == 3)"},
 
 		{src: "@.x == 4", err: "a script must start with a '('"},
 		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 8 in (@.x ++ 4)"},
@@ -274,6 +282,12 @@ func TestScriptEval(t *testing.T) {
 		{src: "(length(@.x) == 2)", value: map[string]any{"x": []any{1, 2, 3}}, noMatch: true},
 		{src: "(length(@.x) == 3)", value: map[string]any{"x": "abc"}},
 		{src: "(length(@.x) == 3)", value: map[string]any{"x": map[string]any{"a": 1, "b": 2, "c": 3}}},
+
+		{src: "(count(@.x[*]) == 3)", value: map[string]any{"x": []any{1, 2, 3}}},
+		{src: "(count(7) == 3)", value: map[string]any{"x": []any{1, 2, 3}}, noMatch: true},
+		{src: "(count(@.x[*]) == 2)", value: map[string]any{"x": []any{1, 2, 3}}, noMatch: true},
+		{src: "(count(@.x) == 1)", value: map[string]any{"x": "abc"}},
+		{src: "(count(@.x.*) == 3)", value: map[string]any{"x": map[string]any{"a": 1, "b": 2, "c": 3}}},
 	} {
 		if testing.Verbose() {
 			if d.value == nil {
@@ -328,8 +342,9 @@ func BenchmarkOjScriptDev(b *testing.B) {
 }
 
 func xTestScriptDev(t *testing.T) {
-	//src := "(length(@.xyz) == 3)"
-	src := "(3 == length(@.xyz))"
+	src := "(count(@.xyz[*]) == 3)"
+	// src := "(count(7) == 3)"
+	// src := "(length(@.xyz) == 3)"
 	s, err := jp.NewScript(src)
 	tt.Nil(t, err, src)
 	fmt.Printf("*** %s\n", s.String())

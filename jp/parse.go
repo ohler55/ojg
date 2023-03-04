@@ -506,6 +506,8 @@ func (p *parser) readEquation() (eq *Equation) {
 		return
 	case 'l':
 		p.readFunc(length, eq)
+	case 'c':
+		p.readFunc(count, eq)
 	default:
 		eq.left = p.readEqValue()
 		eq.o = p.readEqOp()
@@ -562,10 +564,14 @@ func (p *parser) readEqValue() (eq *Equation) {
 		p.pos++
 		rx := p.readRegex()
 		eq = &Equation{result: rx}
-	case 'l': // TBD also c for count, s for search, and m for match
+	case 'l':
 		eq = &Equation{}
 		p.readFunc(length, eq)
+	case 'c':
+		eq = &Equation{}
+		p.readFunc(count, eq)
 	default:
+		// TBD also c for count, s for search, and m for match
 		p.raise("expected a value")
 	}
 	return
