@@ -36,6 +36,8 @@ var (
 	// functions
 	length = &op{prec: 0, code: 'L', name: "length", cnt: 1}
 	count  = &op{prec: 0, code: 'C', name: "count", cnt: 1, getLeft: true}
+	match  = &op{prec: 0, code: 'M', name: "match", cnt: 2}
+	search = &op{prec: 0, code: 'S', name: "search", cnt: 2}
 
 	opMap = map[string]*op{
 		eq.name:     eq,
@@ -60,6 +62,8 @@ var (
 
 		length.name: length,
 		count.name:  count,
+		match.name:  match,
+		search.name: search,
 	}
 )
 
@@ -214,8 +218,6 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 		copy(sstack, s.template)
 		// resolve all expr members
 		for i, ev := range sstack {
-			// Normalize into nil, bool, int64, float64, and string early so
-			// that each comparison doesn't have to.
 			if 0 < i {
 				if o, ok := sstack[i-1].(*op); ok && o.getLeft {
 					var x Expr
@@ -226,8 +228,10 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 					}
 					sstack[i] = ev
 				}
-				// TBD one more for getRight
+				// TBD one more for getRight once function extentions are supported
 			}
+			// Normalize into nil, bool, int64, float64, and string early so
+			// that each comparison doesn't have to.
 		Normalize:
 			switch x := ev.(type) {
 			case Expr:
@@ -236,7 +240,6 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 				// most widely used. For that reason an optimization is
 				// included for that inclusion of a one level child lookup
 				// path.
-
 				switch x[0].(type) {
 				case At:
 					if m, ok := v.(map[string]any); ok && len(x) == 2 {
@@ -572,6 +575,30 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 				if nl, ok := left.([]any); ok {
 					sstack[i] = int64(len(nl))
 				}
+			case match.code:
+				sstack[i] = nil
+				if ls, ok := left.(string); ok {
+					if rs, _ := right.(string); 0 < len(rs) {
+						if rs[0] != '^' {
+							rs = "^" + rs
+						}
+						if rs[len(rs)-1] != '$' {
+							rs += "$"
+						}
+						if rx, err := regexp.Compile(rs); err == nil {
+							sstack[i] = rx.MatchString(ls)
+						}
+					}
+				}
+			case search.code:
+				sstack[i] = nil
+				if ls, ok := left.(string); ok {
+					if rs, _ := right.(string); 0 < len(rs) {
+						if rx, err := regexp.Compile(rs); err == nil {
+							sstack[i] = rx.MatchString(ls)
+						}
+					}
+				}
 			}
 			if i+int(o.cnt)+1 <= len(sstack) {
 				copy(sstack[i+1:], sstack[i+int(o.cnt)+1:])
@@ -628,6 +655,13 @@ func (s *Script) appendOp(o *op, left, right any) (pb *precBuf) {
 		pb.buf = append(pb.buf, o.name...)
 		pb.buf = append(pb.buf, '(')
 		pb.buf = s.appendValue(pb.buf, left, o.prec)
+		pb.buf = append(pb.buf, ')')
+	case match.code, search.code:
+		pb.buf = append(pb.buf, o.name...)
+		pb.buf = append(pb.buf, '(')
+		pb.buf = s.appendValue(pb.buf, left, o.prec)
+		pb.buf = append(pb.buf, ',', ' ')
+		pb.buf = s.appendValue(pb.buf, right, o.prec)
 		pb.buf = append(pb.buf, ')')
 	default:
 		pb.buf = s.appendValue(pb.buf, left, o.prec)

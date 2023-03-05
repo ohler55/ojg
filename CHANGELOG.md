@@ -8,8 +8,8 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ### Added
 - Added support for root fragments in filters such as `$.data[?(@.id == $.key)]`.
 - "exists" is now an alias for the "has" filter operation.
+- Added length, count, match, and search functions.
 
-- TBD add support for functions
 - TBD support [?foo
 
 

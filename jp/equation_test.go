@@ -73,6 +73,12 @@ func TestEquation(t *testing.T) {
 
 	eq = jp.Count(jp.A().C("xyz"))
 	tt.Equal(t, "count(@.xyz)", eq.String())
+
+	eq = jp.Match(jp.Get(jp.A().C("xyz")), jp.ConstString("xy."))
+	tt.Equal(t, "match(@.xyz, 'xy.')", eq.String())
+
+	eq = jp.Search(jp.Get(jp.A().C("xyz")), jp.ConstString("xy."))
+	tt.Equal(t, "search(@.xyz, 'xy.')", eq.String())
 }
 
 func TestEquationScript(t *testing.T) {

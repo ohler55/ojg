@@ -1,13 +1,10 @@
 
 
 - script.go
- - add support for functions
-  - functions
-   + length
-   + count
-   - match - regexp with ^ and & (entirety)
-   - search - any substring so as is
-  - Nothing special value
+ - Nothing special value
+  - check returns for functions and get (path)
+ - support [?foo
+
   - API to add functions
    - RegisterUnaryFunction(name string, get bool, f func(arg any) any)
    - RegisterBinaryFunction(name string, getLeft, getRight bool, f func(left, right any) any)
@@ -17,7 +14,6 @@
     - convert to lower case and validate
     - how to indicate with stack
 
- - support [?foo
  - add a Nothing value for testing does not exist
  - @.foo without a comparison indicates existance
 

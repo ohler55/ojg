@@ -492,7 +492,6 @@ func (p *parser) readEquation() (eq *Equation) {
 	eq = &Equation{}
 
 	b := p.nextNonSpace()
-	// TBD length, count, match, search
 	switch b {
 	case '!':
 		eq.o = not
@@ -508,6 +507,10 @@ func (p *parser) readEquation() (eq *Equation) {
 		p.readFunc(length, eq)
 	case 'c':
 		p.readFunc(count, eq)
+	case 'm':
+		p.readFunc(match, eq)
+	case 's':
+		p.readFunc(search, eq)
 	default:
 		eq.left = p.readEqValue()
 		eq.o = p.readEqOp()
@@ -570,8 +573,13 @@ func (p *parser) readEqValue() (eq *Equation) {
 	case 'c':
 		eq = &Equation{}
 		p.readFunc(count, eq)
+	case 'm':
+		eq = &Equation{}
+		p.readFunc(match, eq)
+	case 's':
+		eq = &Equation{}
+		p.readFunc(search, eq)
 	default:
-		// TBD also c for count, s for search, and m for match
 		p.raise("expected a value")
 	}
 	return
@@ -583,6 +591,11 @@ func (p *parser) readFunc(o *op, eq *Equation) {
 		p.pos += len(o.name) + 1
 		eq.left = p.readEqValue()
 		b := p.nextNonSpace()
+		if b == ',' {
+			p.pos++
+			eq.right = p.readEqValue()
+			b = p.nextNonSpace()
+		}
 		if b != ')' {
 			p.raise("not terminated")
 		}

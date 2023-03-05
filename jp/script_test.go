@@ -99,6 +99,16 @@ func TestScriptParse(t *testing.T) {
 		{src: "(count(@.xyz == 3)", err: "not terminated at 14 in (count(@.xyz == 3)"},
 		{src: "(coun(@.xyz) == 3)", err: "expected a count function at 2 in (coun(@.xyz) == 3)"},
 
+		{src: "(match(@.x, 'xy.'))", expect: "(match(@.x, 'xy.'))"},
+		{src: "(match(@.x, 'xy.') == false)", expect: "(match(@.x, 'xy.') == false)"},
+		{src: "(false == match(@.x, 'xy.'))", expect: "(false == match(@.x, 'xy.'))"},
+		{src: "(matc(@.x, 'xy.'))", err: "expected a match function at 2 in (matc(@.x, 'xy.'))"},
+
+		{src: "(search(@.x, 'xy.'))", expect: "(search(@.x, 'xy.'))"},
+		{src: "(search(@.x, 'xy.') == false)", expect: "(search(@.x, 'xy.') == false)"},
+		{src: "(false == search(@.x, 'xy.'))", expect: "(false == search(@.x, 'xy.'))"},
+		{src: "(sear(@.x, 'xy.'))", err: "expected a search function at 2 in (sear(@.x, 'xy.'))"},
+
 		{src: "@.x == 4", err: "a script must start with a '('"},
 		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 8 in (@.x ++ 4)"},
 		{src: "(@[1:5} == 3)", err: "invalid slice syntax at 8 in (@[1:5} == 3)"},
@@ -288,6 +298,12 @@ func TestScriptEval(t *testing.T) {
 		{src: "(count(@.x[*]) == 2)", value: map[string]any{"x": []any{1, 2, 3}}, noMatch: true},
 		{src: "(count(@.x) == 1)", value: map[string]any{"x": "abc"}},
 		{src: "(count(@.x.*) == 3)", value: map[string]any{"x": map[string]any{"a": 1, "b": 2, "c": 3}}},
+
+		{src: "(match(@.x, 'ab.'))", value: map[string]any{"x": "abc"}},
+		{src: "(match(@.x, 'ab'))", value: map[string]any{"x": "abc"}, noMatch: true},
+
+		{src: "(search(@.x, 'ab'))", value: map[string]any{"x": "abc"}},
+		{src: "(search(@.x, 'abx'))", value: map[string]any{"x": "abc"}, noMatch: true},
 	} {
 		if testing.Verbose() {
 			if d.value == nil {
@@ -342,12 +358,11 @@ func BenchmarkOjScriptDev(b *testing.B) {
 }
 
 func xTestScriptDev(t *testing.T) {
-	src := "(count(@.xyz[*]) == 3)"
-	// src := "(count(7) == 3)"
-	// src := "(length(@.xyz) == 3)"
+	src := "(search(@.xyz, 'abx') == false)"
+
 	s, err := jp.NewScript(src)
 	tt.Nil(t, err, src)
 	fmt.Printf("*** %s\n", s.String())
-	result := s.Eval([]any{}, []any{map[string]any{"xyz": []any{1, 2, 3}}})
+	result := s.Eval([]any{}, []any{map[string]any{"xyz": "abc"}})
 	fmt.Printf("*** %v\n", result)
 }

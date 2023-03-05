@@ -171,12 +171,22 @@ func Count(x Expr) *Equation {
 	return &Equation{o: count, left: &Equation{result: x}}
 }
 
+// Match creates and returns an Equation for a match function.
+func Match(left, right *Equation) *Equation {
+	return &Equation{o: match, left: left, right: right}
+}
+
+// Search creates and returns an Equation for a search function.
+func Search(left, right *Equation) *Equation {
+	return &Equation{o: search, left: left, right: right}
+}
+
 // Append a fragment string representation of the fragment to the buffer
 // then returning the expanded buffer.
 func (e *Equation) Append(buf []byte, parens bool) []byte {
 	if e.o != nil {
 		switch e.o.code {
-		case not.code, length.code, count.code:
+		case not.code, length.code, count.code, match.code, search.code:
 			parens = false
 		}
 	}
@@ -200,6 +210,13 @@ func (e *Equation) Append(buf []byte, parens bool) []byte {
 			buf = append(buf, e.o.name...)
 			buf = append(buf, '(')
 			buf = e.appendValue(buf, e.left.result)
+			buf = append(buf, ')')
+		case match.code, search.code:
+			buf = append(buf, e.o.name...)
+			buf = append(buf, '(')
+			buf = e.left.Append(buf, false)
+			buf = append(buf, ',', ' ')
+			buf = e.right.Append(buf, false)
 			buf = append(buf, ')')
 		default:
 			if e.left != nil {
