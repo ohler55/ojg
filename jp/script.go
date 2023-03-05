@@ -12,6 +12,8 @@ import (
 	"github.com/ohler55/ojg/gen"
 )
 
+type nothing int
+
 var (
 	eq     = &op{prec: 3, code: '=', name: "==", cnt: 2}
 	neq    = &op{prec: 3, code: 'n', name: "!=", cnt: 2}
@@ -65,6 +67,10 @@ var (
 		match.name:  match,
 		search.name: search,
 	}
+	// Nothing can be used in scripts to indicate no value as in a script such
+	// as [?(@.x == Nothing)] this indicates there was no value as @.x. It is
+	// the same as [?(@.x has false)] or [?(@.x exists false)].
+	Nothing = nothing(0)
 )
 
 type op struct {
@@ -228,8 +234,9 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 					}
 					sstack[i] = ev
 				}
-				// TBD one more for getRight once function extentions are supported
+				// TBD one more for getRight once function extensions are supported
 			}
+			var has bool
 			// Normalize into nil, bool, int64, float64, and string early so
 			// that each comparison doesn't have to.
 		Normalize:
@@ -245,19 +252,28 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 					if m, ok := v.(map[string]any); ok && len(x) == 2 {
 						var c Child
 						if c, ok = x[1].(Child); ok {
-							ev = m[string(c)]
-							sstack[i] = ev
-							goto Normalize
+							if ev, has = m[string(c)]; has {
+								sstack[i] = ev
+								goto Normalize
+							} else {
+								sstack[i] = Nothing
+							}
 						}
 					}
 				case Root:
-					ev = x.First(root)
+					if ev, has = x.FirstFound(root); has {
+						sstack[i] = ev
+						goto Normalize
+					} else {
+						sstack[i] = Nothing
+					}
+				}
+				if ev, has = x.FirstFound(v); has {
 					sstack[i] = ev
 					goto Normalize
+				} else {
+					sstack[i] = Nothing
 				}
-				ev = x.First(v)
-				sstack[i] = ev
-				goto Normalize
 			case int:
 				sstack[i] = int64(x)
 			case int8:
@@ -561,7 +577,7 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 					sstack[i] = tr.MatchString(ls)
 				}
 			case length.code:
-				sstack[i] = nil
+				sstack[i] = Nothing
 				switch tl := left.(type) {
 				case string:
 					sstack[i] = int64(len(tl))
@@ -571,12 +587,12 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 					sstack[i] = int64(len(tl))
 				}
 			case count.code:
-				sstack[i] = nil
+				sstack[i] = Nothing
 				if nl, ok := left.([]any); ok {
 					sstack[i] = int64(len(nl))
 				}
 			case match.code:
-				sstack[i] = nil
+				sstack[i] = Nothing
 				if ls, ok := left.(string); ok {
 					if rs, _ := right.(string); 0 < len(rs) {
 						if rs[0] != '^' {
@@ -591,7 +607,7 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 					}
 				}
 			case search.code:
-				sstack[i] = nil
+				sstack[i] = Nothing
 				if ls, ok := left.(string); ok {
 					if rs, _ := right.(string); 0 < len(rs) {
 						if rx, err := regexp.Compile(rs); err == nil {
@@ -677,15 +693,14 @@ func (s *Script) appendValue(buf []byte, v any, prec byte) []byte {
 	switch tv := v.(type) {
 	case nil:
 		buf = append(buf, "null"...)
+	case nothing:
+		buf = append(buf, "Nothing"...)
 	case string:
 		buf = append(buf, '\'')
 		buf = append(buf, tv...)
 		buf = append(buf, '\'')
 	case int64:
 		buf = append(buf, strconv.FormatInt(tv, 10)...)
-		// TBD verify this is never reached
-	// case int:
-	//	buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
 	case float64:
 		buf = append(buf, strconv.FormatFloat(tv, 'g', -1, 64)...)
 	case bool:

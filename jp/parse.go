@@ -548,6 +548,9 @@ func (p *parser) readEqValue() (eq *Equation) {
 	case 'n':
 		p.readEqToken([]byte("null"))
 		eq = &Equation{result: nil}
+	case 'N':
+		p.readEqToken([]byte("Nothing"))
+		eq = &Equation{result: Nothing}
 	case 't':
 		p.readEqToken([]byte("true"))
 		eq = &Equation{result: true}

@@ -1,8 +1,7 @@
 
 
 - script.go
- - Nothing special value
-  - check returns for functions and get (path)
+
  - support [?foo
 
   - API to add functions

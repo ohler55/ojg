@@ -17,6 +17,9 @@ func TestEquation(t *testing.T) {
 	eq = jp.Eq(jp.ConstBool(true), jp.ConstNil())
 	tt.Equal(t, "(true == null)", eq.String())
 
+	eq = jp.Eq(jp.ConstBool(true), jp.ConstNothing())
+	tt.Equal(t, "(true == Nothing)", eq.String())
+
 	eq = jp.Get(jp.A().C("xyz"))
 	tt.Equal(t, "(@.xyz)", eq.String())
 

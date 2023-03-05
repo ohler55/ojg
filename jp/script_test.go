@@ -89,6 +89,7 @@ func TestScriptParse(t *testing.T) {
 		{src: "(length(@.xyz))", expect: "(length(@.xyz))"},
 		{src: "(3 == length(@.xyz))", expect: "(3 == length(@.xyz))"},
 		{src: "(length(@.xyz) == 3)", expect: "(length(@.xyz) == 3)"},
+		{src: "(length(@.xyz) == Nothing)", expect: "(length(@.xyz) == Nothing)"},
 		{src: "(length(@.xyz == 3)", err: "not terminated at 15 in (length(@.xyz == 3)"},
 		{src: "(leng(@.xyz) == 3)", err: "expected a length function at 2 in (leng(@.xyz) == 3)"},
 
@@ -357,8 +358,10 @@ func BenchmarkOjScriptDev(b *testing.B) {
 	}
 }
 
-func xTestScriptDev(t *testing.T) {
-	src := "(search(@.xyz, 'abx') == false)"
+/*
+func TestScriptDev(t *testing.T) {
+	// src := "(search(@.xyz, 'abx') == false)"
+	src := "(length(@.xyz) == Nothing)"
 
 	s, err := jp.NewScript(src)
 	tt.Nil(t, err, src)
@@ -366,3 +369,4 @@ func xTestScriptDev(t *testing.T) {
 	result := s.Eval([]any{}, []any{map[string]any{"xyz": "abc"}})
 	fmt.Printf("*** %v\n", result)
 }
+*/

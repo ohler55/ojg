@@ -35,6 +35,11 @@ func ConstNil() *Equation {
 	return &Equation{result: nil}
 }
 
+// ConstNothing creates and returns an Equation for a constant of nothing.
+func ConstNothing() *Equation {
+	return &Equation{result: Nothing}
+}
+
 // ConstBool creates and returns an Equation for a bool constant.
 func ConstBool(b bool) *Equation {
 	return &Equation{result: b}
@@ -240,6 +245,8 @@ func (e *Equation) appendValue(buf []byte, v any) []byte {
 	switch tv := v.(type) {
 	case nil:
 		buf = append(buf, "null"...)
+	case nothing:
+		buf = append(buf, "Nothing"...)
 	case string:
 		buf = append(buf, '\'')
 		buf = append(buf, tv...)

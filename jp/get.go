@@ -617,13 +617,20 @@ func (x Expr) Get(data any) (results []any) {
 
 // First element of the data identified by the path.
 func (x Expr) First(data any) any {
-	if len(x) == 0 {
-		return nil
-	}
-	var v any
-	var prev any
-	var has bool
+	first, _ := x.FirstFound(data)
+	return first
+}
 
+// FirstFound element of the data identified by the path.
+func (x Expr) FirstFound(data any) (any, bool) {
+	if len(x) == 0 {
+		return nil, false
+	}
+	var (
+		v    any
+		prev any
+		has  bool
+	)
 	stack := make([]any, 0, 64)
 	defer func() {
 		stack = stack[0:cap(stack)]
@@ -659,7 +666,7 @@ func (x Expr) First(data any) any {
 			}
 			if has {
 				if int(fi) == len(x)-1 { // last one
-					return v
+					return v, true
 				}
 				switch v.(type) {
 				case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
@@ -699,7 +706,7 @@ func (x Expr) First(data any) any {
 			}
 			if has {
 				if int(fi) == len(x)-1 { // last one
-					return v
+					return v, true
 				}
 				switch v.(type) {
 				case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
@@ -720,7 +727,7 @@ func (x Expr) First(data any) any {
 			case map[string]any:
 				if int(fi) == len(x)-1 { // last one
 					for _, v = range tv {
-						return v
+						return v, true
 					}
 				} else {
 					for _, v = range tv {
@@ -742,7 +749,7 @@ func (x Expr) First(data any) any {
 			case []any:
 				if int(fi) == len(x)-1 { // last one
 					if 0 < len(tv) {
-						return tv[0]
+						return tv[0], true
 					}
 				} else {
 					for i := len(tv) - 1; 0 <= i; i-- {
@@ -765,7 +772,7 @@ func (x Expr) First(data any) any {
 			case gen.Object:
 				if int(fi) == len(x)-1 { // last one
 					for _, v = range tv {
-						return v
+						return v, true
 					}
 				} else {
 					for _, v = range tv {
@@ -778,7 +785,7 @@ func (x Expr) First(data any) any {
 			case gen.Array:
 				if int(fi) == len(x)-1 { // last one
 					for _, v = range tv {
-						return v
+						return v, true
 					}
 				} else {
 					for i := len(tv) - 1; 0 <= i; i-- {
@@ -792,7 +799,7 @@ func (x Expr) First(data any) any {
 			default:
 				if v, has = x.reflectGetWildOne(tv); has {
 					if int(fi) == len(x)-1 { // last one
-						return v
+						return v, true
 					}
 					switch v.(type) {
 					case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
@@ -820,7 +827,7 @@ func (x Expr) First(data any) any {
 					stack = append(stack, di|descentFlag)
 					if int(fi) == len(x)-1 { // last one
 						for _, v = range tv {
-							return v
+							return v, true
 						}
 					}
 					for _, v = range tv {
@@ -845,7 +852,7 @@ func (x Expr) First(data any) any {
 					stack = append(stack, di|descentFlag)
 					if int(fi) == len(x)-1 { // last one
 						if 0 < len(tv) {
-							return tv[0]
+							return tv[0], true
 						}
 					}
 					for i := len(tv) - 1; 0 <= i; i-- {
@@ -871,7 +878,7 @@ func (x Expr) First(data any) any {
 					stack = append(stack, di|descentFlag)
 					if int(fi) == len(x)-1 { // last one
 						for _, v = range tv {
-							return v
+							return v, true
 						}
 					}
 					for _, v = range tv {
@@ -887,7 +894,7 @@ func (x Expr) First(data any) any {
 					stack = append(stack, di|descentFlag)
 					if int(fi) == len(x)-1 { // last one
 						if 0 < len(tv) {
-							return tv[0]
+							return tv[0], true
 						}
 					}
 					for i := len(tv) - 1; 0 <= i; i-- {
@@ -904,12 +911,12 @@ func (x Expr) First(data any) any {
 			}
 		case Root:
 			if int(fi) == len(x)-1 { // last one
-				return data
+				return data, true
 			}
 			stack = append(stack, data)
 		case At, Bracket:
 			if int(fi) == len(x)-1 { // last one
-				return prev
+				return prev, true
 			}
 			stack = append(stack, prev)
 		case Union:
@@ -950,7 +957,7 @@ func (x Expr) First(data any) any {
 						}
 					}
 					if has {
-						return v
+						return v, true
 					}
 				}
 			} else {
@@ -1042,7 +1049,7 @@ func (x Expr) First(data any) any {
 				}
 				if 0 < step {
 					if int(fi) == len(x)-1 && start < end { // last one
-						return tv[start]
+						return tv[start], true
 					}
 					end = start + (end-start-1)/step*step
 					for i := end; start <= i; i -= step {
@@ -1066,7 +1073,7 @@ func (x Expr) First(data any) any {
 						end = -1
 					}
 					if int(fi) == len(x)-1 && end < start { // last one
-						return tv[start]
+						return tv[start], true
 					}
 					end = start - (start-end-1)/step*step
 					for i := end; i <= start; i -= step {
@@ -1104,7 +1111,7 @@ func (x Expr) First(data any) any {
 				}
 				if 0 < step {
 					if int(fi) == len(x)-1 && start < end { // last one
-						return tv[start]
+						return tv[start], true
 					}
 					end = start + (end-start-1)/step*step
 					for i := end; start <= i; i -= step {
@@ -1119,7 +1126,7 @@ func (x Expr) First(data any) any {
 						end = -1
 					}
 					if int(fi) == len(x)-1 && end < start { // last one
-						return tv[start]
+						return tv[start], true
 					}
 					end = start - (start-end-1)/step*step
 					for i := end; i <= start; i -= step {
@@ -1133,7 +1140,7 @@ func (x Expr) First(data any) any {
 			default:
 				if v, has = x.reflectGetNth(tv, start); has {
 					if int(fi) == len(x)-1 { // last one
-						return v
+						return v, true
 					}
 					switch v.(type) {
 					case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
@@ -1157,7 +1164,7 @@ func (x Expr) First(data any) any {
 				if before < len(stack) {
 					result := stack[len(stack)-1]
 					stack = stack[:before]
-					return result
+					return result, true
 				}
 			}
 		}
@@ -1169,7 +1176,7 @@ func (x Expr) First(data any) any {
 			}
 		}
 	}
-	return nil
+	return nil, false
 }
 
 func (x Expr) reflectGetChild(data any, key string) (v any, has bool) {
