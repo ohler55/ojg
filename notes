@@ -1,19 +1,17 @@
 
 
 - script.go
-
  - support [?foo
 
-  - API to add functions
-   - RegisterUnaryFunction(name string, get bool, f func(arg any) any)
-   - RegisterBinaryFunction(name string, getLeft, getRight bool, f func(left, right any) any)
-    - handle in EvalWithRoot
-    - get indicates using get and not first in eval of args
-    - no override of existing
-    - convert to lower case and validate
-    - how to indicate with stack
+ - API to add functions
+  - RegisterUnaryFunction(name string, get bool, f func(arg any) any)
+  - RegisterBinaryFunction(name string, getLeft, getRight bool, f func(left, right any) any)
+   - handle in EvalWithRoot
+   - get indicates using get and not first in eval of args
+   - no override of existing
+   - convert to lower case and validate
+   - how to indicate with stack
 
- - add a Nothing value for testing does not exist
  - @.foo without a comparison indicates existance
 
 - parse
