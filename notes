@@ -1,8 +1,6 @@
 
 
 - script.go
- - support [?foo
-
  - API to add functions
   - RegisterUnaryFunction(name string, get bool, f func(arg any) any)
   - RegisterBinaryFunction(name string, getLeft, getRight bool, f func(left, right any) any)

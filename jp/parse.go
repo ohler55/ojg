@@ -472,9 +472,8 @@ func (p *parser) readFilter() *Filter {
 		p.raise("not terminated")
 	}
 	b := p.buf[p.pos]
-	p.pos++
-	if b != '(' {
-		p.raise("expected a '(' in filter")
+	if b == '(' {
+		p.pos++
 	}
 	eq := p.readEquation()
 	if len(p.buf) <= p.pos || p.buf[p.pos] != ']' {
@@ -518,8 +517,11 @@ func (p *parser) readEquation() (eq *Equation) {
 	}
 	for {
 		b = p.nextNonSpace()
-		if b == ')' {
+		switch b {
+		case ')':
 			p.pos++
+			return
+		case ']':
 			return
 		}
 		o := p.readEqOp()
