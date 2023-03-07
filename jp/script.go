@@ -3,7 +3,6 @@
 package jp
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -106,10 +105,9 @@ func NewScript(str string) (s *Script, err error) {
 // MustNewScript parses the string argument and returns a script or an error.
 func MustNewScript(str string) (s *Script) {
 	p := &parser{buf: []byte(str)}
-	if len(p.buf) == 0 || p.buf[0] != '(' {
-		panic(fmt.Errorf("a script must start with a '('"))
+	if 0 < len(p.buf) && p.buf[0] == '(' {
+		p.pos = 1
 	}
-	p.pos = 1
 	eq := p.readEquation()
 
 	return eq.Script()

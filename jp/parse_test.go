@@ -62,6 +62,7 @@ func TestParse(t *testing.T) {
 		{src: `[::]`, expect: `[:]`},
 		{src: `[1:2:]`, expect: `[1:2]`},
 		{src: `[01:02:02]`, expect: `[1:2:2]`},
+		{src: "[?@.x == 'abc']", expect: "[?(@.x == 'abc')]"},
 
 		{src: "$[1,'a']  ", err: "parse error at 9 in $[1,'a']  "},
 		{src: "abc.", err: "not terminated at 5 in abc."},

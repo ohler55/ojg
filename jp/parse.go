@@ -515,7 +515,7 @@ func (p *parser) readEquation() (eq *Equation) {
 		eq.o = p.readEqOp()
 		eq.right = p.readEqValue()
 	}
-	for {
+	for p.pos < len(p.buf) {
 		b = p.nextNonSpace()
 		switch b {
 		case ')':
@@ -533,6 +533,7 @@ func (p *parser) readEquation() (eq *Equation) {
 			eq.right.right = p.readEqValue()
 		}
 	}
+	return
 }
 
 func (p *parser) readEqValue() (eq *Equation) {

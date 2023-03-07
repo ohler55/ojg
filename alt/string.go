@@ -20,6 +20,8 @@ func String(v any, defaults ...string) (s string) {
 	switch ts := v.(type) {
 	case string:
 		s = ts
+	case []byte:
+		s = string(ts)
 	case gen.String:
 		s = string(ts)
 	default:

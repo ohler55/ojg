@@ -110,7 +110,7 @@ func TestScriptParse(t *testing.T) {
 		{src: "(false == search(@.x, 'xy.'))", expect: "(false == search(@.x, 'xy.'))"},
 		{src: "(sear(@.x, 'xy.'))", err: "expected a search function at 2 in (sear(@.x, 'xy.'))"},
 
-		{src: "@.x == 4", err: "a script must start with a '('"},
+		{src: "@.x == 4", expect: "(@.x == 4)"},
 		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 8 in (@.x ++ 4)"},
 		{src: "(@[1:5} == 3)", err: "invalid slice syntax at 8 in (@[1:5} == 3)"},
 		{src: "(@ =~ /a[c/)", err: "error parsing regexp: missing closing ]: `[c` at 12 in (@ =~ /a[c/)"},
@@ -357,4 +357,15 @@ func BenchmarkOjScriptDev(b *testing.B) {
 		stack = stack[:0]
 		stack, _ = s.Eval(stack, data).([]any)
 	}
+}
+
+func xTestScriptDev(t *testing.T) {
+	// src := "@.xyz == 'abc'"
+	src := "($.xyz == 'abc')"
+
+	s, err := jp.NewScript(src)
+	tt.Nil(t, err, src)
+	fmt.Printf("*** %s\n", s.String())
+	result := s.Eval([]any{}, []any{map[string]any{"xyz": "abc"}})
+	fmt.Printf("*** %v\n", result)
 }
