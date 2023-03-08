@@ -130,7 +130,7 @@ See [CHANGELOG.md](CHANGELOG.md)
 
 - *GitHub* *repo*: https://github.com/ohler55/ojg
 
-- *JSONPath* description: https://goessner.net/articles/JsonPath
+- *JSONPath* draft specification: https://datatracker.ietf.org/doc/draft-ietf-jsonpath-base
 
 - *JSONPath Comparisons*: https://cburgmer.github.io/json-path-comparison
 
