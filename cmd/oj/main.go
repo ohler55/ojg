@@ -788,6 +788,30 @@ supported are:
  =~    returns true if left is a string and matches the right regex which can be
        either a regex delimited by / or a string.
 
+Functions are also support and take the for of [?length(@.x) == 3]. The
+supported functions are:
+
+ length(path)        returns the length of the list, object, or string at the
+                     path. If the element does not exist or is not a list,
+                     object, or string then Nothing is returned.
+
+ count(path)         returns the number of elements that match the path which
+                     should return a node list.
+
+ match(path, regex)  the path should return a string which is then compared to
+                     the regex string. If there is a match to on the entirety of
+                     the string at path then true is returned otherwise if the
+                     string does not match false is returned. I the value at
+                     path is not a string or does not exist then Nothing is
+                     returned.
+
+ search(path, regex) the path should return a string which is then compared to
+                     the regex string. If there is a match to on a substring of
+                     the string at path then true is returned otherwise if the
+                     string does not match false is returned. I the value at
+                     path is not a string or does not exist then Nothing is
+                     returned.
+
 `)
 }
 
@@ -838,7 +862,7 @@ The file format (SEN with comments) is:
   // Either the pretty element can be used or the individual width, depth, and
   // align options can be specified separately.
   format: {indent: 2 tab: false pretty: 80.3.false}
-  //format: {indent: 2 tab: false width: 80 depth: 3 align: false}
+  // format: {indent: 2 tab: false width: 80 depth: 3 align: false}
   html: {
     syntax: "<span>"
     key: '<span style="color:#44f">'

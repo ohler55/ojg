@@ -358,14 +358,3 @@ func BenchmarkOjScriptDev(b *testing.B) {
 		stack, _ = s.Eval(stack, data).([]any)
 	}
 }
-
-func xTestScriptDev(t *testing.T) {
-	// src := "@.xyz == 'abc'"
-	src := "($.xyz == 'abc')"
-
-	s, err := jp.NewScript(src)
-	tt.Nil(t, err, src)
-	fmt.Printf("*** %s\n", s.String())
-	result := s.Eval([]any{}, []any{map[string]any{"xyz": "abc"}})
-	fmt.Printf("*** %v\n", result)
-}

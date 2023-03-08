@@ -759,3 +759,15 @@ func TestGetWildReflectOrder(t *testing.T) {
 	tt.Equal(t, "[e1 e2 e3]", pretty.SEN(path.Get(data)))
 	tt.Equal(t, "e1", pretty.SEN(path.First(data)))
 }
+
+func TestGetSliceReflect(t *testing.T) {
+	src := "$.vals[-3:]"
+	data := map[string]any{"vals": []int{10, 20, 30, 40, 50, 60}}
+	x := jp.MustParseString(src)
+	tt.Equal(t, "[40 50 60]", pretty.SEN(x.Get(data)))
+
+	src = "$.vals[-3:].x"
+	data = map[string]any{"vals": []map[string]int{{"x": 10}, {"x": 20}, {"x": 30}, {"x": 40}, {"x": 50}, {"x": 60}}}
+	x = jp.MustParseString(src)
+	tt.Equal(t, "[40 50 60]", pretty.SEN(x.Get(data)))
+}

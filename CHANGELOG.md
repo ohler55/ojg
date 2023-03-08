@@ -4,13 +4,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.18.0] - unreleased
+## [1.18.0] - 2023-03-07
 ### Added
 - Added support for root fragments in filters such as `$.data[?(@.id == $.key)]`.
 - "exists" is now an alias for the "has" filter operation.
 - Added length, count, match, and search functions.
 - Added `Nothing` as a value for comparison to return values where nothing is found.
 - Added support no parenthesis around a filter so `[?@.x == 3]` is now valid.
+- `alt.String()` now converts `[]byte`.
+### Fixed
+- Fix order of union with when final elements are not an `[]any`.
 
 ## [1.17.5] - 2023-02-19
 ### Added
