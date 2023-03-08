@@ -3,7 +3,6 @@
 package jp
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -11,6 +10,8 @@ import (
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
 )
+
+type nothing int
 
 var (
 	eq     = &op{prec: 3, code: '=', name: "==", cnt: 2}
@@ -29,8 +30,15 @@ var (
 	get    = &op{prec: 0, code: 'G', name: "get", cnt: 1}
 	in     = &op{prec: 3, code: 'i', name: "in", cnt: 2}
 	empty  = &op{prec: 3, code: 'e', name: "empty", cnt: 2}
-	rx     = &op{prec: 0, code: '~', name: "=~", cnt: 2}
+	rx     = &op{prec: 0, code: '~', name: "~=", cnt: 2}
+	rxa    = &op{prec: 0, code: '~', name: "=~", cnt: 2}
 	has    = &op{prec: 3, code: 'h', name: "has", cnt: 2}
+	exists = &op{prec: 3, code: 'x', name: "exists", cnt: 2}
+	// functions
+	length = &op{prec: 0, code: 'L', name: "length", cnt: 1}
+	count  = &op{prec: 0, code: 'C', name: "count", cnt: 1, getLeft: true}
+	match  = &op{prec: 0, code: 'M', name: "match", cnt: 2}
+	search = &op{prec: 0, code: 'S', name: "search", cnt: 2}
 
 	opMap = map[string]*op{
 		eq.name:     eq,
@@ -49,15 +57,28 @@ var (
 		in.name:     in,
 		empty.name:  empty,
 		has.name:    has,
+		exists.name: exists,
 		rx.name:     rx,
+		rxa.name:    rx,
+
+		length.name: length,
+		count.name:  count,
+		match.name:  match,
+		search.name: search,
 	}
+	// Nothing can be used in scripts to indicate no value as in a script such
+	// as [?(@.x == Nothing)] this indicates there was no value as @.x. It is
+	// the same as [?(@.x has false)] or [?(@.x exists false)].
+	Nothing = nothing(0)
 )
 
 type op struct {
-	name string
-	prec byte
-	cnt  byte
-	code byte
+	name     string
+	prec     byte
+	cnt      byte
+	code     byte
+	getLeft  bool
+	getRight bool
 }
 
 type precBuf struct {
@@ -84,10 +105,9 @@ func NewScript(str string) (s *Script, err error) {
 // MustNewScript parses the string argument and returns a script or an error.
 func MustNewScript(str string) (s *Script) {
 	p := &parser{buf: []byte(str)}
-	if len(p.buf) == 0 || p.buf[0] != '(' {
-		panic(fmt.Errorf("a script must start with a '('"))
+	if 0 < len(p.buf) && p.buf[0] == '(' {
+		p.pos = 1
 	}
-	p.pos = 1
 	eq := p.readEquation()
 
 	return eq.Script()
@@ -106,8 +126,10 @@ func (s *Script) Append(buf []byte) []byte {
 			if o == nil {
 				continue
 			}
-			var left any
-			var right any
+			var (
+				left  any
+				right any
+			)
 			if 1 < len(bstack)-i {
 				left = bstack[i+1]
 			}
@@ -138,15 +160,20 @@ func (s *Script) String() string {
 func (s *Script) Match(data any) bool {
 	stack := []any{}
 	if node, ok := data.(gen.Node); ok {
-		stack, _ = s.Eval(stack, gen.Array{node}).([]any)
+		stack, _ = s.EvalWithRoot(stack, gen.Array{node}, data).([]any)
 	} else {
-		stack, _ = s.Eval(stack, []any{data}).([]any)
+		stack, _ = s.EvalWithRoot(stack, []any{data}, data).([]any)
 	}
 	return 0 < len(stack)
 }
 
 // Eval is primarily used by the Expr parser but is public for testing.
 func (s *Script) Eval(stack any, data any) any {
+	return s.EvalWithRoot(stack, data, nil)
+}
+
+// EvalWithRoot is primarily used by the Expr parser but is public for testing.
+func (s *Script) EvalWithRoot(stack any, data, root any) any {
 	// Checking the type each iteration adds 2.5% but allows code not to be
 	// duplicated and not to call a separate function. Using just one more
 	// function call for each iteration adds 6.5%.
@@ -195,8 +222,21 @@ func (s *Script) Eval(stack any, data any) any {
 		copy(sstack, s.template)
 		// resolve all expr members
 		for i, ev := range sstack {
+			if 0 < i {
+				if o, ok := sstack[i-1].(*op); ok && o.getLeft {
+					var x Expr
+					if x, ok = ev.(Expr); ok {
+						ev = x.Get(v)
+					} else {
+						ev = nil
+					}
+					sstack[i] = ev
+				}
+				// TBD one more for getRight once function extensions are supported
+			}
+			var has bool
 			// Normalize into nil, bool, int64, float64, and string early so
-			// that each comparison doen't have to.
+			// that each comparison doesn't have to.
 		Normalize:
 			switch x := ev.(type) {
 			case Expr:
@@ -205,19 +245,33 @@ func (s *Script) Eval(stack any, data any) any {
 				// most widely used. For that reason an optimization is
 				// included for that inclusion of a one level child lookup
 				// path.
-				if m, ok := v.(map[string]any); ok && len(x) == 2 {
-					if _, ok = x[0].(At); ok {
+				switch x[0].(type) {
+				case At:
+					if m, ok := v.(map[string]any); ok && len(x) == 2 {
 						var c Child
 						if c, ok = x[1].(Child); ok {
-							ev = m[string(c)]
-							sstack[i] = ev
-							goto Normalize
+							if ev, has = m[string(c)]; has {
+								sstack[i] = ev
+								goto Normalize
+							} else {
+								sstack[i] = Nothing
+							}
 						}
 					}
+				case Root:
+					if ev, has = x.FirstFound(root); has {
+						sstack[i] = ev
+						goto Normalize
+					} else {
+						sstack[i] = Nothing
+					}
 				}
-				ev = x.First(v)
-				sstack[i] = ev
-				goto Normalize
+				if ev, has = x.FirstFound(v); has {
+					sstack[i] = ev
+					goto Normalize
+				} else {
+					sstack[i] = Nothing
+				}
 			case int:
 				sstack[i] = int64(x)
 			case int8:
@@ -501,7 +555,7 @@ func (s *Script) Eval(stack any, data any) any {
 						sstack[i] = boo == (len(tl) == 0)
 					}
 				}
-			case has.code:
+			case has.code, exists.code:
 				sstack[i] = false
 				if boo, ok := right.(bool); ok {
 					sstack[i] = boo == (left != nil)
@@ -519,6 +573,45 @@ func (s *Script) Eval(stack any, data any) any {
 					}
 				case *regexp.Regexp:
 					sstack[i] = tr.MatchString(ls)
+				}
+			case length.code:
+				sstack[i] = Nothing
+				switch tl := left.(type) {
+				case string:
+					sstack[i] = int64(len(tl))
+				case []any:
+					sstack[i] = int64(len(tl))
+				case map[string]any:
+					sstack[i] = int64(len(tl))
+				}
+			case count.code:
+				sstack[i] = Nothing
+				if nl, ok := left.([]any); ok {
+					sstack[i] = int64(len(nl))
+				}
+			case match.code:
+				sstack[i] = Nothing
+				if ls, ok := left.(string); ok {
+					if rs, _ := right.(string); 0 < len(rs) {
+						if rs[0] != '^' {
+							rs = "^" + rs
+						}
+						if rs[len(rs)-1] != '$' {
+							rs += "$"
+						}
+						if rx, err := regexp.Compile(rs); err == nil {
+							sstack[i] = rx.MatchString(ls)
+						}
+					}
+				}
+			case search.code:
+				sstack[i] = Nothing
+				if ls, ok := left.(string); ok {
+					if rs, _ := right.(string); 0 < len(rs) {
+						if rx, err := regexp.Compile(rs); err == nil {
+							sstack[i] = rx.MatchString(ls)
+						}
+					}
 				}
 			}
 			if i+int(o.cnt)+1 <= len(sstack) {
@@ -572,6 +665,18 @@ func (s *Script) appendOp(o *op, left, right any) (pb *precBuf) {
 	case not.code:
 		pb.buf = append(pb.buf, o.name...)
 		pb.buf = s.appendValue(pb.buf, left, o.prec)
+	case length.code, count.code:
+		pb.buf = append(pb.buf, o.name...)
+		pb.buf = append(pb.buf, '(')
+		pb.buf = s.appendValue(pb.buf, left, o.prec)
+		pb.buf = append(pb.buf, ')')
+	case match.code, search.code:
+		pb.buf = append(pb.buf, o.name...)
+		pb.buf = append(pb.buf, '(')
+		pb.buf = s.appendValue(pb.buf, left, o.prec)
+		pb.buf = append(pb.buf, ',', ' ')
+		pb.buf = s.appendValue(pb.buf, right, o.prec)
+		pb.buf = append(pb.buf, ')')
 	default:
 		pb.buf = s.appendValue(pb.buf, left, o.prec)
 		pb.buf = append(pb.buf, ' ')
@@ -586,15 +691,14 @@ func (s *Script) appendValue(buf []byte, v any, prec byte) []byte {
 	switch tv := v.(type) {
 	case nil:
 		buf = append(buf, "null"...)
+	case nothing:
+		buf = append(buf, "Nothing"...)
 	case string:
 		buf = append(buf, '\'')
 		buf = append(buf, tv...)
 		buf = append(buf, '\'')
 	case int64:
 		buf = append(buf, strconv.FormatInt(tv, 10)...)
-		// TBD verify this is never reached
-	// case int:
-	//	buf = append(buf, strconv.FormatInt(int64(tv), 10)...)
 	case float64:
 		buf = append(buf, strconv.FormatFloat(tv, 'g', -1, 64)...)
 	case bool:

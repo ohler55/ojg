@@ -53,6 +53,7 @@ func TestString(t *testing.T) {
 		{value: gen.Big("3.1"), expect: "3.1"},
 
 		{value: "xyz", expect: "xyz"},
+		{value: []byte("xyz"), expect: "xyz"},
 		{value: "xyz", expect: "xyz", defaults: []string{"d1"}},
 		{value: "xyz", expect: "xyz", defaults: []string{"d1", "d2"}},
 		{value: gen.String("xyz"), expect: "xyz"},

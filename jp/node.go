@@ -322,7 +322,7 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 			}
 		case *Filter:
 			before := len(stack)
-			stack, _ = tf.Eval(stack, prev).([]gen.Node)
+			stack, _ = tf.EvalWithRoot(stack, prev, n).([]gen.Node)
 			if int(fi) == len(x)-1 { // last one
 				for i := before; i < len(stack); i++ {
 					results = append(results, stack[i])
@@ -589,7 +589,7 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 			}
 		case *Filter:
 			before := len(stack)
-			stack, _ = tf.Eval(stack, prev).([]gen.Node)
+			stack, _ = tf.EvalWithRoot(stack, prev, n).([]gen.Node)
 			if int(fi) == len(x)-1 { // last one
 				if before < len(stack) {
 					result := stack[before]

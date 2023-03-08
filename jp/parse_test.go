@@ -62,6 +62,7 @@ func TestParse(t *testing.T) {
 		{src: `[::]`, expect: `[:]`},
 		{src: `[1:2:]`, expect: `[1:2]`},
 		{src: `[01:02:02]`, expect: `[1:2:2]`},
+		{src: "[?@.x == 'abc']", expect: "[?(@.x == 'abc')]"},
 
 		{src: "$[1,'a']  ", err: "parse error at 9 in $[1,'a']  "},
 		{src: "abc.", err: "not terminated at 5 in abc."},
@@ -95,7 +96,7 @@ func TestParse(t *testing.T) {
 		{src: "[2,x", err: "invalid union syntax at 5 in [2,x"},
 		{src: "[?", err: "not terminated at 3 in [?"},
 		{src: "[?(", err: "not terminated at 4 in [?("},
-		{src: "[?x", err: "expected a '(' in filter at 4 in [?x"},
+		{src: "[?x", err: "expected a value at 3 in [?x"},
 		{src: "[?(@.x == 3)", err: "not terminated at 13 in [?(@.x == 3)"},
 		{src: "[?(!(@.x == -x)", err: `strconv.ParseInt: parsing "-": invalid syntax at 14 in [?(!(@.x == -x)`},
 		{src: "[?(!(@.x == 1)]", err: "not terminated at 15 in [?(!(@.x == 1)]"},
