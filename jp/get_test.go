@@ -771,3 +771,15 @@ func TestGetSliceReflect(t *testing.T) {
 	x = jp.MustParseString(src)
 	tt.Equal(t, "[40 50 60]", pretty.SEN(x.Get(data)))
 }
+
+func TestGetExists(t *testing.T) {
+	src := "[?(@.x exists false)]"
+	data := []any{
+		map[string]any{"x": 1, "y": 2},
+		map[string]any{"y": 4},
+		map[string]any{"x": 5},
+	}
+	x := jp.MustParseString(src)
+	tt.Equal(t, "[{y: 4}]", pretty.SEN(x.Get(data)))
+
+}

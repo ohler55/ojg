@@ -558,7 +558,7 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 			case has.code, exists.code:
 				sstack[i] = false
 				if boo, ok := right.(bool); ok {
-					sstack[i] = boo == (left != nil)
+					sstack[i] = boo == (left != Nothing)
 				}
 			case rx.code:
 				sstack[i] = false

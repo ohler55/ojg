@@ -231,10 +231,10 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@ empty true)", value: "x", noMatch: true},
 
 		{src: "(@ has true)", value: 5},
-		{src: "(@ has false)", value: nil},
+		{src: "(@ has false)", value: jp.Nothing},
 
 		{src: "(@ exists true)", value: 5},
-		{src: "(@ exists false)", value: nil},
+		{src: "(@.x exists false)", value: map[string]any{}},
 
 		{src: "(@ ~= /a.c/)", value: "abc"},
 		{src: "(@ =~ 'a.c')", value: "abc"},
