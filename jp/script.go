@@ -449,7 +449,7 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 				lb, _ := left.(bool)
 				sstack[i] = !lb
 			case add.code:
-				sstack[i] = nil
+				sstack[i] = Nothing
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
@@ -471,7 +471,7 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 					}
 				}
 			case sub.code:
-				sstack[i] = nil
+				sstack[i] = Nothing
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
@@ -489,7 +489,7 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 					}
 				}
 			case mult.code:
-				sstack[i] = nil
+				sstack[i] = Nothing
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
@@ -507,7 +507,7 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 					}
 				}
 			case divide.code:
-				sstack[i] = nil
+				sstack[i] = Nothing
 				switch tl := left.(type) {
 				case int64:
 					switch tr := right.(type) {
