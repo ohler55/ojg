@@ -6,7 +6,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 
 ## [1.18.1] - 2023-03-11
 ### Fixed
-- Fixed "has" and "exists" issue where comparisons broken with the intoduction of `Nothing`.
+- Fixed "has" and "exists" issue where comparisons broken with the introduction of `Nothing`.
 
 ## [1.18.0] - 2023-03-07
 ### Added
