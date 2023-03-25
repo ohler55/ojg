@@ -694,9 +694,7 @@ func (s *Script) appendValue(buf []byte, v any, prec byte) []byte {
 	case nothing:
 		buf = append(buf, "Nothing"...)
 	case string:
-		buf = append(buf, '\'')
-		buf = append(buf, tv...)
-		buf = append(buf, '\'')
+		buf = appendString(buf, tv, '\'')
 	case int64:
 		buf = append(buf, strconv.FormatInt(tv, 10)...)
 	case float64:
@@ -719,9 +717,7 @@ func (s *Script) appendValue(buf []byte, v any, prec byte) []byte {
 	case Expr:
 		buf = tv.Append(buf)
 	case *regexp.Regexp:
-		buf = append(buf, '/')
-		buf = append(buf, tv.String()...)
-		buf = append(buf, '/')
+		buf = appendString(buf, tv.String(), '/')
 	case *precBuf:
 		if prec < tv.prec {
 			buf = append(buf, '(')

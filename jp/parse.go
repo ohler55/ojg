@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"unicode/utf8"
 
 	"github.com/ohler55/ojg"
 )
@@ -427,40 +428,100 @@ func (p *parser) readUnion(v any, b byte) Frag {
 	}
 }
 
+func (p *parser) readHex(b byte) (i byte) {
+	switch b {
+	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+		i = b - '0'
+	case 'a', 'b', 'c', 'd', 'e', 'f':
+		i = b - 'a' + 10
+	case 'A', 'B', 'C', 'D', 'E', 'F':
+		i = b - 'A' + 10
+	default:
+		panic(fmt.Sprintf("0x%02x (%c) is not a valid hexadecimal character", b, b))
+	}
+	return
+}
+
+func (p *parser) readEscStr(start int, term byte) string {
+	buf := make([]byte, 0, p.pos-start+16)
+	p.pos--
+	buf = append(buf, p.buf[start:p.pos]...)
+	var b byte
+top:
+	for p.pos < len(p.buf) {
+		b = p.buf[p.pos]
+		p.pos++
+		switch b {
+		case '\\':
+			b = p.buf[p.pos]
+			p.pos++
+			switch b {
+			case 'b':
+				buf = append(buf, '\b')
+			case 't':
+				buf = append(buf, '\t')
+			case 'n':
+				buf = append(buf, '\n')
+			case 'f':
+				buf = append(buf, '\f')
+			case 'r':
+				buf = append(buf, '\r')
+			case '"':
+				buf = append(buf, '"')
+			case '\'':
+				buf = append(buf, '\'')
+			case '/':
+				buf = append(buf, '/')
+			case '\\':
+				buf = append(buf, '\\')
+			case 'x':
+				b = p.buf[p.pos]
+				p.pos++
+				i := p.readHex(b)
+				b = p.buf[p.pos]
+				p.pos++
+				i = (i << 4) | p.readHex(b)
+				buf = append(buf, i)
+			case 'u', 'U':
+				var r rune
+				for i := 4; 0 < i; i-- {
+					b = p.buf[p.pos]
+					p.pos++
+					r = (r << 4) | rune(p.readHex(b))
+				}
+				buf = utf8.AppendRune(buf, r)
+
+				// TBD
+
+			default:
+				panic(fmt.Sprintf("0x%02x (%c) is not a valid escaped character", b, b))
+			}
+		case term:
+			break top
+		default:
+			buf = append(buf, b)
+		}
+	}
+	return string(buf)
+}
+
 func (p *parser) readStr(term byte) string {
 	start := p.pos
-	esc := false
 	for p.pos < len(p.buf) {
 		b := p.buf[p.pos]
 		p.pos++
-		if b == term && !esc {
+		if b == term {
 			break
 		}
 		if b == '\\' {
-			esc = !esc
-		} else {
-			esc = false
+			return p.readEscStr(start, term)
 		}
 	}
 	return string(p.buf[start : p.pos-1])
 }
 
 func (p *parser) readRegex() *regexp.Regexp {
-	start := p.pos
-	esc := false
-	for p.pos < len(p.buf) {
-		b := p.buf[p.pos]
-		p.pos++
-		if b == '/' && !esc {
-			break
-		}
-		if b == '\\' {
-			esc = !esc
-		} else {
-			esc = false
-		}
-	}
-	rx, err := regexp.Compile(string(p.buf[start : p.pos-1]))
+	rx, err := regexp.Compile(p.readStr('/'))
 	if err != nil {
 		p.raise(err.Error())
 	}

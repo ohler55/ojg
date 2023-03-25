@@ -6,9 +6,7 @@ import (
 	"unicode/utf8"
 )
 
-const (
-	hex = "0123456789abcdef"
-)
+const hex = "0123456789abcdef"
 
 var (
 	maxTokenLen = 64

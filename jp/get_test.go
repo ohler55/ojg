@@ -781,5 +781,16 @@ func TestGetExists(t *testing.T) {
 	}
 	x := jp.MustParseString(src)
 	tt.Equal(t, "[{y: 4}]", pretty.SEN(x.Get(data)))
+}
 
+func TestEscaping(t *testing.T) {
+	data := map[string]any{
+		`\`: "ok",
+	}
+	expr := jp.MustParseString(`$['\\']`)
+	// expr := jp.MustParseString(`$['\x5c']`)
+	// expr := jp.MustParseString(`$['\u005c']`)
+	fmt.Printf("*** %s\n", expr)
+
+	tt.Equal(t, []any{"ok"}, expr.Get(data))
 }

@@ -1,6 +1,15 @@
 
+- jp
+ - Indexable or Indexed
+  - ValueByIndex(i int) or ValueAtIndex(i int)
+  - Iterate???
+ - Keyable or Keyed
+  - ValueByKey(key string) or ValueForKey(key string)
+  - Iterate???
+
 
 - alt.String should handle []bytes
+
 - script.go
  - API to add functions
   - RegisterUnaryFunction(name string, get bool, f func(arg any) any)
