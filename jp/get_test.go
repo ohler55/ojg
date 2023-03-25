@@ -48,6 +48,19 @@ var (
 		{path: "[?(@ > 1)]", expect: []any{2, 3}, data: []any{1, 2, 3}},
 		{path: "$[?(1==1)]", expect: []any{1, 2, 3}, data: []any{1, 2, 3}},
 		{path: "$.*[*].a", expect: []any{111, 121, 131, 141, 211, 221, 231, 241, 311, 321, 331, 341, 411, 421, 431, 441}},
+		{path: `$['\\']`, expect: []any{3}, data: map[string]any{`\`: 3}},
+		{path: `$['\x41']`, expect: []any{3}, data: map[string]any{"A": 3}},
+		{path: `$['\x4A']`, expect: []any{3}, data: map[string]any{"J": 3}},
+		{path: `$['\x4a']`, expect: []any{3}, data: map[string]any{"J": 3}},
+		{path: `$['\u03A0']`, expect: []any{3}, data: map[string]any{"Π": 3}},
+		{path: `$['\b']`, expect: []any{3}, data: map[string]any{"\b": 3}},
+		{path: `$['\t']`, expect: []any{3}, data: map[string]any{"\t": 3}},
+		{path: `$['\n']`, expect: []any{3}, data: map[string]any{"\n": 3}},
+		{path: `$['\r']`, expect: []any{3}, data: map[string]any{"\r": 3}},
+		{path: `$['\f']`, expect: []any{3}, data: map[string]any{"\f": 3}},
+		{path: `$["\'"]`, expect: []any{3}, data: map[string]any{"'": 3}},
+		{path: `$['\"']`, expect: []any{3}, data: map[string]any{`"`: 3}},
+
 		{path: "$.a[*].y",
 			expect: []any{2, 4},
 			data: map[string]any{
@@ -781,16 +794,4 @@ func TestGetExists(t *testing.T) {
 	}
 	x := jp.MustParseString(src)
 	tt.Equal(t, "[{y: 4}]", pretty.SEN(x.Get(data)))
-}
-
-func TestEscaping(t *testing.T) {
-	data := map[string]any{
-		`\`: "ok",
-	}
-	expr := jp.MustParseString(`$['\\']`)
-	// expr := jp.MustParseString(`$['\x5c']`)
-	// expr := jp.MustParseString(`$['\u005c']`)
-	fmt.Printf("*** %s\n", expr)
-
-	tt.Equal(t, []any{"ok"}, expr.Get(data))
 }

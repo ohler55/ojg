@@ -21,7 +21,8 @@ var (
 		`88888888888888888888888888888888` //  0xe0
 )
 
-func appendString(buf []byte, s string, delim byte) []byte {
+// AppendString to a buffer while escaping characters as necessary.
+func AppendString(buf []byte, s string, delim byte) []byte {
 	buf = append(buf, delim)
 	start := 0
 	skip := 0

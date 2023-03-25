@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.18.2] - unreleased
+### Fixed
+- Strings in bracketed JSONPaths are now handled correctly.
+
 ## [1.18.1] - 2023-03-11
 ### Fixed
 - Fixed "has" and "exists" issue where comparisons broken with the introduction of `Nothing`.

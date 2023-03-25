@@ -490,9 +490,6 @@ top:
 					r = (r << 4) | rune(p.readHex(b))
 				}
 				buf = utf8.AppendRune(buf, r)
-
-				// TBD
-
 			default:
 				panic(fmt.Sprintf("0x%02x (%c) is not a valid escaped character", b, b))
 			}
