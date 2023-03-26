@@ -795,3 +795,100 @@ func TestGetExists(t *testing.T) {
 	x := jp.MustParseString(src)
 	tt.Equal(t, "[{y: 4}]", pretty.SEN(x.Get(data)))
 }
+
+type entry struct {
+	key   string
+	value any
+}
+
+type ordered struct {
+	entries []*entry
+}
+
+func (o *ordered) ValueAtIndex(index int) any {
+	if index < 0 || len(o.entries) <= index {
+		return nil
+	}
+	return o.entries[index].value
+}
+
+func (o *ordered) Size() int {
+	return len(o.entries)
+}
+
+func (o *ordered) ValueForKey(key string) (value any, has bool) {
+	for _, e := range o.entries {
+		if e.key == key {
+			return e.value, true
+		}
+	}
+	return
+}
+
+func (o *ordered) SetValueForKey(key string, value any) {
+	for _, e := range o.entries {
+		if e.key == key {
+			e.value = value
+			return
+		}
+	}
+	o.entries = append(o.entries, &entry{key: key, value: value})
+}
+
+func (o *ordered) RemoveValueForKey(key string) {
+	for i, e := range o.entries {
+		if e.key == key {
+			copy(o.entries[i:], o.entries[i+1:])
+			o.entries = o.entries[:len(o.entries)-1]
+		}
+	}
+}
+
+func (o *ordered) SetValueAtIndex(index int, value any) {
+	if 0 <= index && index < len(o.entries) {
+		o.entries[index].value = value
+	}
+}
+
+func (o *ordered) Keys() (keys []string) {
+	for _, e := range o.entries {
+		keys = append(keys, e.key)
+	}
+	return
+}
+
+func TestGetKeyed(t *testing.T) {
+	data := &ordered{
+		entries: []*entry{
+			{key: "a", value: 1},
+			{key: "b", value: 2},
+			{
+				key: "c",
+				value: &ordered{
+					entries: []*entry{
+						{key: "c1", value: 11},
+						{key: "c2", value: 12},
+						{key: "c3", value: 13},
+					},
+				},
+			},
+		},
+	}
+	for _, d := range []*struct {
+		src    string
+		expect string
+	}{
+		{src: "$.b", expect: "[2]"},
+		{src: "$.c.c2", expect: "[12]"},
+		{src: "$[1]", expect: "[2]"},
+		{src: "$[2][1]", expect: "[12]"},
+		{src: "$.c.*", expect: "[11 12 13]"},
+		{src: "$[*][*]", expect: "[11 12 13]"},
+		{src: "$..", expect: "[1 2 {} 11 12 13 {}]"},
+		{src: "$['a',1]", expect: "[1 2]"},
+		{src: "$[0:2]", expect: "[1 2]"},
+	} {
+		x := jp.MustParseString(d.src)
+		tt.Equal(t, d.expect, pretty.SEN(x.Get(data)), d.src)
+	}
+}
