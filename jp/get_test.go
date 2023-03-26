@@ -841,6 +841,7 @@ func TestGetKeyedIndexed(t *testing.T) {
 		{src: "$[-1:0:-1][-2:-1]", expect: "[12]"},
 		{src: "$[3:]", expect: "[]"},
 		{src: "$[2:0:-1][2:-5:-1]", expect: "[13 12 11]"},
+		{src: "$[?(@.c2 == 12)].c2", expect: "[12]"},
 
 		{src: "$.b", expect: "2", first: true},
 		{src: "$.c.c2", expect: "12", first: true},
@@ -914,6 +915,31 @@ func TestGetIndexed(t *testing.T) {
 			tt.Equal(t, d.expect, pretty.SEN(x.Get(data)), d.src)
 		}
 	}
+}
+
+func TestGetKeyed(t *testing.T) {
+	data := &keyed{
+		ordered: ordered{
+			entries: []*entry{
+				{key: "a", value: 1},
+				{key: "b", value: 2},
+				{
+					key: "c",
+					value: &keyed{
+						ordered: ordered{
+							entries: []*entry{
+								{key: "c1", value: 11},
+								{key: "c2", value: 12},
+								{key: "c3", value: 13},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	x := jp.MustParseString("$[?(@.c2 == 12)].c2")
+	tt.Equal(t, "[12]", pretty.SEN(x.Get(data)))
 }
 
 func TestGetKeyedIndexedReflect(t *testing.T) {

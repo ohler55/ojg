@@ -190,6 +190,16 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 			da = append(da, v)
 		}
 		data = da
+	case Indexed:
+		dlen = td.Size()
+	case Keyed:
+		keys := td.Keys()
+		dlen = len(keys)
+		da := make([]any, dlen)
+		for i, k := range keys {
+			da[i], _ = td.ValueForKey(k)
+		}
+		data = da
 	case gen.Object:
 		dlen = len(td)
 		da := make(gen.Array, 0, dlen)
@@ -215,6 +225,8 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 		switch td := data.(type) {
 		case []any:
 			v = td[vi]
+		case Indexed:
+			v = td.ValueAtIndex(vi)
 		case gen.Array:
 			v = td[vi]
 		}
