@@ -857,7 +857,7 @@ func (o *ordered) Keys() (keys []string) {
 	return
 }
 
-func TestGetKeyed(t *testing.T) {
+func TestGetKeyedIndexed(t *testing.T) {
 	data := &ordered{
 		entries: []*entry{
 			{key: "a", value: 1},
@@ -877,6 +877,7 @@ func TestGetKeyed(t *testing.T) {
 	for _, d := range []*struct {
 		src    string
 		expect string
+		first  bool
 	}{
 		{src: "$.b", expect: "[2]"},
 		{src: "$.c.c2", expect: "[12]"},
@@ -887,8 +888,22 @@ func TestGetKeyed(t *testing.T) {
 		{src: "$..", expect: "[1 2 {} 11 12 13 {}]"},
 		{src: "$['a',1]", expect: "[1 2]"},
 		{src: "$[0:2]", expect: "[1 2]"},
+
+		{src: "$.b", expect: "2", first: true},
+		{src: "$.c.c2", expect: "12", first: true},
+		{src: "$[1]", expect: "2", first: true},
+		{src: "$[2][1]", expect: "12", first: true},
+		{src: "$.c.*", expect: "11", first: true},
+		{src: "$[*][*]", expect: "11", first: true},
+		{src: "$..", expect: "1", first: true},
+		{src: "$['a',1]", expect: "1", first: true},
+		{src: "$[0:2]", expect: "1", first: true},
 	} {
 		x := jp.MustParseString(d.src)
-		tt.Equal(t, d.expect, pretty.SEN(x.Get(data)), d.src)
+		if d.first {
+			tt.Equal(t, d.expect, pretty.SEN(x.First(data)), d.src)
+		} else {
+			tt.Equal(t, d.expect, pretty.SEN(x.Get(data)), d.src)
+		}
 	}
 }
