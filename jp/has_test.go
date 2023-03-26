@@ -129,3 +129,153 @@ func TestExprHasNode(t *testing.T) {
 		tt.Equal(t, d.expect, result, i, " : ", x)
 	}
 }
+
+func TestHasKeyedIndexed(t *testing.T) {
+	data := &keydex{
+		keyed: keyed{
+			ordered: ordered{
+				entries: []*entry{
+					{key: "a", value: 1},
+					{key: "b", value: 2},
+					{
+						key: "c",
+						value: &keydex{
+							keyed: keyed{
+								ordered: ordered{
+									entries: []*entry{
+										{key: "c1", value: 11},
+										{key: "c2", value: 12},
+										{key: "c3", value: 13},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, d := range []*struct {
+		src    string
+		expect bool
+	}{
+		{src: "$.b", expect: true},
+		{src: "$.c.c2", expect: true},
+		{src: "$[1]", expect: true},
+		{src: "$[2][1]", expect: true},
+		{src: "$.c.*", expect: true},
+		{src: "$[*][*]", expect: true},
+		{src: "$..", expect: true},
+		{src: "$..c2", expect: true},
+		{src: "$['a',1]", expect: true},
+		{src: "$['c',1].c3", expect: true},
+		{src: "$['a',-1][-1]", expect: true},
+		{src: "$[0:2]", expect: true},
+		{src: "$[-4:][-2:-1]", expect: true},
+		{src: "$[-1:0:-1][-2:-1]", expect: true},
+		{src: "$[3:]", expect: false},
+		{src: "$[2:0:-1][2:-5:-1]", expect: true},
+		{src: "$[?(@.c2 == 12)].c2", expect: true},
+	} {
+		x := jp.MustParseString(d.src)
+		tt.Equal(t, d.expect, x.Has(data), d.src)
+	}
+}
+
+func TestHasIndexed(t *testing.T) {
+	data := &indexed{
+		ordered: ordered{
+			entries: []*entry{
+				{key: "a", value: 1},
+				{key: "b", value: 2},
+				{
+					key: "c",
+					value: &indexed{
+						ordered: ordered{
+							entries: []*entry{
+								{key: "c1", value: 11},
+								{key: "c2", value: 12},
+								{key: "c3", value: 13},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, d := range []*struct {
+		src    string
+		expect bool
+	}{
+		{src: "$[1]", expect: true},
+		{src: "$[2][1]", expect: true},
+		{src: "$[*][*]", expect: true},
+		{src: "$..", expect: true},
+		{src: "$[1,2][-2,0]", expect: true},
+		{src: "$..[1]", expect: true},
+	} {
+		x := jp.MustParseString(d.src)
+		tt.Equal(t, d.expect, x.Has(data), d.src)
+	}
+}
+
+func TestHasKeyedIndexedReflect(t *testing.T) {
+	data := &keydex{
+		keyed: keyed{
+			ordered: ordered{
+				entries: []*entry{
+					{key: "a", value: Any{X: []any{1}}},
+					{key: "b", value: Any{X: 2}},
+					{key: "c", value: Any{X: 3}},
+				},
+			},
+		},
+	}
+	for _, d := range []*struct {
+		src    string
+		expect bool
+	}{
+		{src: "$.b.x", expect: true},
+		{src: "$[1].x", expect: true},
+		{src: "$.c.*", expect: true},
+		{src: "$[*][*]", expect: true},
+		{src: "$.*.x", expect: true},
+		{src: "$..", expect: true},
+		{src: "$..x", expect: true},
+		{src: "$['a',1].x", expect: true},
+		{src: "$[-1,2].x", expect: true},
+		{src: "$['a',-1].x", expect: true},
+		{src: "$[0:2].x", expect: true},
+		{src: "$[-4:].x", expect: true},
+		{src: "$[-1:0:-1].x", expect: true},
+		{src: "$[3:].x", expect: false},
+		{src: "$[2:0:-1].x", expect: true},
+	} {
+		x := jp.MustParseString(d.src)
+		tt.Equal(t, d.expect, x.Has(data), d.src)
+	}
+}
+
+func TestHasIndexedReflect(t *testing.T) {
+	data := &indexed{
+		ordered: ordered{
+			entries: []*entry{
+				{key: "a", value: Any{X: []any{1}}},
+				{key: "b", value: Any{X: 2}},
+				{key: "c", value: Any{X: 3}},
+			},
+		},
+	}
+	for _, d := range []*struct {
+		src    string
+		expect bool
+	}{
+		{src: "$..", expect: true},
+		{src: "$..x", expect: true},
+		{src: "$.*.x", expect: true},
+		{src: "$.*", expect: true},
+	} {
+		x := jp.MustParseString(d.src)
+		tt.Equal(t, d.expect, x.Has(data), d.src)
+	}
+}
