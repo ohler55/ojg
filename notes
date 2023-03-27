@@ -1,10 +1,7 @@
 
 - jp
- - update has
  - update set
- - update remove
- - update modified
-
+ - update modify
 
 
 - script.go

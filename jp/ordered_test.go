@@ -2,6 +2,10 @@
 
 package jp_test
 
+import (
+	"github.com/ohler55/ojg/alt"
+)
+
 type entry struct {
 	key   string
 	value any
@@ -9,6 +13,14 @@ type entry struct {
 
 type ordered struct {
 	entries []*entry
+}
+
+func (o *ordered) Simplify() any {
+	var simple []any
+	for _, e := range o.entries {
+		simple = append(simple, map[string]any{"key": e.key, "value": alt.Decompose(e.value)})
+	}
+	return simple
 }
 
 func (o *ordered) ValueAtIndex(index int) any {

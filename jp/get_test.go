@@ -832,7 +832,22 @@ func TestGetKeyedIndexed(t *testing.T) {
 		{src: "$[2][1]", expect: "[12]"},
 		{src: "$.c.*", expect: "[11 12 13]"},
 		{src: "$[*][*]", expect: "[11 12 13]"},
-		{src: "$..", expect: "[1 2 {} 11 12 13 {}]"},
+		{src: "$..", expect: `[
+  1
+  2
+  [{key: c1 value: 11} {key: c2 value: 12} {key: c3 value: 13}]
+  11
+  12
+  13
+  [
+    {key: a value: 1}
+    {key: b value: 2}
+    {
+      key: c
+      value: [{key: c1 value: 11} {key: c2 value: 12} {key: c3 value: 13}]
+    }
+  ]
+]`},
 		{src: "$['a',1]", expect: "[1 2]"},
 		{src: "$['c',1].c3", expect: "[13]"},
 		{src: "$['a',-1][-1]", expect: "[13]"},
@@ -898,7 +913,22 @@ func TestGetIndexed(t *testing.T) {
 		{src: "$[1]", expect: "[2]"},
 		{src: "$[2][1]", expect: "[12]"},
 		{src: "$[*][*]", expect: "[11 12 13]"},
-		{src: "$..", expect: "[1 2 {} 11 12 13 {}]"},
+		{src: "$..", expect: `[
+  1
+  2
+  [{key: c1 value: 11} {key: c2 value: 12} {key: c3 value: 13}]
+  11
+  12
+  13
+  [
+    {key: a value: 1}
+    {key: b value: 2}
+    {
+      key: c
+      value: [{key: c1 value: 11} {key: c2 value: 12} {key: c3 value: 13}]
+    }
+  ]
+]`},
 		{src: "$[1,2][-2,0]", expect: "[12 11]"},
 
 		{src: "$[1]", expect: "2", first: true},
@@ -964,7 +994,16 @@ func TestGetKeyedIndexedReflect(t *testing.T) {
 		{src: "$.c.*", expect: "[3]"},
 		{src: "$[*][*]", expect: "[1 2 3]"},
 		{src: "$.*.x", expect: "[1 2 3]"},
-		{src: "$..", expect: "[{x: 1} {x: 2} {x: 3} {}]"},
+		{src: "$..", expect: `[
+  {x: 1}
+  {x: 2}
+  {x: 3}
+  [
+    {key: a value: {type: Any x: 1}}
+    {key: b value: {type: Any x: 2}}
+    {key: c value: {type: Any x: 3}}
+  ]
+]`},
 		{src: "$..x", expect: "[1 2 3]"},
 		{src: "$['a',1].x", expect: "[1 2]"},
 		{src: "$['a',-1].x", expect: "[1 3]"},
@@ -1013,7 +1052,16 @@ func TestGetIndexedReflect(t *testing.T) {
 		expect string
 		first  bool
 	}{
-		{src: "$..", expect: "[{x: 1} {x: 2} {x: 3} {}]"},
+		{src: "$..", expect: `[
+  {x: 1}
+  {x: 2}
+  {x: 3}
+  [
+    {key: a value: {type: Any x: 1}}
+    {key: b value: {type: Any x: 2}}
+    {key: c value: {type: Any x: 3}}
+  ]
+]`},
 		{src: "$..x", expect: "[1 2 3]"},
 		{src: "$.*.x", expect: "[1 2 3]"},
 

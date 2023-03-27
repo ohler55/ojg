@@ -77,8 +77,10 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 		ta := strings.Split(fmt.Sprintf("%T", x[len(x)-1]), ".")
 		return fmt.Errorf("can not %s with an expression ending with a %s", fun, ta[len(ta)-1])
 	}
-	var v any
-	var nv gen.Node
+	var (
+		v  any
+		nv gen.Node
+	)
 	_, isNode := data.(gen.Node)
 	nodeValue, ok := value.(gen.Node)
 	if isNode && !ok {
@@ -128,7 +130,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 					case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 						bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-					case map[string]any, []any, gen.Object, gen.Array:
+					case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 						stack = append(stack, v)
 					default:
 						kind := reflect.Invalid
@@ -154,6 +156,52 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 						}
 						v = make([]any, int(tc)+1)
 						tv[string(tf)] = v
+						stack = append(stack, v)
+					default:
+						return fmt.Errorf("can not deduce what element to add at '%s'", x[:fi+1])
+					}
+				}
+			case Keyed:
+				if int(fi) == len(x)-1 { // last one
+					if value == delFlag {
+						tv.RemoveValueForKey(string(tf))
+					} else {
+						tv.SetValueForKey(string(tf), value)
+					}
+					if one {
+						return nil
+					}
+				} else if v, has = tv.ValueForKey(string(tf)); has {
+					switch v.(type) {
+					case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+						bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
+					case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
+						stack = append(stack, v)
+					default:
+						kind := reflect.Invalid
+						if rt := reflect.TypeOf(v); rt != nil {
+							kind = rt.Kind()
+						}
+						switch kind {
+						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+							stack = append(stack, v)
+						default:
+							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
+						}
+					}
+				} else if value != delFlag {
+					switch tc := x[fi+1].(type) {
+					case Child:
+						v = map[string]any{}
+						tv.SetValueForKey(string(tf), v)
+						stack = append(stack, v)
+					case Nth:
+						if int(tc) < 0 {
+							return fmt.Errorf("can not deduce the length of the array to add at '%s'", x[:fi+1])
+						}
+						v = make([]any, int(tc)+1)
+						tv.SetValueForKey(string(tf), v)
 						stack = append(stack, v)
 					default:
 						return fmt.Errorf("can not deduce what element to add at '%s'", x[:fi+1])
@@ -205,7 +253,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 					case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 						bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
 						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-					case map[string]any, []any, gen.Object, gen.Array:
+					case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 						stack = append(stack, v)
 					default:
 						kind := reflect.Invalid
@@ -244,7 +292,46 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
 							nil, gen.Bool, gen.Int, gen.Float, gen.String:
 							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-						case map[string]any, []any, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
+							stack = append(stack, v)
+						default:
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								stack = append(stack, v)
+							default:
+								return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
+							}
+						}
+					}
+				} else {
+					return fmt.Errorf("can not follow out of bounds array index at '%s'", x[:fi+1])
+				}
+			case Indexed:
+				size := tv.Size()
+				if i < 0 {
+					i = size + i
+				}
+				if 0 <= i && i < size {
+					if int(fi) == len(x)-1 { // last one
+						if value == delFlag {
+							tv.SetValueAtIndex(i, nil)
+						} else {
+							tv.SetValueAtIndex(i, value)
+						}
+						if one {
+							return nil
+						}
+					} else {
+						v = tv.ValueAtIndex(i)
+						switch v.(type) {
+						case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
+							nil, gen.Bool, gen.Int, gen.Float, gen.String:
+							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -301,7 +388,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 					case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
 						nil, gen.Bool, gen.Int, gen.Float, gen.String:
 						return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
-					case map[string]any, []any, gen.Object, gen.Array:
+					case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 						stack = append(stack, v)
 					default:
 						kind := reflect.Invalid
@@ -342,7 +429,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]any, []any, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -361,14 +448,11 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 					for i := range tv {
 						if value == delFlag {
 							tv[i] = nil
-							if one {
-								return nil
-							}
 						} else {
 							tv[i] = value
-							if one {
-								return nil
-							}
+						}
+						if one {
+							return nil
 						}
 					}
 				} else {
@@ -377,7 +461,78 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]any, []any, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
+							stack = append(stack, v)
+						default:
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								stack = append(stack, v)
+							}
+						}
+					}
+				}
+			case Keyed:
+				keys := tv.Keys()
+				if int(fi) == len(x)-1 { // last one
+					if value == delFlag {
+						for _, k := range keys {
+							tv.RemoveValueForKey(k)
+							if one {
+								return nil
+							}
+						}
+					} else {
+						for _, k := range keys {
+							tv.SetValueForKey(k, value)
+							if one {
+								return nil
+							}
+						}
+					}
+				} else {
+					for _, k := range keys {
+						v, _ = tv.ValueForKey(k)
+						switch v.(type) {
+						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
+							stack = append(stack, v)
+						default:
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								stack = append(stack, v)
+							}
+						}
+					}
+				}
+			case Indexed:
+				size := tv.Size()
+				if int(fi) == len(x)-1 { // last one
+					for i := 0; i < size; i++ {
+						if value == delFlag {
+							tv.SetValueAtIndex(i, nil)
+						} else {
+							tv.SetValueAtIndex(i, value)
+						}
+						if one {
+							return nil
+						}
+					}
+				} else {
+					for i := size - 1; 0 <= i; i-- {
+						v = tv.ValueAtIndex(i)
+						switch v.(type) {
+						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -451,11 +606,11 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 					} else {
 						va = x.reflectGetWild(tv)
 					}
-					for _, v := range va {
+					for _, v = range va {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]any, []any, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -483,7 +638,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]any, []any, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						default:
@@ -506,7 +661,53 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]any, []any, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
+							stack = append(stack, v)
+							stack = append(stack, fi|descentChildFlag)
+						default:
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								stack = append(stack, v)
+							}
+						}
+					}
+				case Keyed:
+					// Put prev back and slide fi.
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					for _, k := range tv.Keys() {
+						v, _ = tv.ValueForKey(k)
+						switch v.(type) {
+						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
+							stack = append(stack, v)
+							stack = append(stack, fi|descentChildFlag)
+						default:
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								stack = append(stack, v)
+							}
+						}
+					}
+				case Indexed:
+					// Put prev back and slide fi.
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					for i := tv.Size() - 1; 0 <= i; i-- {
+						v = tv.ValueAtIndex(i)
+						switch v.(type) {
+						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						default:
@@ -526,7 +727,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 					stack = append(stack, di|descentFlag)
 					for _, v = range tv {
 						switch v.(type) {
-						case map[string]any, []any, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						}
@@ -538,7 +739,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 					for i := len(tv) - 1; 0 <= i; i-- {
 						v = tv[i]
 						switch v.(type) {
-						case map[string]any, []any, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
 						}
@@ -567,7 +768,34 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-							case map[string]any, []any, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
+								stack = append(stack, v)
+							default:
+								kind := reflect.Invalid
+								if rt := reflect.TypeOf(v); rt != nil {
+									kind = rt.Kind()
+								}
+								switch kind {
+								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+									stack = append(stack, v)
+								}
+							}
+						}
+					case Keyed:
+						if int(fi) == len(x)-1 { // last one
+							if value == delFlag {
+								tv.RemoveValueForKey(tu)
+							} else {
+								tv.SetValueForKey(tu, value)
+							}
+							if one {
+								return nil
+							}
+						} else if v, has = tv.ValueForKey(tu); has {
+							switch v.(type) {
+							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+							case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 								stack = append(stack, v)
 							default:
 								kind := reflect.Invalid
@@ -592,7 +820,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 							}
 						} else if v, has = tv[tu]; has {
 							switch v.(type) {
-							case map[string]any, []any, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 								stack = append(stack, v)
 							}
 						}
@@ -609,7 +837,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-							case map[string]any, []any, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 								stack = append(stack, v)
 							default:
 								kind := reflect.Invalid
@@ -645,7 +873,41 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 								switch v.(type) {
 								case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 									bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-								case map[string]any, []any, gen.Object, gen.Array:
+								case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
+									stack = append(stack, v)
+								default:
+									kind := reflect.Invalid
+									if rt := reflect.TypeOf(v); rt != nil {
+										kind = rt.Kind()
+									}
+									switch kind {
+									case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+										stack = append(stack, v)
+									}
+								}
+							}
+						}
+					case Indexed:
+						size := tv.Size()
+						if i < 0 {
+							i = size + i
+						}
+						if 0 <= i && i < size {
+							v = tv.ValueAtIndex(i)
+							if int(fi) == len(x)-1 { // last one
+								if value == delFlag {
+									tv.SetValueAtIndex(i, nil)
+								} else {
+									tv.SetValueAtIndex(i, value)
+								}
+								if one {
+									return nil
+								}
+							} else {
+								switch v.(type) {
+								case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+									bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+								case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 									stack = append(stack, v)
 								default:
 									kind := reflect.Invalid
@@ -677,7 +939,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 							}
 						} else {
 							switch v.(type) {
-							case map[string]any, []any, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 								stack = append(stack, v)
 							}
 						}
@@ -693,7 +955,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-							case map[string]any, []any, gen.Object, gen.Array:
+							case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 								stack = append(stack, v)
 							default:
 								kind := reflect.Invalid
@@ -743,7 +1005,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]any, []any, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -762,7 +1024,61 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]any, []any, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
+							stack = append(stack, v)
+						default:
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								stack = append(stack, v)
+							}
+						}
+					}
+				}
+			case Indexed:
+				size := tv.Size()
+				if start < 0 {
+					start = size + start
+				}
+				if end < 0 {
+					end = size + end
+				}
+				if start < 0 || end < 0 || size <= start || step == 0 {
+					continue
+				}
+				if size <= end {
+					end = size - 1
+				}
+				end = start + ((end - start) / step * step)
+				if 0 < step {
+					for i := end; start <= i; i -= step {
+						v = tv.ValueAtIndex(i)
+						switch v.(type) {
+						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
+							stack = append(stack, v)
+						default:
+							kind := reflect.Invalid
+							if rt := reflect.TypeOf(v); rt != nil {
+								kind = rt.Kind()
+							}
+							switch kind {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								stack = append(stack, v)
+							}
+						}
+					}
+				} else {
+					for i := end; i <= start; i -= step {
+						v = tv.ValueAtIndex(i)
+						switch v.(type) {
+						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
+							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
@@ -794,7 +1110,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 					for i := end; start <= i; i -= step {
 						v = tv[i]
 						switch v.(type) {
-						case map[string]any, []any, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 							stack = append(stack, v)
 						}
 					}
@@ -802,18 +1118,18 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 					for i := end; i <= start; i -= step {
 						v = tv[i]
 						switch v.(type) {
-						case map[string]any, []any, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 							stack = append(stack, v)
 						}
 					}
 				}
 			default:
 				if int(fi) != len(x)-1 {
-					for _, v := range x.reflectGetSlice(tv, start, end, step) {
+					for _, v = range x.reflectGetSlice(tv, start, end, step) {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
-						case map[string]any, []any, gen.Object, gen.Array:
+						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 							stack = append(stack, v)
 						default:
 							kind := reflect.Invalid
