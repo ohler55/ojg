@@ -475,8 +475,14 @@ top:
 			case '\\':
 				buf = append(buf, '\\')
 			case 'x':
+				if len(p.buf) <= p.pos {
+					goto fail
+				}
 				b = p.buf[p.pos]
 				p.pos++
+				if len(p.buf) <= p.pos {
+					goto fail
+				}
 				i := p.readHex(b)
 				b = p.buf[p.pos]
 				p.pos++
@@ -485,13 +491,16 @@ top:
 			case 'u', 'U':
 				var r rune
 				for i := 4; 0 < i; i-- {
+					if len(p.buf) <= p.pos {
+						goto fail
+					}
 					b = p.buf[p.pos]
 					p.pos++
 					r = (r << 4) | rune(p.readHex(b))
 				}
 				buf = utf8.AppendRune(buf, r)
 			default:
-				panic(fmt.Sprintf("0x%02x (%c) is not a valid escaped character", b, b))
+				goto fail
 			}
 		case term:
 			break top
@@ -500,6 +509,8 @@ top:
 		}
 	}
 	return string(buf)
+fail:
+	panic(fmt.Sprintf("0x%02x (%c) is not a valid escaped character", b, b))
 }
 
 func (p *parser) readStr(term byte) string {

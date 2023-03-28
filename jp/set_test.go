@@ -448,20 +448,42 @@ func flatIndexed() any {
 	}
 }
 
+func deepIndexed() any {
+	return &indexed{
+		ordered: ordered{
+			entries: []*entry{
+				{key: "a", value: 1},
+				{key: "b", value: 2},
+				{
+					key: "c",
+					value: &indexed{
+						ordered: ordered{
+							entries: []*entry{
+								{key: "c1", value: 11},
+								{key: "c2", value: 12},
+								{key: "c3", value: 13},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func TestSetKeyedIndexed(t *testing.T) {
 	for _, d := range []*struct {
-		src    string
-		data   any
-		after  string
-		value  any
-		remove bool
-		err    bool
-		one    bool
+		src   string
+		data  any
+		after string
+		value any
+		del   bool
+		err   bool
+		one   bool
 	}{
 		{src: "$.b", value: 5, data: flatKeyed(), after: "[{key: a value: 1} {key: b value: 5} {key: c value: 3}]"},
-		{src: "$.b", value: 5, data: flatKeyed(), after: "[{key: a value: 1} {key: c value: 3}]", remove: true},
-		{src: "$.b", value: 5, data: flatKeyed(), after: "[{key: a value: 1} {key: c value: 3}]", remove: true, one: true},
-
+		{src: "$.b", value: 5, data: flatKeyed(), after: "[{key: a value: 1} {key: c value: 3}]", del: true},
+		{src: "$.b", value: 5, data: flatKeyed(), after: "[{key: a value: 1} {key: c value: 3}]", del: true, one: true},
 		{
 			src:   "$.c.c2",
 			value: 5,
@@ -475,35 +497,141 @@ func TestSetKeyedIndexed(t *testing.T) {
   }
 ]`,
 		},
+		{
+			src:   "$.b.c",
+			value: 5,
+			data:  &keyed{},
+			after: `[
+  {key: b value: {c: 5}}
+]`,
+			one: true,
+		},
+		{
+			src:   "$.b[1]",
+			value: 5,
+			data:  &keyed{},
+			after: `[
+  {key: b value: [null 5]}
+]`,
+			one: true,
+		},
+		{src: "$.b[-1]", value: 5, data: &keyed{}, err: true},
+		{src: "$.b.*", value: 5, data: &keyed{}, err: true},
 		{src: "$.b.c2", value: 5, data: flatKeyed(), err: true},
 
 		{src: "$[1]", value: 5, data: flatIndexed(), after: "[{key: a value: 1} {key: b value: 5} {key: c value: 3}]"},
-		{src: "$[-2]", value: 5, data: flatIndexed(), after: "[{key: a value: 1} {key: b value: null} {key: c value: 3}]", remove: true, one: true},
-
+		{src: "$[-2]", value: 5, data: flatIndexed(), after: "[{key: a value: 1} {key: b value: null} {key: c value: 3}]", del: true, one: true},
+		{
+			src:   "$[2][1]",
+			value: 5,
+			data:  deepIndexed(),
+			after: `[
+  {key: a value: 1}
+  {key: b value: 2}
+  {
+    key: c
+    value: [{key: c1 value: 11} {key: c2 value: 5} {key: c3 value: 13}]
+  }
+]`},
 		{src: "$[4]", value: 5, data: flatIndexed(), err: true},
+		{src: "$[1][1]", value: 5, data: flatIndexed(), err: true},
+
+		{src: "$.*", value: 5, data: flatKeyed(), after: "[{key: a value: 5} {key: b value: 5} {key: c value: 5}]"},
+		{
+			src:   "$.*.c2",
+			value: 5,
+			data:  deepKeyed(),
+			after: `[
+  {key: a value: 1}
+  {key: b value: 2}
+  {
+    key: c
+    value: [{key: c1 value: 11} {key: c2 value: 5} {key: c3 value: 13}]
+  }
+]`,
+		},
+		{src: "$.*", value: 5, data: flatKeyed(), after: `[{key: b value: 2} {key: c value: 3}]`, del: true, one: true},
+		{
+			src:   "$.*",
+			value: 5,
+			data:  flatKeyed(),
+			after: `[{key: a value: 5} {key: b value: 2} {key: c value: 3}]`,
+			one:   true,
+		},
+		{src: "$.*", data: flatIndexed(), after: `[{key: a value: null} {key: b value: 2} {key: c value: 3}]`, del: true, one: true},
+		{src: "$.*", value: 5, data: flatIndexed(), after: `[{key: a value: 5} {key: b value: 2} {key: c value: 3}]`, one: true},
+		{
+			src:   "$.*[1]",
+			value: 5,
+			data:  deepIndexed(),
+			after: `[
+  {key: a value: 1}
+  {key: b value: 2}
+  {
+    key: c
+    value: [{key: c1 value: 11} {key: c2 value: 5} {key: c3 value: 13}]
+  }
+]`,
+			one: true,
+		},
+		{
+			src:   "$..x",
+			value: 5,
+			data:  deepKeyed(),
+			after: `[
+  {key: a value: 1}
+  {key: b value: 2}
+  {
+    key: c
+    value: [
+      {key: c1 value: 11}
+      {key: c2 value: 12}
+      {key: c3 value: 13}
+      {key: x value: 5}
+    ]
+  }
+  {key: x value: 5}
+]`,
+		},
+		{
+			src:   "$..[1]",
+			value: 5,
+			data:  deepIndexed(),
+			after: `[
+  {key: a value: 1}
+  {key: b value: 5}
+  {
+    key: c
+    value: [{key: c1 value: 11} {key: c2 value: 5} {key: c3 value: 13}]
+  }
+]`,
+		},
+
+		// union
+		// slice
 	} {
 		x := jp.MustParseString(d.src)
 		var (
 			err error
 		)
 		if d.one {
-			if d.remove {
+			if d.del {
 				err = x.DelOne(d.data)
 			} else {
 				err = x.SetOne(d.data, d.value)
 			}
 		} else {
-			if d.remove {
+			if d.del {
 				err = x.Del(d.data)
 			} else {
 				err = x.Set(d.data, d.value)
 			}
 		}
 		if d.err {
-			tt.NotNil(t, err, "%s remove: %t one: %t", d.src, d.remove, d.one)
+			tt.NotNil(t, err, "%s del: %t one: %t", d.src, d.del, d.one)
 		} else {
-			tt.Nil(t, err, "%s remove: %t one: %t", d.src, d.remove, d.one)
-			tt.Equal(t, d.after, pretty.SEN(d.data), "%s remove: %t one: %t", d.src, d.remove, d.one)
+			tt.Nil(t, err, "%s del: %t one: %t", d.src, d.del, d.one)
+			tt.Equal(t, d.after, pretty.SEN(d.data), "%s del: %t one: %t", d.src, d.del, d.one)
 		}
 	}
 }
