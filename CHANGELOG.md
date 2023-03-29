@@ -4,9 +4,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.18.2] - 2023-03-29
+### Fixed
+- Strings in bracketed JSONPaths with escaped characters are now handled correctly.
+### Added
+- Added support for the Keyed and Indexed interface in the JSONPath (jp) evaluations.
+
 ## [1.18.1] - 2023-03-11
 ### Fixed
-- Fixed "has" and "exists" issue where comparisons broken with the introduction of `Nothing`.
+- Fixed "has" and "exists" issue where comparisons were broken with the introduction of `Nothing`.
 
 ## [1.18.0] - 2023-03-07
 ### Added

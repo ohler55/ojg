@@ -15,9 +15,9 @@ type Child string
 // then returning the expanded buffer.
 func (f Child) Append(buf []byte, bracket, first bool) []byte {
 	if bracket || !f.tokenOk() {
-		buf = append(buf, "['"...)
-		buf = append(buf, string(f)...)
-		buf = append(buf, "']"...)
+		buf = append(buf, '[')
+		buf = AppendString(buf, string(f), '\'')
+		buf = append(buf, ']')
 	} else {
 		if !first {
 			buf = append(buf, '.')

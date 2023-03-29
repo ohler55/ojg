@@ -48,6 +48,19 @@ var (
 		{path: "[?(@ > 1)]", expect: []any{2, 3}, data: []any{1, 2, 3}},
 		{path: "$[?(1==1)]", expect: []any{1, 2, 3}, data: []any{1, 2, 3}},
 		{path: "$.*[*].a", expect: []any{111, 121, 131, 141, 211, 221, 231, 241, 311, 321, 331, 341, 411, 421, 431, 441}},
+		{path: `$['\\']`, expect: []any{3}, data: map[string]any{`\`: 3}},
+		{path: `$['\x41']`, expect: []any{3}, data: map[string]any{"A": 3}},
+		{path: `$['\x4A']`, expect: []any{3}, data: map[string]any{"J": 3}},
+		{path: `$['\x4a']`, expect: []any{3}, data: map[string]any{"J": 3}},
+		{path: `$['\u03A0']`, expect: []any{3}, data: map[string]any{"Π": 3}},
+		{path: `$['\b']`, expect: []any{3}, data: map[string]any{"\b": 3}},
+		{path: `$['\t']`, expect: []any{3}, data: map[string]any{"\t": 3}},
+		{path: `$['\n']`, expect: []any{3}, data: map[string]any{"\n": 3}},
+		{path: `$['\r']`, expect: []any{3}, data: map[string]any{"\r": 3}},
+		{path: `$['\f']`, expect: []any{3}, data: map[string]any{"\f": 3}},
+		{path: `$["\'"]`, expect: []any{3}, data: map[string]any{"'": 3}},
+		{path: `$['\"']`, expect: []any{3}, data: map[string]any{`"`: 3}},
+
 		{path: "$.a[*].y",
 			expect: []any{2, 4},
 			data: map[string]any{
@@ -781,5 +794,286 @@ func TestGetExists(t *testing.T) {
 	}
 	x := jp.MustParseString(src)
 	tt.Equal(t, "[{y: 4}]", pretty.SEN(x.Get(data)))
+}
 
+func TestGetKeyedIndexed(t *testing.T) {
+	data := &keydex{
+		keyed: keyed{
+			ordered: ordered{
+				entries: []*entry{
+					{key: "a", value: 1},
+					{key: "b", value: 2},
+					{
+						key: "c",
+						value: &keydex{
+							keyed: keyed{
+								ordered: ordered{
+									entries: []*entry{
+										{key: "c1", value: 11},
+										{key: "c2", value: 12},
+										{key: "c3", value: 13},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, d := range []*struct {
+		src    string
+		expect string
+		first  bool
+	}{
+		{src: "$.b", expect: "[2]"},
+		{src: "$.c.c2", expect: "[12]"},
+		{src: "$[1]", expect: "[2]"},
+		{src: "$[2][1]", expect: "[12]"},
+		{src: "$.c.*", expect: "[11 12 13]"},
+		{src: "$[*][*]", expect: "[11 12 13]"},
+		{src: "$..", expect: `[
+  1
+  2
+  [{key: c1 value: 11} {key: c2 value: 12} {key: c3 value: 13}]
+  11
+  12
+  13
+  [
+    {key: a value: 1}
+    {key: b value: 2}
+    {
+      key: c
+      value: [{key: c1 value: 11} {key: c2 value: 12} {key: c3 value: 13}]
+    }
+  ]
+]`},
+		{src: "$['a',1]", expect: "[1 2]"},
+		{src: "$['c',1].c3", expect: "[13]"},
+		{src: "$['a',-1][-1]", expect: "[13]"},
+		{src: "$[0:2]", expect: "[1 2]"},
+		{src: "$[-4:][-2:-1]", expect: "[12]"},
+		{src: "$[-1:0:-1][-2:-1]", expect: "[12]"},
+		{src: "$[3:]", expect: "[]"},
+		{src: "$[2:0:-1][2:-5:-1]", expect: "[13 12 11]"},
+		{src: "$[?(@.c2 == 12)].c2", expect: "[12]"},
+
+		{src: "$.b", expect: "2", first: true},
+		{src: "$.c.c2", expect: "12", first: true},
+		{src: "$[1]", expect: "2", first: true},
+		{src: "$[2][1]", expect: "12", first: true},
+		{src: "$.c.*", expect: "11", first: true},
+		{src: "$[*][*]", expect: "11", first: true},
+		{src: "$..", expect: "1", first: true},
+		{src: "$..c2", expect: "12", first: true},
+		{src: "$['a',1]", expect: "1", first: true},
+		{src: "$['c',1].c3", expect: "13", first: true},
+		{src: "$['a',-1][-1]", expect: "13", first: true},
+		{src: "$[0:2]", expect: "1", first: true},
+		{src: "$[-4:][-2:-1]", expect: "12", first: true},
+		{src: "$[-1:0:-1][-2:-1]", expect: "12", first: true},
+		{src: "$[3:]", expect: "null", first: true},
+		{src: "$[2:0:-1][2:-5:-1]", expect: "13", first: true},
+	} {
+		x := jp.MustParseString(d.src)
+		if d.first {
+			tt.Equal(t, d.expect, pretty.SEN(x.First(data)), d.src)
+		} else {
+			tt.Equal(t, d.expect, pretty.SEN(x.Get(data)), d.src)
+		}
+	}
+}
+
+func TestGetIndexed(t *testing.T) {
+	data := &indexed{
+		ordered: ordered{
+			entries: []*entry{
+				{key: "a", value: 1},
+				{key: "b", value: 2},
+				{
+					key: "c",
+					value: &indexed{
+						ordered: ordered{
+							entries: []*entry{
+								{key: "c1", value: 11},
+								{key: "c2", value: 12},
+								{key: "c3", value: 13},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, d := range []*struct {
+		src    string
+		expect string
+		first  bool
+	}{
+		{src: "$[1]", expect: "[2]"},
+		{src: "$[2][1]", expect: "[12]"},
+		{src: "$[*][*]", expect: "[11 12 13]"},
+		{src: "$..", expect: `[
+  1
+  2
+  [{key: c1 value: 11} {key: c2 value: 12} {key: c3 value: 13}]
+  11
+  12
+  13
+  [
+    {key: a value: 1}
+    {key: b value: 2}
+    {
+      key: c
+      value: [{key: c1 value: 11} {key: c2 value: 12} {key: c3 value: 13}]
+    }
+  ]
+]`},
+		{src: "$[1,2][-2,0]", expect: "[12 11]"},
+
+		{src: "$[1]", expect: "2", first: true},
+		{src: "$[2][1]", expect: "12", first: true},
+		{src: "$[*][*]", expect: "11", first: true},
+		{src: "$..", expect: "1", first: true},
+		{src: "$..[1]", expect: "12", first: true},
+		{src: "$[1,2][-2,0]", expect: "12", first: true},
+	} {
+		x := jp.MustParseString(d.src)
+		if d.first {
+			tt.Equal(t, d.expect, pretty.SEN(x.First(data)), d.src)
+		} else {
+			tt.Equal(t, d.expect, pretty.SEN(x.Get(data)), d.src)
+		}
+	}
+}
+
+func TestGetKeyed(t *testing.T) {
+	data := &keyed{
+		ordered: ordered{
+			entries: []*entry{
+				{key: "a", value: 1},
+				{key: "b", value: 2},
+				{
+					key: "c",
+					value: &keyed{
+						ordered: ordered{
+							entries: []*entry{
+								{key: "c1", value: 11},
+								{key: "c2", value: 12},
+								{key: "c3", value: 13},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	x := jp.MustParseString("$[?(@.c2 == 12)].c2")
+	tt.Equal(t, "[12]", pretty.SEN(x.Get(data)))
+}
+
+func TestGetKeyedIndexedReflect(t *testing.T) {
+	data := &keydex{
+		keyed: keyed{
+			ordered: ordered{
+				entries: []*entry{
+					{key: "a", value: Any{X: 1}},
+					{key: "b", value: Any{X: 2}},
+					{key: "c", value: Any{X: 3}},
+				},
+			},
+		},
+	}
+	for _, d := range []*struct {
+		src    string
+		expect string
+		first  bool
+	}{
+		{src: "$.b.x", expect: "[2]"},
+		{src: "$[1].x", expect: "[2]"},
+		{src: "$.c.*", expect: "[3]"},
+		{src: "$[*][*]", expect: "[1 2 3]"},
+		{src: "$.*.x", expect: "[1 2 3]"},
+		{src: "$..", expect: `[
+  {x: 1}
+  {x: 2}
+  {x: 3}
+  [
+    {key: a value: {type: Any x: 1}}
+    {key: b value: {type: Any x: 2}}
+    {key: c value: {type: Any x: 3}}
+  ]
+]`},
+		{src: "$..x", expect: "[1 2 3]"},
+		{src: "$['a',1].x", expect: "[1 2]"},
+		{src: "$['a',-1].x", expect: "[1 3]"},
+		{src: "$[0:2].x", expect: "[1 2]"},
+		{src: "$[-4:].x", expect: "[1 2 3]"},
+		{src: "$[-1:0:-1].x", expect: "[3 2]"},
+		{src: "$[3:].x", expect: "[]"},
+		{src: "$[2:0:-1].x", expect: "[3 2]"},
+
+		{src: "$.b.x", expect: "2", first: true},
+		{src: "$[1].x", expect: "2", first: true},
+		{src: "$.c.*", expect: "3", first: true},
+		{src: "$[*][*]", expect: "1", first: true},
+		{src: "$.*.x", expect: "1", first: true},
+		{src: "$..", expect: "{x: 1}", first: true},
+		{src: "$..x", expect: "1", first: true},
+		{src: "$['a',1].x", expect: "1", first: true},
+		{src: "$['a',-1].x", expect: "1", first: true},
+		{src: "$[0:2].x", expect: "1", first: true},
+		{src: "$[-4:].x", expect: "1", first: true},
+		{src: "$[-1:0:-1].x", expect: "3", first: true},
+		{src: "$[3:].x", expect: "null", first: true},
+		{src: "$[2:0:-1].x", expect: "3", first: true},
+	} {
+		x := jp.MustParseString(d.src)
+		if d.first {
+			tt.Equal(t, d.expect, pretty.SEN(x.First(data)), d.src)
+		} else {
+			tt.Equal(t, d.expect, pretty.SEN(x.Get(data)), d.src)
+		}
+	}
+}
+
+func TestGetIndexedReflect(t *testing.T) {
+	data := &indexed{
+		ordered: ordered{
+			entries: []*entry{
+				{key: "a", value: Any{X: 1}},
+				{key: "b", value: Any{X: 2}},
+				{key: "c", value: Any{X: 3}},
+			},
+		},
+	}
+	for _, d := range []*struct {
+		src    string
+		expect string
+		first  bool
+	}{
+		{src: "$..", expect: `[
+  {x: 1}
+  {x: 2}
+  {x: 3}
+  [
+    {key: a value: {type: Any x: 1}}
+    {key: b value: {type: Any x: 2}}
+    {key: c value: {type: Any x: 3}}
+  ]
+]`},
+		{src: "$..x", expect: "[1 2 3]"},
+		{src: "$.*.x", expect: "[1 2 3]"},
+
+		{src: "$..", expect: "{x: 1}", first: true},
+		{src: "$..x", expect: "1", first: true},
+		{src: "$.*.x", expect: "1", first: true},
+	} {
+		x := jp.MustParseString(d.src)
+		if d.first {
+			tt.Equal(t, d.expect, pretty.SEN(x.First(data)), d.src)
+		} else {
+			tt.Equal(t, d.expect, pretty.SEN(x.Get(data)), d.src)
+		}
+	}
 }

@@ -24,4 +24,6 @@ cover: lint
 	$Q grep github asm/cov.out >> cov.out
 	$Q go tool cover -func=cov.out | grep "total:"
 
-.PHONY: all lint cover
+test: cover
+
+.PHONY: all lint cover test
