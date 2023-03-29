@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.18.2] - unreleased
+## [1.18.2] - 2023-03-29
 ### Fixed
 - Strings in bracketed JSONPaths with escaped characters are now handled correctly.
 ### Added
