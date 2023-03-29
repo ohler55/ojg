@@ -607,8 +607,114 @@ func TestSetKeyedIndexed(t *testing.T) {
 ]`,
 		},
 
-		// union
-		// slice
+		{
+			src:   "$['a','c'].x",
+			value: 5,
+			data:  deepKeyed(),
+			after: `[
+  {key: a value: 1}
+  {key: b value: 2}
+  {
+    key: c
+    value: [
+      {key: c1 value: 11}
+      {key: c2 value: 12}
+      {key: c3 value: 13}
+      {key: x value: 5}
+    ]
+  }
+]`,
+		},
+		{
+			src:   "$['a','b']",
+			value: 5,
+			data:  flatKeyed(),
+			after: `[{key: a value: 5} {key: b value: 2} {key: c value: 3}]`,
+			one:   true,
+		},
+		{src: "$['a','b']", data: flatKeyed(), after: `[{key: c value: 3}]`, del: true},
+		{
+			src:   "$[0,2][1]",
+			value: 5,
+			data:  deepIndexed(),
+			after: `[
+  {key: a value: 1}
+  {key: b value: 2}
+  {
+    key: c
+    value: [{key: c1 value: 11} {key: c2 value: 5} {key: c3 value: 13}]
+  }
+]`,
+		},
+		{
+			src:   "$[0,2]",
+			value: 5,
+			data:  flatIndexed(),
+			after: `[{key: a value: 5} {key: b value: 2} {key: c value: 3}]`,
+			one:   true,
+		},
+		{
+			src:   "$[0,-1]",
+			data:  flatIndexed(),
+			after: `[{key: a value: null} {key: b value: 2} {key: c value: null}]`,
+			del:   true,
+		},
+		{
+			src:   "$[0:-1][1]",
+			value: 5,
+			data:  deepIndexed(),
+			after: `[
+  {key: a value: 1}
+  {key: b value: 2}
+  {
+    key: c
+    value: [{key: c1 value: 11} {key: c2 value: 5} {key: c3 value: 13}]
+  }
+]`,
+			one: true,
+		},
+		{
+			src:   "$[2:0:-1][1]",
+			value: 5,
+			data:  deepIndexed(),
+			after: `[
+  {key: a value: 1}
+  {key: b value: 2}
+  {
+    key: c
+    value: [{key: c1 value: 11} {key: c2 value: 5} {key: c3 value: 13}]
+  }
+]`,
+			one: true,
+		},
+		{
+			src:   "$[-3:4][1]",
+			value: 5,
+			data:  deepIndexed(),
+			after: `[
+  {key: a value: 1}
+  {key: b value: 2}
+  {
+    key: c
+    value: [{key: c1 value: 11} {key: c2 value: 5} {key: c3 value: 13}]
+  }
+]`,
+			one: true,
+		},
+		{
+			src:   "$[0:1:0][1]",
+			value: 5,
+			data:  deepIndexed(),
+			after: `[
+  {key: a value: 1}
+  {key: b value: 2}
+  {
+    key: c
+    value: [{key: c1 value: 11} {key: c2 value: 12} {key: c3 value: 13}]
+  }
+]`,
+			one: true,
+		},
 	} {
 		x := jp.MustParseString(d.src)
 		var (
@@ -632,6 +738,155 @@ func TestSetKeyedIndexed(t *testing.T) {
 		} else {
 			tt.Nil(t, err, "%s del: %t one: %t", d.src, d.del, d.one)
 			tt.Equal(t, d.after, pretty.SEN(d.data), "%s del: %t one: %t", d.src, d.del, d.one)
+		}
+	}
+}
+
+func flatReflectKeyed() any {
+	return &keyed{
+		ordered: ordered{
+			entries: []*entry{
+				{key: "a", value: &Any{X: 1}},
+				{key: "b", value: &Any{X: 2}},
+				{key: "c", value: &Any{X: 3}},
+			},
+		},
+	}
+}
+
+func flatReflectIndexed() any {
+	return &indexed{
+		ordered: ordered{
+			entries: []*entry{
+				{key: "a", value: &Any{X: 1}},
+				{key: "b", value: &Any{X: 2}},
+				{key: "c", value: &Any{X: 3}},
+			},
+		},
+	}
+}
+
+func TestSetKeyedIndexedReflect(t *testing.T) {
+	for _, d := range []*struct {
+		src   string
+		data  any
+		after string
+		value any
+		err   bool
+	}{
+		{
+			src:   "$.b.x",
+			value: 5,
+			data:  flatReflectKeyed(),
+			after: `[
+  {key: a value: {type: Any x: 1}}
+  {key: b value: {type: Any x: 5}}
+  {key: c value: {type: Any x: 3}}
+]`,
+		},
+		{src: "$.a.x", value: 5, data: &keyed{ordered: ordered{entries: []*entry{{key: "a", value: func() {}}}}}, err: true},
+		{
+			src:   "$[1].x",
+			value: 5,
+			data:  flatReflectIndexed(),
+			after: `[
+  {key: a value: {type: Any x: 1}}
+  {key: b value: {type: Any x: 5}}
+  {key: c value: {type: Any x: 3}}
+]`,
+		},
+		{src: "$[0].x", value: 5, data: &indexed{ordered: ordered{entries: []*entry{{key: "a", value: func() {}}}}}, err: true},
+		{
+			src:   "$.*.x",
+			value: 5,
+			data:  flatReflectKeyed(),
+			after: `[
+  {key: a value: {type: Any x: 5}}
+  {key: b value: {type: Any x: 5}}
+  {key: c value: {type: Any x: 5}}
+]`,
+		},
+		{
+			src:   "$.*.x",
+			value: 5,
+			data:  flatReflectIndexed(),
+			after: `[
+  {key: a value: {type: Any x: 5}}
+  {key: b value: {type: Any x: 5}}
+  {key: c value: {type: Any x: 5}}
+]`,
+		},
+		{
+			src:   "$..x",
+			value: 5,
+			data:  flatReflectKeyed(),
+			after: `[
+  {key: a value: {type: Any x: 5}}
+  {key: b value: {type: Any x: 5}}
+  {key: c value: {type: Any x: 5}}
+  {key: x value: 5}
+]`,
+		},
+		{
+			src:   "$..x",
+			value: 5,
+			data:  flatReflectIndexed(),
+			after: `[
+  {key: a value: {type: Any x: 5}}
+  {key: b value: {type: Any x: 5}}
+  {key: c value: {type: Any x: 5}}
+]`,
+		},
+		{
+			src:   "$['a','b'].x",
+			value: 5,
+			data:  flatReflectKeyed(),
+			after: `[
+  {key: a value: {type: Any x: 5}}
+  {key: b value: {type: Any x: 5}}
+  {key: c value: {type: Any x: 3}}
+]`,
+		},
+		{
+			src:   "$[0,1].x",
+			value: 5,
+			data:  flatReflectIndexed(),
+			after: `[
+  {key: a value: {type: Any x: 5}}
+  {key: b value: {type: Any x: 5}}
+  {key: c value: {type: Any x: 3}}
+]`,
+		},
+		{
+			src:   "$[0:1].x",
+			value: 5,
+			data:  flatReflectIndexed(),
+			after: `[
+  {key: a value: {type: Any x: 5}}
+  {key: b value: {type: Any x: 5}}
+  {key: c value: {type: Any x: 3}}
+]`,
+		},
+		{
+			src:   "$[1:0:-1].x",
+			value: 5,
+			data:  flatReflectIndexed(),
+			after: `[
+  {key: a value: {type: Any x: 5}}
+  {key: b value: {type: Any x: 5}}
+  {key: c value: {type: Any x: 3}}
+]`,
+		},
+	} {
+		x := jp.MustParseString(d.src)
+		var err error
+
+		err = x.Set(d.data, d.value)
+		if d.err {
+			tt.NotNil(t, err, "%s", d.src)
+		} else {
+			tt.Nil(t, err, "%s", d.src)
+			tt.Equal(t, d.after, pretty.SEN(d.data), d.src)
 		}
 	}
 }
