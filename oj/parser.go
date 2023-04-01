@@ -294,10 +294,14 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			}
 		case numComma:
 			p.add(p.num.AsNum())
-			if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 {
-				p.mode = keyMap
+			if 0 < len(p.starts) {
+				if p.starts[len(p.starts)-1] == -1 {
+					p.mode = keyMap
+				} else {
+					p.mode = commaMap
+				}
 			} else {
-				p.mode = commaMap
+				return p.newError(off, "unexpected comma")
 			}
 		case strSlash:
 			p.mode = escMap

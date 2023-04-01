@@ -142,6 +142,7 @@ func TestParserParseString(t *testing.T) {
 		{src: "[ // a comment\n  true\n]", expect: "unexpected character '/' at 1:3"},
 		{src: `→`, expect: "unexpected character '→' at 1:1"},
 		{src: `{"a":"1"`, expect: "incomplete JSON at 1:9"},
+		{src: "1,2,3", expect: "unexpected comma at 1:2"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.src)
