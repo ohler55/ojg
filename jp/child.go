@@ -33,7 +33,7 @@ func (f Child) tokenOk() bool {
 			return false
 		}
 	}
-	return true
+	return len(f) != 0
 }
 
 func (f Child) remove(value any) (out any, changed bool) {
