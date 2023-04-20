@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.18.5] - 2023-04-20
+### Fixed
+- alt.Diff now handles slice indexes correctly.
+
 ## [1.18.4] - 2023-04-04
 ### Fixed
 - JSONPath with a child selector containing `'` is not escaped properly.

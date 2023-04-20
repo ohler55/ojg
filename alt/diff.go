@@ -141,10 +141,14 @@ func diff(v0, v1 any, one bool, ignores ...Path) (diffs []Path) {
 			break
 		}
 		var childIgnores []Path
+		ii := -1
 		for _, ign := range ignores {
 			if 1 < len(ign) {
-				switch ign[0].(type) {
-				case nil, int:
+				switch ti := ign[0].(type) {
+				case nil:
+					childIgnores = append(childIgnores, ign[1:])
+				case int:
+					ii = ti
 					childIgnores = append(childIgnores, ign[1:])
 				}
 			}
@@ -157,7 +161,12 @@ func diff(v0, v1 any, one bool, ignores ...Path) (diffs []Path) {
 				diffs = append(diffs, Path{i})
 				return
 			}
-			ds := diff(m1, t1[i], one, childIgnores...)
+			var ds []Path
+			if ii == i || ii < 0 {
+				ds = diff(m1, t1[i], one, childIgnores...)
+			} else {
+				ds = diff(m1, t1[i], one)
+			}
 			for _, d := range ds {
 				if len(d) == 1 && d[0] == nil {
 					d[0] = i

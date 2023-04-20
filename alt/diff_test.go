@@ -199,11 +199,15 @@ func TestDiffReflect(t *testing.T) {
 }
 
 func TestDiffArrayIgnores(t *testing.T) {
-	diffs := alt.Diff(
-		map[string]any{"x": []any{map[string]any{"a": 3}, map[string]any{"a": 3}}},
-		map[string]any{"x": []any{map[string]any{"a": 3}, map[string]any{"a": 4}}},
-		alt.Path{"x", 0, "a"},
-	)
-	// TBD index doesn't see to matter
+	v1 := map[string]any{"x": []any{map[string]any{"a": 3}, map[string]any{"a": 3}}}
+	v2 := map[string]any{"x": []any{map[string]any{"a": 3}, map[string]any{"a": 4}}}
+
+	diffs := alt.Diff(v1, v2, alt.Path{"x", 1, "a"})
+	tt.Equal(t, 0, len(diffs))
+
+	diffs = alt.Diff(v1, v2, alt.Path{"x", 0, "a"})
+	tt.Equal(t, 1, len(diffs))
+
+	diffs = alt.Diff(v1, v2, alt.Path{"x", nil, "a"})
 	tt.Equal(t, 0, len(diffs))
 }

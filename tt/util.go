@@ -23,9 +23,9 @@ func finishFail(t *testing.T, b *strings.Builder, args []any) {
 	stackFill(b)
 	if 0 < len(args) {
 		if format, _ := args[0].(string); 0 < len(format) {
-			b.WriteString(fmt.Sprintf(format, args[1:]...))
+			_, _ = fmt.Fprintf(b, format, args[1:]...)
 		} else {
-			b.WriteString(fmt.Sprint(args...))
+			_, _ = fmt.Fprint(b, args...)
 		}
 	}
 	t.Fatal(b.String())
@@ -44,7 +44,7 @@ func stackFill(b *strings.Builder) {
 		fn = runtime.FuncForPC(pc[i])
 		c.file, c.line = fn.FileLine(pc[i])
 		c.fn = fn.Name()
-		b.WriteString(fmt.Sprintf("%s @ %s:%d", c.fn, c.file, c.line))
+		_, _ = fmt.Fprintf(b, "%s @ %s:%d", c.fn, c.file, c.line)
 		b.WriteByte('\n')
 	}
 }
