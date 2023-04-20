@@ -197,3 +197,13 @@ func TestDiffReflect(t *testing.T) {
 	)
 	tt.Equal(t, 0, len(diffs))
 }
+
+func TestDiffArrayIgnores(t *testing.T) {
+	diffs := alt.Diff(
+		map[string]any{"x": []any{map[string]any{"a": 3}, map[string]any{"a": 3}}},
+		map[string]any{"x": []any{map[string]any{"a": 3}, map[string]any{"a": 4}}},
+		alt.Path{"x", 0, "a"},
+	)
+	// TBD index doesn't see to matter
+	tt.Equal(t, 0, len(diffs))
+}
