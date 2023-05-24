@@ -773,6 +773,161 @@ func TestGetWildReflectOrder(t *testing.T) {
 	tt.Equal(t, "e1", pretty.SEN(path.First(data)))
 }
 
+func TestGetChildReflectByJsonTag(t *testing.T) {
+	type Element struct {
+		Value string
+	}
+	type Root struct {
+		Elements    []Element
+		AltElements []Element `json:"anyOtherAttributeName"`
+	}
+	data := Root{
+		Elements: []Element{
+			{Value: "e1"},
+			{Value: "e2"},
+			{Value: "e3"},
+		},
+		AltElements: []Element{
+			{Value: "e4"},
+			{Value: "e5"},
+			{Value: "e6"},
+		},
+	}
+	path := jp.MustParseString("$.elements[*]")
+	tt.Equal(t, "[{value: e1} {value: e2} {value: e3}]", pretty.SEN(path.Get(data)))
+	tt.Equal(t, "{value: e1}", pretty.SEN(path.First(data)))
+
+	path = jp.MustParseString("$.elements[*].value")
+	tt.Equal(t, "[e1 e2 e3]", pretty.SEN(path.Get(data)))
+	tt.Equal(t, "e1", pretty.SEN(path.First(data)))
+
+	path = jp.MustParseString("$.altElements[*]")
+	tt.Equal(t, "[{value: e4} {value: e5} {value: e6}]", pretty.SEN(path.Get(data)))
+	tt.Equal(t, "{value: e4}", pretty.SEN(path.First(data)))
+
+	path = jp.MustParseString("$.altElements[*].value")
+	tt.Equal(t, "[e4 e5 e6]", pretty.SEN(path.Get(data)))
+	tt.Equal(t, "e4", pretty.SEN(path.First(data)))
+
+	// Get by "json" tag
+	path = jp.MustParseString("$.anyOtherAttributeName[*]")
+	tt.Equal(t, "[{value: e4} {value: e5} {value: e6}]", pretty.SEN(path.Get(data)))
+	tt.Equal(t, "{value: e4}", pretty.SEN(path.First(data)))
+
+	path = jp.MustParseString("$.anyOtherAttributeName[*].value")
+	tt.Equal(t, "[e4 e5 e6]", pretty.SEN(path.Get(data)))
+	tt.Equal(t, "e4", pretty.SEN(path.First(data)))
+
+	// a non-existent attribute in the struct and also in the json (which populated the struct)
+	// would still be non-existent as expected
+	path = jp.MustParseString("$.nonExistentAttributeName[*].value")
+	tt.Equal(t, "[]", pretty.SEN(path.Get(data)))
+}
+
+func TestGetChildReflectByJsonTagInEmbeddedStruct(t *testing.T) {
+	type Base struct {
+		BaseVal string `json:"anyOtherAttributeName"`
+	}
+	type Element struct {
+		Base  // Embedded Struct
+		Value string
+	}
+	type Root struct {
+		Elements []Element
+	}
+	data := Root{
+		Elements: []Element{
+			{Base: Base{BaseVal: "b1"}, Value: "e1"},
+			{Base: Base{BaseVal: "b2"}, Value: "e2"},
+			{Base: Base{BaseVal: "b3"}, Value: "e3"},
+		},
+	}
+	path := jp.MustParseString("$.elements[*]")
+	tt.Equal(t, "[{baseVal: b1 value: e1} {baseVal: b2 value: e2} {baseVal: b3 value: e3}]", pretty.SEN(path.Get(data)))
+	tt.Equal(t, "{baseVal: b1 value: e1}", pretty.SEN(path.First(data)))
+
+	path = jp.MustParseString("$.elements[*].value")
+	tt.Equal(t, "[e1 e2 e3]", pretty.SEN(path.Get(data)))
+	tt.Equal(t, "e1", pretty.SEN(path.First(data)))
+
+	path = jp.MustParseString("$.elements[*].baseVal")
+	tt.Equal(t, "[b1 b2 b3]", pretty.SEN(path.Get(data)))
+	tt.Equal(t, "b1", pretty.SEN(path.First(data)))
+
+	// Get by "json" tag
+	path = jp.MustParseString("$.elements[*].anyOtherAttributeName")
+	tt.Equal(t, "[b1 b2 b3]", pretty.SEN(path.Get(data)))
+	tt.Equal(t, "b1", pretty.SEN(path.First(data)))
+
+	// a non-existent attribute in the struct and also in the json (which populated the struct)
+	// would still be non-existent as expected
+	path = jp.MustParseString("$.elements[*].nonExistentAttributeName")
+	tt.Equal(t, "[]", pretty.SEN(path.Get(data)))
+}
+
+func TestGetChildReflectInEmbeddedStructsResultsInNothing(t *testing.T) {
+
+	// given embedded structures with fields of the same name
+	// when trying to find the field by its name
+	// then the search will be invalidated by not knowing which of the fields to get
+
+	type A struct {
+		attr string
+	}
+	type B struct {
+		attr string
+	}
+	type C struct {
+		A
+		B
+	}
+
+	a := A{attr: "_a"}
+	b := B{attr: "_b"}
+	c := C{
+		A: a,
+		B: b,
+	}
+
+	path := jp.MustParseString("$.attr")
+	tt.Equal(t, "[]", pretty.SEN(path.Get(c)))
+}
+
+func TestGetChildReflectInCyclicGraphEmbeddedStructsResultsInNothing(t *testing.T) {
+
+	// Given a cyclic graph of embedded structs (because of the interface)
+	// when trying to find the field by its name (since the name does not exist)
+	// then the search will be invalidated and it will not go into infinite loop
+
+	type I interface{}
+	type A struct {
+		I
+		attr string
+	}
+	type B struct {
+		I
+		attr string
+	}
+	type C struct {
+		*A
+		*B
+		I
+	}
+
+	a := &A{attr: "_a"}
+	b := &B{attr: "_b"}
+	a.I = b
+	b.I = a
+	c := C{
+		A: a,
+		B: b,
+		I: b, // this member will be completely ignored because it is repeated
+	}
+
+	path := jp.MustParseString("$.aNonExistentAttribute")
+	tt.Equal(t, "[]", pretty.SEN(path.Get(c)))
+}
+
 func TestGetSliceReflect(t *testing.T) {
 	src := "$.vals[-3:]"
 	data := map[string]any{"vals": []int{10, 20, 30, 40, 50, 60}}

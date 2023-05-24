@@ -1587,7 +1587,7 @@ func (x Expr) reflectGetChild(data any, key string) (v any, has bool) {
 		}
 		switch rt.Kind() {
 		case reflect.Struct:
-			rv := rd.FieldByNameFunc(func(k string) bool { return strings.EqualFold(k, key) })
+			rv := reflectGetFieldByKey(rd, key)
 			if rv.IsValid() && rv.CanInterface() {
 				v = rv.Interface()
 				has = true
@@ -1598,6 +1598,151 @@ func (x Expr) reflectGetChild(data any, key string) (v any, has bool) {
 				v = rv.Interface()
 				has = true
 			}
+		}
+	}
+	return
+}
+
+func reflectGetFieldByKey(structValue reflect.Value, key string) reflect.Value {
+	if f, ok := reflectGetStructFieldByNameOrJsonTag(structValue, key); ok {
+		return structValue.FieldByIndex(f.Index)
+	}
+	return reflect.Value{}
+}
+
+func reflectGetStructFieldByNameOrJsonTag(structValue reflect.Value, key string) (result reflect.StructField, ok bool) {
+
+	// match by field name or by json tag
+	match := func(f reflect.StructField) bool {
+		if strings.EqualFold(f.Name, key) {
+			return true
+		}
+		tagValue := f.Tag.Get("json")
+		jsonKey, _, _ := strings.Cut(tagValue, ",")
+		jsonKey = strings.Trim(jsonKey, " ")
+		if strings.EqualFold(jsonKey, key) {
+			return true
+		}
+		return false
+	}
+
+	type fieldScan struct {
+		structVal reflect.Value
+		index     []int
+	}
+
+	// -----------------------------------------------------------------
+	// The algorithm is breadth first search, one depth level at a time.
+	// Based on the original: ((Struct) reflect.Value).FieldByNameFunc()
+	// -----------------------------------------------------------------
+
+	// The 'current' and 'next' slices are work queues:
+	// 'current' lists the fields to visit on this depth level,
+	// and 'next' lists the fields on the next lower level.
+	current := []fieldScan{}
+	next := []fieldScan{{structVal: structValue}}
+
+	// 'nextCount' records the number of times an embedded struct type has been
+	// encountered and considered for queueing in the 'next' slice.
+	// We only queue the first one, but we increment the count on each.
+	// If a struct type T can be reached more than once at a given depth level,
+	// then it annihilates itself and need not be considered at all when we
+	// process that next depth level.
+	var nextCount map[reflect.Type]int
+
+	// 'visited' records the structs that have been considered already.
+	// Note that embedded pointer fields can create cycles in the graph of
+	// reachable embedded types; 'visited' avoids following those cycles.
+	// It also avoids duplicated effort: if we didn't find the field in an
+	// embedded type T at level 2, we won't find it in one at level 4 either.
+	visited := map[reflect.Type]bool{}
+
+	for len(next) > 0 {
+		current, next = next, current[:0]
+		count := nextCount
+		nextCount = nil
+
+		// Process all the fields at this depth, now listed in 'current'.
+		// The loop queues embedded fields found in 'next', for processing during the next
+		// iteration. The multiplicity of the 'current' field counts is recorded
+		// in 'count'; the multiplicity of the 'next' field counts is recorded in 'nextCount'.
+		for i := range current {
+			scan := current[i]
+			sVal := scan.structVal
+			sTyp := sVal.Type()
+			if visited[sTyp] {
+				// We've looked through this type before, at a higher level.
+				// That higher level would shadow the lower level we're now at,
+				// so this one can't be useful to us. Ignore it.
+				continue
+			}
+			visited[sTyp] = true
+
+			for i := 0; i < sVal.NumField(); i++ {
+				fieldValue := sVal.Field(i)
+				structField := sTyp.Field(i)
+
+				var nestedTyp reflect.Type
+				if structField.Anonymous {
+					// Embedded field of type T or *T.
+					nestedTyp = fieldValue.Type()
+
+					if nestedTyp.Kind() == reflect.Interface {
+						fieldValue = reflect.ValueOf(fieldValue.Interface())
+						nestedTyp = fieldValue.Type()
+					}
+
+					if nestedTyp.Kind() == reflect.Ptr {
+						fieldValue = fieldValue.Elem()
+						nestedTyp = nestedTyp.Elem()
+					}
+				}
+
+				// Does it match?
+				if match(structField) {
+					// Potential match
+					if count[sTyp] > 1 || ok {
+						// Name appeared multiple times at this level: annihilate.
+						return reflect.StructField{}, false
+					}
+					result = structField
+					result.Index = nil
+					result.Index = append(result.Index, scan.index...)
+					result.Index = append(result.Index, i)
+					ok = true
+					continue
+				}
+
+				// Queue embedded struct fields for processing with next level,
+				// but only if we haven't seen a match yet at this level and only
+				// if the embedded types haven't already been queued.
+				if ok || nestedTyp == nil || nestedTyp.Kind() != reflect.Struct {
+					continue
+				}
+
+				// here we are sure that the nested type is indeed a Struct
+				nestedStructVal := fieldValue
+				nestedStructTyp := nestedStructVal.Type()
+
+				if nextCount[nestedStructTyp] > 0 {
+					nextCount[nestedStructTyp] = 2 // exact multiple doesn't matter
+					continue
+				}
+				if nextCount == nil {
+					nextCount = map[reflect.Type]int{}
+				}
+				nextCount[nestedStructTyp] = 1
+				if count[sTyp] > 1 {
+					nextCount[nestedStructTyp] = 2 // exact multiple doesn't matter
+				}
+				var index []int
+				index = append(index, scan.index...)
+				index = append(index, i)
+				next = append(next, fieldScan{structVal: nestedStructVal, index: index})
+			}
+		}
+		if ok {
+			break
 		}
 	}
 	return
