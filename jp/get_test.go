@@ -865,6 +865,69 @@ func TestGetChildReflectByJsonTagInEmbeddedStruct(t *testing.T) {
 	tt.Equal(t, "[]", pretty.SEN(path.Get(data)))
 }
 
+func TestGetChildReflectInEmbeddedStructsResultsInNothing(t *testing.T) {
+
+	// given embedded structures with fields of the same name
+	// when trying to find the field by its name
+	// then the search will be invalidated by not knowing which of the fields to get
+
+	type A struct {
+		attr string
+	}
+	type B struct {
+		attr string
+	}
+	type C struct {
+		A
+		B
+	}
+
+	a := A{attr: "_a"}
+	b := B{attr: "_b"}
+	c := C{
+		A: a,
+		B: b,
+	}
+
+	path := jp.MustParseString("$.attr")
+	tt.Equal(t, "[]", pretty.SEN(path.Get(c)))
+}
+
+func TestGetChildReflectInCyclicGraphEmbeddedStructsResultsInNothing(t *testing.T) {
+
+	// Given a cyclic graph of embedded structs (because of the interface)
+	// when trying to find the field by its name (since the name does not exist)
+	// then the search will be invalidated and it will not go into infinite loop
+
+	type I interface{}
+	type A struct {
+		I
+		attr string
+	}
+	type B struct {
+		I
+		attr string
+	}
+	type C struct {
+		*A
+		*B
+		I
+	}
+
+	a := &A{attr: "_a"}
+	b := &B{attr: "_b"}
+	a.I = b
+	b.I = a
+	c := C{
+		A: a,
+		B: b,
+		I: b, // this member will be completely ignored because it is repeated
+	}
+
+	path := jp.MustParseString("$.aNonExistentAttribute")
+	tt.Equal(t, "[]", pretty.SEN(path.Get(c)))
+}
+
 func TestGetSliceReflect(t *testing.T) {
 	src := "$.vals[-3:]"
 	data := map[string]any{"vals": []int{10, 20, 30, 40, 50, 60}}
