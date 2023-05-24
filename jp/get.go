@@ -1666,7 +1666,8 @@ func reflectGetStructFieldByNameOrJsonTag(structValue reflect.Value, key string)
 		// The loop queues embedded fields found in 'next', for processing during the next
 		// iteration. The multiplicity of the 'current' field counts is recorded
 		// in 'count'; the multiplicity of the 'next' field counts is recorded in 'nextCount'.
-		for _, scan := range current {
+		for i := range current {
+			scan := current[i]
 			sVal := scan.structVal
 			sTyp := sVal.Type()
 			if visited[sTyp] {
@@ -1678,8 +1679,8 @@ func reflectGetStructFieldByNameOrJsonTag(structValue reflect.Value, key string)
 			visited[sTyp] = true
 
 			for i := 0; i < sVal.NumField(); i++ {
-				structField := sTyp.Field(i)
 				fieldValue := sVal.Field(i)
+				structField := sTyp.Field(i)
 
 				var nestedTyp reflect.Type
 				if structField.Anonymous {
