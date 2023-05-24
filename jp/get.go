@@ -1611,9 +1611,6 @@ func reflectGetFieldByKey(structValue reflect.Value, key string) reflect.Value {
 }
 
 func reflectGetStructFieldByNameOrJsonTag(structValue reflect.Value, key string) (result reflect.StructField, ok bool) {
-	if structValue.Type().Kind() != reflect.Struct {
-		panic("reflectGetStructFieldByNameOrJsonTag of non-struct type " + structValue.Type().String())
-	}
 
 	// match by field name or by json tag
 	match := func(f reflect.StructField) bool {
@@ -1681,25 +1678,33 @@ func reflectGetStructFieldByNameOrJsonTag(structValue reflect.Value, key string)
 			visited[sTyp] = true
 
 			for i := 0; i < sVal.NumField(); i++ {
-				f := sTyp.Field(i)
+				structField := sTyp.Field(i)
+				fieldValue := sVal.Field(i)
 
 				var nestedTyp reflect.Type
-				if f.Anonymous {
+				if structField.Anonymous {
 					// Embedded field of type T or *T.
-					nestedTyp = f.Type
+					nestedTyp = fieldValue.Type()
+
+					if nestedTyp.Kind() == reflect.Interface {
+						fieldValue = reflect.ValueOf(fieldValue.Interface())
+						nestedTyp = fieldValue.Type()
+					}
+
 					if nestedTyp.Kind() == reflect.Ptr {
+						fieldValue = fieldValue.Elem()
 						nestedTyp = nestedTyp.Elem()
 					}
 				}
 
 				// Does it match?
-				if match(f) {
+				if match(structField) {
 					// Potential match
 					if count[sTyp] > 1 || ok {
 						// Name appeared multiple times at this level: annihilate.
 						return reflect.StructField{}, false
 					}
-					result = f
+					result = structField
 					result.Index = nil
 					result.Index = append(result.Index, scan.index...)
 					result.Index = append(result.Index, i)
@@ -1714,7 +1719,8 @@ func reflectGetStructFieldByNameOrJsonTag(structValue reflect.Value, key string)
 					continue
 				}
 
-				nestedStructVal := sVal.Field(i)
+				// here we are sure that the nested type is indeed a Struct
+				nestedStructVal := fieldValue
 				nestedStructTyp := nestedStructVal.Type()
 
 				if nextCount[nestedStructTyp] > 0 {
