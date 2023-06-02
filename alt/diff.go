@@ -188,15 +188,6 @@ func diff(v0, v1 any, one bool, ignores ...Path) (diffs []Path) {
 			diffs = append(diffs, Path{nil})
 			break
 		}
-		var childIgnores []Path
-		for _, ign := range ignores {
-			if 1 < len(ign) {
-				switch ign[0].(type) {
-				case nil, string:
-					childIgnores = append(childIgnores, ign[1:])
-				}
-			}
-		}
 		keys := map[string]bool{}
 		for k := range t0 {
 			keys[k] = true
@@ -208,7 +199,25 @@ func diff(v0, v1 any, one bool, ignores ...Path) (diffs []Path) {
 			if ignoreKey(k, ignores) {
 				continue
 			}
-			ds := diff(t0[k], t1[k], one, childIgnores...)
+			var ds []Path
+			if 0 < len(ignores) {
+				var childIgnores []Path
+				for _, ign := range ignores {
+					if 1 < len(ign) {
+						switch ti := ign[0].(type) {
+						case nil:
+							childIgnores = append(childIgnores, ign[1:])
+						case string:
+							if k == ti {
+								childIgnores = append(childIgnores, ign[1:])
+							}
+						}
+					}
+				}
+				ds = diff(t0[k], t1[k], one, childIgnores...)
+			} else {
+				ds = diff(t0[k], t1[k], one)
+			}
 			for _, d := range ds {
 				if len(d) == 1 && d[0] == nil {
 					d[0] = k

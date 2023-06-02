@@ -8,6 +8,7 @@ import (
 
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
+	"github.com/ohler55/ojg/pretty"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -210,4 +211,29 @@ func TestDiffArrayIgnores(t *testing.T) {
 
 	diffs = alt.Diff(v1, v2, alt.Path{"x", nil, "a"})
 	tt.Equal(t, 0, len(diffs))
+}
+
+func TestDiffMapIgnores2(t *testing.T) {
+	diffs := alt.Diff(
+		map[string]any{"x": map[string]any{"a": 1, "b": 2}, "y": map[string]any{"a": 3, "b": 4}},
+		map[string]any{"x": map[string]any{"a": 1, "b": 3}, "y": map[string]any{"a": 3, "b": 5}},
+		alt.Path{"y", "b"},
+	)
+	tt.Equal(t, "[[x b]]", pretty.SEN(diffs))
+
+	diffs = alt.Diff(
+		map[string]any{"x": map[string]any{"a": 1, "b": 2}, "y": map[string]any{"a": 3, "b": 4}},
+		map[string]any{"x": map[string]any{"a": 1, "b": 3}, "y": map[string]any{"a": 3, "b": 5}},
+		alt.Path{nil, "b"},
+	)
+	tt.Equal(t, "[]", pretty.SEN(diffs))
+}
+
+func TestDiffArrayIgnores2(t *testing.T) {
+	diffs := alt.Diff(
+		[]any{map[string]any{"a": 1, "b": 2}, map[string]any{"a": 3, "b": 4}},
+		[]any{map[string]any{"a": 1, "b": 3}, map[string]any{"a": 3, "b": 5}},
+		alt.Path{1, "b"},
+	)
+	tt.Equal(t, "[[0 b]]", pretty.SEN(diffs))
 }

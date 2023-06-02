@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.18.7] - 2023-06-02
+### Fixed
+- Fixed alt.Diff to not skip non-matching map entries.
+
 ## [1.18.6] - 2023-05-24
 ### Added
 - Thanks to @thiagodpf allowing JSONPath get on structs to use JSON annotation.
