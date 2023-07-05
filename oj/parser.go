@@ -73,6 +73,7 @@ func (p *Parser) Parse(buf []byte, args ...any) (any, error) {
 	p.cb = nil
 	p.resultChan = nil
 	p.OnlyOne = true
+	p.num.Conv = ojg.DefaultNumConvMethod
 	for _, a := range args {
 		switch ta := a.(type) {
 		case func(any) bool:
@@ -132,6 +133,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...any) (data any, err error) {
 	p.cb = nil
 	p.resultChan = nil
 	p.OnlyOne = true
+	p.num.Conv = ojg.DefaultNumConvMethod
 	for _, a := range args {
 		switch ta := a.(type) {
 		case func(any) bool:

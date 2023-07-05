@@ -45,9 +45,6 @@ var (
 // A chan argument will be used to deliver parse results.
 func Parse(buf []byte, args ...any) (any, error) {
 	p, _ := parserPool.Get().(*Parser)
-	p.cb = nil
-	p.resultChan = nil
-	p.OnlyOne = false
 	p.Reuse = false
 	defer parserPool.Put(p)
 	return p.Parse(buf, args...)
@@ -64,9 +61,6 @@ func Parse(buf []byte, args ...any) (any, error) {
 // A chan argument will be used to deliver parse results.
 func MustParse(buf []byte, args ...any) any {
 	p := parserPool.Get().(*Parser)
-	p.cb = nil
-	p.resultChan = nil
-	p.OnlyOne = false
 	p.Reuse = false
 	defer parserPool.Put(p)
 	val, err := p.Parse(buf, args...)
@@ -87,9 +81,6 @@ func MustParse(buf []byte, args ...any) any {
 // A chan argument will be used to deliver parse results.
 func ParseReader(r io.Reader, args ...any) (data any, err error) {
 	p, _ := parserPool.Get().(*Parser)
-	p.cb = nil
-	p.resultChan = nil
-	p.OnlyOne = false
 	p.Reuse = false
 	defer parserPool.Put(p)
 	return p.ParseReader(r, args...)
@@ -107,9 +98,6 @@ func ParseReader(r io.Reader, args ...any) (data any, err error) {
 // A chan argument will be used to deliver parse results.
 func MustParseReader(r io.Reader, args ...any) (data any) {
 	p := parserPool.Get().(*Parser)
-	p.cb = nil
-	p.resultChan = nil
-	p.OnlyOne = false
 	p.Reuse = false
 	defer parserPool.Put(p)
 	var err error
