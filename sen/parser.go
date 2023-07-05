@@ -9,6 +9,7 @@ import (
 	"io"
 	"unicode/utf8"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/oj"
@@ -109,6 +110,8 @@ func (p *Parser) Parse(buf []byte, args ...any) (any, error) {
 			p.resultChan = ta
 			p.OnlyOne = false
 			p.Reuse = false
+		case ojg.NumConvMethod:
+			p.num.Conv = ta
 		default:
 			return nil, fmt.Errorf("a %T is not a valid option type", a)
 		}
@@ -174,6 +177,8 @@ func (p *Parser) ParseReader(r io.Reader, args ...any) (data any, err error) {
 			p.resultChan = ta
 			p.OnlyOne = false
 			p.Reuse = false
+		case ojg.NumConvMethod:
+			p.num.Conv = ta
 		default:
 			return nil, fmt.Errorf("a %T is not a valid option type", a)
 		}

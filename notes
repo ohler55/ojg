@@ -1,7 +1,13 @@
 
-- jp
- - update set
- - update modify
+
+- json.Number
+ - alt.Recompose
+  - convert to float64 or string depending on target type
+   - or if any then look at option
+    - type for enum values type NumConvMethod byte
+     - NumConvFloat
+     - NumConvString
+     - NumConvNone
 
 
 - script.go

@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"math"
 	"strconv"
+
+	"github.com/ohler55/ojg"
 )
 
 // BigLimit is the limit before a number is converted into a Big
@@ -21,6 +23,7 @@ type Number struct {
 	Neg        bool
 	NegExp     bool
 	BigBuf     []byte
+	Conv       ojg.NumConvMethod
 	ForceFloat bool
 }
 
@@ -114,7 +117,14 @@ func (n *Number) FillBig() {
 func (n *Number) AsNum() (num any) {
 	switch {
 	case 0 < len(n.BigBuf):
-		num = json.Number(n.BigBuf)
+		switch n.Conv {
+		case ojg.NumConvFloat64:
+			num, _ = json.Number(n.BigBuf).Float64()
+		case ojg.NumConvString:
+			num = json.Number(n.BigBuf).String()
+		default:
+			num = json.Number(n.BigBuf)
+		}
 	case n.Div == 1 && n.Exp == 0:
 		i := int64(n.I)
 		if n.Neg {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/tt"
 )
@@ -69,4 +70,19 @@ func TestNumberForceFloat(t *testing.T) {
 	}
 	v := n.AsNum()
 	tt.Equal(t, 123.0, v)
+}
+
+func TestNumberNumConv(t *testing.T) {
+	n := gen.Number{Conv: ojg.NumConvFloat64}
+	n.Reset()
+	n.AddDigit('0')
+	for _, b := range []byte("12345678901234567890123") {
+		n.AddFrac(b)
+	}
+	v := n.AsNum()
+	tt.Equal(t, 0.12345678901234568, v)
+
+	n.Conv = ojg.NumConvString
+	v = n.AsNum()
+	tt.Equal(t, "0.12345678901234567890123", v)
 }

@@ -37,6 +37,9 @@ type Recomposer struct {
 	CreateKey string
 
 	composers map[string]*composer
+
+	// NumConvMethod specifies the json.Number conversion method.
+	NumConvMethod ojg.NumConvMethod
 }
 
 var jsonUnmarshalerType reflect.Type
@@ -290,6 +293,16 @@ func (r *Recomposer) recompAny(v any) any {
 		}
 		v = o
 
+	case json.Number:
+		switch r.NumConvMethod {
+		case ojg.NumConvFloat64:
+			var err error
+			if v, err = tv.Float64(); err != nil {
+				panic(err)
+			}
+		case ojg.NumConvString:
+			v = tv.String()
+		}
 	default:
 		panic(fmt.Errorf("can not recompose a %T", v))
 	}
@@ -488,12 +501,24 @@ func (r *Recomposer) setValue(v any, rv reflect.Value, sf *reflect.StructField) 
 			} else {
 				panic(err)
 			}
+		} else if jn, jok := v.(json.Number); jok {
+			if i, err := jn.Int64(); err == nil {
+				rv.Set(reflect.ValueOf(i).Convert(rv.Type()))
+			} else {
+				panic(err)
+			}
 		} else {
 			rv.Set(reflect.ValueOf(v).Convert(rv.Type()))
 		}
 	case reflect.Float32, reflect.Float64:
 		if s, ok := v.(string); ok && sf != nil && strings.Contains(sf.Tag.Get("json"), ",string") {
 			if f, err := strconv.ParseFloat(s, 64); err == nil {
+				rv.Set(reflect.ValueOf(f).Convert(rv.Type()))
+			} else {
+				panic(err)
+			}
+		} else if jn, jok := v.(json.Number); jok {
+			if f, err := jn.Float64(); err == nil {
 				rv.Set(reflect.ValueOf(f).Convert(rv.Type()))
 			} else {
 				panic(err)
