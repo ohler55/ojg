@@ -115,8 +115,9 @@ func MustNewRecomposer(
 	anyComposers ...map[any]RecomposeAnyFunc) *Recomposer {
 
 	r := Recomposer{
-		CreateKey: createKey,
-		composers: map[string]*composer{},
+		CreateKey:     createKey,
+		composers:     map[string]*composer{},
+		NumConvMethod: ojg.DefaultNumConvMethod,
 	}
 	for v, fun := range composers {
 		rt := reflect.TypeOf(v)

@@ -3,14 +3,17 @@
 package alt_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
+	"github.com/ohler55/ojg/pretty"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -29,6 +32,13 @@ type Parent struct {
 
 type Child struct {
 	Name string
+}
+
+type PickANumber struct {
+	AsString string
+	AsFloat  float64
+	AsInt    int64
+	AsNumber json.Number
 }
 
 func (c *Child) String() string {
@@ -777,4 +787,54 @@ func TestRecomposeUnmarshallerList(t *testing.T) {
 	tt.Equal(t, 1, len(list))
 	tt.Equal(t, 1, len(list[0]))
 	tt.Equal(t, 1, list[0]["k1"])
+}
+
+func TestRecomposeNumber(t *testing.T) {
+	src := json.Number("0.1234567890123456789")
+
+	r, err := alt.NewRecomposer("type", nil)
+	tt.Nil(t, err, "NewRecomposer")
+	r.NumConvMethod = ojg.NumConvFloat64
+
+	var v any
+	v, err = r.Recompose(src)
+	tt.Nil(t, err, "Recompose")
+	tt.Equal(t, 0.123456789012345678, v)
+
+	tt.Panic(t, func() { _ = r.MustRecompose(json.Number("1.2.3")) })
+
+	r.NumConvMethod = ojg.NumConvString
+	v, err = r.Recompose(src)
+	tt.Nil(t, err, "Recompose")
+	tt.Equal(t, "0.1234567890123456789", v)
+}
+
+func TestRecomposeReflectNumber(t *testing.T) {
+	src := map[string]any{
+		"asString": json.Number("0.1234567890123456789"),
+		"asFloat":  json.Number("0.1234567890123456789"),
+		"asInt":    json.Number("1234567890123456789"),
+		"asNumber": json.Number("0.1234567890123456789"),
+	}
+	r, err := alt.NewRecomposer("type", nil)
+	tt.Nil(t, err, "NewRecomposer")
+
+	var pan PickANumber
+
+	_, err = r.Recompose(src, &pan)
+	tt.Nil(t, err, "Recompose")
+
+	tt.Equal(t, `{
+  asFloat: 0.12345678901234568
+  asInt: 1234567890123456789
+  asNumber: "0.1234567890123456789"
+  asString: "0.1234567890123456789"
+}`, pretty.SEN(&pan))
+
+	src["asFloat"] = json.Number("1.2.3")
+	tt.Panic(t, func() { _ = r.MustRecompose(src, &pan) })
+
+	src["asFloat"] = json.Number("123.4")
+	src["asInt"] = json.Number("123.4")
+	tt.Panic(t, func() { _ = r.MustRecompose(src, &pan) })
 }

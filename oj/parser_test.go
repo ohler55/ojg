@@ -3,11 +3,13 @@
 package oj_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
 	"testing/iotest"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/tt"
 )
@@ -362,4 +364,18 @@ func TestMustPanic(t *testing.T) {
 	tt.Panic(t, func() { _ = oj.MustParse([]byte("[true}")) })
 	tt.Panic(t, func() { _ = oj.MustParseString("[true}") })
 	tt.Panic(t, func() { _ = oj.MustLoad(strings.NewReader("[true}")) })
+}
+
+func TestParserNumConv(t *testing.T) {
+	v := oj.MustParseString("0.1234567890123456789")
+	tt.Equal(t, json.Number("0.1234567890123456789"), v)
+
+	v = oj.MustParseString("0.1234567890123456789", ojg.NumConvFloat64)
+	tt.Equal(t, 0.123456789012345678, v)
+
+	v = oj.MustParseString("0.1234567890123456789", ojg.NumConvString)
+	tt.Equal(t, "0.1234567890123456789", v)
+
+	v = oj.MustLoad(strings.NewReader("0.1234567890123456789"), ojg.NumConvFloat64)
+	tt.Equal(t, 0.123456789012345678, v)
 }
