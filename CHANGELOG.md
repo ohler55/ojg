@@ -6,7 +6,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 
 ## [1.19.1] - 2023-07-05
 ### Fixed
-- Pooled parsers no reset the number conversion method.
+- Pooled parsers now reset the number conversion method.
 
 ## [1.19.0] - 2023-07-05
 ### Added
