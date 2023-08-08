@@ -8,17 +8,18 @@ import (
 )
 
 // Panic verifies that a function panics..
-func Panic(t *testing.T, fun func(), args ...any) {
+func Panic(t *testing.T, fun func(), args ...any) (r any) {
 	ff := func() {
 		var b strings.Builder
 		b.WriteString("\nexpect: panic\nactual: no panic\n")
 		finishFail(t, &b, args)
 	}
 	defer func() {
-		if r := recover(); r == nil {
+		if r = recover(); r == nil {
 			ff()
 		}
 	}()
 	fun()
 	ff()
+	return
 }

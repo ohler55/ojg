@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.19.2] - 2023-08-07
+### Fixed
+- The test tool (tt) package Panic() function should return the recovered panic and now does.
+
 ## [1.19.1] - 2023-07-05
 ### Fixed
 - Pooled parsers now reset the number conversion method.
