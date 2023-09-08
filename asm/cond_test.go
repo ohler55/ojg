@@ -48,3 +48,24 @@ func TestCondArgElementCount(t *testing.T) {
 	err := p.Execute(map[string]any{})
 	tt.NotNil(t, err)
 }
+
+func TestCondEval(t *testing.T) {
+	root := testPlan(t,
+		`[
+           [set $.asm.a [cond [[get "$.src.x[1]"] [get "@.src.x[0]"]]]]
+	       [set $.asm.b [cond ["$.src.x[1]" 2]]]
+           [set $.asm.c [cond [$.src.y $.src.z]]]
+	       [set $.asm.d [cond [$.src.y abc]]]
+         ]`,
+		"{src: {x: [1 true 3], y: true, z: 4}}",
+	)
+	opt := sopt
+	opt.Indent = 2
+	tt.Equal(t,
+		`{
+  a: 1
+  b: 2
+  c: 4
+  d: abc
+}`, sen.String(root["asm"], &opt))
+}

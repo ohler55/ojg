@@ -4,6 +4,8 @@ package asm
 
 import (
 	"fmt"
+
+	"github.com/ohler55/ojg/jp"
 )
 
 func init() {
@@ -20,17 +22,54 @@ is returned.`,
 
 func cond(root map[string]any, at any, args ...any) any {
 	for _, arg := range args {
-		v := evalArg(root, at, arg)
-		list, ok := v.([]any)
+		list, ok := arg.([]any)
 		if !ok {
-			panic(fmt.Errorf("cond expects array arguments, not a %T", v))
+			panic(fmt.Errorf("cond expects array arguments, not a %T", arg))
 		}
 		if len(list) != 2 {
 			panic(fmt.Errorf("cond array arguments must have two elements, not a %d", len(list)))
 		}
-		if b, _ := evalArg(root, at, list[0]).(bool); b {
-			return list[1]
+		if bv, _ := evalValue(root, at, list[0]).(bool); bv {
+			return evalValue(root, at, list[1])
 		}
 	}
 	return nil
+}
+
+func evalValue(root map[string]any, at any, value any) (result any) {
+top:
+	switch tv := value.(type) {
+	case *Fn:
+		result = tv.Eval(root, at, tv.Args...)
+	case []any:
+		if 0 < len(tv) {
+			if name, _ := tv[0].(string); 0 < len(name) {
+				if af := NewFn(name); af != nil {
+					af.Args = tv[1:]
+					af.compile()
+					value = af
+					goto top
+				}
+			}
+		}
+	case jp.Expr:
+		if 0 < len(tv) {
+			if _, ok := tv[0].(jp.At); ok {
+				result = tv.First(at)
+			} else {
+				result = tv.First(root)
+			}
+		}
+	case string:
+		if 0 < len(tv) && (tv[0] == '$' || tv[0] == '@') {
+			if x, err := jp.Parse([]byte(tv)); err == nil {
+				value = x
+				goto top
+			}
+		}
+		result = tv
+	default:
+		result = value
+	}
+	return
 }
