@@ -54,7 +54,7 @@ func TestCondEval(t *testing.T) {
 		`[
            [set $.asm.a [cond [[get "$.src.x[1]"] [get "@.src.x[0]"]]]]
 	       [set $.asm.b [cond ["$.src.x[1]" 2]]]
-           [set $.asm.c [cond [$.src.y $.src.z]]]
+           [set $.asm.c [cond [@.src.y @.src.z]]]
 	       [set $.asm.d [cond [$.src.y abc]]]
          ]`,
 		"{src: {x: [1 true 3], y: true, z: 4}}",
