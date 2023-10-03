@@ -81,6 +81,13 @@ To build and install the `oj` application:
 go install ./...
 ```
 
+The `oj` application can be installed with brew.
+
+```
+brew tap ohler55/tap
+brew install oj
+```
+
 ## Benchmarks
 
 Higher numbers (longer bars) are better.
