@@ -990,6 +990,16 @@ func TestMarshalNoAddr(t *testing.T) {
 	tt.Nil(t, err)
 }
 
+func TestWriteFloatFormat(t *testing.T) {
+	var wr oj.Writer
+	wr.FloatFormat = "%05.2f"
+	j := wr.MustJSON(1.234)
+	tt.Equal(t, `01.23`, string(j))
+
+	j = wr.MustJSON(float32(1.234))
+	tt.Equal(t, `01.23`, string(j))
+}
+
 func BenchmarkMarshalFlat(b *testing.B) {
 	m := Mix{
 		Val:   1,

@@ -4,6 +4,7 @@ package pretty
 
 import (
 	"encoding/base64"
+	"fmt"
 	"sort"
 	"strconv"
 	"time"
@@ -138,9 +139,16 @@ func (w *Writer) buildInt(v int64) (n *node) {
 }
 
 func (w *Writer) buildFloat32(v float32) (n *node) {
-	n = &node{
-		buf:  []byte(strconv.FormatFloat(float64(v), 'g', -1, 32)),
-		kind: numNode,
+	if 0 < len(w.FloatFormat) {
+		n = &node{
+			buf:  fmt.Appendf(nil, w.FloatFormat, float64(v)),
+			kind: numNode,
+		}
+	} else {
+		n = &node{
+			buf:  []byte(strconv.FormatFloat(float64(v), 'g', -1, 32)),
+			kind: numNode,
+		}
 	}
 	n.size = len(n.buf)
 	if w.Color {
@@ -150,9 +158,16 @@ func (w *Writer) buildFloat32(v float32) (n *node) {
 }
 
 func (w *Writer) buildFloat64(v float64) (n *node) {
-	n = &node{
-		buf:  []byte(strconv.FormatFloat(v, 'g', -1, 64)),
-		kind: numNode,
+	if 0 < len(w.FloatFormat) {
+		n = &node{
+			buf:  fmt.Appendf(nil, w.FloatFormat, v),
+			kind: numNode,
+		}
+	} else {
+		n = &node{
+			buf:  []byte(strconv.FormatFloat(v, 'g', -1, 64)),
+			kind: numNode,
+		}
 	}
 	n.size = len(n.buf)
 	if w.Color {

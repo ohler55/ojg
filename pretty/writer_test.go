@@ -478,3 +478,13 @@ func TestSENEmpty(t *testing.T) {
 	}, &ojg.Options{OmitEmpty: true})
 	tt.Equal(t, `{}`, genOut)
 }
+
+func TestWriteFloatFormat(t *testing.T) {
+	var wr pretty.Writer
+	wr.FloatFormat = "%05.2f"
+	j := wr.Encode(1.234)
+	tt.Equal(t, `01.23`, string(j))
+
+	j = wr.Encode(float32(1.234))
+	tt.Equal(t, `01.23`, string(j))
+}

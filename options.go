@@ -246,6 +246,10 @@ type Options struct {
 	// Converter to use when decomposing or altering if non nil. The Converter
 	// type includes more details.
 	Converter *Converter
+
+	// FloatFormat is the fmt.Printf formatting verb and options. The default
+	// is "%g".
+	FloatFormat string
 }
 
 // AppendTime appends a time string to the buffer.

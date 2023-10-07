@@ -753,3 +753,13 @@ func TestMarshalTextMarshaler(t *testing.T) {
 
 	tt.Panic(t, func() { _ = sen.Bytes(&TM{val: 5}) })
 }
+
+func TestWriteFloatFormat(t *testing.T) {
+	var wr sen.Writer
+	wr.FloatFormat = "%05.2f"
+	j := wr.MustSEN(1.234)
+	tt.Equal(t, `01.23`, string(j))
+
+	j = wr.MustSEN(float32(1.234))
+	tt.Equal(t, `01.23`, string(j))
+}

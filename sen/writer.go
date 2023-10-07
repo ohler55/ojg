@@ -199,9 +199,17 @@ func (wr *Writer) appendSEN(data any, depth int) {
 		wr.buf = strconv.AppendUint(wr.buf, td, 10)
 
 	case float32:
-		wr.buf = strconv.AppendFloat(wr.buf, float64(td), 'g', -1, 32)
+		if 0 < len(wr.FloatFormat) {
+			wr.buf = fmt.Appendf(wr.buf, wr.FloatFormat, float64(td))
+		} else {
+			wr.buf = strconv.AppendFloat(wr.buf, float64(td), 'g', -1, 32)
+		}
 	case float64:
-		wr.buf = strconv.AppendFloat(wr.buf, td, 'g', -1, 64)
+		if 0 < len(wr.FloatFormat) {
+			wr.buf = fmt.Appendf(wr.buf, wr.FloatFormat, td)
+		} else {
+			wr.buf = strconv.AppendFloat(wr.buf, td, 'g', -1, 64)
+		}
 
 	case string:
 		wr.buf = wr.appendString(wr.buf, td, !wr.HTMLUnsafe)

@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.20.0] - unreleased
+### Added
+- Added ojg.Options.FloatFormat to allow float output format to be specified.
+
 ## [1.19.4] - 2023-10-03
 ### Added
 - Updated cmd/oj version and updated notes to reference the brew formula.
