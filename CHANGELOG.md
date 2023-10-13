@@ -7,6 +7,8 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.20.0] - unreleased
 ### Added
 - Added ojg.Options.FloatFormat to allow float output format to be specified.
+### Fixed
+- A single quote character can now be escaped in strings when using SEN for parsing.
 
 ## [1.19.4] - 2023-10-03
 ### Added
