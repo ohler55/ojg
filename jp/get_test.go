@@ -946,6 +946,9 @@ func TestGetDescentReflect(t *testing.T) {
 	}
 	path := jp.MustParseString("$..x")
 	tt.Equal(t, "[A BA B]", pretty.SEN(path.Get(c)))
+	tt.Equal(t, "A", pretty.SEN(path.First(c)))
+
+	tt.Equal(t, "{a: {x: BA} x: B}", pretty.SEN(jp.R().D().First(c)))
 }
 
 func TestGetSliceReflect(t *testing.T) {

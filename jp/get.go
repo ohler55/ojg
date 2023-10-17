@@ -433,7 +433,6 @@ func (x Expr) Get(data any) (results []any) {
 						}
 					}
 				default:
-					// TBD WIP
 					got := x.reflectGetWild(tv)
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
@@ -1253,7 +1252,6 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						}
 					}
 				default:
-					// TBD WIP
 					got := x.reflectGetWild(tv)
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
