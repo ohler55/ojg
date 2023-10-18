@@ -1262,31 +1262,22 @@ func TestGetIndexedReflect(t *testing.T) {
 	}
 }
 
-func TestGetDev(t *testing.T) {
-	data := &keydex{
-		keyed: keyed{
-			ordered: ordered{
-				entries: []*entry{
-					{key: "a", value: Any{X: 1}},
-					{key: "b", value: Any{X: 2}},
-					{key: "c", value: Any{X: 3}},
-				},
-			},
-		},
+func TestGetStructMap(t *testing.T) {
+	type A struct {
+		X map[string]any
 	}
-	expect := `[
-  {x: 1}
-  {x: 2}
-  {x: 3}
-  1
-  2
-  3
-  [
-    {key: a value: {type: Any x: 1}}
-    {key: b value: {type: Any x: 2}}
-    {key: c value: {type: Any x: 3}}
-  ]
-]`
-	x := jp.MustParseString("$..")
+	data := A{X: map[string]any{"a": 1}}
+	x := jp.MustParseString("$..a")
+	tt.Equal(t, "[1]", pretty.SEN(x.Get(data)))
+	tt.Equal(t, "1", pretty.SEN(x.First(data)))
+}
+
+func TestGetDev(t *testing.T) {
+	type A struct {
+		X map[string]any
+	}
+	data := A{X: map[string]any{"a": 1}}
+	expect := `[1]`
+	x := jp.MustParseString("$..a")
 	tt.Equal(t, expect, pretty.SEN(x.Get(data)))
 }
