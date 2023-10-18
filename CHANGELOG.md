@@ -4,11 +4,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.20.0] - unreleased
+## [1.20.0] - 2023-10-17
 ### Added
 - Added ojg.Options.FloatFormat to allow float output format to be specified.
 ### Fixed
 - A single quote character can now be escaped in strings when using SEN for parsing.
+- Descent on a struct for get and first fixed.
 
 ## [1.19.4] - 2023-10-03
 ### Added

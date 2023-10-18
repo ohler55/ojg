@@ -928,6 +928,29 @@ func TestGetChildReflectInCyclicGraphEmbeddedStructsResultsInNothing(t *testing.
 	tt.Equal(t, "[]", pretty.SEN(path.Get(c)))
 }
 
+func TestGetDescentReflect(t *testing.T) {
+	type A struct {
+		X string
+	}
+	type B struct {
+		X string
+		A *A
+	}
+	type C struct {
+		A *A
+		B *B
+	}
+	c := C{
+		A: &A{X: "A"},
+		B: &B{X: "B", A: &A{X: "BA"}},
+	}
+	path := jp.MustParseString("$..x")
+	tt.Equal(t, "[A BA B]", pretty.SEN(path.Get(c)))
+	tt.Equal(t, "A", pretty.SEN(path.First(c)))
+
+	tt.Equal(t, "{a: {x: BA} x: B}", pretty.SEN(jp.R().D().First(c)))
+}
+
 func TestGetSliceReflect(t *testing.T) {
 	src := "$.vals[-3:]"
 	data := map[string]any{"vals": []int{10, 20, 30, 40, 50, 60}}
@@ -1153,6 +1176,9 @@ func TestGetKeyedIndexedReflect(t *testing.T) {
   {x: 1}
   {x: 2}
   {x: 3}
+  1
+  2
+  3
   [
     {key: a value: {type: Any x: 1}}
     {key: b value: {type: Any x: 2}}
@@ -1211,6 +1237,9 @@ func TestGetIndexedReflect(t *testing.T) {
   {x: 1}
   {x: 2}
   {x: 3}
+  1
+  2
+  3
   [
     {key: a value: {type: Any x: 1}}
     {key: b value: {type: Any x: 2}}
@@ -1231,4 +1260,24 @@ func TestGetIndexedReflect(t *testing.T) {
 			tt.Equal(t, d.expect, pretty.SEN(x.Get(data)), d.src)
 		}
 	}
+}
+
+func TestGetStructMap(t *testing.T) {
+	type A struct {
+		X map[string]any
+	}
+	data := A{X: map[string]any{"a": 1}}
+	x := jp.MustParseString("$..a")
+	tt.Equal(t, "[1]", pretty.SEN(x.Get(data)))
+	tt.Equal(t, "1", pretty.SEN(x.First(data)))
+}
+
+func TestGetDev(t *testing.T) {
+	type A struct {
+		X map[string]any
+	}
+	data := A{X: map[string]any{"a": 1}}
+	expect := `[1]`
+	x := jp.MustParseString("$..a")
+	tt.Equal(t, expect, pretty.SEN(x.Get(data)))
 }

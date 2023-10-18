@@ -312,6 +312,7 @@ func (x Expr) Get(data any) (results []any) {
 								switch rt.Kind() {
 								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
+									stack = append(stack, fi|descentChildFlag)
 								}
 							}
 						}
@@ -336,6 +337,7 @@ func (x Expr) Get(data any) (results []any) {
 								switch rt.Kind() {
 								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
+									stack = append(stack, fi|descentChildFlag)
 								}
 							}
 						}
@@ -364,6 +366,7 @@ func (x Expr) Get(data any) (results []any) {
 								switch rt.Kind() {
 								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
+									stack = append(stack, fi|descentChildFlag) // TBD ??
 								}
 							}
 						}
@@ -391,6 +394,7 @@ func (x Expr) Get(data any) (results []any) {
 								switch rt.Kind() {
 								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
+									stack = append(stack, fi|descentChildFlag)
 								}
 							}
 						}
@@ -426,6 +430,33 @@ func (x Expr) Get(data any) (results []any) {
 						case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
 							stack = append(stack, v)
 							stack = append(stack, fi|descentChildFlag)
+						}
+					}
+				default:
+					got := x.reflectGetWild(tv)
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					if int(fi) == len(x)-1 { // last one
+						for i := len(got) - 1; 0 <= i; i-- {
+							results = append(results, got[i])
+						}
+					} else {
+						for _, v := range got {
+							switch v.(type) {
+							case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
+								int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
+							case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
+								stack = append(stack, v)
+								stack = append(stack, fi|descentChildFlag)
+							default:
+								if rt := reflect.TypeOf(v); rt != nil {
+									switch rt.Kind() {
+									case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+										stack = append(stack, v)
+										stack = append(stack, fi|descentChildFlag)
+									}
+								}
+							}
 						}
 					}
 				}
@@ -1220,6 +1251,34 @@ func (x Expr) FirstFound(data any) (any, bool) {
 							stack = append(stack, fi|descentChildFlag)
 						}
 					}
+				default:
+					got := x.reflectGetWild(tv)
+					stack[len(stack)-1] = prev
+					stack = append(stack, di|descentFlag)
+					if int(fi) == len(x)-1 { // last one
+						if 0 < len(got) {
+							return got[0], true
+						}
+					} else {
+						for _, v := range got {
+							switch v.(type) {
+							case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
+								int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
+							case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
+								stack = append(stack, v)
+								stack = append(stack, fi|descentChildFlag)
+							default:
+								if rt := reflect.TypeOf(v); rt != nil {
+									switch rt.Kind() {
+									case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+										stack = append(stack, v)
+										stack = append(stack, fi|descentChildFlag)
+									}
+								}
+							}
+						}
+					}
+
 				}
 			} else {
 				stack = append(stack, prev)
