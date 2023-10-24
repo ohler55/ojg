@@ -53,6 +53,7 @@ var (
 		{path: "[?(@.b == 2)].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":3}]`},
 		{path: "a[0]", data: `{}`, value: 3, expect: `{"a":[3]}`},
 		{path: "*.x", data: `{"a":null}`, value: 3, expect: `{"a":null}`},
+		{path: "a", data: `{"a":null}`, value: nil, expect: `{"a":null}`},
 		{path: "[*].x", data: "[null]", value: 3, expect: `[null]`},
 		{path: "...x", data: "[null]", value: 3, expect: `[null]`},
 		{path: "[0,1].x", data: "[null]", value: 3, expect: `[null]`},
@@ -889,4 +890,21 @@ func TestSetKeyedIndexedReflect(t *testing.T) {
 			tt.Equal(t, d.after, pretty.SEN(d.data), d.src)
 		}
 	}
+}
+
+func TestSetMapPtrNil(t *testing.T) {
+	data := map[string]any{
+		"a": nil,
+	}
+	jp.C("a").Set(&data, nil)
+	tt.Nil(t, data["a"])
+}
+
+func TestSetStructPtrNil(t *testing.T) {
+	type A struct {
+		B any
+	}
+	data := A{B: 1}
+	jp.C("b").Set(&data, nil)
+	tt.Nil(t, data.B)
 }

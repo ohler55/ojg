@@ -1174,6 +1174,9 @@ func (x Expr) reflectSetChild(data any, key string, v any) bool {
 		case reflect.Struct:
 			rv := rd.FieldByNameFunc(func(k string) bool { return strings.EqualFold(k, key) })
 			vv := reflect.ValueOf(v)
+			if !vv.IsValid() && v == nil {
+				vv = reflect.Zero(rv.Type())
+			}
 			vt := vv.Type()
 			if rv.CanSet() && vt.AssignableTo(rv.Type()) {
 				rv.Set(vv)
@@ -1182,6 +1185,9 @@ func (x Expr) reflectSetChild(data any, key string, v any) bool {
 		case reflect.Map:
 			rk := reflect.ValueOf(key)
 			vv := reflect.ValueOf(v)
+			if !vv.IsValid() && v == nil {
+				vv = reflect.Zero(rt.Elem())
+			}
 			vt := vv.Type()
 			if vt.AssignableTo(rt.Elem()) {
 				rd.SetMapIndex(rk, vv)
