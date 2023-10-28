@@ -58,6 +58,7 @@ func TestParse(t *testing.T) {
 		{src: "$[?(@.x == 'abc')]", expect: "$[?(@.x == 'abc')]"},
 		{src: "$[?(1==1)]", expect: "$[?(1 == 1)]"},
 		{src: "$[?(@.x)]", expect: "$[?(@.x exists true)]"},
+		{src: "$[?@.x]", expect: "$[?(@.x exists true)]"},
 		{src: `['a\\b']`, expect: `['a\\b']`},
 		{src: `[:]`, expect: `[:]`},
 		{src: `[::]`, expect: `[:]`},
