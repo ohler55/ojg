@@ -61,6 +61,7 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@.x<5)", expect: "(@.x < 5)"},
 		{src: "(@.x<123)", expect: "(@.x < 123)"},
 		{src: "(@.x == 3)", expect: "(@.x == 3)"},
+		{src: "(@['x'] == 3)", expect: "(@.x == 3)"},
 		{src: "(@.*.xyz==true)", expect: "(@.*.xyz == true)"},
 		{src: "(@.x.* == 3)", expect: "(@.x.* == 3)"},
 		{src: "(@.. == 3)", expect: "(@.. == 3)"},
