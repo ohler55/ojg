@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.20.2] - 2023-10-28
+## [1.20.2] - 2023-10-30
 ### Fixed
 - A script of `@.x` is now read correctly as `@.x exists true`.
 
