@@ -581,8 +581,12 @@ func (p *parser) readEquation() (eq *Equation) {
 		p.readFunc(search, eq)
 	default:
 		eq.left = p.readEqValue()
-		eq.o = p.readEqOp()
-		eq.right = p.readEqValue()
+		var right bool
+		if eq.o, right = p.readEqOp(); right {
+			eq.right = &Equation{result: true}
+		} else {
+			eq.right = p.readEqValue()
+		}
 	}
 	for p.pos < len(p.buf) {
 		b = p.nextNonSpace()
@@ -593,7 +597,7 @@ func (p *parser) readEquation() (eq *Equation) {
 		case ']':
 			return
 		}
-		o := p.readEqOp()
+		o, _ := p.readEqOp()
 		if eq.o.prec <= o.prec {
 			eq = &Equation{left: eq, o: o}
 			eq.right = p.readEqValue()
@@ -716,9 +720,13 @@ func partialOp(token []byte, b byte) bool {
 	return false
 }
 
-func (p *parser) readEqOp() (o *op) {
+func (p *parser) readEqOp() (o *op, right bool) {
 	var token []byte
 	b := p.nextNonSpace()
+	switch b {
+	case 0, ']', ')', '(':
+		return exists, true
+	}
 	for {
 		if eqMap[b] != 'o' {
 			if len(token) == 0 || !partialOp(token, b) {
