@@ -1,6 +1,4 @@
 
-
-
 - script.go
  - API to add functions
   - RegisterUnaryFunction(name string, get bool, f func(arg any) any)
