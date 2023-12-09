@@ -163,7 +163,7 @@ func (s *Script) Match(data any) bool {
 		ns, _ := s.evalWithRoot(stack, gen.Array{node}, data)
 		stack, _ = ns.([]any)
 	} else {
-		ns, _ := s.evalWithRoot(stack, []any{node}, data)
+		ns, _ := s.evalWithRoot(stack, []any{data}, data)
 		stack, _ = ns.([]any)
 	}
 	return 0 < len(stack)
