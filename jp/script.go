@@ -160,20 +160,23 @@ func (s *Script) String() string {
 func (s *Script) Match(data any) bool {
 	stack := []any{}
 	if node, ok := data.(gen.Node); ok {
-		stack, _ = s.EvalWithRoot(stack, gen.Array{node}, data).([]any)
+		ns, _ := s.evalWithRoot(stack, gen.Array{node}, data)
+		stack, _ = ns.([]any)
 	} else {
-		stack, _ = s.EvalWithRoot(stack, []any{data}, data).([]any)
+		ns, _ := s.evalWithRoot(stack, []any{data}, data)
+		stack, _ = ns.([]any)
 	}
 	return 0 < len(stack)
 }
 
 // Eval is primarily used by the Expr parser but is public for testing.
 func (s *Script) Eval(stack any, data any) any {
-	return s.EvalWithRoot(stack, data, nil)
+	ns, _ := s.evalWithRoot(stack, data, nil)
+	return ns
 }
 
-// EvalWithRoot is primarily used by the Expr parser but is public for testing.
-func (s *Script) EvalWithRoot(stack any, data, root any) any {
+// evalWithRoot is primarily used by the Expr parser but is public for testing.
+func (s *Script) evalWithRoot(stack any, data, root any) (any, Expr) {
 	// Checking the type each iteration adds 2.5% but allows code not to be
 	// duplicated and not to call a separate function. Using just one more
 	// function call for each iteration adds 6.5%.
@@ -210,7 +213,7 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 	default:
 		rv := reflect.ValueOf(td)
 		if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
-			return stack
+			return stack, nil
 		}
 		dlen = rv.Len()
 		da := make([]any, 0, dlen)
@@ -646,7 +649,7 @@ func (s *Script) EvalWithRoot(stack any, data, root any) any {
 	for i := range sstack {
 		sstack[i] = nil
 	}
-	return stack
+	return stack, nil
 }
 
 // Inspect the script.
