@@ -345,3 +345,159 @@ func inStep(i, start, end, step int) bool {
 	}
 	return end <= i && i <= start && (i-end)%-step == 0
 }
+
+func (f Slice) startEndStep(size int) (start, end, step int) {
+	end = maxEnd
+	step = 1
+	if 0 < len(f) {
+		start = f[0]
+	}
+	if 1 < len(f) {
+		end = f[1]
+	}
+	if 2 < len(f) {
+		step = f[2]
+		if step == 0 {
+			return
+		}
+	}
+	if start < 0 {
+		start = size + start
+		if start < 0 {
+			start = 0
+		}
+	}
+	if end < 0 {
+		end = size + end
+	}
+	if size <= start {
+		step = 0
+		return
+	}
+	if size < end {
+		end = size
+	}
+	if step < 0 {
+		if end < -1 {
+			end = -1
+		}
+		end = start + (end-start-1)/step*step
+	}
+	return
+}
+
+func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
+	switch td := data.(type) {
+	case []any:
+		start, end, step := f.startEndStep(len(td))
+		if step == 0 {
+			return
+		}
+		if 0 < step {
+			if len(rest) == 0 { // last one
+				for i := start; i < end; i += step {
+					locs = locateAppendFrag(locs, pp, Nth(i))
+				}
+			} else {
+				cp := append(pp, nil) // place holder
+				for i := start; i < end; i += step {
+					cp[len(pp)] = Nth(i)
+					locs = locateContinueFrag(locs, cp, td[i], rest, max)
+					if 0 < max && max <= len(locs) {
+						break
+					}
+				}
+			}
+		} else {
+			if len(rest) == 0 { // last one
+				for i := end; start <= i; i -= step {
+					locs = locateAppendFrag(locs, pp, Nth(i))
+				}
+			} else {
+				cp := append(pp, nil) // place holder
+				for i := end; i <= start; i -= step {
+					cp[len(pp)] = Nth(i)
+					locs = locateContinueFrag(locs, cp, td[i], rest, max)
+					if 0 < max && max <= len(locs) {
+						break
+					}
+				}
+			}
+		}
+	case gen.Array:
+		start, end, step := f.startEndStep(len(td))
+		if step == 0 {
+			return
+		}
+		if 0 < step {
+			if len(rest) == 0 { // last one
+				for i := start; i < end; i += step {
+					locs = locateAppendFrag(locs, pp, Nth(i))
+				}
+			} else {
+				cp := append(pp, nil) // place holder
+				for i := start; i < end; i += step {
+					cp[len(pp)] = Nth(i)
+					locs = locateContinueFrag(locs, cp, td[i], rest, max)
+					if 0 < max && max <= len(locs) {
+						break
+					}
+				}
+			}
+		} else {
+			if len(rest) == 0 { // last one
+				for i := end; start <= i; i -= step {
+					locs = locateAppendFrag(locs, pp, Nth(i))
+				}
+			} else {
+				cp := append(pp, nil) // place holder
+				for i := end; i <= start; i -= step {
+					cp[len(pp)] = Nth(i)
+					locs = locateContinueFrag(locs, cp, td[i], rest, max)
+					if 0 < max && max <= len(locs) {
+						break
+					}
+				}
+			}
+		}
+	case Indexed:
+		start, end, step := f.startEndStep(td.Size())
+		if step == 0 {
+			return
+		}
+		if 0 < step {
+			if len(rest) == 0 { // last one
+				for i := start; i < end; i += step {
+					locs = locateAppendFrag(locs, pp, Nth(i))
+				}
+			} else {
+				cp := append(pp, nil) // place holder
+				for i := start; i < end; i += step {
+					cp[len(pp)] = Nth(i)
+					locs = locateContinueFrag(locs, cp, td.ValueAtIndex(i), rest, max)
+					if 0 < max && max <= len(locs) {
+						break
+					}
+				}
+			}
+		} else {
+			if len(rest) == 0 { // last one
+				for i := end; start <= i; i -= step {
+					locs = locateAppendFrag(locs, pp, Nth(i))
+				}
+			} else {
+				cp := append(pp, nil) // place holder
+				for i := end; i <= start; i -= step {
+					cp[len(pp)] = Nth(i)
+					locs = locateContinueFrag(locs, cp, td.ValueAtIndex(i), rest, max)
+					if 0 < max && max <= len(locs) {
+						break
+					}
+				}
+			}
+		}
+	default:
+		// TBD
+	}
+	return
+}

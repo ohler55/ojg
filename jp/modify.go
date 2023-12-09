@@ -795,7 +795,8 @@ done:
 					}
 				}
 			} else {
-				stack, _ = tf.EvalWithRoot(stack, prev, data).([]any)
+				ns, _ := tf.evalWithRoot(stack, prev, data)
+				stack, _ = ns.([]any)
 			}
 		case Descent:
 			di, _ := stack[len(stack)-1].(fragIndex)

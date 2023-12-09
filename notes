@@ -1,4 +1,10 @@
 
+- jp.Expr.Locate(data any, max int) []Expr
+ - drive with Expr but use Frag func to get the next or last
+ - Frag
+  - locate(pp Expr, data any, rest Expr, max int) (locs []Expr)
+   - last makes a copy to avoid over-writes
+
 - script.go
  - API to add functions
   - RegisterUnaryFunction(name string, get bool, f func(arg any) any)

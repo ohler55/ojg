@@ -259,3 +259,8 @@ func (f Union) remove(value any) (out any, changed bool) {
 	}
 	return
 }
+
+func (f Union) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
+	// TBD
+	return
+}

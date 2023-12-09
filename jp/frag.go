@@ -9,4 +9,6 @@ type Frag interface {
 	// Append a fragment string representation of the fragment to the buffer
 	// then returning the expanded buffer.
 	Append(buf []byte, bracket, first bool) []byte
+
+	locate(pp Expr, data any, rest Expr, max int) (locs []Expr)
 }

@@ -63,3 +63,24 @@ func (f Child) remove(value any) (out any, changed bool) {
 	}
 	return
 }
+
+func (f Child) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
+	var (
+		v   any
+		has bool
+	)
+	switch td := data.(type) {
+	case map[string]any:
+		v, has = td[string(f)]
+	case gen.Object:
+		v, has = td[string(f)]
+	case Keyed:
+		v, has = td.ValueForKey(string(f))
+	default:
+		v, has = pp.reflectGetChild(td, string(f))
+	}
+	if has {
+		locs = locateNthChildHas(pp, f, v, rest, max)
+	}
+	return
+}

@@ -755,7 +755,8 @@ func (x Expr) Has(data any) bool {
 			}
 		case *Filter:
 			before := len(stack)
-			stack, _ = tf.EvalWithRoot(stack, prev, data).([]any)
+			ns, _ := tf.evalWithRoot(stack, prev, data)
+			stack, _ = ns.([]any)
 			if int(fi) == len(x)-1 { // last one
 				if before < len(stack) {
 					stack = stack[:before]

@@ -79,3 +79,8 @@ func TestExprBracket(t *testing.T) {
 	br := jp.Bracket('x')
 	tt.Equal(t, 0, len(br.Append([]byte{}, true, true)))
 }
+
+func TestExprBracketString(t *testing.T) {
+	x := jp.R().C("abc").N(1).C("def")
+	tt.Equal(t, "$['abc'][1]['def']", x.BracketString())
+}

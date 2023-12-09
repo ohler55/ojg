@@ -16,3 +16,8 @@ func (f Descent) Append(buf []byte, bracket, first bool) []byte {
 	}
 	return buf
 }
+
+func (f Descent) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
+	// TBD
+	return
+}
