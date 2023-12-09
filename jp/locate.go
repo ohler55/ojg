@@ -18,9 +18,6 @@ func (x Expr) Locate(data any, max int) (locs []Expr) {
 	return
 }
 
-// union.go
-// descent.go
-
 func locateNthChildHas(pp Expr, f Frag, v any, rest Expr, max int) (locs []Expr) {
 	if len(rest) == 0 { // last one
 		loc := make(Expr, len(pp)+1)

@@ -140,55 +140,7 @@ func (f Wildcard) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			}
 		} else {
 			cp := append(pp, nil) // place holder
-			r2 := rest[1:]
-			mx := max
 			for k, v := range td {
-				cp[len(pp)] = Child(k)
-				locs = append(locs, rest[0].locate(cp, v, r2, mx)...)
-				if 0 < max {
-					if max <= len(locs) {
-						break
-					}
-					mx = max - len(locs)
-				}
-			}
-		}
-	case gen.Object:
-		if len(rest) == 0 { // last one
-			for k := range td {
-				locs = locateAppendFrag(locs, pp, Child(k))
-				if 0 < max && max <= len(locs) {
-					break
-				}
-			}
-		} else {
-			cp := append(pp, nil) // place holder
-			r2 := rest[1:]
-			mx := max
-			for k, v := range td {
-				cp[len(pp)] = Child(k)
-				locs = append(locs, rest[0].locate(cp, v, r2, mx)...)
-				if 0 < max {
-					if max <= len(locs) {
-						break
-					}
-					mx = max - len(locs)
-				}
-			}
-		}
-	case Keyed:
-		keys := td.Keys()
-		if len(rest) == 0 { // last one
-			for _, k := range keys {
-				locs = locateAppendFrag(locs, pp, Child(k))
-				if 0 < max && max <= len(locs) {
-					break
-				}
-			}
-		} else {
-			cp := append(pp, nil) // place holder
-			for _, k := range keys {
-				v, _ := td.ValueForKey(k)
 				cp[len(pp)] = Child(k)
 				locs = locateContinueFrag(locs, cp, v, rest, max)
 				if 0 < max && max <= len(locs) {
@@ -214,6 +166,65 @@ func (f Wildcard) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 				}
 			}
 		}
+	case gen.Object:
+		if len(rest) == 0 { // last one
+			for k := range td {
+				locs = locateAppendFrag(locs, pp, Child(k))
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		} else {
+			cp := append(pp, nil) // place holder
+			for k, v := range td {
+				cp[len(pp)] = Child(k)
+				locs = locateContinueFrag(locs, cp, v, rest, max)
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		}
+	case gen.Array:
+		if len(rest) == 0 { // last one
+			for i := range td {
+				locs = locateAppendFrag(locs, pp, Nth(i))
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		} else {
+			cp := append(pp, nil) // place holder
+			for i, v := range td {
+				switch v.(type) {
+				case gen.Object, gen.Array, Keyed, Indexed:
+					cp[len(pp)] = Nth(i)
+					locs = locateContinueFrag(locs, cp, v, rest, max)
+					if 0 < max && max <= len(locs) {
+						break
+					}
+				}
+			}
+		}
+	case Keyed:
+		keys := td.Keys()
+		if len(rest) == 0 { // last one
+			for _, k := range keys {
+				locs = locateAppendFrag(locs, pp, Child(k))
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		} else {
+			cp := append(pp, nil) // place holder
+			for _, k := range keys {
+				v, _ := td.ValueForKey(k)
+				cp[len(pp)] = Child(k)
+				locs = locateContinueFrag(locs, cp, v, rest, max)
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		}
 	case Indexed:
 		size := td.Size()
 		if len(rest) == 0 { // last one
@@ -231,32 +242,6 @@ func (f Wildcard) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 				locs = locateContinueFrag(locs, cp, v, rest, max)
 				if 0 < max && max <= len(locs) {
 					break
-				}
-			}
-		}
-	case gen.Array:
-		if len(rest) == 0 { // last one
-			for i := range td {
-				locs = locateAppendFrag(locs, pp, Nth(i))
-				if 0 < max && max <= len(locs) {
-					break
-				}
-			}
-		} else {
-			cp := append(pp, nil) // place holder
-			r2 := rest[1:]
-			mx := max
-			for i, v := range td {
-				switch v.(type) {
-				case gen.Object, gen.Array, Keyed, Indexed:
-					cp[len(pp)] = Nth(i)
-					locs = append(locs, rest[0].locate(cp, v, r2, mx)...)
-					if 0 < max {
-						if max <= len(locs) {
-							break
-						}
-						mx = max - len(locs)
-					}
 				}
 			}
 		}
