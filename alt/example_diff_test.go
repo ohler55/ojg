@@ -20,7 +20,7 @@ func ExampleDiff() {
 	})
 	fmt.Printf("diff: %v\n", diffs)
 
-	// Output: diff: [[y] [z 1] [z 2]]
+	// Output: diff: [y z[1] z[2]]
 }
 
 func ExampleCompare() {
@@ -30,7 +30,7 @@ func ExampleCompare() {
 	)
 	fmt.Printf("diff: %v\n", diff)
 
-	// Output: diff: [z 1]
+	// Output: diff: z[1]
 }
 
 func ExampleMatch() {
