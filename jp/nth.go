@@ -121,7 +121,7 @@ func (f Nth) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 		v, has = pp.reflectGetNth(td, i)
 	}
 	if has {
-		locs = locateNthChildHas(pp, f, v, rest, max)
+		locs = locateNthChildHas(pp, Nth(i), v, rest, max)
 	}
 	return
 }

@@ -2,7 +2,9 @@
 
 package jp
 
-import "unsafe"
+import (
+	"unsafe"
+)
 
 // Expr is a JSON path expression composed of fragments. An Expr implements
 // JSONPath as described by https://goessner.net/articles/JsonPath. Where the

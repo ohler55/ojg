@@ -195,13 +195,10 @@ func (f Wildcard) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 		} else {
 			cp := append(pp, nil) // place holder
 			for i, v := range td {
-				switch v.(type) {
-				case gen.Object, gen.Array, Keyed, Indexed:
-					cp[len(pp)] = Nth(i)
-					locs = locateContinueFrag(locs, cp, v, rest, max)
-					if 0 < max && max <= len(locs) {
-						break
-					}
+				cp[len(pp)] = Nth(i)
+				locs = locateContinueFrag(locs, cp, v, rest, max)
+				if 0 < max && max <= len(locs) {
+					break
 				}
 			}
 		}
