@@ -2,7 +2,11 @@
 
 package jp
 
-import "github.com/ohler55/ojg/gen"
+import (
+	"fmt"
+
+	"github.com/ohler55/ojg/gen"
+)
 
 // Descent is used as a flag to indicate the path should be displayed in a
 // recursive descent representation.
@@ -20,154 +24,91 @@ func (f Descent) Append(buf []byte, bracket, first bool) []byte {
 }
 
 func (f Descent) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
+	if len(rest) == 0 { // last one
+		loc := make(Expr, len(pp))
+		copy(loc, pp)
+		locs = append(locs, loc)
+	} else {
+		locs = locateContinueFrag(locs, pp, data, rest, max)
+	}
+	cp := append(pp, nil) // place holder
+	mx := max
 	switch td := data.(type) {
 	case map[string]any:
-		if len(rest) == 0 { // last one
-			for k := range td {
-				locs = locateAppendFrag(locs, pp, Child(k))
-				if 0 < max && max <= len(locs) {
+		for k, v := range td {
+			cp[len(pp)] = Child(k)
+			if 0 < max {
+				mx = max - len(locs)
+				if mx <= 0 {
 					break
 				}
 			}
-		} else {
-			// Depth first with rest[1:].
-			cp := append(pp, nil) // place holder
-			mx := max
-			for k, v := range td {
-				cp[len(pp)] = Child(k)
-				locs = locateContinueFrag(locs, cp, v, rest, max)
-				if 0 < max && max <= len(locs) {
-					break
-				}
-				if 0 < max {
-					mx = max - len(locs)
-				}
-				locs = append(locs, f.locate(cp, v, rest, mx)...)
-			}
+			locs = append(locs, f.locate(cp, v, rest, mx)...)
 		}
 	case []any:
-		if len(rest) == 0 { // last one
-			for i := range td {
-				locs = locateAppendFrag(locs, pp, Nth(i))
-				if 0 < max && max <= len(locs) {
+		for i, v := range td {
+			cp[len(pp)] = Nth(i)
+			if 0 < max {
+				mx = max - len(locs)
+				if mx <= 0 {
 					break
 				}
 			}
-		} else {
-			cp := append(pp, nil) // place holder
-			mx := max
-			for i, v := range td {
-				cp[len(pp)] = Nth(i)
-				locs = locateContinueFrag(locs, cp, v, rest, max)
-				if 0 < max && max <= len(locs) {
-					break
-				}
-				if 0 < max {
-					mx = max - len(locs)
-				}
-				locs = append(locs, f.locate(cp, v, rest, mx)...)
-			}
+			locs = append(locs, f.locate(cp, v, rest, mx)...)
 		}
 	case gen.Object:
-		if len(rest) == 0 { // last one
-			for k := range td {
-				locs = locateAppendFrag(locs, pp, Child(k))
-				if 0 < max && max <= len(locs) {
+		for k, v := range td {
+			cp[len(pp)] = Child(k)
+			if 0 < max {
+				mx = max - len(locs)
+				if mx <= 0 {
 					break
 				}
 			}
-		} else {
-			// Depth first with rest[1:].
-			cp := append(pp, nil) // place holder
-			r2 := rest[1:]
-			mx := max
-			for k, v := range td {
-				cp[len(pp)] = Child(k)
-				locs = append(locs, rest[0].locate(cp, v, r2, mx)...)
-				if 0 < max {
-					if max <= len(locs) {
-						break
-					}
-					mx = max - len(locs)
-				}
-				locs = append(locs, f.locate(cp, v, rest, mx)...)
-			}
+			locs = append(locs, f.locate(cp, v, rest, mx)...)
 		}
 	case gen.Array:
-		if len(rest) == 0 { // last one
-			for i := range td {
-				locs = locateAppendFrag(locs, pp, Nth(i))
-				if 0 < max && max <= len(locs) {
+		for i, v := range td {
+			cp[len(pp)] = Nth(i)
+			if 0 < max {
+				mx = max - len(locs)
+				if mx <= 0 {
 					break
 				}
 			}
-		} else {
-			cp := append(pp, nil) // place holder
-			mx := max
-			for i, v := range td {
-				cp[len(pp)] = Nth(i)
-				locs = locateContinueFrag(locs, cp, v, rest, max)
-				if 0 < max && max <= len(locs) {
-					break
-				}
-				if 0 < max {
-					mx = max - len(locs)
-				}
-				locs = append(locs, f.locate(cp, v, rest, mx)...)
-			}
+			locs = append(locs, f.locate(cp, v, rest, mx)...)
 		}
 	case Keyed:
 		keys := td.Keys()
-		if len(rest) == 0 { // last one
-			for _, k := range keys {
-				locs = locateAppendFrag(locs, pp, Child(k))
-				if 0 < max && max <= len(locs) {
+		for _, k := range keys {
+			v, _ := td.ValueForKey(k)
+			cp[len(pp)] = Child(k)
+			if 0 < max {
+				mx = max - len(locs)
+				if mx <= 0 {
 					break
 				}
 			}
-		} else {
-			cp := append(pp, nil) // place holder
-			mx := max
-			for _, k := range keys {
-				v, _ := td.ValueForKey(k)
-				cp[len(pp)] = Child(k)
-				locs = locateContinueFrag(locs, cp, v, rest, max)
-				if 0 < max && max <= len(locs) {
-					break
-				}
-				if 0 < max {
-					mx = max - len(locs)
-				}
-				locs = append(locs, f.locate(cp, v, rest, mx)...)
-			}
+			locs = append(locs, f.locate(cp, v, rest, mx)...)
 		}
 	case Indexed:
 		size := td.Size()
-		if len(rest) == 0 { // last one
-			for i := 0; i < size; i++ {
-				locs = locateAppendFrag(locs, pp, Nth(i))
-				if 0 < max && max <= len(locs) {
+		for i := 0; i < size; i++ {
+			v := td.ValueAtIndex(i)
+			cp[len(pp)] = Nth(i)
+			if 0 < max {
+				mx = max - len(locs)
+				if mx <= 0 {
 					break
 				}
 			}
-		} else {
-			cp := append(pp, nil) // place holder
-			mx := max
-			for i := 0; i < size; i++ {
-				v := td.ValueAtIndex(i)
-				cp[len(pp)] = Nth(i)
-				locs = locateContinueFrag(locs, cp, v, rest, max)
-				if 0 < max && max <= len(locs) {
-					break
-				}
-				if 0 < max {
-					mx = max - len(locs)
-				}
-				locs = append(locs, f.locate(cp, v, rest, mx)...)
-			}
+			locs = append(locs, f.locate(cp, v, rest, mx)...)
 		}
+	case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
+		int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
 	default:
 		// TBD
+		fmt.Println("*** not implemented yet")
 	}
 	return
 }

@@ -17,6 +17,7 @@ type locateData struct {
 	max    int
 	data   any
 	expect []string
+	noSort bool
 }
 
 var (
@@ -33,6 +34,56 @@ var (
 		{path: "*", max: 1, data: map[string]any{"a": 1}, expect: []string{"a"}},
 		{path: "@.a[?(@.b == 122)].c", max: 1, expect: []string{"@.a[1].c"}},
 		{path: "@.a[?(@.b == 122)]", max: 1, expect: []string{"@.a[1]"}},
+		{path: "a[1:3].a", noSort: true, expect: []string{"a[1].a", "a[2].a"}},
+		{path: "a[1:3].a", max: 1, expect: []string{"a[1].a"}},
+		{path: "a[2:0:-1].a", max: 1, expect: []string{"a[2].a"}},
+		{path: "a[1:3]", noSort: true, expect: []string{"a[1]", "a[2]"}},
+		{path: "a[2:0:-1].a", noSort: true, expect: []string{"a[2].a", "a[1].a"}},
+		{path: "a[-2:0:-1]", noSort: true, expect: []string{"a[2]", "a[1]"}},
+		{path: "a[5:0:-1]", noSort: true, expect: []string{"a[3]", "a[2]", "a[1]"}},
+		{path: "a[1:-7:-1]", noSort: true, expect: []string{"a[1]", "a[0]"}},
+		{path: "a[-6:6:]", noSort: true, expect: []string{"a[0]", "a[1]", "a[2]", "a[3]"}},
+		{path: "a[2:0:0]", expect: []string{}},
+		{path: "a[1,3].a", noSort: true, expect: []string{"a[1].a", "a[3].a"}},
+		{path: "a[1,3]", noSort: true, expect: []string{"a[1]", "a[3]"}},
+		{path: "a[-1,1]", noSort: true, expect: []string{"a[3]", "a[1]"}},
+		{path: "a[-1,1]", max: 1, expect: []string{"a[3]"}},
+		{path: "a[1]['a','c']", noSort: true, expect: []string{"a[1].a", "a[1].c"}},
+		{
+			path:   "$..",
+			noSort: true,
+			data:   map[string]any{"a": []any{1, map[string]any{"x": 3}}},
+			expect: []string{"$", "$.a", "$.a[0]", "$.a[1]", "$.a[1].x"},
+		},
+		{
+			path:   "$..",
+			max:    3,
+			noSort: true,
+			data:   map[string]any{"a": []any{1, map[string]any{"x": 3}}},
+			expect: []string{"$", "$.a", "$.a[0]"},
+		},
+		{
+			path: "$..", max: 2, noSort: true, data: []any{map[string]any{"a": 3}}, expect: []string{"$", "$[0]"},
+		},
+		{path: "$..a", expect: []string{
+			"$.a",
+			"$.a[0].a",
+			"$.a[1].a",
+			"$.a[2].a",
+			"$.a[3].a",
+			"$.b[0].a",
+			"$.b[1].a",
+			"$.b[2].a",
+			"$.b[3].a",
+			"$.c[0].a",
+			"$.c[1].a",
+			"$.c[2].a",
+			"$.c[3].a",
+			"$.d[0].a",
+			"$.d[1].a",
+			"$.d[2].a",
+			"$.d[3].a",
+		}},
 	}
 )
 
@@ -55,9 +106,8 @@ func testDiffString(expect, actual []string, diff alt.Path) string {
 	return string(b)
 }
 
-func TestExprLocate(t *testing.T) {
+func TestExprLocateAny(t *testing.T) {
 	data := buildTree(4, 3, 0)
-	// fmt.Printf("*** %s\n", pretty.SEN(data))
 	for i, d := range locateTestData {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.path)
@@ -74,7 +124,9 @@ func TestExprLocate(t *testing.T) {
 		for _, loc := range locs {
 			results = append(results, loc.String())
 		}
-		sort.Strings(results)
+		if !d.noSort {
+			sort.Strings(results)
+		}
 		diff := alt.Compare(d.expect, results)
 		if 0 < len(diff) {
 			t.Fatal(testDiffString(d.expect, results, diff))
@@ -84,7 +136,6 @@ func TestExprLocate(t *testing.T) {
 
 func TestExprLocateNode(t *testing.T) {
 	data := alt.Generify(buildTree(4, 3, 0))
-	// fmt.Printf("*** %s\n", pretty.SEN(data))
 	for i, d := range locateTestData {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.path)
@@ -101,7 +152,9 @@ func TestExprLocateNode(t *testing.T) {
 		for _, loc := range locs {
 			results = append(results, loc.String())
 		}
-		sort.Strings(results)
+		if !d.noSort {
+			sort.Strings(results)
+		}
 		diff := alt.Compare(d.expect, results)
 		if 0 < len(diff) {
 			t.Fatal(testDiffString(d.expect, results, diff))
@@ -127,7 +180,9 @@ func TestExprLocateOrdered(t *testing.T) {
 		for _, loc := range locs {
 			results = append(results, loc.String())
 		}
-		sort.Strings(results)
+		if !d.noSort {
+			sort.Strings(results)
+		}
 		diff := alt.Compare(d.expect, results)
 		if 0 < len(diff) {
 			t.Fatal(testDiffString(d.expect, results, diff))
@@ -140,6 +195,8 @@ func TestExprLocateBracket(t *testing.T) {
 	x := jp.B().N(0).C("b")
 	tt.Equal(t, "[0]['b']", x.Locate(data, 0)[0].BracketString())
 }
+
+// TBD reflection tests
 
 // func TestLocateDev(t *testing.T) {
 // 	data := []any{map[string]any{"b": 1, "c": 2}, []any{1, 2, 3}}

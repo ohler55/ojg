@@ -3,6 +3,7 @@
 package jp
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 
@@ -347,6 +348,7 @@ func inStep(i, start, end, step int) bool {
 }
 
 func (f Slice) startEndStep(size int) (start, end, step int) {
+	start = 0
 	end = maxEnd
 	step = 1
 	if 0 < len(f) {
@@ -363,25 +365,19 @@ func (f Slice) startEndStep(size int) (start, end, step int) {
 	}
 	if start < 0 {
 		start = size + start
-		if start < 0 {
-			start = 0
-		}
+	} else if size <= start {
+		start = size - 1
+	}
+	if start < 0 {
+		start = 0
 	}
 	if end < 0 {
-		end = size + end
-	}
-	if size <= start {
-		step = 0
-		return
-	}
-	if size < end {
-		end = size
-	}
-	if step < 0 {
-		if end < -1 {
+		end = size + end + 1
+		if end < 0 && step < 0 {
 			end = -1
 		}
-		end = start + (end-start-1)/step*step
+	} else if size < end {
+		end = size
 	}
 	return
 }
@@ -410,12 +406,12 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			}
 		} else {
 			if len(rest) == 0 { // last one
-				for i := end; start <= i; i -= step {
+				for i := start; end < i; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
 				}
 			} else {
 				cp := append(pp, nil) // place holder
-				for i := end; i <= start; i -= step {
+				for i := start; end < i; i += step {
 					cp[len(pp)] = Nth(i)
 					locs = locateContinueFrag(locs, cp, td[i], rest, max)
 					if 0 < max && max <= len(locs) {
@@ -446,12 +442,12 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			}
 		} else {
 			if len(rest) == 0 { // last one
-				for i := end; start <= i; i -= step {
+				for i := start; end < i; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
 				}
 			} else {
 				cp := append(pp, nil) // place holder
-				for i := end; i <= start; i -= step {
+				for i := start; end < i; i += step {
 					cp[len(pp)] = Nth(i)
 					locs = locateContinueFrag(locs, cp, td[i], rest, max)
 					if 0 < max && max <= len(locs) {
@@ -482,12 +478,12 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			}
 		} else {
 			if len(rest) == 0 { // last one
-				for i := end; start <= i; i -= step {
+				for i := start; end < i; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
 				}
 			} else {
 				cp := append(pp, nil) // place holder
-				for i := end; i <= start; i -= step {
+				for i := start; end < i; i += step {
 					cp[len(pp)] = Nth(i)
 					locs = locateContinueFrag(locs, cp, td.ValueAtIndex(i), rest, max)
 					if 0 < max && max <= len(locs) {
@@ -498,6 +494,7 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 		}
 	default:
 		// TBD
+		fmt.Println("*** not implemented yet")
 	}
 	return
 }

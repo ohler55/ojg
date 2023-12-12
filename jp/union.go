@@ -311,7 +311,7 @@ func (f Union) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			default:
 				v, has = pp.reflectGetNth(td, i)
 			}
-			lf = Nth(tu)
+			lf = Nth(i)
 		}
 		if has {
 			if len(rest) == 0 { // last one
