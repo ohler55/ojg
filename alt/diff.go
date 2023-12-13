@@ -3,6 +3,7 @@
 package alt
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 	"unsafe"
@@ -17,6 +18,24 @@ var TimeTolerance = time.Millisecond
 // are used for keys in a map, ints are for indexes to a slice/array, and nil
 // is a wildcard that matches either.
 type Path []any
+
+// String representation of the Path.
+func (p Path) String() string {
+	var b []byte
+
+	for i, a := range p {
+		switch ta := a.(type) {
+		case int:
+			b = fmt.Appendf(b, "[%d]", ta)
+		case string:
+			if 0 < i {
+				b = append(b, '.')
+			}
+			b = append(b, ta...)
+		}
+	}
+	return string(b)
+}
 
 // Diff returns the paths to the differences between two values. Any ignore
 // paths are ignored in the comparison.

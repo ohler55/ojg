@@ -237,3 +237,7 @@ func TestDiffArrayIgnores2(t *testing.T) {
 	)
 	tt.Equal(t, "[[0 b]]", pretty.SEN(diffs))
 }
+
+func TestPathString(t *testing.T) {
+	tt.Equal(t, "a[3].b", alt.Path{"a", 3, "b"}.String())
+}

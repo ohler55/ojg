@@ -11,3 +11,10 @@ func (f Root) Append(buf []byte, bracket, first bool) []byte {
 	buf = append(buf, '$')
 	return buf
 }
+
+func (f Root) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
+	if 0 < len(rest) {
+		locs = rest[0].locate(append(pp, f), data, rest[1:], max)
+	}
+	return
+}

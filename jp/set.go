@@ -1145,7 +1145,8 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 				}
 			}
 		case *Filter:
-			stack, _ = tf.EvalWithRoot(stack, prev, data).([]any)
+			ns, _ := tf.evalWithRoot(stack, prev, data)
+			stack, _ = ns.([]any)
 		case Root:
 			stack = append(stack, data)
 		case At, Bracket:

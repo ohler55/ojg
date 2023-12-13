@@ -2,7 +2,9 @@
 
 package jp
 
-import "unsafe"
+import (
+	"unsafe"
+)
 
 // Expr is a JSON path expression composed of fragments. An Expr implements
 // JSONPath as described by https://goessner.net/articles/JsonPath. Where the
@@ -15,10 +17,16 @@ func (x Expr) String() string {
 	return string(x.Append(nil))
 }
 
+// BracketString returns a string representation of the expression using the
+// bracket notation.
+func (x Expr) BracketString() string {
+	return string(x.Append(nil, true))
+}
+
 // Append a string representation of the expression to a byte slice and return
 // the expanded buffer.
-func (x Expr) Append(buf []byte) []byte {
-	bracket := false
+func (x Expr) Append(buf []byte, brackets ...bool) []byte {
+	bracket := 0 < len(brackets) && brackets[0]
 	for i, frag := range x {
 		if _, ok := frag.(Bracket); ok {
 			bracket = true

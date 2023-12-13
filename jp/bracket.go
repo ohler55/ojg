@@ -11,3 +11,10 @@ type Bracket byte
 func (f Bracket) Append(buf []byte, bracket, first bool) []byte {
 	return buf
 }
+
+func (f Bracket) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
+	if 0 < len(rest) {
+		locs = rest[0].locate(pp, data, rest[1:], max)
+	}
+	return
+}
