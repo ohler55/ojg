@@ -10,6 +10,8 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
   notation to for normalized paths as described by the draft IETF
   JSONPath document in section 2.7.
 - Added `jp.Expr.Locate()` function that returns normalized paths for JSONPath expression.
+### Fixed
+- TBD Unmarshal now supports arrays such as `[4]int`.
 
 ## [1.20.3] - 2023-11-09
 ### Added

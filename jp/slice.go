@@ -3,7 +3,6 @@
 package jp
 
 import (
-	"fmt"
 	"reflect"
 	"strconv"
 
@@ -492,9 +491,64 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 				}
 			}
 		}
+	case nil:
+		// no match
 	default:
-		// TBD
-		fmt.Println("*** not implemented yet")
+		rd := reflect.ValueOf(data)
+		rt := rd.Type()
+		switch rt.Kind() {
+		case reflect.Slice, reflect.Array:
+			start, end, step := f.startEndStep(rd.Len())
+			if 0 < step {
+				if len(rest) == 0 { // last one
+					for i := start; i < end; i += step {
+						rv := rd.Index(i)
+						if rv.CanInterface() {
+							locs = locateAppendFrag(locs, pp, Nth(i))
+							if 0 < max && max <= len(locs) {
+								break
+							}
+						}
+					}
+				} else {
+					cp := append(pp, nil) // place holder
+					for i := start; i < end; i += step {
+						cp[len(pp)] = Nth(i)
+						rv := rd.Index(i)
+						if rv.CanInterface() {
+							locs = locateContinueFrag(locs, cp, rv.Interface(), rest, max)
+							if 0 < max && max <= len(locs) {
+								break
+							}
+						}
+					}
+				}
+			} else {
+				if len(rest) == 0 { // last one
+					for i := start; end < i; i += step {
+						rv := rd.Index(i)
+						if rv.CanInterface() {
+							locs = locateAppendFrag(locs, pp, Nth(i))
+							if 0 < max && max <= len(locs) {
+								break
+							}
+						}
+					}
+				} else {
+					cp := append(pp, nil) // place holder
+					for i := start; end < i; i += step {
+						cp[len(pp)] = Nth(i)
+						rv := rd.Index(i)
+						if rv.CanInterface() {
+							locs = locateContinueFrag(locs, cp, rv.Interface(), rest, max)
+							if 0 < max && max <= len(locs) {
+								break
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 	return
 }

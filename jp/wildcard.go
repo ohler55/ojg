@@ -242,8 +242,65 @@ func (f Wildcard) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 				}
 			}
 		}
+	case nil:
+		// no match
 	default:
-		// TBD
+		rd := reflect.ValueOf(data)
+		rt := rd.Type()
+		if rt.Kind() == reflect.Ptr {
+			rt = rt.Elem()
+			rd = rd.Elem()
+		}
+		if len(rest) == 0 { // last one
+			switch rt.Kind() {
+			case reflect.Struct:
+				for i := rd.NumField() - 1; 0 <= i; i-- {
+					rv := rd.Field(i)
+					if rv.CanInterface() {
+						locs = locateAppendFrag(locs, pp, Child(rt.Field(i).Name))
+						if 0 < max && max <= len(locs) {
+							break
+						}
+					}
+				}
+			case reflect.Slice, reflect.Array:
+				for i := 0; i < rd.Len(); i++ {
+					rv := rd.Index(i)
+					if rv.CanInterface() {
+						locs = locateAppendFrag(locs, pp, Nth(i))
+						if 0 < max && max <= len(locs) {
+							break
+						}
+					}
+				}
+			}
+		} else {
+			cp := append(pp, nil) // place holder
+			switch rt.Kind() {
+			case reflect.Struct:
+				for i := rd.NumField() - 1; 0 <= i; i-- {
+					rv := rd.Field(i)
+					if rv.CanInterface() {
+						cp[len(pp)] = Child(rt.Field(i).Name)
+						locs = locateContinueFrag(locs, cp, rv.Interface(), rest, max)
+						if 0 < max && max <= len(locs) {
+							break
+						}
+					}
+				}
+			case reflect.Slice, reflect.Array:
+				for i := 0; i < rd.Len(); i++ {
+					rv := rd.Index(i)
+					if rv.CanInterface() {
+						cp[len(pp)] = Nth(i)
+						locs = locateContinueFrag(locs, cp, rv.Interface(), rest, max)
+						if 0 < max && max <= len(locs) {
+							break
+						}
+					}
+				}
+			}
+		}
 	}
 	return
 }

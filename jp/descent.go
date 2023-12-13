@@ -3,7 +3,7 @@
 package jp
 
 import (
-	"fmt"
+	"reflect"
 
 	"github.com/ohler55/ojg/gen"
 )
@@ -107,8 +107,43 @@ func (f Descent) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 	case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
 		int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
 	default:
-		// TBD
-		fmt.Println("*** not implemented yet")
+		rd := reflect.ValueOf(data)
+		rt := rd.Type()
+		if rt.Kind() == reflect.Ptr {
+			rt = rt.Elem()
+			rd = rd.Elem()
+		}
+		cp := append(pp, nil) // place holder
+		switch rt.Kind() {
+		case reflect.Struct:
+			for i := rd.NumField() - 1; 0 <= i; i-- {
+				rv := rd.Field(i)
+				if rv.CanInterface() {
+					cp[len(pp)] = Child(rt.Field(i).Name)
+					if 0 < max {
+						mx = max - len(locs)
+						if mx <= 0 {
+							break
+						}
+					}
+					locs = append(locs, f.locate(cp, rv.Interface(), rest, mx)...)
+				}
+			}
+		case reflect.Slice, reflect.Array:
+			for i := 0; i < rd.Len(); i++ {
+				rv := rd.Index(i)
+				if rv.CanInterface() {
+					cp[len(pp)] = Nth(i)
+					if 0 < max {
+						mx = max - len(locs)
+						if mx <= 0 {
+							break
+						}
+					}
+					locs = append(locs, f.locate(cp, rv.Interface(), rest, mx)...)
+				}
+			}
+		}
 	}
 	return
 }

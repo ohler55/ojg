@@ -190,18 +190,60 @@ func TestExprLocateOrdered(t *testing.T) {
 	}
 }
 
+func TestExprLocateReflect(t *testing.T) {
+	for i, d := range []*locateData{
+		{path: "a", data: &Sample{A: 3, B: "sample"}, expect: []string{"a"}},
+		{path: "[1]", data: []int{1, 2, 3}, expect: []string{"[1]"}},
+		{path: "['a','b']", data: &Sample{A: 3, B: "sample"}, expect: []string{"a", "b"}},
+		{path: "[1,2]", data: []int{1, 2, 3}, expect: []string{"[1]", "[2]"}},
+		{path: "[1:2]", data: nil, expect: []string{}},
+		{path: "[1:3]", data: []int{1, 2, 3}, expect: []string{"[1]", "[2]"}},
+		{path: "[1:3]", max: 1, data: []int{1, 2, 3}, expect: []string{"[1]"}},
+		{path: "[2:0:-1]", max: 1, data: []int{1, 2, 3}, expect: []string{"[2]"}},
+		{path: "[0:3].b", max: 1,
+			data:   []map[string]any{map[string]any{"a": 1}, map[string]any{"b": 1}},
+			expect: []string{"[1].b"},
+		},
+		{path: "[2:0:-1].b", max: 1,
+			data:   []map[string]any{map[string]any{"a": 1}, map[string]any{"b": 1}},
+			expect: []string{"[1].b"},
+		},
+		{path: "$.*", data: nil, expect: []string{}},
+		{path: "$.*", data: &Sample{A: 3, B: "sample"}, expect: []string{"$.A", "$.B"}},
+		{path: "$.*", max: 1, data: &Sample{A: 3, B: "sample"}, expect: []string{"$.B"}},
+		{path: "$.*.a", data: &Any{X: map[string]any{"a": 1}}, expect: []string{"$.X.a"}},
+		{path: "$.*.a", max: 1, data: &Any{X: map[string]any{"a": 1}}, expect: []string{"$.X.a"}},
+		{path: "$.*", max: 2, data: []int{1, 2, 3}, expect: []string{"$[0]", "$[1]"}},
+		{path: "$.*.a", max: 1, data: []map[string]any{map[string]any{"a": 1}}, expect: []string{"$[0].a"}},
+		{path: "$..", data: nil, expect: []string{"$"}},
+		{path: "$..", data: &Sample{A: 3, B: "sample"}, expect: []string{"$", "$.A", "$.B"}},
+		{path: "$..", max: 2, data: &Sample{A: 3, B: "sample"}, expect: []string{"$", "$.B"}},
+		{path: "$..", max: 2, data: []int{1, 2, 3}, expect: []string{"$", "$[0]"}},
+		{path: "[0][1]", data: []any{[]int{1, 2, 3}}, expect: []string{"[0][1]"}},
+		{path: "[0:2][1]", data: []any{[]int{1, 2, 3}}, expect: []string{"[0][1]"}},
+	} {
+		if testing.Verbose() {
+			fmt.Printf("... %d: %s\n", i, d.path)
+		}
+		x, err := jp.ParseString(d.path)
+		tt.Nil(t, err)
+		locs := x.Locate(d.data, d.max)
+		var results []string
+		for _, loc := range locs {
+			results = append(results, loc.String())
+		}
+		if !d.noSort {
+			sort.Strings(results)
+		}
+		diff := alt.Compare(d.expect, results)
+		if 0 < len(diff) {
+			t.Fatal(testDiffString(d.expect, results, diff))
+		}
+	}
+}
+
 func TestExprLocateBracket(t *testing.T) {
 	data := []any{map[string]any{"b": 1, "c": 2}, []any{1, 2, 3}}
 	x := jp.B().N(0).C("b")
 	tt.Equal(t, "[0]['b']", x.Locate(data, 0)[0].BracketString())
 }
-
-// TBD reflection tests
-
-// func TestLocateDev(t *testing.T) {
-// 	data := []any{map[string]any{"b": 1, "c": 2}, []any{1, 2, 3}}
-// 	x := jp.MustParseString("$[?(@[1] == 2)].*")
-// 	for _, ep := range x.Locate(data, 0) {
-// 		fmt.Printf("*** %s\n", ep.BracketString())
-// 	}
-// }
