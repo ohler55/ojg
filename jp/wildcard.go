@@ -127,3 +127,180 @@ func (f Wildcard) removeOne(value any) (out any, changed bool) {
 	}
 	return
 }
+
+func (f Wildcard) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
+	switch td := data.(type) {
+	case map[string]any:
+		if len(rest) == 0 { // last one
+			for k := range td {
+				locs = locateAppendFrag(locs, pp, Child(k))
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		} else {
+			cp := append(pp, nil) // place holder
+			for k, v := range td {
+				cp[len(pp)] = Child(k)
+				locs = locateContinueFrag(locs, cp, v, rest, max)
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		}
+	case []any:
+		if len(rest) == 0 { // last one
+			for i := range td {
+				locs = locateAppendFrag(locs, pp, Nth(i))
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		} else {
+			cp := append(pp, nil) // place holder
+			for i, v := range td {
+				cp[len(pp)] = Nth(i)
+				locs = locateContinueFrag(locs, cp, v, rest, max)
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		}
+	case gen.Object:
+		if len(rest) == 0 { // last one
+			for k := range td {
+				locs = locateAppendFrag(locs, pp, Child(k))
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		} else {
+			cp := append(pp, nil) // place holder
+			for k, v := range td {
+				cp[len(pp)] = Child(k)
+				locs = locateContinueFrag(locs, cp, v, rest, max)
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		}
+	case gen.Array:
+		if len(rest) == 0 { // last one
+			for i := range td {
+				locs = locateAppendFrag(locs, pp, Nth(i))
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		} else {
+			cp := append(pp, nil) // place holder
+			for i, v := range td {
+				cp[len(pp)] = Nth(i)
+				locs = locateContinueFrag(locs, cp, v, rest, max)
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		}
+	case Keyed:
+		keys := td.Keys()
+		if len(rest) == 0 { // last one
+			for _, k := range keys {
+				locs = locateAppendFrag(locs, pp, Child(k))
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		} else {
+			cp := append(pp, nil) // place holder
+			for _, k := range keys {
+				v, _ := td.ValueForKey(k)
+				cp[len(pp)] = Child(k)
+				locs = locateContinueFrag(locs, cp, v, rest, max)
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		}
+	case Indexed:
+		size := td.Size()
+		if len(rest) == 0 { // last one
+			for i := 0; i < size; i++ {
+				locs = locateAppendFrag(locs, pp, Nth(i))
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		} else {
+			cp := append(pp, nil) // place holder
+			for i := 0; i < size; i++ {
+				v := td.ValueAtIndex(i)
+				cp[len(pp)] = Nth(i)
+				locs = locateContinueFrag(locs, cp, v, rest, max)
+				if 0 < max && max <= len(locs) {
+					break
+				}
+			}
+		}
+	case nil:
+		// no match
+	default:
+		rd := reflect.ValueOf(data)
+		rt := rd.Type()
+		if rt.Kind() == reflect.Ptr {
+			rt = rt.Elem()
+			rd = rd.Elem()
+		}
+		if len(rest) == 0 { // last one
+			switch rt.Kind() {
+			case reflect.Struct:
+				for i := rd.NumField() - 1; 0 <= i; i-- {
+					rv := rd.Field(i)
+					if rv.CanInterface() {
+						locs = locateAppendFrag(locs, pp, Child(rt.Field(i).Name))
+						if 0 < max && max <= len(locs) {
+							break
+						}
+					}
+				}
+			case reflect.Slice, reflect.Array:
+				for i := 0; i < rd.Len(); i++ {
+					rv := rd.Index(i)
+					if rv.CanInterface() {
+						locs = locateAppendFrag(locs, pp, Nth(i))
+						if 0 < max && max <= len(locs) {
+							break
+						}
+					}
+				}
+			}
+		} else {
+			cp := append(pp, nil) // place holder
+			switch rt.Kind() {
+			case reflect.Struct:
+				for i := rd.NumField() - 1; 0 <= i; i-- {
+					rv := rd.Field(i)
+					if rv.CanInterface() {
+						cp[len(pp)] = Child(rt.Field(i).Name)
+						locs = locateContinueFrag(locs, cp, rv.Interface(), rest, max)
+						if 0 < max && max <= len(locs) {
+							break
+						}
+					}
+				}
+			case reflect.Slice, reflect.Array:
+				for i := 0; i < rd.Len(); i++ {
+					rv := rd.Index(i)
+					if rv.CanInterface() {
+						cp[len(pp)] = Nth(i)
+						locs = locateContinueFrag(locs, cp, rv.Interface(), rest, max)
+						if 0 < max && max <= len(locs) {
+							break
+						}
+					}
+				}
+			}
+		}
+	}
+	return
+}

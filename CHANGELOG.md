@@ -4,6 +4,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.21.0] - unreleased
+### Added
+- Added the Expr function `BracketString` to force the use of bracket
+  notation to for normalized paths as described by the draft IETF
+  JSONPath document in section 2.7.
+- Added `jp.Expr.Locate()` function that returns normalized paths for JSONPath expression.
+### Fixed
+- TBD Unmarshal now supports arrays such as `[4]int`.
+
 ## [1.20.3] - 2023-11-09
 ### Added
 - Added an option to jp.Walk to just callback on leaves making the function more useable.

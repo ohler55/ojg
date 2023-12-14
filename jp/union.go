@@ -259,3 +259,70 @@ func (f Union) remove(value any) (out any, changed bool) {
 	}
 	return
 }
+
+func (f Union) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
+	var (
+		v   any
+		has bool
+		lf  Frag
+	)
+	for _, u := range f {
+		has = false
+		switch tu := u.(type) {
+		case string:
+			switch td := data.(type) {
+			case map[string]any:
+				v, has = td[tu]
+			case Keyed:
+				v, has = td.ValueForKey(tu)
+			case gen.Object:
+				v, has = td[tu]
+			default:
+				v, has = pp.reflectGetChild(td, tu)
+			}
+			lf = Child(tu)
+		case int64:
+			i := int(tu)
+			switch td := data.(type) {
+			case []any:
+				if i < 0 {
+					i = len(td) + i
+				}
+				if 0 <= i && i < len(td) {
+					v = td[i]
+					has = true
+				}
+			case Indexed:
+				if i < 0 {
+					i = td.Size() + i
+				}
+				if 0 <= i && i < td.Size() {
+					v = td.ValueAtIndex(i)
+					has = true
+				}
+			case gen.Array:
+				if i < 0 {
+					i = len(td) + i
+				}
+				if 0 <= i && i < len(td) {
+					v = td[i]
+					has = true
+				}
+			default:
+				v, has = pp.reflectGetNth(td, i)
+			}
+			lf = Nth(i)
+		}
+		if has {
+			if len(rest) == 0 { // last one
+				locs = locateAppendFrag(locs, pp, lf)
+			} else {
+				locs = locateContinueFrag(locs, append(pp, lf), v, rest, max)
+			}
+			if 0 < max && max <= len(locs) {
+				break
+			}
+		}
+	}
+	return
+}

@@ -170,17 +170,20 @@ func (s *Script) Match(data any) bool {
 }
 
 // Eval is primarily used by the Expr parser but is public for testing.
-func (s *Script) Eval(stack any, data any) any {
+func (s *Script) Eval(stack, data any) any {
 	ns, _ := s.evalWithRoot(stack, data, nil)
 	return ns
 }
 
-// evalWithRoot is primarily used by the Expr parser but is public for testing.
-func (s *Script) evalWithRoot(stack any, data, root any) (any, Expr) {
+func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 	// Checking the type each iteration adds 2.5% but allows code not to be
 	// duplicated and not to call a separate function. Using just one more
 	// function call for each iteration adds 6.5%.
-	var dlen int
+	var (
+		dlen    int
+		locKeys Expr
+		locs    Expr
+	)
 	switch td := data.(type) {
 	case []any:
 		dlen = len(td)
@@ -189,8 +192,9 @@ func (s *Script) evalWithRoot(stack any, data, root any) (any, Expr) {
 	case map[string]any:
 		dlen = len(td)
 		da := make([]any, 0, dlen)
-		for _, v := range td {
+		for k, v := range td {
 			da = append(da, v)
+			locKeys = append(locKeys, Child(k))
 		}
 		data = da
 	case Indexed:
@@ -201,24 +205,27 @@ func (s *Script) evalWithRoot(stack any, data, root any) (any, Expr) {
 		da := make([]any, dlen)
 		for i, k := range keys {
 			da[i], _ = td.ValueForKey(k)
+			locKeys = append(locKeys, Child(k))
 		}
 		data = da
 	case gen.Object:
 		dlen = len(td)
 		da := make(gen.Array, 0, dlen)
-		for _, v := range td {
+		for k, v := range td {
 			da = append(da, v)
+			locKeys = append(locKeys, Child(k))
 		}
 		data = da
 	default:
 		rv := reflect.ValueOf(td)
 		if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
-			return stack, nil
+			return stack, locs
 		}
 		dlen = rv.Len()
 		da := make([]any, 0, dlen)
 		for i := 0; i < dlen; i++ {
 			da = append(da, rv.Index(i).Interface())
+			locKeys = append(locKeys, Nth(i))
 		}
 		data = da
 	}
@@ -637,10 +644,20 @@ func (s *Script) evalWithRoot(stack any, data, root any) (any, Expr) {
 			switch tstack := stack.(type) {
 			case []any:
 				tstack = append(tstack, v)
+				if 0 < len(locKeys) {
+					locs = append(locs, locKeys[vi])
+				} else {
+					locs = append(locs, Nth(vi))
+				}
 				stack = tstack
 			case []gen.Node:
 				if n, ok := v.(gen.Node); ok {
 					tstack = append(tstack, n)
+					if 0 < len(locKeys) {
+						locs = append(locs, locKeys[vi])
+					} else {
+						locs = append(locs, Nth(vi))
+					}
 					stack = tstack
 				}
 			}
@@ -649,7 +666,7 @@ func (s *Script) evalWithRoot(stack any, data, root any) (any, Expr) {
 	for i := range sstack {
 		sstack[i] = nil
 	}
-	return stack, nil
+	return stack, locs
 }
 
 // Inspect the script.

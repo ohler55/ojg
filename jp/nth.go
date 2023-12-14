@@ -85,3 +85,43 @@ func (f Nth) remove(value any) (out any, changed bool) {
 	}
 	return
 }
+
+func (f Nth) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
+	var (
+		v   any
+		has bool
+	)
+	i := int(f)
+	switch td := data.(type) {
+	case []any:
+		if i < 0 {
+			i = len(td) + i
+		}
+		if 0 <= i && i < len(td) {
+			v = td[i]
+			has = true
+		}
+	case gen.Array:
+		if i < 0 {
+			i = len(td) + i
+		}
+		if 0 <= i && i < len(td) {
+			v = td[i]
+			has = true
+		}
+	case Indexed:
+		if i < 0 {
+			i = td.Size() + i
+		}
+		if 0 <= i && i < td.Size() {
+			v = td.ValueAtIndex(i)
+			has = true
+		}
+	default:
+		v, has = pp.reflectGetNth(td, i)
+	}
+	if has {
+		locs = locateNthChildHas(pp, Nth(i), v, rest, max)
+	}
+	return
+}

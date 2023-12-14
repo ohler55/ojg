@@ -90,3 +90,23 @@ type keydex struct {
 func (o *keydex) Size() int {
 	return len(o.entries)
 }
+
+func orderedFromSimple(v any) (o any) {
+	switch tv := v.(type) {
+	case []any:
+		ind := indexed{}
+		for _, v2 := range tv {
+			ind.entries = append(ind.entries, &entry{value: orderedFromSimple(v2)})
+		}
+		o = &ind
+	case map[string]any:
+		kd := keyed{}
+		for k, v2 := range tv {
+			kd.entries = append(kd.entries, &entry{key: k, value: orderedFromSimple(v2)})
+		}
+		o = &kd
+	default:
+		o = v
+	}
+	return
+}

@@ -250,3 +250,26 @@ func (f Filter) removeOne(value any) (out any, changed bool) {
 	}
 	return
 }
+
+func (f Filter) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
+	ns, lcs := f.evalWithRoot([]any{}, data, nil)
+	stack, _ := ns.([]any)
+	if len(rest) == 0 { // last one
+		for _, lc := range lcs {
+			locs = locateAppendFrag(locs, pp, lc)
+			if 0 < max && max <= len(locs) {
+				break
+			}
+		}
+	} else {
+		cp := append(pp, nil) // place holder
+		for i, lc := range lcs {
+			cp[len(pp)] = lc
+			locs = locateContinueFrag(locs, cp, stack[i], rest, max)
+			if 0 < max && max <= len(locs) {
+				break
+			}
+		}
+	}
+	return
+}
