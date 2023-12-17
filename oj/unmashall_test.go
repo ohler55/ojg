@@ -75,14 +75,14 @@ func TestUnmarshaler(t *testing.T) {
 	tt.Equal(t, 1, tags["k1"])
 }
 
-type Triple [3]float64
+type Triple [3]int
 
 func TestUnmarshalArray(t *testing.T) {
 	var tri Triple
-	src := []byte(`[1.0, 2.0, 3.0]`)
+	src := []byte(`[1.0, 2, 3]`)
 	err := oj.Unmarshal(src, &tri)
 	tt.Nil(t, err)
-	tt.Equal(t, 1.0, tri[0])
-	tt.Equal(t, 2.0, tri[1])
-	tt.Equal(t, 3.0, tri[2])
+	tt.Equal(t, 1, tri[0])
+	tt.Equal(t, 2, tri[1])
+	tt.Equal(t, 3, tri[2])
 }

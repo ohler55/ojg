@@ -359,9 +359,9 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 			}
 			// Kind of awkward but the double reflect is needed to get the
 			// actual type of the element value if the slice input is []any.
-			re := reflect.ValueOf(vv.Index(i).Interface())
+			ev := vv.Index(i).Interface()
 			ri := rv.Index(i)
-			ri.Set(re)
+			r.setValue(ev, ri, nil)
 		}
 	case reflect.Map:
 		if v == nil {
