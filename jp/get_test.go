@@ -34,6 +34,8 @@ type Any struct {
 	X any
 }
 
+type triple [3]int
+
 var (
 	getTestData = []*getData{
 		{path: "", expect: []any{}},
@@ -155,6 +157,7 @@ var (
 		{path: "a..b", expect: []any{112, 122, 132, 142}},
 		{path: "[1]", expect: []any{2}, data: []int{1, 2, 3}},
 		{path: "[-1]", expect: []any{3}, data: []int{1, 2, 3}},
+		{path: "[1]", expect: []any{2}, data: triple{1, 2, 3}},
 		{path: "[-1,'a']", expect: []any{3}, data: []int{1, 2, 3}},
 		{path: "$[::]", expect: []any{1, 2, 3}, data: []int{1, 2, 3}},
 		{path: "[-1,'a'].x",

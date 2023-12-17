@@ -838,3 +838,21 @@ func TestRecomposeReflectNumber(t *testing.T) {
 	src["asInt"] = json.Number("123.4")
 	tt.Panic(t, func() { _ = r.MustRecompose(src, &pan) })
 }
+
+type Triple [3]int
+
+func TestRecomposeReflectArray(t *testing.T) {
+	r, err := alt.NewRecomposer("type", nil)
+	tt.Nil(t, err, "NewRecomposer")
+
+	var tri Triple
+
+	_ = r.MustRecompose([]any{1, 2, 3}, &tri)
+	tt.Equal(t, `[1 2 3]`, pretty.SEN(tri))
+
+	tri = Triple{0, 0, 0}
+	_ = r.MustRecompose([]any{1, 2, 3, 4}, &tri)
+	tt.Equal(t, `[1 2 3]`, pretty.SEN(tri))
+
+	tt.Panic(t, func() { _ = r.MustRecompose(map[string]any{"a": 1}, &tri) })
+}
