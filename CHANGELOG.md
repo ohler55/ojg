@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.21.0] - unreleased
+## [1.21.0] - 2023-12-18
 ### Added
 - Added the Expr function `BracketString` to force the use of bracket
   notation to for normalized paths as described by the draft IETF
