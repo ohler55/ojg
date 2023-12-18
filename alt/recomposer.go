@@ -318,7 +318,7 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 		rv = rv.Elem()
 	}
 	switch rv.Kind() {
-	case reflect.Array, reflect.Slice:
+	case reflect.Slice:
 		va, ok := (v).([]any)
 		if !ok {
 			vv := reflect.ValueOf(v)
@@ -346,6 +346,23 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 			}
 		}
 		rv.Set(av)
+	case reflect.Array:
+		vv := reflect.ValueOf(v)
+		if vv.Kind() != reflect.Slice {
+			panic(fmt.Errorf("can only recompose a %s from a []any, not a %T", rv.Type(), v))
+		}
+		inSize := vv.Len()
+		size := rv.Len()
+		for i := 0; i < inSize; i++ {
+			if size <= i {
+				break
+			}
+			// Kind of awkward but the double reflect is needed to get the
+			// actual type of the element value if the slice input is []any.
+			ev := vv.Index(i).Interface()
+			ri := rv.Index(i)
+			r.setValue(ev, ri, nil)
+		}
 	case reflect.Map:
 		if v == nil {
 			return
@@ -404,7 +421,6 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 				}
 				break
 			}
-
 			vv := reflect.ValueOf(v)
 			if vv.Kind() != reflect.Map {
 				panic(fmt.Errorf("can only recompose a %s from a map[string]any, not a %T", rv.Type(), v))

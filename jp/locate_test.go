@@ -25,6 +25,7 @@ var (
 		{path: "", expect: []string{}},
 		{path: "a.b", data: map[string]any{"a": map[string]any{"b": 2}, "x": 3}, expect: []string{"a.b"}},
 		{path: "a[1]", data: map[string]any{"a": []any{1, 2, 3}}, expect: []string{"a[1]"}},
+		{path: "[1]", data: triple{1, 2, 3}, expect: []string{"[1]"}},
 		{path: "a[-1]", data: map[string]any{"a": []any{1, 2, 3}}, expect: []string{"a[2]"}},
 		{path: "a[*]", data: map[string]any{"a": []any{1, 2, 3}}, expect: []string{"a[0]", "a[1]", "a[2]"}},
 		{path: "$.a.*.b", max: 2, expect: []string{"$.a[0].b", "$.a[1].b"}},
