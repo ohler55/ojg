@@ -57,6 +57,7 @@ func TestScriptBasicEval(t *testing.T) {
 func TestScriptParse(t *testing.T) {
 	for i, d := range []xdata{
 		{src: "($.x == 'abc')", expect: "($.x == 'abc')"},
+		{src: " ($.x == 'abc') ", expect: "($.x == 'abc')"},
 		{src: "(@.x == 'abc')", expect: "(@.x == 'abc')"},
 		{src: "(@.x<5)", expect: "(@.x < 5)"},
 		{src: "(@.x<123)", expect: "(@.x < 123)"},
@@ -80,6 +81,8 @@ func TestScriptParse(t *testing.T) {
 		{src: "((@.x == 3) || (@.y > 5))", expect: "(@.x == 3 || @.y > 5)"},
 		{src: "(@.x < 3 && @.x > 1 || @.z == 3)", expect: "(@.x < 3 && @.x > 1 || @.z == 3)"},
 		{src: "(!(3 == @.x))", expect: "(!(3 == @.x))"},
+		{src: "!(3 == @.x)", expect: "(!(3 == @.x))"},
+		{src: " !(3 == @.x) ", expect: "(!(3 == @.x))"},
 		{src: "(@.x in [1,2,3])", expect: "(@.x in [1,2,3])"},
 		{src: "(@.x in ['a' , 'b', 'c'])", expect: "(@.x in ['a','b','c'])"},
 		{src: "(@ empty true)", expect: "(@ empty true)"},
@@ -89,6 +92,8 @@ func TestScriptParse(t *testing.T) {
 		{src: "@", expect: "(@ exists true)"},
 		{src: "(@ =~ /abc/)", expect: "(@ ~= /abc/)"},
 		{src: "(@ ~= /a\\/c/)", expect: "(@ ~= /a\\/c/)"},
+		{src: "@ =~ /abc/", expect: "(@ ~= /abc/)"},
+		{src: " @.quux ~= /(?i)abc/ ", expect: "(@.quux ~= /(?i)abc/)"},
 
 		{src: "(length(@.xyz))", expect: "(length(@.xyz))"},
 		{src: "(3 == length(@.xyz))", expect: "(3 == length(@.xyz))"},

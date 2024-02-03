@@ -566,7 +566,7 @@ func (p *parser) readEquation() (eq *Equation) {
 		p.pos++
 		eq.left = p.readEqValue()
 		b := p.nextNonSpace()
-		if b != ')' {
+		if b != ')' && b != 0 {
 			p.raise("not terminated")
 		}
 		p.pos++
@@ -588,13 +588,14 @@ func (p *parser) readEquation() (eq *Equation) {
 			eq.right = p.readEqValue()
 		}
 	}
+	b = p.nextNonSpace()
 	for p.pos < len(p.buf) {
 		b = p.nextNonSpace()
 		switch b {
 		case ')':
 			p.pos++
 			return
-		case ']':
+		case ']', 0:
 			return
 		}
 		o, _ := p.readEqOp()
@@ -764,8 +765,9 @@ func (p *parser) skipSpace() (b byte) {
 
 func (p *parser) nextNonSpace() (b byte) {
 	for p.pos < len(p.buf) {
-		b = p.buf[p.pos]
-		if b != ' ' {
+		b2 := p.buf[p.pos]
+		if b2 != ' ' {
+			b = b2
 			break
 		}
 		p.pos++

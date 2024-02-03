@@ -105,8 +105,10 @@ func NewScript(str string) (s *Script, err error) {
 // MustNewScript parses the string argument and returns a script or an error.
 func MustNewScript(str string) (s *Script) {
 	p := &parser{buf: []byte(str)}
-	if 0 < len(p.buf) && p.buf[0] == '(' {
-		p.pos = 1
+
+	_ = p.nextNonSpace()
+	if 0 < len(p.buf) && p.buf[p.pos] == '(' {
+		p.pos++
 	}
 	eq := p.readEquation()
 
