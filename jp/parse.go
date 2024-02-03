@@ -588,7 +588,6 @@ func (p *parser) readEquation() (eq *Equation) {
 			eq.right = p.readEqValue()
 		}
 	}
-	b = p.nextNonSpace()
 	for p.pos < len(p.buf) {
 		b = p.nextNonSpace()
 		switch b {
