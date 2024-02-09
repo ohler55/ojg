@@ -3,6 +3,7 @@
 package jp
 
 import (
+	"bytes"
 	"regexp"
 	"strconv"
 )
@@ -21,7 +22,39 @@ type Equation struct {
 // Script creates and returns a Script that implements the equation.
 func (e *Equation) Script() (s *Script) {
 	s = &Script{template: e.buildScript([]any{})}
+	if s.template[0] == group {
+		s.template = s.template[1:]
+	}
 	return
+}
+
+// Inspect is a debugging function for inspecting an equation tree.
+func (e *Equation) Inspect(b []byte, depth int) []byte {
+	indent := bytes.Repeat([]byte{' '}, depth)
+	b = append(b, indent...)
+	b = append(b, '{')
+	if e.o == nil {
+		b = e.appendValue(b, e.result)
+		b = append(b, '}', '\n')
+		return b
+	}
+	b = append(b, e.o.name...)
+	b = append(b, '\n')
+	if e.left == nil {
+		b = append(b, indent...)
+		b = append(b, "  nil\n"...)
+	} else {
+		b = e.left.Inspect(b, depth+2)
+	}
+	if e.right == nil {
+		b = append(b, indent...)
+		b = append(b, "  nil\n"...)
+	} else {
+		b = e.right.Inspect(b, depth+2)
+	}
+	b = append(b, indent...)
+
+	return append(b, '}', '\n')
 }
 
 // Filter creates and returns a Script that implements the equation.
@@ -186,12 +219,11 @@ func Search(left, right *Equation) *Equation {
 	return &Equation{o: search, left: left, right: right}
 }
 
-// Append a fragment string representation of the fragment to the buffer
-// then returning the expanded buffer.
+// Append a equation string representation to a buffer.
 func (e *Equation) Append(buf []byte, parens bool) []byte {
 	if e.o != nil {
 		switch e.o.code {
-		case not.code, length.code, count.code, match.code, search.code:
+		case not.code, length.code, count.code, match.code, search.code, group.code:
 			parens = false
 		}
 	}
@@ -223,6 +255,10 @@ func (e *Equation) Append(buf []byte, parens bool) []byte {
 			buf = append(buf, ',', ' ')
 			buf = e.right.Append(buf, false)
 			buf = append(buf, ')')
+		case group.code:
+			if e.left != nil {
+				buf = e.left.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)
+			}
 		default:
 			if e.left != nil {
 				buf = e.left.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)
@@ -291,7 +327,7 @@ func (e *Equation) buildScript(stack []any) []any {
 		if e.left != nil {
 			stack = append(stack, e.left.result) // should always be an Expr
 		}
-	case not.code, length.code, count.code:
+	case not.code, length.code, count.code, group.code:
 		stack = append(stack, e.o)
 		if e.left == nil {
 			stack = append(stack, nil)
@@ -311,5 +347,26 @@ func (e *Equation) buildScript(stack []any) []any {
 			stack = e.right.buildScript(stack)
 		}
 	}
+	// Simplify stack by removing extra empty groups.
+	for {
+		if 1 < len(stack) && stack[0] == group && stack[1] == group {
+			stack = stack[1:]
+		} else {
+			break
+		}
+	}
 	return stack
+}
+
+func reduceGroups(e *Equation, po *op) *Equation {
+	if e == nil || e.o == nil { // a result or empty/nothing
+		return e
+	}
+	if e.o.code == group.code && (po == nil || (e.left != nil && e.left.o != nil && e.left.o.prec < po.prec)) {
+		return reduceGroups(e.left, po)
+	}
+	e.left = reduceGroups(e.left, e.o)
+	e.right = reduceGroups(e.right, e.o)
+
+	return e
 }
