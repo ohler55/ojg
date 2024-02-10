@@ -56,7 +56,6 @@ func TestScriptBasicEval(t *testing.T) {
 
 func TestScriptParse(t *testing.T) {
 	for i, d := range []xdata{
-		// {src: "((@.text ~= /(?i)expected/) && !(@.text ~= /(?i)notexpected/))", expect: "TBD"},
 		{src: "($.x == 'abc')", expect: "($.x == 'abc')"},
 		{src: " ($.x == 'abc') ", expect: "($.x == 'abc')"},
 		{src: "(@.x == 'abc')", expect: "(@.x == 'abc')"},
@@ -80,51 +79,63 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@.x[?(@.a == true)].b == false)", expect: "(@.x[?(@.a == true)].b == false)"},
 		{src: "(@.x[?(@.a == 5)] == 11)", expect: "(@.x[?(@.a == 5)] == 11)"},
 		{src: "((@.x == 3) || (@.y > 5))", expect: "(@.x == 3 || @.y > 5)"},
+		{src: "@.x == 3 || @.y > 5", expect: "(@.x == 3 || @.y > 5)"},
+		{src: "((@.x == 3) || (@.y > 5 && @.z))", expect: "(@.x == 3 || (@.y > 5 && @.z))"},
 		{src: "(@.x < 3 && @.x > 1 || @.z == 3)", expect: "(@.x < 3 && @.x > 1 || @.z == 3)"},
 		{src: "@.x < 3 && @.x > 1 || @.z == 3", expect: "(@.x < 3 && @.x > 1 || @.z == 3)"},
+		{src: "@.x + 3 > @.y - 3", expect: "(@.x + 3 > @.y - 3)"},
+		// {src: "@.x + 3 * 2 - 1 > 3", expect: "(@.x + 3 * 2 - 1 > 3)"}, // TBD fix me
 		{src: "(!(3 == @.x))", expect: "(!(3 == @.x))"},
 		{src: "!(3 == @.x)", expect: "(!(3 == @.x))"},
 		{src: " !(3 == @.x) ", expect: "(!(3 == @.x))"},
-		// {src: "(@.x in [1,2,3])", expect: "(@.x in [1,2,3])"}, // TBD fix
-		// {src: "(@.x in ['a' , 'b', 'c'])", expect: "(@.x in ['a','b','c'])"}, // TBD fix
+		{src: "(@.x in [1,2,3])", expect: "(@.x in [1,2,3])"},
+		{src: "(@.x in ['a' , 'b', 'c'])", expect: "(@.x in ['a','b','c'])"},
 		{src: "(@ empty true)", expect: "(@ empty true)"},
 		{src: "(@ has true)", expect: "(@ has true)"},
 		{src: "(@ exists true)", expect: "(@ exists true)"},
-		// {src: "(@)", expect: "(@ exists true)"}, // TBD fix
-		// {src: "@", expect: "(@ exists true)"}, // TBD fix
+		{src: "(@)", expect: "(@ exists true)"},
+		{src: "@", expect: "(@ exists true)"},
 		{src: "(@ =~ /abc/)", expect: "(@ ~= /abc/)"},
 		{src: "(@ ~= /a\\/c/)", expect: "(@ ~= /a\\/c/)"},
 		{src: "@ =~ /abc/", expect: "(@ ~= /abc/)"},
 		{src: " @.quux ~= /(?i)abc/ ", expect: "(@.quux ~= /(?i)abc/)"},
+		{
+			src:    " @.text ~= /(?i)expected/ && !(@.text ~= /(?i)notexpected/)",
+			expect: "(@.text ~= /(?i)expected/ && !(@.text ~= /(?i)notexpected/))",
+		},
 
 		{src: "(length(@.xyz))", expect: "(length(@.xyz))"},
 		{src: "(3 == length(@.xyz))", expect: "(3 == length(@.xyz))"},
 		{src: "(length(@.xyz) == 3)", expect: "(length(@.xyz) == 3)"},
 		{src: "(length(@.xyz) == Nothing)", expect: "(length(@.xyz) == Nothing)"},
-		// {src: "(length(@.xyz == 3)", err: "not terminated at 15 in (length(@.xyz == 3)"},  // TBD fix
+		{src: "(length(@.xyz == 3)", err: "not terminated at 20 in (length(@.xyz == 3)"},
 		{src: "(leng(@.xyz) == 3)", err: "expected a length function at 2 in (leng(@.xyz) == 3)"},
+		{src: "length(@.xyz == 3", err: "not terminated at 18 in length(@.xyz == 3"},
 
 		{src: "(count(@.xyz))", expect: "(count(@.xyz))"},
 		{src: "(3 == count(@.xyz))", expect: "(3 == count(@.xyz))"},
 		{src: "(count(@.xyz) == 3)", expect: "(count(@.xyz) == 3)"},
 		{src: "(count(7) == 3)", expect: "(count(7) == 3)"},
-		// {src: "(count(@.xyz == 3)", err: "not terminated at 14 in (count(@.xyz == 3)"}, // TBD fix
+		{src: "(count(@.xyz == 3)", err: "not terminated at 19 in (count(@.xyz == 3)"},
 		{src: "(coun(@.xyz) == 3)", err: "expected a count function at 2 in (coun(@.xyz) == 3)"},
 
-		// {src: "(match(@.x, 'xy.'))", expect: "(match(@.x, 'xy.'))"}, // TBD fix
-		// {src: "(match(@.x, 'xy.') == false)", expect: "(match(@.x, 'xy.') == false)"}, // TBD fix
-		// {src: "(false == match(@.x, 'xy.'))", expect: "(false == match(@.x, 'xy.'))"}, // TBD fix
+		{src: "(match(@.x, 'xy.'))", expect: "(match(@.x, 'xy.'))"},
+		{src: "(match(@.x, 'xy.') == false)", expect: "(match(@.x, 'xy.') == false)"},
+		{src: "(false == match(@.x, 'xy.'))", expect: "(false == match(@.x, 'xy.'))"},
 		{src: "(matc(@.x, 'xy.'))", err: "expected a match function at 2 in (matc(@.x, 'xy.'))"},
 
-		// {src: "(search(@.x, 'xy.'))", expect: "(search(@.x, 'xy.'))"}, // TBD fix
-		// {src: "(search(@.x, 'xy.') == false)", expect: "(search(@.x, 'xy.') == false)"}, // TBD fix
-		// {src: "(false == search(@.x, 'xy.'))", expect: "(false == search(@.x, 'xy.'))"}, // TBD fix
+		{src: "(search(@.x, 'xy.'))", expect: "(search(@.x, 'xy.'))"},
+		{src: "(search(@.x, 'xy.') == false)", expect: "(search(@.x, 'xy.') == false)"},
+		{src: "(false == search(@.x, 'xy.'))", expect: "(false == search(@.x, 'xy.'))"},
 		{src: "(sear(@.x, 'xy.'))", err: "expected a search function at 2 in (sear(@.x, 'xy.'))"},
 
 		{src: "@.x == 4", expect: "(@.x == 4)"},
 		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 8 in (@.x ++ 4)"},
 		{src: "(@[1:5} == 3)", err: "invalid slice syntax at 8 in (@[1:5} == 3)"},
 		{src: "(@ =~ /a[c/)", err: "error parsing regexp: missing closing ]: `[c` at 12 in (@ =~ /a[c/)"},
+		{src: "@.x in [1,2,3", err: "expected a comma or an array close at 14 in @.x in [1,2,3"},
+
+		{src: "((($.x == 'abc')))", expect: "($.x == 'abc')"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
@@ -229,8 +240,8 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@ >= 3.0)", value: 3.1},
 		{src: "(@ >= 'abc')", value: "abd"},
 
-		// {src: "(@ in [1,2,3])", value: int64(2)}, // TBD fix
-		// {src: "(@ in ['a','b','c'])", value: "b"}, // TBD fix
+		{src: "(@ in [1,2,3])", value: int64(2)},
+		{src: "(@ in ['a','b','c'])", value: "b"},
 		{src: "(2 in @)", value: []any{int64(1), int64(2), int64(3)}},
 
 		{src: "(@ empty false)", value: []any{int64(1)}},
@@ -245,6 +256,7 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@ has false)", value: jp.Nothing},
 
 		{src: "(@ exists true)", value: 5},
+		{src: "(@)", value: 5},
 		{src: "(@.x exists false)", value: map[string]any{}},
 
 		{src: "(@ ~= /a.c/)", value: "abc"},
@@ -312,11 +324,11 @@ func TestScriptEval(t *testing.T) {
 		{src: "(count(@.x) == 1)", value: map[string]any{"x": "abc"}},
 		{src: "(count(@.x.*) == 3)", value: map[string]any{"x": map[string]any{"a": 1, "b": 2, "c": 3}}},
 
-		// {src: "(match(@.x, 'ab.'))", value: map[string]any{"x": "abc"}}, // TBD fix
-		// {src: "(match(@.x, 'ab'))", value: map[string]any{"x": "abc"}, noMatch: true}, // TBD fix
+		{src: "(match(@.x, 'ab.'))", value: map[string]any{"x": "abc"}},
+		{src: "(match(@.x, 'ab'))", value: map[string]any{"x": "abc"}, noMatch: true},
 
-		// {src: "(search(@.x, 'ab'))", value: map[string]any{"x": "abc"}}, // TBD fix
-		// {src: "(search(@.x, 'abx'))", value: map[string]any{"x": "abc"}, noMatch: true}, // TBD fix
+		{src: "(search(@.x, 'ab'))", value: map[string]any{"x": "abc"}},
+		{src: "(search(@.x, 'abx'))", value: map[string]any{"x": "abc"}, noMatch: true},
 	} {
 		if testing.Verbose() {
 			if d.value == nil {
@@ -371,13 +383,13 @@ func BenchmarkOjScriptDev(b *testing.B) {
 }
 
 func TestScriptFoo(t *testing.T) {
-	// src := "@.foo == 123 || 123"
-	src := "(((@.x == 3)) || (@.y > 5))"
-	// src := "@.x == 3 || @.y > 5"
-	// expect := "($.x == 'abc')"
+	src := "(@)"
+	src = "@.x + 3 * 2 - 1 > 3"
+	//  expect: "(@.x + 3 * 2 - 1 > 3)"},
+	// src = "(@ exists true)"
 
-	// TBD then add reduceParens or minParens or reduceGroups function at end in scripts
-
-	s, err := jp.NewScript(src)
-	fmt.Printf("*** %s %s\n", s, err)
+	s := jp.MustNewScript(src)
+	fmt.Printf("*** script: %s\n", s)
+	result := s.Eval([]any{}, []any{5})
+	fmt.Printf("*** %s\n", result)
 }

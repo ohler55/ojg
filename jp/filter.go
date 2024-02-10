@@ -31,13 +31,11 @@ func NewFilter(str string) (f *Filter, err error) {
 // MustNewFilter creates a new Filter and panics on error.
 func MustNewFilter(str string) (f *Filter) {
 	p := &parser{buf: []byte(str)}
-	if len(p.buf) <= 5 ||
-		p.buf[0] != '[' || p.buf[1] != '?' || p.buf[2] != '(' ||
-		p.buf[len(p.buf)-2] != ')' || p.buf[len(p.buf)-1] != ']' {
-		panic(fmt.Errorf("a filter must start with a '[?(' and end with ')]'"))
+	if len(p.buf) <= 3 ||
+		p.buf[0] != '[' || p.buf[1] != '?' || p.buf[len(p.buf)-1] != ']' {
+		panic(fmt.Errorf("a filter must start with a '[?' and end with ']'"))
 	}
-	// TBD [? ] is sufficient, don't need ()
-	p.buf = p.buf[3 : len(p.buf)-1]
+	p.buf = p.buf[2 : len(p.buf)-1]
 	eq := reduceGroups(p.readEq(), nil)
 
 	return eq.Filter()

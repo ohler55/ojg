@@ -540,10 +540,6 @@ func (p *parser) readFilter() *Filter {
 	if len(p.buf) <= p.pos {
 		p.raise("not terminated")
 	}
-	b := p.buf[p.pos]
-	if b == '(' {
-		// p.pos++ // TBD
-	}
 	eq := reduceGroups(p.readEq(), nil)
 
 	if len(p.buf) <= p.pos || p.buf[p.pos] != ']' {
@@ -617,16 +613,14 @@ func (p *parser) readEq() (eq *Equation) {
 	for p.pos < len(p.buf) {
 		b := p.nextNonSpace()
 		switch b {
+		case ',': // probably reading array elements or function arguments
+			return
 		case ')':
-			// TBD wasn't expecting a close ) as part of this equation so maybe it is above
 			return
 		case ']', 0:
-			// TBD end of the parsing so return to close out call stack
 			return
 		}
-		o := p.readEqOp() // TBD readEqOp should not check for ), ], (, or 0
-
-		// fmt.Printf("*** eq: %s o: %v next: %q\n", eq, o, p.buf[p.pos:])
+		o := p.readEqOp()
 		if eq.o == nil || eq.o.prec <= o.prec {
 			eq = &Equation{left: eq, o: o}
 			eq.right = p.readEq()
@@ -642,7 +636,6 @@ func (p *parser) readEq() (eq *Equation) {
 			eq.right.right = p.readEq()
 			// TBD reorder?
 		}
-		// fmt.Printf("*** after eq: %s %q\n", eq, p.buf[p.pos:])
 	}
 	return
 }
@@ -688,7 +681,7 @@ List:
 		case ']':
 			break List
 		default:
-			p.raise("expected a comma")
+			p.raise("expected a comma or an array close")
 		}
 	}
 	return

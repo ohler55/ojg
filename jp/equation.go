@@ -3,7 +3,6 @@
 package jp
 
 import (
-	"bytes"
 	"regexp"
 	"strconv"
 )
@@ -20,46 +19,53 @@ type Equation struct {
 }
 
 // Script creates and returns a Script that implements the equation.
-func (e *Equation) Script() (s *Script) {
-	s = &Script{template: e.buildScript([]any{})}
-	if s.template[0] == group {
-		s.template = s.template[1:]
+func (e *Equation) Script() *Script {
+	if e.o == nil {
+		if _, ok := e.result.(Expr); ok {
+			e2 := &Equation{
+				left:  &Equation{result: e.result},
+				o:     exists,
+				right: &Equation{result: true},
+			}
+			return &Script{template: e2.buildScript([]any{})}
+		}
 	}
-	return
+	return &Script{template: e.buildScript([]any{})}
 }
 
 // Inspect is a debugging function for inspecting an equation tree.
-func (e *Equation) Inspect(b []byte, depth int) []byte {
-	indent := bytes.Repeat([]byte{' '}, depth)
-	b = append(b, indent...)
-	b = append(b, '{')
-	if e.o == nil {
-		b = e.appendValue(b, e.result)
-		b = append(b, '}', '\n')
-		return b
-	}
-	b = append(b, e.o.name...)
-	b = append(b, '\n')
-	if e.left == nil {
-		b = append(b, indent...)
-		b = append(b, "  nil\n"...)
-	} else {
-		b = e.left.Inspect(b, depth+2)
-	}
-	if e.right == nil {
-		b = append(b, indent...)
-		b = append(b, "  nil\n"...)
-	} else {
-		b = e.right.Inspect(b, depth+2)
-	}
-	b = append(b, indent...)
+// func (e *Equation) Inspect(b []byte, depth int) []byte {
+// 	indent := bytes.Repeat([]byte{' '}, depth)
+// 	b = append(b, indent...)
+// 	b = append(b, '{')
+// 	if e.o == nil {
+// 		b = e.appendValue(b, e.result)
+// 		b = append(b, '}', '\n')
+// 		return b
+// 	}
+// 	b = append(b, e.o.name...)
+// 	b = append(b, '\n')
+// 	if e.left == nil {
+// 		b = append(b, indent...)
+// 		b = append(b, "  nil\n"...)
+// 	} else {
+// 		b = e.left.Inspect(b, depth+2)
+// 	}
+// 	if e.right == nil {
+// 		b = append(b, indent...)
+// 		b = append(b, "  nil\n"...)
+// 	} else {
+// 		b = e.right.Inspect(b, depth+2)
+// 	}
+// 	b = append(b, indent...)
 
-	return append(b, '}', '\n')
-}
+// 	return append(b, '}', '\n')
+// }
 
 // Filter creates and returns a Script that implements the equation.
 func (e *Equation) Filter() (f *Filter) {
 	f = &Filter{Script: Script{template: e.buildScript([]any{})}}
+	// TBD
 	return
 }
 
@@ -255,10 +261,10 @@ func (e *Equation) Append(buf []byte, parens bool) []byte {
 			buf = append(buf, ',', ' ')
 			buf = e.right.Append(buf, false)
 			buf = append(buf, ')')
-		case group.code:
-			if e.left != nil {
-				buf = e.left.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)
-			}
+		// case group.code:
+		// 	if e.left != nil {
+		// 		buf = e.left.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)
+		// 	}
 		default:
 			if e.left != nil {
 				buf = e.left.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)
@@ -345,14 +351,6 @@ func (e *Equation) buildScript(stack []any) []any {
 			stack = append(stack, nil)
 		} else {
 			stack = e.right.buildScript(stack)
-		}
-	}
-	// Simplify stack by removing extra empty groups.
-	for {
-		if 1 < len(stack) && stack[0] == group && stack[1] == group {
-			stack = stack[1:]
-		} else {
-			break
 		}
 	}
 	return stack

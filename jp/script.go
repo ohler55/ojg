@@ -31,8 +31,8 @@ var (
 	get    = &op{prec: 0, code: 'G', name: "get", cnt: 1}
 	in     = &op{prec: 3, code: 'i', name: "in", cnt: 2}
 	empty  = &op{prec: 3, code: 'e', name: "empty", cnt: 2}
-	rx     = &op{prec: 0, code: '~', name: "~=", cnt: 2}
-	rxa    = &op{prec: 0, code: '~', name: "=~", cnt: 2}
+	rx     = &op{prec: 3, code: '~', name: "~=", cnt: 2}
+	rxa    = &op{prec: 3, code: '~', name: "=~", cnt: 2}
 	has    = &op{prec: 3, code: 'h', name: "has", cnt: 2}
 	exists = &op{prec: 3, code: 'x', name: "exists", cnt: 2}
 	// functions
@@ -129,9 +129,9 @@ func (s *Script) Append(buf []byte) []byte {
 		for i := len(bstack) - 1; 0 <= i; i-- {
 			o, _ := bstack[i].(*op)
 			if o == nil {
-				if i == 0 {
-					buf = s.appendValue(buf, bstack[i], 0)
-				}
+				// if i == 0 {
+				// 	buf = s.appendValue(buf, bstack[i], 0)
+				// }
 				continue
 			}
 			var (
@@ -340,11 +340,12 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 			o, _ := sstack[i].(*op)
 			if o == nil {
 				// a value, not an op
-				// TBD could be () so ??? sstack[i] = sstack[i+1] ???
 				continue
 			}
-			var left any
-			var right any
+			var (
+				left  any
+				right any
+			)
 			if 1 < len(sstack)-i {
 				left = sstack[i+1]
 			}
