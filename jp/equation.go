@@ -3,6 +3,7 @@
 package jp
 
 import (
+	"bytes"
 	"regexp"
 	"strconv"
 )
@@ -34,38 +35,37 @@ func (e *Equation) Script() *Script {
 }
 
 // Inspect is a debugging function for inspecting an equation tree.
-// func (e *Equation) Inspect(b []byte, depth int) []byte {
-// 	indent := bytes.Repeat([]byte{' '}, depth)
-// 	b = append(b, indent...)
-// 	b = append(b, '{')
-// 	if e.o == nil {
-// 		b = e.appendValue(b, e.result)
-// 		b = append(b, '}', '\n')
-// 		return b
-// 	}
-// 	b = append(b, e.o.name...)
-// 	b = append(b, '\n')
-// 	if e.left == nil {
-// 		b = append(b, indent...)
-// 		b = append(b, "  nil\n"...)
-// 	} else {
-// 		b = e.left.Inspect(b, depth+2)
-// 	}
-// 	if e.right == nil {
-// 		b = append(b, indent...)
-// 		b = append(b, "  nil\n"...)
-// 	} else {
-// 		b = e.right.Inspect(b, depth+2)
-// 	}
-// 	b = append(b, indent...)
+func (e *Equation) Inspect(b []byte, depth int) []byte {
+	indent := bytes.Repeat([]byte{' '}, depth)
+	b = append(b, indent...)
+	b = append(b, '{')
+	if e.o == nil {
+		b = e.appendValue(b, e.result)
+		b = append(b, '}', '\n')
+		return b
+	}
+	b = append(b, e.o.name...)
+	b = append(b, '\n')
+	if e.left == nil {
+		b = append(b, indent...)
+		b = append(b, "  nil\n"...)
+	} else {
+		b = e.left.Inspect(b, depth+2)
+	}
+	if e.right == nil {
+		b = append(b, indent...)
+		b = append(b, "  nil\n"...)
+	} else {
+		b = e.right.Inspect(b, depth+2)
+	}
+	b = append(b, indent...)
 
-// 	return append(b, '}', '\n')
-// }
+	return append(b, '}', '\n')
+}
 
 // Filter creates and returns a Script that implements the equation.
 func (e *Equation) Filter() (f *Filter) {
 	f = &Filter{Script: Script{template: e.buildScript([]any{})}}
-	// TBD
 	return
 }
 
@@ -354,6 +354,37 @@ func (e *Equation) buildScript(stack []any) []any {
 		}
 	}
 	return stack
+}
+
+// Parsing of an equation is from left to right. Each equation is added to the
+// equation right side with no regard for precedence. This function then
+// reorganizes the equations to be in the correct evaluation order based on
+// the precedent.
+func precedentCorrect(e *Equation) *Equation {
+	if e == nil || e.o == nil { // a result or empty/nothing
+		return e
+	}
+	// The left precedence correction is called too many times. Could add a
+	// flag to Equation indicating it has already been corrected or just
+	// process more than once for a small performance hit on parsing the
+	// equation.
+	if e.left != nil {
+		e.left = precedentCorrect(e.left)
+	}
+	if e.right == nil || e.right.o == nil {
+		return e
+	}
+	if e.o.prec <= e.right.o.prec {
+		r := e.right
+		e.right = r.left
+		r.left = e
+		return precedentCorrect(r)
+	}
+	e.right = precedentCorrect(e.right)
+	if e.right.o != nil && e.o.prec <= e.right.o.prec {
+		e = precedentCorrect(e)
+	}
+	return e
 }
 
 func reduceGroups(e *Equation, po *op) *Equation {

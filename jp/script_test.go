@@ -84,7 +84,7 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@.x < 3 && @.x > 1 || @.z == 3)", expect: "(@.x < 3 && @.x > 1 || @.z == 3)"},
 		{src: "@.x < 3 && @.x > 1 || @.z == 3", expect: "(@.x < 3 && @.x > 1 || @.z == 3)"},
 		{src: "@.x + 3 > @.y - 3", expect: "(@.x + 3 > @.y - 3)"},
-		// {src: "@.x + 3 * 2 - 1 > 3", expect: "(@.x + 3 * 2 - 1 > 3)"}, // TBD fix me
+		{src: "@.x + 3 * 2 - 1 > 3", expect: "(@.x + 3 * 2 - 1 > 3)"},
 		{src: "(!(3 == @.x))", expect: "(!(3 == @.x))"},
 		{src: "!(3 == @.x)", expect: "(!(3 == @.x))"},
 		{src: " !(3 == @.x) ", expect: "(!(3 == @.x))"},
@@ -383,13 +383,12 @@ func BenchmarkOjScriptDev(b *testing.B) {
 }
 
 func TestScriptFoo(t *testing.T) {
-	src := "(@)"
-	src = "@.x + 3 * 2 - 1 > 3"
-	//  expect: "(@.x + 3 * 2 - 1 > 3)"},
-	// src = "(@ exists true)"
+	src := "(@.x)"
+	// src = "@.x + 3 * 2 - 1 > 4"
 
 	s := jp.MustNewScript(src)
-	fmt.Printf("*** script: %s\n", s)
+	fmt.Printf("*** %q => script: %s\n", src, s)
+
 	result := s.Eval([]any{}, []any{5})
 	fmt.Printf("*** %s\n", result)
 }

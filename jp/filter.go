@@ -36,7 +36,8 @@ func MustNewFilter(str string) (f *Filter) {
 		panic(fmt.Errorf("a filter must start with a '[?' and end with ']'"))
 	}
 	p.buf = p.buf[2 : len(p.buf)-1]
-	eq := reduceGroups(p.readEq(), nil)
+	eq := precedentCorrect(p.readEq())
+	eq = reduceGroups(eq, nil)
 
 	return eq.Filter()
 }

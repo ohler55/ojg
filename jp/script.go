@@ -111,9 +111,8 @@ func NewScript(str string) (s *Script, err error) {
 func MustNewScript(str string) (s *Script) {
 	p := &parser{buf: []byte(str)}
 
-	eq := reduceGroups(p.readEq(), nil)
-	// fmt.Printf("*** inspect %s\n", eq.Inspect(nil, 0))
-	// fmt.Printf("*** %s\n", eq)
+	eq := precedentCorrect(p.readEq())
+	eq = reduceGroups(eq, nil)
 
 	return eq.Script()
 }
@@ -129,9 +128,9 @@ func (s *Script) Append(buf []byte) []byte {
 		for i := len(bstack) - 1; 0 <= i; i-- {
 			o, _ := bstack[i].(*op)
 			if o == nil {
-				// if i == 0 {
-				// 	buf = s.appendValue(buf, bstack[i], 0)
-				// }
+				if i == 0 {
+					buf = s.appendValue(buf, bstack[i], 0)
+				}
 				continue
 			}
 			var (

@@ -540,9 +540,10 @@ func (p *parser) readFilter() *Filter {
 	if len(p.buf) <= p.pos {
 		p.raise("not terminated")
 	}
-	eq := reduceGroups(p.readEq(), nil)
-
-	if len(p.buf) <= p.pos || p.buf[p.pos] != ']' {
+	eq := precedentCorrect(p.readEq())
+	eq = reduceGroups(eq, nil)
+	b := p.nextNonSpace()
+	if len(p.buf) <= p.pos || b != ']' {
 		p.raise("not terminated")
 	}
 	p.pos++
@@ -620,22 +621,7 @@ func (p *parser) readEq() (eq *Equation) {
 		case ']', 0:
 			return
 		}
-		o := p.readEqOp()
-		if eq.o == nil || eq.o.prec <= o.prec {
-			eq = &Equation{left: eq, o: o}
-			eq.right = p.readEq()
-			if eq.right.o != nil && eq.o.prec < eq.right.o.prec {
-				r := eq.right
-				eq.right = r.left
-				r.left = eq
-				eq = r
-			}
-		} else {
-			eq.right = &Equation{left: eq.right, o: o}
-			fmt.Printf("*** more eq: %s\n", eq)
-			eq.right.right = p.readEq()
-			// TBD reorder?
-		}
+		eq = &Equation{left: eq, o: p.readEqOp(), right: p.readEq()}
 	}
 	return
 }
