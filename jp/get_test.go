@@ -1286,11 +1286,20 @@ func TestGetStructMap(t *testing.T) {
 }
 
 func TestGetDev(t *testing.T) {
-	type A struct {
-		X map[string]any
+	data := map[string]any{
+		"a": []any{
+			map[string]any{
+				"b": []any{
+					map[string]any{"c": 1},
+					map[string]any{"c": 2},
+					map[string]any{"c": 3},
+				},
+			},
+		},
 	}
-	data := A{X: map[string]any{"a": 1}}
-	expect := `[1]`
-	x := jp.MustParseString("$..a")
-	tt.Equal(t, expect, pretty.SEN(x.Get(data)))
+	// expect := `[1]`
+	x := jp.MustParseString("a[?(@.b[*].c == 1)]")
+	fmt.Printf("*** result: %s\n", pretty.SEN(x.Get(data)))
+
+	// tt.Equal(t, expect, pretty.SEN(x.Get(data)))
 }

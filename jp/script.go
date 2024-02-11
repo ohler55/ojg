@@ -263,19 +263,19 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 				}
 				// TBD one more for getRight once function extensions are supported
 			}
-			var has bool
 			// Normalize into nil, bool, int64, float64, and string early so
 			// that each comparison doesn't have to.
 		Normalize:
 			switch x := ev.(type) {
 			case Expr:
-				// The most common pattern is [?(@.child == value)] where
-				// the operation and value vary but the @.child is the
-				// most widely used. For that reason an optimization is
-				// included for that inclusion of a one level child lookup
-				// path.
+				var has bool
 				switch x[0].(type) {
 				case At:
+					// The most common pattern is [?(@.child == value)] where
+					// the operation and value vary but the @.child is the
+					// most widely used. For that reason an optimization is
+					// included for that condition of a one level child lookup
+					// path.
 					if m, ok := v.(map[string]any); ok && len(x) == 2 {
 						var c Child
 						if c, ok = x[1].(Child); ok {
@@ -288,6 +288,7 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 						}
 					}
 				case Root:
+					// TBD must handle multiple values
 					if ev, has = x.FirstFound(root); has {
 						sstack[i] = ev
 						goto Normalize
@@ -295,6 +296,7 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 						sstack[i] = Nothing
 					}
 				}
+				// TBD must handle multiple values
 				if ev, has = x.FirstFound(v); has {
 					sstack[i] = ev
 					goto Normalize
