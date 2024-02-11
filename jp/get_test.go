@@ -215,7 +215,17 @@ var (
 			data:   map[string]any{"x": []any{map[string]any{"a": 3, "b": "sample1"}}},
 		},
 		{
+			path:   "$.x[?@.b=='sample1'].a",
+			expect: []any{3},
+			data:   map[string]any{"x": []any{map[string]any{"a": 3, "b": "sample1"}}},
+		},
+		{
 			path:   "$.x[?(@.a==3)].b",
+			expect: []any{"sample1"},
+			data:   map[string]any{"x": []any{map[string]any{"a": 3, "b": "sample1"}}},
+		},
+		{
+			path:   "$.x[?@.a==3].b",
 			expect: []any{"sample1"},
 			data:   map[string]any{"x": []any{map[string]any{"a": 3, "b": "sample1"}}},
 		},

@@ -68,6 +68,10 @@ func TestExprFilter(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Equal(t, "[?(@.x == 3)]", f.String())
 
+	f, err = jp.NewFilter("[?@.x == 3]")
+	tt.Nil(t, err)
+	tt.Equal(t, "[?(@.x == 3)]", f.String())
+
 	_, err = jp.NewFilter("[(@.x == 3)]")
 	tt.NotNil(t, err)
 

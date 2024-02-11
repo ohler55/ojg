@@ -540,12 +540,10 @@ func (p *parser) readFilter() *Filter {
 	if len(p.buf) <= p.pos {
 		p.raise("not terminated")
 	}
-	b := p.buf[p.pos]
-	if b == '(' {
-		p.pos++
-	}
-	eq := p.readEquation()
-	if len(p.buf) <= p.pos || p.buf[p.pos] != ']' {
+	eq := precedentCorrect(p.readEq())
+	eq = reduceGroups(eq, nil)
+	b := p.nextNonSpace()
+	if len(p.buf) <= p.pos || b != ']' {
 		p.raise("not terminated")
 	}
 	p.pos++
@@ -553,70 +551,18 @@ func (p *parser) readFilter() *Filter {
 	return eq.Filter()
 }
 
-func (p *parser) readEquation() (eq *Equation) {
-	if len(p.buf) <= p.pos {
-		p.raise("not terminated")
-	}
-	eq = &Equation{}
-
+// Reads an equation by reading the left value first and then seeing if there
+// is an operation after that. If so it reads the next equation and decides
+// based on precedent which is contained in the other.
+func (p *parser) readEq() (eq *Equation) {
 	b := p.nextNonSpace()
 	switch b {
 	case '!':
-		eq.o = not
 		p.pos++
-		eq.left = p.readEqValue()
-		b := p.nextNonSpace()
-		if b != ')' && b != 0 {
-			p.raise("not terminated")
-		}
-		p.pos++
-		return
-	case 'l':
-		p.readFunc(length, eq)
-	case 'c':
-		p.readFunc(count, eq)
-	case 'm':
-		p.readFunc(match, eq)
-	case 's':
-		p.readFunc(search, eq)
-	default:
-		eq.left = p.readEqValue()
-		var right bool
-		if eq.o, right = p.readEqOp(); right {
-			eq.right = &Equation{result: true}
-		} else {
-			eq.right = p.readEqValue()
-		}
-	}
-	for p.pos < len(p.buf) {
-		b = p.nextNonSpace()
-		switch b {
-		case ')':
-			p.pos++
-			return
-		case ']', 0:
-			return
-		}
-		o, _ := p.readEqOp()
-		if eq.o.prec <= o.prec {
-			eq = &Equation{left: eq, o: o}
-			eq.right = p.readEqValue()
-		} else {
-			eq.right = &Equation{left: eq.right, o: o}
-			eq.right.right = p.readEqValue()
-		}
-	}
-	return
-}
-
-func (p *parser) readEqValue() (eq *Equation) {
-	b := p.nextNonSpace()
-	switch b {
+		eq = &Equation{o: not, left: p.readEq()}
 	case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
-		var v any
 		p.pos++
-		v = p.readNum(b)
-		eq = &Equation{result: v}
+		eq = &Equation{result: p.readNum(b)}
 	case '\'', '"':
 		p.pos++
 		s := p.readStr(b)
@@ -639,13 +585,17 @@ func (p *parser) readEqValue() (eq *Equation) {
 		eq = &Equation{result: x}
 	case '(':
 		p.pos++
-		eq = p.readEquation()
+		eq = &Equation{left: p.readEq(), o: group}
+		b = p.nextNonSpace()
+		if b != ')' {
+			p.raise("not terminated")
+		}
+		p.pos++
 	case '[':
 		eq = &Equation{result: p.readEqList()}
 	case '/':
 		p.pos++
-		rx := p.readRegex()
-		eq = &Equation{result: rx}
+		eq = &Equation{result: p.readRegex()}
 	case 'l':
 		eq = &Equation{}
 		p.readFunc(length, eq)
@@ -661,6 +611,18 @@ func (p *parser) readEqValue() (eq *Equation) {
 	default:
 		p.raise("expected a value")
 	}
+	for p.pos < len(p.buf) {
+		b := p.nextNonSpace()
+		switch b {
+		case ',': // probably reading array elements or function arguments
+			return
+		case ')':
+			return
+		case ']', 0:
+			return
+		}
+		eq = &Equation{left: eq, o: p.readEqOp(), right: p.readEq()}
+	}
 	return
 }
 
@@ -668,11 +630,11 @@ func (p *parser) readFunc(o *op, eq *Equation) {
 	if bytes.HasPrefix(p.buf[p.pos:], []byte(o.name)) && p.buf[p.pos+len(o.name)] == '(' {
 		eq.o = o
 		p.pos += len(o.name) + 1
-		eq.left = p.readEqValue()
+		eq.left = p.readEq()
 		b := p.nextNonSpace()
 		if b == ',' {
 			p.pos++
-			eq.right = p.readEqValue()
+			eq.right = p.readEq()
 			b = p.nextNonSpace()
 		}
 		if b != ')' {
@@ -697,7 +659,7 @@ func (p *parser) readEqList() (list []any) {
 	p.pos++
 List:
 	for p.pos < len(p.buf) {
-		eq := p.readEqValue()
+		eq := p.readEq()
 		list = append(list, eq.result)
 		b := p.skipSpace()
 		switch b {
@@ -705,7 +667,7 @@ List:
 		case ']':
 			break List
 		default:
-			p.raise("expected a comma")
+			p.raise("expected a comma or an array close")
 		}
 	}
 	return
@@ -720,13 +682,9 @@ func partialOp(token []byte, b byte) bool {
 	return false
 }
 
-func (p *parser) readEqOp() (o *op, right bool) {
+func (p *parser) readEqOp() (o *op) {
 	var token []byte
 	b := p.nextNonSpace()
-	switch b {
-	case 0, ']', ')', '(':
-		return exists, true
-	}
 	for {
 		if eqMap[b] != 'o' {
 			if len(token) == 0 || !partialOp(token, b) {

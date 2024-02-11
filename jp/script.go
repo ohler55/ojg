@@ -14,6 +14,7 @@ import (
 type nothing int
 
 var (
+	// Lower precedence is evaluated first.
 	eq     = &op{prec: 3, code: '=', name: "==", cnt: 2}
 	neq    = &op{prec: 3, code: 'n', name: "!=", cnt: 2}
 	lt     = &op{prec: 3, code: '<', name: "<", cnt: 2}
@@ -30,8 +31,8 @@ var (
 	get    = &op{prec: 0, code: 'G', name: "get", cnt: 1}
 	in     = &op{prec: 3, code: 'i', name: "in", cnt: 2}
 	empty  = &op{prec: 3, code: 'e', name: "empty", cnt: 2}
-	rx     = &op{prec: 0, code: '~', name: "~=", cnt: 2}
-	rxa    = &op{prec: 0, code: '~', name: "=~", cnt: 2}
+	rx     = &op{prec: 3, code: '~', name: "~=", cnt: 2}
+	rxa    = &op{prec: 3, code: '~', name: "=~", cnt: 2}
 	has    = &op{prec: 3, code: 'h', name: "has", cnt: 2}
 	exists = &op{prec: 3, code: 'x', name: "exists", cnt: 2}
 	// functions
@@ -39,6 +40,10 @@ var (
 	count  = &op{prec: 0, code: 'C', name: "count", cnt: 1, getLeft: true}
 	match  = &op{prec: 0, code: 'M', name: "match", cnt: 2}
 	search = &op{prec: 0, code: 'S', name: "search", cnt: 2}
+
+	// group is for an equation inside () so it represents the (). It should
+	// not be in the opMap.
+	group = &op{prec: 0, code: '(', name: "(", cnt: 1}
 
 	opMap = map[string]*op{
 		eq.name:     eq,
@@ -106,11 +111,8 @@ func NewScript(str string) (s *Script, err error) {
 func MustNewScript(str string) (s *Script) {
 	p := &parser{buf: []byte(str)}
 
-	_ = p.nextNonSpace()
-	if 0 < len(p.buf) && p.buf[p.pos] == '(' {
-		p.pos++
-	}
-	eq := p.readEquation()
+	eq := precedentCorrect(p.readEq())
+	eq = reduceGroups(eq, nil)
 
 	return eq.Script()
 }
@@ -126,6 +128,9 @@ func (s *Script) Append(buf []byte) []byte {
 		for i := len(bstack) - 1; 0 <= i; i-- {
 			o, _ := bstack[i].(*op)
 			if o == nil {
+				if i == 0 {
+					buf = s.appendValue(buf, bstack[i], 0)
+				}
 				continue
 			}
 			var (
@@ -336,8 +341,10 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 				// a value, not an op
 				continue
 			}
-			var left any
-			var right any
+			var (
+				left  any
+				right any
+			)
 			if 1 < len(sstack)-i {
 				left = sstack[i+1]
 			}
@@ -698,6 +705,8 @@ func (s *Script) appendOp(o *op, left, right any) (pb *precBuf) {
 	switch o.code {
 	case not.code:
 		pb.buf = append(pb.buf, o.name...)
+		pb.buf = s.appendValue(pb.buf, left, o.prec)
+	case group.code:
 		pb.buf = s.appendValue(pb.buf, left, o.prec)
 	case length.code, count.code:
 		pb.buf = append(pb.buf, o.name...)

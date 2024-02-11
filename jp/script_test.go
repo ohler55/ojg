@@ -79,7 +79,12 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@.x[?(@.a == true)].b == false)", expect: "(@.x[?(@.a == true)].b == false)"},
 		{src: "(@.x[?(@.a == 5)] == 11)", expect: "(@.x[?(@.a == 5)] == 11)"},
 		{src: "((@.x == 3) || (@.y > 5))", expect: "(@.x == 3 || @.y > 5)"},
+		{src: "@.x == 3 || @.y > 5", expect: "(@.x == 3 || @.y > 5)"},
+		{src: "((@.x == 3) || (@.y > 5 && @.z))", expect: "(@.x == 3 || (@.y > 5 && @.z))"},
 		{src: "(@.x < 3 && @.x > 1 || @.z == 3)", expect: "(@.x < 3 && @.x > 1 || @.z == 3)"},
+		{src: "@.x < 3 && @.x > 1 || @.z == 3", expect: "(@.x < 3 && @.x > 1 || @.z == 3)"},
+		{src: "@.x + 3 > @.y - 3", expect: "(@.x + 3 > @.y - 3)"},
+		{src: "@.x + 3 * 2 - 1 > 3", expect: "(@.x + 3 * 2 - 1 > 3)"},
 		{src: "(!(3 == @.x))", expect: "(!(3 == @.x))"},
 		{src: "!(3 == @.x)", expect: "(!(3 == @.x))"},
 		{src: " !(3 == @.x) ", expect: "(!(3 == @.x))"},
@@ -94,19 +99,24 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@ ~= /a\\/c/)", expect: "(@ ~= /a\\/c/)"},
 		{src: "@ =~ /abc/", expect: "(@ ~= /abc/)"},
 		{src: " @.quux ~= /(?i)abc/ ", expect: "(@.quux ~= /(?i)abc/)"},
+		{
+			src:    " @.text ~= /(?i)expected/ && !(@.text ~= /(?i)notexpected/)",
+			expect: "(@.text ~= /(?i)expected/ && !(@.text ~= /(?i)notexpected/))",
+		},
 
 		{src: "(length(@.xyz))", expect: "(length(@.xyz))"},
 		{src: "(3 == length(@.xyz))", expect: "(3 == length(@.xyz))"},
 		{src: "(length(@.xyz) == 3)", expect: "(length(@.xyz) == 3)"},
 		{src: "(length(@.xyz) == Nothing)", expect: "(length(@.xyz) == Nothing)"},
-		{src: "(length(@.xyz == 3)", err: "not terminated at 15 in (length(@.xyz == 3)"},
+		{src: "(length(@.xyz == 3)", err: "not terminated at 20 in (length(@.xyz == 3)"},
 		{src: "(leng(@.xyz) == 3)", err: "expected a length function at 2 in (leng(@.xyz) == 3)"},
+		{src: "length(@.xyz == 3", err: "not terminated at 18 in length(@.xyz == 3"},
 
 		{src: "(count(@.xyz))", expect: "(count(@.xyz))"},
 		{src: "(3 == count(@.xyz))", expect: "(3 == count(@.xyz))"},
 		{src: "(count(@.xyz) == 3)", expect: "(count(@.xyz) == 3)"},
 		{src: "(count(7) == 3)", expect: "(count(7) == 3)"},
-		{src: "(count(@.xyz == 3)", err: "not terminated at 14 in (count(@.xyz == 3)"},
+		{src: "(count(@.xyz == 3)", err: "not terminated at 19 in (count(@.xyz == 3)"},
 		{src: "(coun(@.xyz) == 3)", err: "expected a count function at 2 in (coun(@.xyz) == 3)"},
 
 		{src: "(match(@.x, 'xy.'))", expect: "(match(@.x, 'xy.'))"},
@@ -123,6 +133,9 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 8 in (@.x ++ 4)"},
 		{src: "(@[1:5} == 3)", err: "invalid slice syntax at 8 in (@[1:5} == 3)"},
 		{src: "(@ =~ /a[c/)", err: "error parsing regexp: missing closing ]: `[c` at 12 in (@ =~ /a[c/)"},
+		{src: "@.x in [1,2,3", err: "expected a comma or an array close at 14 in @.x in [1,2,3"},
+
+		{src: "((($.x == 'abc')))", expect: "($.x == 'abc')"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
@@ -243,6 +256,7 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@ has false)", value: jp.Nothing},
 
 		{src: "(@ exists true)", value: 5},
+		{src: "(@)", value: 5},
 		{src: "(@.x exists false)", value: map[string]any{}},
 
 		{src: "(@ ~= /a.c/)", value: "abc"},
@@ -367,3 +381,14 @@ func BenchmarkOjScriptDev(b *testing.B) {
 		stack, _ = s.Eval(stack, data).([]any)
 	}
 }
+
+// func TestScriptFoo(t *testing.T) {
+// 	src := "(@.x)"
+// 	// src = "@.x + 3 * 2 - 1 > 4"
+
+// 	s := jp.MustNewScript(src)
+// 	fmt.Printf("*** %q => script: %s\n", src, s)
+
+// 	result := s.Eval([]any{}, []any{5})
+// 	fmt.Printf("*** %s\n", result)
+// }
