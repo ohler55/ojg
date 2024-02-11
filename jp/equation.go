@@ -3,7 +3,6 @@
 package jp
 
 import (
-	"bytes"
 	"regexp"
 	"strconv"
 )
@@ -35,33 +34,33 @@ func (e *Equation) Script() *Script {
 }
 
 // Inspect is a debugging function for inspecting an equation tree.
-func (e *Equation) Inspect(b []byte, depth int) []byte {
-	indent := bytes.Repeat([]byte{' '}, depth)
-	b = append(b, indent...)
-	b = append(b, '{')
-	if e.o == nil {
-		b = e.appendValue(b, e.result)
-		b = append(b, '}', '\n')
-		return b
-	}
-	b = append(b, e.o.name...)
-	b = append(b, '\n')
-	if e.left == nil {
-		b = append(b, indent...)
-		b = append(b, "  nil\n"...)
-	} else {
-		b = e.left.Inspect(b, depth+2)
-	}
-	if e.right == nil {
-		b = append(b, indent...)
-		b = append(b, "  nil\n"...)
-	} else {
-		b = e.right.Inspect(b, depth+2)
-	}
-	b = append(b, indent...)
+// func (e *Equation) Inspect(b []byte, depth int) []byte {
+// 	indent := bytes.Repeat([]byte{' '}, depth)
+// 	b = append(b, indent...)
+// 	b = append(b, '{')
+// 	if e.o == nil {
+// 		b = e.appendValue(b, e.result)
+// 		b = append(b, '}', '\n')
+// 		return b
+// 	}
+// 	b = append(b, e.o.name...)
+// 	b = append(b, '\n')
+// 	if e.left == nil {
+// 		b = append(b, indent...)
+// 		b = append(b, "  nil\n"...)
+// 	} else {
+// 		b = e.left.Inspect(b, depth+2)
+// 	}
+// 	if e.right == nil {
+// 		b = append(b, indent...)
+// 		b = append(b, "  nil\n"...)
+// 	} else {
+// 		b = e.right.Inspect(b, depth+2)
+// 	}
+// 	b = append(b, indent...)
 
-	return append(b, '}', '\n')
-}
+// 	return append(b, '}', '\n')
+// }
 
 // Filter creates and returns a Script that implements the equation.
 func (e *Equation) Filter() (f *Filter) {

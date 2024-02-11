@@ -382,13 +382,13 @@ func BenchmarkOjScriptDev(b *testing.B) {
 	}
 }
 
-func TestScriptFoo(t *testing.T) {
-	src := "(@.x)"
-	// src = "@.x + 3 * 2 - 1 > 4"
+// func TestScriptFoo(t *testing.T) {
+// 	src := "(@.x)"
+// 	// src = "@.x + 3 * 2 - 1 > 4"
 
-	s := jp.MustNewScript(src)
-	fmt.Printf("*** %q => script: %s\n", src, s)
+// 	s := jp.MustNewScript(src)
+// 	fmt.Printf("*** %q => script: %s\n", src, s)
 
-	result := s.Eval([]any{}, []any{5})
-	fmt.Printf("*** %s\n", result)
-}
+// 	result := s.Eval([]any{}, []any{5})
+// 	fmt.Printf("*** %s\n", result)
+// }
