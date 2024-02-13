@@ -3,7 +3,6 @@
 package jp
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -303,15 +302,19 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 						sstack[i] = Nothing
 					}
 				} else {
-					fmt.Printf("*** %s is not normal\n", x)
-					// TBD must handle multiple values, set multi flag and place multivalue on stack
-					// get and normalize value but separately
-					multi = true
-					if ev, has = x.FirstFound(dv); has {
-						sstack[i] = ev
-						goto Normalize
-					} else {
+					values := x.Get(dv)
+					switch len(values) {
+					case 0:
 						sstack[i] = Nothing
+					case 1:
+						sstack[i] = normalize(values[0])
+					default:
+						multi = true
+						mval := make(multivalue, len(values))
+						for gi, gv := range values {
+							mval[gi] = normalize(gv)
+						}
+						sstack[i] = mval
 					}
 				}
 			case int:
@@ -349,10 +352,19 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 			}
 		}
 		var match bool
-		// TBD if there is a multi value then dup stacks and eval each until true or none are true
-		//  need a flag for multi
 		if multi {
-			fmt.Printf("*** mult\n")
+			max := 1
+			for _, v := range sstack {
+				if mv, ok := v.(multivalue); ok {
+					max *= len(mv)
+				}
+			}
+			for mi := 0; mi < max; mi++ {
+				xstack := evalStack(expandStack(sstack, mi))
+				if match, _ = xstack[0].(bool); match {
+					break
+				}
+			}
 		} else {
 			sstack = evalStack(sstack)
 			match, _ = sstack[0].(bool)
@@ -384,6 +396,53 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 		sstack[i] = nil
 	}
 	return stack, locs
+}
+
+func normalize(v any) any {
+	switch tv := v.(type) {
+	case int:
+		v = int64(tv)
+	case int8:
+		v = int64(tv)
+	case int16:
+		v = int64(tv)
+	case int32:
+		v = int64(tv)
+	case uint:
+		v = int64(tv)
+	case uint8:
+		v = int64(tv)
+	case uint16:
+		v = int64(tv)
+	case uint32:
+		v = int64(tv)
+	case uint64:
+		v = int64(tv)
+	case float32:
+		v = float64(tv)
+	case gen.Bool:
+		v = bool(tv)
+	case gen.String:
+		v = string(tv)
+	case gen.Int:
+		v = int64(tv)
+	case gen.Float:
+		v = float64(tv)
+	}
+	return v
+}
+
+func expandStack(stack []any, mi int) []any {
+	nstack := make([]any, len(stack))
+	for i, v := range stack {
+		if mv, ok := v.(multivalue); ok {
+			nstack[i] = mv[mi%len(mv)]
+			mi /= len(mv)
+		} else {
+			nstack[i] = v
+		}
+	}
+	return nstack
 }
 
 func evalStack(sstack []any) []any {

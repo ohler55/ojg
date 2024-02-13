@@ -1285,7 +1285,7 @@ func TestGetStructMap(t *testing.T) {
 	tt.Equal(t, "1", pretty.SEN(x.First(data)))
 }
 
-func TestGetDev(t *testing.T) {
+func TestGetMultiFilter(t *testing.T) {
 	data := map[string]any{
 		"a": []any{
 			map[string]any{
@@ -1297,9 +1297,99 @@ func TestGetDev(t *testing.T) {
 			},
 		},
 	}
-	// expect := `[1]`
-	x := jp.MustParseString("a[?(@.b[*].c == 1)]")
-	fmt.Printf("*** result: %s\n", pretty.SEN(x.Get(data)))
+	// A match on any c value should return non nil.
+	x := jp.MustParseString("a[?(@.b[*].c == 1)].b[0]")
+	tt.Equal(t, "{c: 1}", pretty.SEN(x.First(data)))
 
-	// tt.Equal(t, expect, pretty.SEN(x.Get(data)))
+	x = jp.MustParseString("a[?(@.b[*].c == 2)].b[0]")
+	tt.Equal(t, "{c: 1}", pretty.SEN(x.First(data)))
+
+	x = jp.MustParseString("a[?(@.b[*].c == 3)].b[0]")
+	tt.Equal(t, "{c: 1}", pretty.SEN(x.First(data)))
+
+	x = jp.MustParseString("a[?(@.b[*].c == 4)].b[0]")
+	tt.Equal(t, "null", pretty.SEN(x.First(data)))
+
+	data = map[string]any{
+		"a": []any{
+			map[string]any{
+				"b": []any{
+					map[string]any{"c": 1},
+				},
+			},
+		},
+	}
+	x = jp.MustParseString("a[?(@.b[*].c == 1)].b[0]")
+	tt.Equal(t, "{c: 1}", pretty.SEN(x.First(data)))
+
+	data = map[string]any{
+		"a": []any{
+			map[string]any{
+				"b": []any{},
+			},
+		},
+	}
+	x = jp.MustParseString("a[?(@.b[*].c == 1)]")
+	tt.Equal(t, "null", pretty.SEN(x.First(data)))
+
+	// Make sure normalization works.
+	m := map[string]any{"c": 2}
+	data = map[string]any{
+		"a": []any{
+			map[string]any{
+				"b": []any{
+					map[string]any{"c": 1},
+					m,
+				},
+			},
+		},
+	}
+	x = jp.MustParseString("a[?(@.b[*].c == 2)].b[0]")
+	for _, v := range []any{
+		int8(2),
+		int16(2),
+		int32(2),
+		int64(2),
+		uint(2),
+		uint8(2),
+		uint16(2),
+		uint32(2),
+		uint64(2),
+		gen.Int(2),
+	} {
+		m["c"] = v
+		tt.Equal(t, "{c: 1}", pretty.SEN(x.First(data)))
+	}
+	x = jp.MustParseString("a[?(@.b[*].c == 2.5)].b[0]")
+	for _, v := range []any{
+		float32(2.5),
+		float64(2.5),
+		gen.Float(2.5),
+	} {
+		m["c"] = v
+		tt.Equal(t, "{c: 1}", pretty.SEN(x.First(data)))
+	}
+	m["c"] = gen.Bool(true)
+	x = jp.MustParseString("a[?(@.b[*].c == true)].b[0]")
+	tt.Equal(t, "{c: 1}", pretty.SEN(x.First(data)))
+
+	m["c"] = gen.String("xyz")
+	x = jp.MustParseString("a[?(@.b[*].c == 'xyz')].b[0]")
+	tt.Equal(t, "{c: 1}", pretty.SEN(x.First(data)))
 }
+
+// func TestGetDev(t *testing.T) {
+// 	data := map[string]any{
+// 		"a": []any{
+// 			map[string]any{
+// 				"b": []any{
+// 					map[string]any{"c": 1},
+// 					map[string]any{"c": 2},
+// 					map[string]any{"c": 3},
+// 				},
+// 			},
+// 		},
+// 	}
+// 	x := jp.MustParseString("a[?(@.b[*].c == 2)]")
+// 	fmt.Printf("*** result: %s\n", pretty.SEN(x.Get(data)))
+// }
