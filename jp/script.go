@@ -91,6 +91,8 @@ type precBuf struct {
 	buf  []byte
 }
 
+type multivalue []any
+
 // Script represents JSON Path script used in filters as well.
 type Script struct {
 	template []any
@@ -249,6 +251,7 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 		}
 		// Eval script for each member of the list.
 		copy(sstack, s.template)
+		var multi bool
 		// resolve all expr members
 		for i, ev := range sstack {
 			if 0 < i {
@@ -263,19 +266,20 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 				}
 				// TBD one more for getRight once function extensions are supported
 			}
-			var has bool
 			// Normalize into nil, bool, int64, float64, and string early so
 			// that each comparison doesn't have to.
 		Normalize:
 			switch x := ev.(type) {
 			case Expr:
-				// The most common pattern is [?(@.child == value)] where
-				// the operation and value vary but the @.child is the
-				// most widely used. For that reason an optimization is
-				// included for that inclusion of a one level child lookup
-				// path.
+				var has bool
+				dv := v
 				switch x[0].(type) {
 				case At:
+					// The most common pattern is [?(@.child == value)] where
+					// the operation and value vary but the @.child is the
+					// most widely used. For that reason an optimization is
+					// included for that condition of a one level child lookup
+					// path.
 					if m, ok := v.(map[string]any); ok && len(x) == 2 {
 						var c Child
 						if c, ok = x[1].(Child); ok {
@@ -288,18 +292,30 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 						}
 					}
 				case Root:
-					if ev, has = x.FirstFound(root); has {
+					dv = root
+				}
+				if x.Normal() {
+					if ev, has = x.FirstFound(dv); has {
 						sstack[i] = ev
 						goto Normalize
 					} else {
 						sstack[i] = Nothing
 					}
-				}
-				if ev, has = x.FirstFound(v); has {
-					sstack[i] = ev
-					goto Normalize
 				} else {
-					sstack[i] = Nothing
+					values := x.Get(dv)
+					switch len(values) {
+					case 0:
+						sstack[i] = Nothing
+					case 1:
+						sstack[i] = normalize(values[0])
+					default:
+						multi = true
+						mval := make(multivalue, len(values))
+						for gi, gv := range values {
+							mval[gi] = normalize(gv)
+						}
+						sstack[i] = mval
+					}
 				}
 			case int:
 				sstack[i] = int64(x)
@@ -335,321 +351,25 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 				// handled and will fail later.
 			}
 		}
-		for i := len(sstack) - 1; 0 <= i; i-- {
-			o, _ := sstack[i].(*op)
-			if o == nil {
-				// a value, not an op
-				continue
+		var match bool
+		if multi {
+			max := 1
+			for _, v := range sstack {
+				if mv, ok := v.(multivalue); ok {
+					max *= len(mv)
+				}
 			}
-			var (
-				left  any
-				right any
-			)
-			if 1 < len(sstack)-i {
-				left = sstack[i+1]
-			}
-			if 2 < len(sstack)-i {
-				right = sstack[i+2]
-			}
-			switch o.code {
-			case eq.code:
-				if left == right {
-					sstack[i] = true
-				} else {
-					sstack[i] = false
-					switch tl := left.(type) {
-					case int64:
-						if tr, ok := right.(float64); ok {
-							sstack[i] = ok && float64(tl) == tr
-						}
-					case float64:
-						tr, ok := right.(int64)
-						sstack[i] = ok && tl == float64(tr)
-					}
-				}
-			case neq.code:
-				if left == right {
-					sstack[i] = false
-				} else {
-					sstack[i] = true
-					switch tl := left.(type) {
-					case int64:
-						if tr, ok := right.(float64); ok {
-							sstack[i] = ok && float64(tl) != tr
-						}
-					case float64:
-						tr, ok := right.(int64)
-						sstack[i] = ok && tl != float64(tr)
-					}
-				}
-			case lt.code:
-				sstack[i] = false
-				switch tl := left.(type) {
-				case int64:
-					switch tr := right.(type) {
-					case int64:
-						sstack[i] = tl < tr
-					case float64:
-						sstack[i] = float64(tl) < tr
-					}
-				case float64:
-					switch tr := right.(type) {
-					case int64:
-						sstack[i] = tl < float64(tr)
-					case float64:
-						sstack[i] = tl < tr
-					}
-				case string:
-					tr, ok := right.(string)
-					sstack[i] = ok && tl < tr
-				}
-			case gt.code:
-				sstack[i] = false
-				switch tl := left.(type) {
-				case int64:
-					switch tr := right.(type) {
-					case int64:
-						sstack[i] = tl > tr
-					case float64:
-						sstack[i] = float64(tl) > tr
-					}
-				case float64:
-					switch tr := right.(type) {
-					case int64:
-						sstack[i] = tl > float64(tr)
-					case float64:
-						sstack[i] = tl > tr
-					}
-				case string:
-					tr, ok := right.(string)
-					sstack[i] = ok && tl > tr
-				}
-			case lte.code:
-				sstack[i] = false
-				switch tl := left.(type) {
-				case int64:
-					switch tr := right.(type) {
-					case int64:
-						sstack[i] = tl <= tr
-					case float64:
-						sstack[i] = float64(tl) <= tr
-					}
-				case float64:
-					switch tr := right.(type) {
-					case int64:
-						sstack[i] = tl <= float64(tr)
-					case float64:
-						sstack[i] = tl <= tr
-					}
-				case string:
-					tr, ok := right.(string)
-					sstack[i] = ok && tl <= tr
-				}
-			case gte.code:
-				sstack[i] = false
-				switch tl := left.(type) {
-				case int64:
-					switch tr := right.(type) {
-					case int64:
-						sstack[i] = tl >= tr
-					case float64:
-						sstack[i] = float64(tl) >= tr
-					}
-				case float64:
-					switch tr := right.(type) {
-					case int64:
-						sstack[i] = tl >= float64(tr)
-					case float64:
-						sstack[i] = tl >= tr
-					}
-				case string:
-					tr, ok := right.(string)
-					sstack[i] = ok && tl >= tr
-				}
-			case or.code:
-				// If one is a boolean true then true.
-				lb, _ := left.(bool)
-				rb, _ := right.(bool)
-				sstack[i] = lb || rb
-			case and.code:
-				// If both are a boolean true then true else false.
-				lb, _ := left.(bool)
-				rb, _ := right.(bool)
-				sstack[i] = lb && rb
-			case not.code:
-				lb, _ := left.(bool)
-				sstack[i] = !lb
-			case add.code:
-				sstack[i] = Nothing
-				switch tl := left.(type) {
-				case int64:
-					switch tr := right.(type) {
-					case int64:
-						sstack[i] = tl + tr
-					case float64:
-						sstack[i] = float64(tl) + tr
-					}
-				case float64:
-					switch tr := right.(type) {
-					case int64:
-						sstack[i] = tl + float64(tr)
-					case float64:
-						sstack[i] = tl + tr
-					}
-				case string:
-					if tr, ok := right.(string); ok {
-						sstack[i] = tl + tr
-					}
-				}
-			case sub.code:
-				sstack[i] = Nothing
-				switch tl := left.(type) {
-				case int64:
-					switch tr := right.(type) {
-					case int64:
-						sstack[i] = tl - tr
-					case float64:
-						sstack[i] = float64(tl) - tr
-					}
-				case float64:
-					switch tr := right.(type) {
-					case int64:
-						sstack[i] = tl - float64(tr)
-					case float64:
-						sstack[i] = tl - tr
-					}
-				}
-			case mult.code:
-				sstack[i] = Nothing
-				switch tl := left.(type) {
-				case int64:
-					switch tr := right.(type) {
-					case int64:
-						sstack[i] = tl * tr
-					case float64:
-						sstack[i] = float64(tl) * tr
-					}
-				case float64:
-					switch tr := right.(type) {
-					case int64:
-						sstack[i] = tl * float64(tr)
-					case float64:
-						sstack[i] = tl * tr
-					}
-				}
-			case divide.code:
-				sstack[i] = Nothing
-				switch tl := left.(type) {
-				case int64:
-					switch tr := right.(type) {
-					case int64:
-						if tr != 0 {
-							sstack[i] = tl / tr
-						}
-					case float64:
-						if tr != 0.0 {
-							sstack[i] = float64(tl) / tr
-
-						}
-					}
-				case float64:
-					switch tr := right.(type) {
-					case int64:
-						if tr != 0 {
-							sstack[i] = tl / float64(tr)
-						}
-					case float64:
-						if tr != 0.0 {
-							sstack[i] = tl / tr
-						}
-					}
-				}
-			case in.code:
-				sstack[i] = false
-				if list, ok := right.([]any); ok {
-					for _, ev := range list {
-						if left == ev {
-							sstack[i] = true
-							break
-						}
-					}
-				}
-			case empty.code:
-				sstack[i] = false
-				if boo, ok := right.(bool); ok {
-					switch tl := left.(type) {
-					case string:
-						sstack[i] = boo == (len(tl) == 0)
-					case []any:
-						sstack[i] = boo == (len(tl) == 0)
-					case map[string]any:
-						sstack[i] = boo == (len(tl) == 0)
-					}
-				}
-			case has.code, exists.code:
-				sstack[i] = false
-				if boo, ok := right.(bool); ok {
-					sstack[i] = boo == (left != Nothing)
-				}
-			case rx.code:
-				sstack[i] = false
-				ls, ok := left.(string)
-				if !ok {
+			for mi := 0; mi < max; mi++ {
+				xstack := evalStack(expandStack(sstack, mi))
+				if match, _ = xstack[0].(bool); match {
 					break
 				}
-				switch tr := right.(type) {
-				case string:
-					if rx, err := regexp.Compile(tr); err == nil {
-						sstack[i] = rx.MatchString(ls)
-					}
-				case *regexp.Regexp:
-					sstack[i] = tr.MatchString(ls)
-				}
-			case length.code:
-				sstack[i] = Nothing
-				switch tl := left.(type) {
-				case string:
-					sstack[i] = int64(len(tl))
-				case []any:
-					sstack[i] = int64(len(tl))
-				case map[string]any:
-					sstack[i] = int64(len(tl))
-				}
-			case count.code:
-				sstack[i] = Nothing
-				if nl, ok := left.([]any); ok {
-					sstack[i] = int64(len(nl))
-				}
-			case match.code:
-				sstack[i] = Nothing
-				if ls, ok := left.(string); ok {
-					if rs, _ := right.(string); 0 < len(rs) {
-						if rs[0] != '^' {
-							rs = "^" + rs
-						}
-						if rs[len(rs)-1] != '$' {
-							rs += "$"
-						}
-						if rx, err := regexp.Compile(rs); err == nil {
-							sstack[i] = rx.MatchString(ls)
-						}
-					}
-				}
-			case search.code:
-				sstack[i] = Nothing
-				if ls, ok := left.(string); ok {
-					if rs, _ := right.(string); 0 < len(rs) {
-						if rx, err := regexp.Compile(rs); err == nil {
-							sstack[i] = rx.MatchString(ls)
-						}
-					}
-				}
 			}
-			if i+int(o.cnt)+1 <= len(sstack) {
-				copy(sstack[i+1:], sstack[i+int(o.cnt)+1:])
-			}
+		} else {
+			sstack = evalStack(sstack)
+			match, _ = sstack[0].(bool)
 		}
-		if b, _ := sstack[0].(bool); b {
+		if match {
 			switch tstack := stack.(type) {
 			case []any:
 				tstack = append(tstack, v)
@@ -676,6 +396,371 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 		sstack[i] = nil
 	}
 	return stack, locs
+}
+
+func normalize(v any) any {
+	switch tv := v.(type) {
+	case int:
+		v = int64(tv)
+	case int8:
+		v = int64(tv)
+	case int16:
+		v = int64(tv)
+	case int32:
+		v = int64(tv)
+	case uint:
+		v = int64(tv)
+	case uint8:
+		v = int64(tv)
+	case uint16:
+		v = int64(tv)
+	case uint32:
+		v = int64(tv)
+	case uint64:
+		v = int64(tv)
+	case float32:
+		v = float64(tv)
+	case gen.Bool:
+		v = bool(tv)
+	case gen.String:
+		v = string(tv)
+	case gen.Int:
+		v = int64(tv)
+	case gen.Float:
+		v = float64(tv)
+	}
+	return v
+}
+
+func expandStack(stack []any, mi int) []any {
+	nstack := make([]any, len(stack))
+	for i, v := range stack {
+		if mv, ok := v.(multivalue); ok {
+			nstack[i] = mv[mi%len(mv)]
+			mi /= len(mv)
+		} else {
+			nstack[i] = v
+		}
+	}
+	return nstack
+}
+
+func evalStack(sstack []any) []any {
+	for i := len(sstack) - 1; 0 <= i; i-- {
+		o, _ := sstack[i].(*op)
+		if o == nil {
+			// a value, not an op
+			continue
+		}
+		var (
+			left  any
+			right any
+		)
+		if 1 < len(sstack)-i {
+			left = sstack[i+1]
+		}
+		if 2 < len(sstack)-i {
+			right = sstack[i+2]
+		}
+		switch o.code {
+		case eq.code:
+			if left == right {
+				sstack[i] = true
+			} else {
+				sstack[i] = false
+				switch tl := left.(type) {
+				case int64:
+					if tr, ok := right.(float64); ok {
+						sstack[i] = ok && float64(tl) == tr
+					}
+				case float64:
+					tr, ok := right.(int64)
+					sstack[i] = ok && tl == float64(tr)
+				}
+			}
+		case neq.code:
+			if left == right {
+				sstack[i] = false
+			} else {
+				sstack[i] = true
+				switch tl := left.(type) {
+				case int64:
+					if tr, ok := right.(float64); ok {
+						sstack[i] = ok && float64(tl) != tr
+					}
+				case float64:
+					tr, ok := right.(int64)
+					sstack[i] = ok && tl != float64(tr)
+				}
+			}
+		case lt.code:
+			sstack[i] = false
+			switch tl := left.(type) {
+			case int64:
+				switch tr := right.(type) {
+				case int64:
+					sstack[i] = tl < tr
+				case float64:
+					sstack[i] = float64(tl) < tr
+				}
+			case float64:
+				switch tr := right.(type) {
+				case int64:
+					sstack[i] = tl < float64(tr)
+				case float64:
+					sstack[i] = tl < tr
+				}
+			case string:
+				tr, ok := right.(string)
+				sstack[i] = ok && tl < tr
+			}
+		case gt.code:
+			sstack[i] = false
+			switch tl := left.(type) {
+			case int64:
+				switch tr := right.(type) {
+				case int64:
+					sstack[i] = tl > tr
+				case float64:
+					sstack[i] = float64(tl) > tr
+				}
+			case float64:
+				switch tr := right.(type) {
+				case int64:
+					sstack[i] = tl > float64(tr)
+				case float64:
+					sstack[i] = tl > tr
+				}
+			case string:
+				tr, ok := right.(string)
+				sstack[i] = ok && tl > tr
+			}
+		case lte.code:
+			sstack[i] = false
+			switch tl := left.(type) {
+			case int64:
+				switch tr := right.(type) {
+				case int64:
+					sstack[i] = tl <= tr
+				case float64:
+					sstack[i] = float64(tl) <= tr
+				}
+			case float64:
+				switch tr := right.(type) {
+				case int64:
+					sstack[i] = tl <= float64(tr)
+				case float64:
+					sstack[i] = tl <= tr
+				}
+			case string:
+				tr, ok := right.(string)
+				sstack[i] = ok && tl <= tr
+			}
+		case gte.code:
+			sstack[i] = false
+			switch tl := left.(type) {
+			case int64:
+				switch tr := right.(type) {
+				case int64:
+					sstack[i] = tl >= tr
+				case float64:
+					sstack[i] = float64(tl) >= tr
+				}
+			case float64:
+				switch tr := right.(type) {
+				case int64:
+					sstack[i] = tl >= float64(tr)
+				case float64:
+					sstack[i] = tl >= tr
+				}
+			case string:
+				tr, ok := right.(string)
+				sstack[i] = ok && tl >= tr
+			}
+		case or.code:
+			// If one is a boolean true then true.
+			lb, _ := left.(bool)
+			rb, _ := right.(bool)
+			sstack[i] = lb || rb
+		case and.code:
+			// If both are a boolean true then true else false.
+			lb, _ := left.(bool)
+			rb, _ := right.(bool)
+			sstack[i] = lb && rb
+		case not.code:
+			lb, _ := left.(bool)
+			sstack[i] = !lb
+		case add.code:
+			sstack[i] = Nothing
+			switch tl := left.(type) {
+			case int64:
+				switch tr := right.(type) {
+				case int64:
+					sstack[i] = tl + tr
+				case float64:
+					sstack[i] = float64(tl) + tr
+				}
+			case float64:
+				switch tr := right.(type) {
+				case int64:
+					sstack[i] = tl + float64(tr)
+				case float64:
+					sstack[i] = tl + tr
+				}
+			case string:
+				if tr, ok := right.(string); ok {
+					sstack[i] = tl + tr
+				}
+			}
+		case sub.code:
+			sstack[i] = Nothing
+			switch tl := left.(type) {
+			case int64:
+				switch tr := right.(type) {
+				case int64:
+					sstack[i] = tl - tr
+				case float64:
+					sstack[i] = float64(tl) - tr
+				}
+			case float64:
+				switch tr := right.(type) {
+				case int64:
+					sstack[i] = tl - float64(tr)
+				case float64:
+					sstack[i] = tl - tr
+				}
+			}
+		case mult.code:
+			sstack[i] = Nothing
+			switch tl := left.(type) {
+			case int64:
+				switch tr := right.(type) {
+				case int64:
+					sstack[i] = tl * tr
+				case float64:
+					sstack[i] = float64(tl) * tr
+				}
+			case float64:
+				switch tr := right.(type) {
+				case int64:
+					sstack[i] = tl * float64(tr)
+				case float64:
+					sstack[i] = tl * tr
+				}
+			}
+		case divide.code:
+			sstack[i] = Nothing
+			switch tl := left.(type) {
+			case int64:
+				switch tr := right.(type) {
+				case int64:
+					if tr != 0 {
+						sstack[i] = tl / tr
+					}
+				case float64:
+					if tr != 0.0 {
+						sstack[i] = float64(tl) / tr
+
+					}
+				}
+			case float64:
+				switch tr := right.(type) {
+				case int64:
+					if tr != 0 {
+						sstack[i] = tl / float64(tr)
+					}
+				case float64:
+					if tr != 0.0 {
+						sstack[i] = tl / tr
+					}
+				}
+			}
+		case in.code:
+			sstack[i] = false
+			if list, ok := right.([]any); ok {
+				for _, ev := range list {
+					if left == ev {
+						sstack[i] = true
+						break
+					}
+				}
+			}
+		case empty.code:
+			sstack[i] = false
+			if boo, ok := right.(bool); ok {
+				switch tl := left.(type) {
+				case string:
+					sstack[i] = boo == (len(tl) == 0)
+				case []any:
+					sstack[i] = boo == (len(tl) == 0)
+				case map[string]any:
+					sstack[i] = boo == (len(tl) == 0)
+				}
+			}
+		case has.code, exists.code:
+			sstack[i] = false
+			if boo, ok := right.(bool); ok {
+				sstack[i] = boo == (left != Nothing)
+			}
+		case rx.code:
+			sstack[i] = false
+			ls, ok := left.(string)
+			if !ok {
+				break
+			}
+			switch tr := right.(type) {
+			case string:
+				if rx, err := regexp.Compile(tr); err == nil {
+					sstack[i] = rx.MatchString(ls)
+				}
+			case *regexp.Regexp:
+				sstack[i] = tr.MatchString(ls)
+			}
+		case length.code:
+			sstack[i] = Nothing
+			switch tl := left.(type) {
+			case string:
+				sstack[i] = int64(len(tl))
+			case []any:
+				sstack[i] = int64(len(tl))
+			case map[string]any:
+				sstack[i] = int64(len(tl))
+			}
+		case count.code:
+			sstack[i] = Nothing
+			if nl, ok := left.([]any); ok {
+				sstack[i] = int64(len(nl))
+			}
+		case match.code:
+			sstack[i] = Nothing
+			if ls, ok := left.(string); ok {
+				if rs, _ := right.(string); 0 < len(rs) {
+					if rs[0] != '^' {
+						rs = "^" + rs
+					}
+					if rs[len(rs)-1] != '$' {
+						rs += "$"
+					}
+					if rx, err := regexp.Compile(rs); err == nil {
+						sstack[i] = rx.MatchString(ls)
+					}
+				}
+			}
+		case search.code:
+			sstack[i] = Nothing
+			if ls, ok := left.(string); ok {
+				if rs, _ := right.(string); 0 < len(rs) {
+					if rx, err := regexp.Compile(rs); err == nil {
+						sstack[i] = rx.MatchString(ls)
+					}
+				}
+			}
+		}
+		if i+int(o.cnt)+1 <= len(sstack) {
+			copy(sstack[i+1:], sstack[i+int(o.cnt)+1:])
+		}
+	}
+	return sstack
 }
 
 // Inspect the script.

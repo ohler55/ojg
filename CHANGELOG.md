@@ -7,6 +7,10 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.21.2] - unreleased
 ### Fixed
 - Reworked the jp equation parser to eliminate some parsing issues.
+- Fixed wildcards in filters so that if any value is true a match is
+  returned. As an example, a path of `a[?(@.b[*].c == 2)].b[0]` might
+  match multiple values of `c` in array `b`. If any of the values is 2
+  then it is considered a match.
 
 ## [1.21.1] - 2024-02-02
 ### Fixed
