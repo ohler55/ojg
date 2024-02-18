@@ -463,6 +463,8 @@ func evalStack(sstack []any) []any {
 			right = sstack[i+2]
 		}
 		switch o.code {
+		case group.code:
+			sstack[i] = left
 		case eq.code:
 			if left == right {
 				sstack[i] = true

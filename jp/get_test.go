@@ -1393,3 +1393,15 @@ func TestGetMultiFilter(t *testing.T) {
 // 	x := jp.MustParseString("a[?(@.b[*].c == 2)]")
 // 	fmt.Printf("*** result: %s\n", pretty.SEN(x.Get(data)))
 // }
+
+func TestScript_Match(t *testing.T) {
+	data := map[string]any{
+		"text": "my Expected text NotExpected",
+	}
+	// expr := jp.MustNewScript("(@.text ~= /(?i)notexpected/)")
+	// fmt.Printf("*** should be true: %t\n", expr.Match(data))
+
+	expr := jp.MustNewScript("!(@.text ~= /(?i)notexpected/)")
+	fmt.Printf("*** should be false: %t\n", expr.Match(data))
+
+}
