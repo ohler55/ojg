@@ -111,12 +111,7 @@ func NewScript(str string) (s *Script, err error) {
 
 // MustNewScript parses the string argument and returns a script or an error.
 func MustNewScript(str string) (s *Script) {
-	p := &parser{buf: []byte(str)}
-
-	eq := precedentCorrect(p.readEq())
-	eq = reduceGroups(eq, nil)
-
-	return eq.Script()
+	return MustParseEquation(str).Script()
 }
 
 // Append a string representation of the fragment to the buffer and then

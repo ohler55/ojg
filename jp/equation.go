@@ -3,7 +3,6 @@
 package jp
 
 import (
-	"bytes"
 	"regexp"
 	"strconv"
 )
@@ -17,6 +16,14 @@ type Equation struct {
 	result any
 	left   *Equation
 	right  *Equation
+}
+
+// MustParseEquation parses the string argument and returns an Equation or panics.
+func MustParseEquation(str string) (eq *Equation) {
+	p := &parser{buf: []byte(str)}
+	eq = precedentCorrect(p.readEq())
+
+	return reduceGroups(eq, nil)
 }
 
 // Script creates and returns a Script that implements the equation.
@@ -35,33 +42,33 @@ func (e *Equation) Script() *Script {
 }
 
 // Inspect is a debugging function for inspecting an equation tree.
-func (e *Equation) Inspect(b []byte, depth int) []byte {
-	indent := bytes.Repeat([]byte{' '}, depth)
-	b = append(b, indent...)
-	b = append(b, '{')
-	if e.o == nil {
-		b = e.appendValue(b, e.result)
-		b = append(b, '}', '\n')
-		return b
-	}
-	b = append(b, e.o.name...)
-	b = append(b, '\n')
-	if e.left == nil {
-		b = append(b, indent...)
-		b = append(b, "  nil\n"...)
-	} else {
-		b = e.left.Inspect(b, depth+2)
-	}
-	if e.right == nil {
-		b = append(b, indent...)
-		b = append(b, "  nil\n"...)
-	} else {
-		b = e.right.Inspect(b, depth+2)
-	}
-	b = append(b, indent...)
+// func (e *Equation) Inspect(b []byte, depth int) []byte {
+// 	indent := bytes.Repeat([]byte{' '}, depth)
+// 	b = append(b, indent...)
+// 	b = append(b, '{')
+// 	if e.o == nil {
+// 		b = e.appendValue(b, e.result)
+// 		b = append(b, '}', '\n')
+// 		return b
+// 	}
+// 	b = append(b, e.o.name...)
+// 	b = append(b, '\n')
+// 	if e.left == nil {
+// 		b = append(b, indent...)
+// 		b = append(b, "  nil\n"...)
+// 	} else {
+// 		b = e.left.Inspect(b, depth+2)
+// 	}
+// 	if e.right == nil {
+// 		b = append(b, indent...)
+// 		b = append(b, "  nil\n"...)
+// 	} else {
+// 		b = e.right.Inspect(b, depth+2)
+// 	}
+// 	b = append(b, indent...)
 
-	return append(b, '}', '\n')
-}
+// 	return append(b, '}', '\n')
+// }
 
 // Filter creates and returns a Script that implements the equation.
 func (e *Equation) Filter() (f *Filter) {
@@ -227,7 +234,6 @@ func Search(left, right *Equation) *Equation {
 
 // Append a equation string representation to a buffer.
 func (e *Equation) Append(buf []byte, parens bool) []byte {
-	// fmt.Printf("*** start %v %q\n", e.o, buf)
 	if e.o != nil {
 		switch e.o.code {
 		case not.code, length.code, count.code, match.code, search.code, group.code:
@@ -262,10 +268,10 @@ func (e *Equation) Append(buf []byte, parens bool) []byte {
 			buf = append(buf, ',', ' ')
 			buf = e.right.Append(buf, false)
 			buf = append(buf, ')')
-		// case group.code:
-		// 	if e.left != nil {
-		// 		buf = e.left.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)
-		// 	}
+		case group.code:
+			if e.left != nil {
+				buf = e.left.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)
+			}
 		default:
 			if e.left != nil {
 				buf = e.left.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)
@@ -281,7 +287,6 @@ func (e *Equation) Append(buf []byte, parens bool) []byte {
 	if parens {
 		buf = append(buf, ')')
 	}
-	// 	fmt.Printf("*** end %v %q\n", e.o, buf)
 	return buf
 }
 
