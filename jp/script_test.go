@@ -392,3 +392,11 @@ func BenchmarkOjScriptDev(b *testing.B) {
 // 	result := s.Eval([]any{}, []any{5})
 // 	fmt.Printf("*** %s\n", result)
 // }
+
+func TestScriptMatchWithNotGroup(t *testing.T) {
+	data := map[string]any{
+		"text": "my Expected text NotExpected",
+	}
+	expr := jp.MustNewScript("!(@.text ~= /(?i)notexpected/)")
+	tt.Equal(t, false, expr.Match(data))
+}

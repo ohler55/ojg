@@ -18,6 +18,14 @@ type Equation struct {
 	right  *Equation
 }
 
+// MustParseEquation parses the string argument and returns an Equation or panics.
+func MustParseEquation(str string) (eq *Equation) {
+	p := &parser{buf: []byte(str)}
+	eq = precedentCorrect(p.readEq())
+
+	return reduceGroups(eq, nil)
+}
+
 // Script creates and returns a Script that implements the equation.
 func (e *Equation) Script() *Script {
 	if e.o == nil {
@@ -260,10 +268,10 @@ func (e *Equation) Append(buf []byte, parens bool) []byte {
 			buf = append(buf, ',', ' ')
 			buf = e.right.Append(buf, false)
 			buf = append(buf, ')')
-		// case group.code:
-		// 	if e.left != nil {
-		// 		buf = e.left.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)
-		// 	}
+		case group.code:
+			if e.left != nil {
+				buf = e.left.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)
+			}
 		default:
 			if e.left != nil {
 				buf = e.left.Append(buf, e.left.o != nil && e.left.o.prec >= e.o.prec)

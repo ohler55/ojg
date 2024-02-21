@@ -91,3 +91,8 @@ func TestEquationScript(t *testing.T) {
 	eq = jp.Not(nil)
 	tt.Equal(t, "(!null)", eq.Script().String())
 }
+
+func TestParseEquation(t *testing.T) {
+	eq := jp.MustParseEquation("!(@.text ~= /(?i)notexpected/)")
+	tt.Equal(t, "!(@.text ~= /(?i)notexpected/)", eq.String())
+}
