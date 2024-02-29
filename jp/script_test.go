@@ -59,6 +59,7 @@ func TestScriptParse(t *testing.T) {
 		{src: "($.x == 'abc')", expect: "($.x == 'abc')"},
 		{src: " ($.x == 'abc') ", expect: "($.x == 'abc')"},
 		{src: "(@.x == 'abc')", expect: "(@.x == 'abc')"},
+		{src: "(@.x == 'a/bc')", expect: "(@.x == 'a/bc')"},
 		{src: "(@.x<5)", expect: "(@.x < 5)"},
 		{src: "(@.x<123)", expect: "(@.x < 123)"},
 		{src: "(@.x == 3)", expect: "(@.x == 3)"},
@@ -383,14 +384,15 @@ func BenchmarkOjScriptDev(b *testing.B) {
 }
 
 // func TestScriptFoo(t *testing.T) {
-// 	src := "(@.x)"
+// 	src := "(@ ~= /a\\/c/)"
+// 	// src := "(@.x)"
 // 	// src = "@.x + 3 * 2 - 1 > 4"
 
 // 	s := jp.MustNewScript(src)
 // 	fmt.Printf("*** %q => script: %s\n", src, s)
 
-// 	result := s.Eval([]any{}, []any{5})
-// 	fmt.Printf("*** %s\n", result)
+// 	// result := s.Eval([]any{}, []any{5})
+// 	// fmt.Printf("*** %s\n", result)
 // }
 
 func TestScriptMatchWithNotGroup(t *testing.T) {

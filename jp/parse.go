@@ -470,8 +470,6 @@ top:
 				buf = append(buf, '"')
 			case '\'':
 				buf = append(buf, '\'')
-			case '/':
-				buf = append(buf, '/')
 			case '\\':
 				buf = append(buf, '\\')
 			case 'x':
@@ -529,7 +527,19 @@ func (p *parser) readStr(term byte) string {
 }
 
 func (p *parser) readRegex() *regexp.Regexp {
-	rx, err := regexp.Compile(p.readStr('/'))
+	start := p.pos
+out:
+	for p.pos < len(p.buf) {
+		b := p.buf[p.pos]
+		p.pos++
+		switch b {
+		case '/':
+			break out
+		case '\\':
+			p.pos++ // skip and then continue
+		}
+	}
+	rx, err := regexp.Compile(string(p.buf[start : p.pos-1]))
 	if err != nil {
 		p.raise(err.Error())
 	}
