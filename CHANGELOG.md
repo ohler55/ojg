@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.21.5] - 2024-04-11
+### Added
+- Makefiles
+
 ## [1.21.4] - 2024-02-29
 ### Fixed
 - Fixed regexp parsing to allow regexp escape sequences.
