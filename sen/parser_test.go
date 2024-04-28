@@ -524,4 +524,32 @@ func TestParserCComment(t *testing.T) {
 	src = `[abc /* def * xyz */ ghi]`
 	v = sen.MustParse([]byte(src))
 	tt.Equal(t, []any{"abc", "ghi"}, v)
+
+	src = `
+[abc ghi]
+`
+	v = sen.MustParse([]byte(src))
+	tt.Equal(t, []any{"abc", "ghi"}, v)
+
+	src = `// A comment at the start.
+[abc ghi]
+`
+	v = sen.MustParse([]byte(src))
+	tt.Equal(t, []any{"abc", "ghi"}, v)
+
+	src = `/* Some old JSON files start
+ * with a comment.
+ */
+[abc ghi]
+`
+	v = sen.MustParse([]byte(src))
+	tt.Equal(t, []any{"abc", "ghi"}, v)
+	src = `
+/* Some old JSON files start *
+ * with a comment.
+ */
+[abc ghi]
+`
+	v = sen.MustParse([]byte(src))
+	tt.Equal(t, []any{"abc", "ghi"}, v)
 }

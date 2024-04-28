@@ -43,6 +43,7 @@ const (
 	ccommentStart = 'C'
 	ccommentEnd   = '*'
 	cskipChar     = 'D'
+	cskipNewline  = 'F'
 	commentEnd    = 'L'
 	charErr       = '.'
 
@@ -235,20 +236,20 @@ const (
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0x80
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0xa0
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0xc0
-		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" //   0xe0)
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaac" //   0xe0)
 	//   0123456789abcdef0123456789abcdef
 	ccommentMap = "" +
-		"................................" + // 0x00
+		".........ab..a.................." + // 0x00
 		"aaaaaaaaaa*aaaaaaaaaaaaaaaaaaaaa" + // 0x20
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0x40
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0x60
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0x80
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0xa0
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0xc0
-		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" //   0xe0)
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaC" //   0xe0)
 	//   0123456789abcdef0123456789abcdef
 	ccommentEndMap = "" +
-		"................................" + // 0x00
+		".........DF..D.................." + // 0x00
 		"DDDDDDDDDDDDDDDLDDDDDDDDDDDDDDDD" + // 0x20
 		"DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" + // 0x40
 		"DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" + // 0x60

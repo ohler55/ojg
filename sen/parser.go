@@ -268,6 +268,18 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			}
 			off += i
 			continue
+		case cskipNewline:
+			p.line++
+			p.noff = off
+			for i, b = range buf[off+1:] {
+				if spaceMap[b] != skipChar {
+					break
+				}
+			}
+			off += i
+			p.mode = ccommentMap
+			continue
+
 		case tokenStart:
 			start := off
 			for i, b = range buf[off:] {
@@ -590,6 +602,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			p.mode = commentMap
 		case commentEnd:
 			p.mode = valueMap
+			continue
 		case ccommentStart:
 			p.mode = ccommentMap
 		case ccommentEnd:
