@@ -515,3 +515,41 @@ func TestParserNumConv(t *testing.T) {
 	v = sen.MustParseReader(strings.NewReader("0.1234567890123456789"), ojg.NumConvFloat64)
 	tt.Equal(t, 0.123456789012345678, v)
 }
+
+func TestParserCComment(t *testing.T) {
+	src := `[abc /* def */ ghi]`
+	v := sen.MustParse([]byte(src))
+	tt.Equal(t, []any{"abc", "ghi"}, v)
+
+	src = `[abc /* def * xyz */ ghi]`
+	v = sen.MustParse([]byte(src))
+	tt.Equal(t, []any{"abc", "ghi"}, v)
+
+	src = `
+[abc ghi]
+`
+	v = sen.MustParse([]byte(src))
+	tt.Equal(t, []any{"abc", "ghi"}, v)
+
+	src = `// A comment at the start.
+[abc ghi]
+`
+	v = sen.MustParse([]byte(src))
+	tt.Equal(t, []any{"abc", "ghi"}, v)
+
+	src = `/* Some old JSON files start
+ * with a comment.
+ */
+[abc ghi]
+`
+	v = sen.MustParse([]byte(src))
+	tt.Equal(t, []any{"abc", "ghi"}, v)
+	src = `
+/* Some old JSON files start *
+ * with a comment.
+ */
+[abc ghi]
+`
+	v = sen.MustParse([]byte(src))
+	tt.Equal(t, []any{"abc", "ghi"}, v)
+}

@@ -268,6 +268,18 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			}
 			off += i
 			continue
+		case cskipNewline:
+			p.line++
+			p.noff = off
+			for i, b = range buf[off+1:] {
+				if spaceMap[b] != skipChar {
+					break
+				}
+			}
+			off += i
+			p.mode = ccommentMap
+			continue
+
 		case tokenStart:
 			start := off
 			for i, b = range buf[off:] {
@@ -303,6 +315,9 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			p.mode = valueMap
 			continue
 		case skipChar: // skip and continue
+			continue
+		case cskipChar: // skip and back to ccomment
+			p.mode = ccommentMap
 			continue
 		case openObject:
 			if 256 < len(p.mode) {
@@ -587,6 +602,11 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			p.mode = commentMap
 		case commentEnd:
 			p.mode = valueMap
+			continue
+		case ccommentStart:
+			p.mode = ccommentMap
+		case ccommentEnd:
+			p.mode = ccommentEndMap
 		case openParen:
 			tf := TokenFunc(defaultTokenFunc)
 			if p.tokenFuncs != nil {
