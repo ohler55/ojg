@@ -304,6 +304,9 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			continue
 		case skipChar: // skip and continue
 			continue
+		case cskipChar: // skip and back to ccomment
+			p.mode = ccommentMap
+			continue
 		case openObject:
 			if 256 < len(p.mode) {
 				switch p.mode[256] {
@@ -587,6 +590,10 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			p.mode = commentMap
 		case commentEnd:
 			p.mode = valueMap
+		case ccommentStart:
+			p.mode = ccommentMap
+		case ccommentEnd:
+			p.mode = ccommentEndMap
 		case openParen:
 			tf := TokenFunc(defaultTokenFunc)
 			if p.tokenFuncs != nil {

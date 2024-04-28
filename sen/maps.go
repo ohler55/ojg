@@ -3,45 +3,48 @@
 package sen
 
 const (
-	skipChar     = 'a'
-	skipNewline  = 'b'
-	valSlash     = 'c'
-	openParen    = 'd'
-	valPlus      = 'e'
-	valNeg       = 'f'
-	val0         = 'g'
-	valDigit     = 'h'
-	valQuote     = 'i'
-	tokenStart   = 'j'
-	openArray    = 'k'
-	openObject   = 'l'
-	closeArray   = 'm'
-	closeObject  = 'n'
-	closeParen   = 'p'
-	colonColon   = 'q'
-	numSpc       = 'r'
-	numNewline   = 's'
-	numDot       = 't'
-	tokenOk      = 'u'
-	numFrac      = 'v'
-	fracE        = 'w'
-	expSign      = 'x'
-	expDigit     = 'y'
-	strQuote     = 'z'
-	negDigit     = '-'
-	strSlash     = 'A'
-	escOk        = 'B'
-	uOk          = 'E'
-	tokenSpc     = 'G'
-	tokenColon   = 'I'
-	tokenNlColon = 'J'
-	numDigit     = 'N'
-	numZero      = 'O'
-	strOk        = 'R'
-	escU         = 'U'
-	commentStart = 'K'
-	commentEnd   = 'L'
-	charErr      = '.'
+	skipChar      = 'a'
+	skipNewline   = 'b'
+	valSlash      = 'c'
+	openParen     = 'd'
+	valPlus       = 'e'
+	valNeg        = 'f'
+	val0          = 'g'
+	valDigit      = 'h'
+	valQuote      = 'i'
+	tokenStart    = 'j'
+	openArray     = 'k'
+	openObject    = 'l'
+	closeArray    = 'm'
+	closeObject   = 'n'
+	closeParen    = 'p'
+	colonColon    = 'q'
+	numSpc        = 'r'
+	numNewline    = 's'
+	numDot        = 't'
+	tokenOk       = 'u'
+	numFrac       = 'v'
+	fracE         = 'w'
+	expSign       = 'x'
+	expDigit      = 'y'
+	strQuote      = 'z'
+	negDigit      = '-'
+	strSlash      = 'A'
+	escOk         = 'B'
+	uOk           = 'E'
+	tokenSpc      = 'G'
+	tokenColon    = 'I'
+	tokenNlColon  = 'J'
+	numDigit      = 'N'
+	numZero       = 'O'
+	strOk         = 'R'
+	escU          = 'U'
+	commentStart  = 'K'
+	ccommentStart = 'C'
+	ccommentEnd   = '*'
+	cskipChar     = 'D'
+	commentEnd    = 'L'
+	charErr       = '.'
 
 	//   0123456789abcdef0123456789abcdef
 	valueMap = "" +
@@ -216,7 +219,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	commentStartMap = "" +
 		"................................" + // 0x00
-		"...............K................" + // 0x20
+		"..........C....K................" + // 0x20
 		"................................" + // 0x40
 		"................................" + // 0x60
 		"................................" + // 0x80
@@ -233,4 +236,24 @@ const (
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0xa0
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0xc0
 		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" //   0xe0)
+	//   0123456789abcdef0123456789abcdef
+	ccommentMap = "" +
+		"................................" + // 0x00
+		"aaaaaaaaaa*aaaaaaaaaaaaaaaaaaaaa" + // 0x20
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0x40
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0x60
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0x80
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0xa0
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + // 0xc0
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" //   0xe0)
+	//   0123456789abcdef0123456789abcdef
+	ccommentEndMap = "" +
+		"................................" + // 0x00
+		"DDDDDDDDDDDDDDDLDDDDDDDDDDDDDDDD" + // 0x20
+		"DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" + // 0x40
+		"DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" + // 0x60
+		"DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" + // 0x80
+		"DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" + // 0xD0
+		"DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" + // 0xc0
+		"DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD" //   0xe0)
 )
