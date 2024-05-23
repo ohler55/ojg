@@ -61,6 +61,9 @@ func TestExprBuild(t *testing.T) {
 
 	x = jp.R().Child("").Child("a")
 	tt.Equal(t, `$[''].a`, x.String())
+
+	x = jp.R().Child("a & b")
+	tt.Equal(t, `$['a & b']`, x.String())
 }
 
 func TestExprFilter(t *testing.T) {
