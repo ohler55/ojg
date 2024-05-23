@@ -12,7 +12,7 @@ var (
 	//   0123456789abcdef0123456789abcdef
 	jMap = "" +
 		`........btn.fr..................` + // 0x00
-		`oo"oooh'oooooooooooooooooooooooo` + // 0x20
+		`oo"oooo'oooooooooooooooooooooooo` + // 0x20
 		`oooooooooooooooooooooooooooo\ooo` + // 0x40
 		"ooooooooooooooooooooooooooooooo." + // 0x60
 		`88888888888888888888888888888888` + // 0x80

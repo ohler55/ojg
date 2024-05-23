@@ -16,6 +16,7 @@ func TestString(t *testing.T) {
 	}
 	for i, td := range []*Data{
 		{src: "abc", expect: `|abc|`},
+		{src: "&", expect: `|&|`},
 		{src: "a\tbc", expect: `|a\tbc|`},
 		{src: "a<b>c", expect: `|a<b>c|`},
 		{src: "a 𝄢 note", expect: `|a 𝄢 note|`},
