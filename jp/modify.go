@@ -12,7 +12,15 @@ import (
 	"github.com/ohler55/ojg/gen"
 )
 
-// MustModify modifies matching nodes and panics on an expression error.
+// MustModify modifies matching nodes and panics on an expression error. In
+// go, maps can be modified in place as the map itself is modified. Slice
+// elements can be replaced in place but elements can not be added or removed
+// without potentially needing to replace the original slice with a new
+// one. This function and the other jp.Modify functions allow a slice to be
+// replaced by stopping at the parent of the target slice and applying a
+// modifier function to the target which is then replaced in the
+// parent. Without that functionality slice element can only be replaced.
+//
 // Modified elements replace the original element in the data. The modified
 // data is returned. Unless the data is a slice and modified the returned data
 // will be the same object as the original. The modifier function will be
