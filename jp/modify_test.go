@@ -124,3 +124,85 @@ func TestExprModifyDescent(t *testing.T) {
 	tt.Equal(t, "{a: {key: 4}}", string(pw.Encode(result)))
 	tt.Equal(t, "{a: {key: 4}}", string(pw.Encode(data)))
 }
+
+func TestExprModifyKeyed(t *testing.T) {
+	data := &keyed{
+		ordered: ordered{
+			entries: []*entry{
+				{key: "a", value: 1},
+				{key: "b", value: 2},
+				{
+					key: "c",
+					value: &keyed{
+						ordered: ordered{
+							entries: []*entry{
+								{key: "c1", value: 11},
+								{key: "c2", value: 12},
+								{key: "c3", value: 13},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	x := jp.MustParseString("b")
+	result, err := x.Modify(data, func(element any) (any, bool) {
+		if num, ok := element.(int); ok {
+			element = num + 1
+		}
+		return element, true
+	})
+	tt.Nil(t, err)
+	tt.Equal(t, "3", string(pw.Encode(jp.C("b").First(result))))
+
+	x = jp.C("c").C("c2")
+	result, err = x.Modify(data, func(element any) (any, bool) {
+		if num, ok := element.(int); ok {
+			element = num + 5
+		}
+		return element, true
+	})
+	tt.Nil(t, err)
+	tt.Equal(t, "17", string(pw.Encode(x.First(result))))
+}
+
+func TestExprModifyIndexed(t *testing.T) {
+	data := &indexed{
+		ordered: ordered{
+			entries: []*entry{
+				{value: 1},
+				{value: 2},
+				{value: &indexed{
+					ordered: ordered{
+						entries: []*entry{
+							{value: 11},
+							{value: 12},
+							{value: 13},
+						},
+					},
+				},
+				},
+			},
+		},
+	}
+	x := jp.N(1)
+	result, err := x.Modify(data, func(element any) (any, bool) {
+		if num, ok := element.(int); ok {
+			element = num + 1
+		}
+		return element, true
+	})
+	tt.Nil(t, err)
+	tt.Equal(t, "3", string(pw.Encode(x.First(result))))
+
+	x = jp.N(2).N(0)
+	result, err = x.Modify(data, func(element any) (any, bool) {
+		if num, ok := element.(int); ok {
+			element = num + 5
+		}
+		return element, true
+	})
+	tt.Nil(t, err)
+	tt.Equal(t, "16", string(pw.Encode(x.First(result))))
+}

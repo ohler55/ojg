@@ -1,4 +1,8 @@
 
+- modify Keyed and Indexed
+ - update not last to handle Keyed and Indexed
+ - add support for each frag type for Keyed and Indexed
+
 - script.go
  - API to add functions
   - RegisterUnaryFunction(name string, get bool, f func(arg any) any)
