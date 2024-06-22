@@ -380,6 +380,8 @@ done:
 						}
 					}
 				}
+				// TBD Keyed
+				// TBD Indexed
 			case gen.Object:
 				var k string
 				if int(fi) == len(wx)-1 { // last one
@@ -496,6 +498,7 @@ done:
 								}
 							}
 						}
+						// TBD Keyed
 					case gen.Object:
 						if v, has = tv[tu]; has {
 							if int(fi) == len(wx)-1 { // last one
@@ -571,6 +574,7 @@ done:
 								}
 							}
 						}
+						// TBD Indexed
 					case gen.Array:
 						if i < 0 {
 							i = len(tv) + i
@@ -692,6 +696,7 @@ done:
 						}
 					}
 				}
+				// TBD Indexed
 			case gen.Array:
 				if start < 0 {
 					start = len(tv) + start
@@ -822,6 +827,8 @@ done:
 							}
 						}
 					}
+				// TBD Keyed
+				// TBD Indexed
 				default:
 					rv := reflect.ValueOf(tv)
 					switch rv.Kind() {
@@ -912,6 +919,8 @@ done:
 							}
 						}
 					}
+				// TBD Keyed
+				// TBD Indexed
 				case gen.Object:
 					// Put prev back and slide fi.
 					stack[len(stack)-1] = prev
