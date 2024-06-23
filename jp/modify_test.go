@@ -125,8 +125,8 @@ func TestExprModifyDescent(t *testing.T) {
 	tt.Equal(t, "{a: {key: 4}}", string(pw.Encode(data)))
 }
 
-func TestExprModifyKeyed(t *testing.T) {
-	data := &keyed{
+func keyedData() any {
+	return &keyed{
 		ordered: ordered{
 			entries: []*entry{
 				{key: "a", value: 1},
@@ -146,6 +146,10 @@ func TestExprModifyKeyed(t *testing.T) {
 			},
 		},
 	}
+}
+
+func TestExprModifyKeyedChild(t *testing.T) {
+	data := keyedData()
 	x := jp.MustParseString("b")
 	result, err := x.Modify(data, func(element any) (any, bool) {
 		if num, ok := element.(int); ok {
@@ -154,21 +158,56 @@ func TestExprModifyKeyed(t *testing.T) {
 		return element, true
 	})
 	tt.Nil(t, err)
-	tt.Equal(t, "3", string(pw.Encode(jp.C("b").First(result))))
+	tt.Equal(t, 3, jp.C("b").First(result))
 
 	x = jp.C("c").C("c2")
-	result, err = x.Modify(data, func(element any) (any, bool) {
+	result = x.MustModifyOne(data, func(element any) (any, bool) {
 		if num, ok := element.(int); ok {
 			element = num + 5
 		}
 		return element, true
 	})
-	tt.Nil(t, err)
-	tt.Equal(t, "17", string(pw.Encode(x.First(result))))
+	tt.Equal(t, 17, x.First(result))
 }
 
-func TestExprModifyIndexed(t *testing.T) {
-	data := &indexed{
+func TestExprModifyKeyedWild(t *testing.T) {
+	data := keyedData()
+	x := jp.W().W()
+	result := x.MustModifyOne(data, func(element any) (any, bool) {
+		if num, ok := element.(int); ok {
+			element = num + 5
+		}
+		return element, true
+	})
+	tt.Equal(t, 16, jp.C("c").C("c1").First(result))
+}
+
+func TestExprModifyKeyedUnion(t *testing.T) {
+	data := keyedData()
+	x := jp.U(1, "c").U(2, "c1")
+	result := x.MustModifyOne(data, func(element any) (any, bool) {
+		if num, ok := element.(int); ok {
+			element = num + 5
+		}
+		return element, true
+	})
+	tt.Equal(t, 16, jp.C("c").C("c1").First(result))
+}
+
+func TestExprModifyKeyedDescent(t *testing.T) {
+	data := keyedData()
+	x := jp.D().C("c1")
+	result := x.MustModifyOne(data, func(element any) (any, bool) {
+		if num, ok := element.(int); ok {
+			element = num + 5
+		}
+		return element, true
+	})
+	tt.Equal(t, 16, jp.C("c").C("c1").First(result))
+}
+
+func indexedData() any {
+	return &indexed{
 		ordered: ordered{
 			entries: []*entry{
 				{value: 1},
@@ -186,6 +225,10 @@ func TestExprModifyIndexed(t *testing.T) {
 			},
 		},
 	}
+}
+
+func TestExprModifyIndexedNth(t *testing.T) {
+	data := indexedData()
 	x := jp.N(1)
 	result, err := x.Modify(data, func(element any) (any, bool) {
 		if num, ok := element.(int); ok {
@@ -194,15 +237,91 @@ func TestExprModifyIndexed(t *testing.T) {
 		return element, true
 	})
 	tt.Nil(t, err)
-	tt.Equal(t, "3", string(pw.Encode(x.First(result))))
+	tt.Equal(t, 3, x.First(result))
 
-	x = jp.N(2).N(0)
-	result, err = x.Modify(data, func(element any) (any, bool) {
+	x = jp.N(-1).N(0)
+	result = x.MustModifyOne(data, func(element any) (any, bool) {
 		if num, ok := element.(int); ok {
 			element = num + 5
 		}
 		return element, true
 	})
-	tt.Nil(t, err)
-	tt.Equal(t, "16", string(pw.Encode(x.First(result))))
+	tt.Equal(t, 16, x.First(result))
+}
+
+func TestExprModifyIndexedWild(t *testing.T) {
+	data := indexedData()
+	x := jp.W().W()
+	result := x.MustModifyOne(data, func(element any) (any, bool) {
+		if num, ok := element.(int); ok {
+			element = num + 5
+		}
+		return element, true
+	})
+	tt.Equal(t, 16, jp.N(2).N(0).First(result))
+}
+
+func TestExprModifyIndexedUnion(t *testing.T) {
+	data := indexedData()
+	x := jp.U("a", -1).U("b", 0)
+	result := x.MustModifyOne(data, func(element any) (any, bool) {
+		if num, ok := element.(int); ok {
+			element = num + 5
+		}
+		return element, true
+	})
+	tt.Equal(t, 16, jp.N(2).N(0).First(result))
+}
+
+func TestExprModifyIndexedSlice(t *testing.T) {
+	data := indexedData()
+	x := jp.S(-2, -1).S(0, 4)
+	result := x.MustModifyOne(data, func(element any) (any, bool) {
+		if num, ok := element.(int); ok {
+			element = num + 5
+		}
+		return element, true
+	})
+	tt.Equal(t, 16, jp.N(2).N(0).First(result))
+
+	x = jp.S(2, 0, -1).S(2, 0, -1)
+	result = x.MustModifyOne(data, func(element any) (any, bool) {
+		if num, ok := element.(int); ok {
+			element = num + 5
+		}
+		return element, true
+	})
+	tt.Equal(t, 18, jp.N(2).N(2).First(result))
+
+	x = jp.S(-5, 2).S(2, 0)
+	var changed bool
+	_ = x.MustModifyOne(data, func(element any) (any, bool) {
+		changed = true
+		return element, true
+	})
+	tt.Equal(t, false, changed)
+}
+
+func TestExprModifyIndexedFilter(t *testing.T) {
+	data := indexedData()
+	x := jp.MustParseString("*[?@ == 11]")
+	result := x.MustModifyOne(data, func(element any) (any, bool) {
+		if num, ok := element.(int); ok {
+			element = num + 5
+		}
+		return element, true
+	})
+	tt.Equal(t, 16, jp.N(2).N(0).First(result))
+}
+
+func TestExprModifyIndexedDescent(t *testing.T) {
+	data := indexedData()
+	x := jp.D().N(0)
+	result := x.MustModifyOne(data, func(element any) (any, bool) {
+		if num, ok := element.(int); ok {
+			element = num + 5
+		}
+		return element, true
+	})
+	tt.Equal(t, 16, jp.N(2).N(0).First(result))
 }
