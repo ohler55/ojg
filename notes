@@ -23,10 +23,6 @@
   - errors don't panic but close off current (if whole) and then back to discover maps
  - implement on all parsers
 
-
-- jp.GetPaths() and jp.FirstPath() - discussion #59
- - returns paths that match or maybe pairs of path and value
-
 - embedded struct pointer encoding issue
 - json.Unmarshaler
  - use alt.Recompose and convert simple to bytes and pass to unmarshaller
