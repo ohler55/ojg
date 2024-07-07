@@ -58,6 +58,10 @@ func TestParse(t *testing.T) {
 		{src: "$[1,'a']", expect: "$[1,'a']"},
 		{src: "$[1,'a',2,'b']", expect: "$[1,'a',2,'b']"},
 		{src: "$[ 1, 'a' , 2 ,'b' ]", expect: "$[1,'a',2,'b']"},
+		{src: "$[?(@.x == true)]", expect: "$[?(@.x == true)]"},
+		{src: "$[?(@.x == false)]", expect: "$[?(@.x == false)]"},
+		{src: "$[?(@.x == Nothing)]", expect: "$[?(@.x == Nothing)]"},
+		{src: "$[?(@.x == null)]", expect: "$[?(@.x == null)]"},
 		{src: "$[?(@.x == 'abc')]", expect: "$[?(@.x == 'abc')]"},
 		{src: "$[?(1==1)]", expect: "$[?(1 == 1)]"},
 		{src: "$[?(@.x)]", expect: "$[?(@.x)]"},
@@ -123,6 +127,8 @@ func TestParse(t *testing.T) {
 		{src: "[?(@.x -- x)]", err: "'--' is not a valid operation at 9 in [?(@.x -- x)]"},
 		{src: "[?(@.x =", err: "equation not terminated at 9 in [?(@.x ="},
 		{src: "[?(@.x in [1 2])]", err: "'' is not a valid operation at 14 in [?(@.x in [1 2])]"},
+		{src: "$[?(@.x == North)]", err: "expected Nothing at 14 in $[?(@.x == North)]"},
+		{src: "[?length]", err: "expected a length function at 9 in [?length]"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)

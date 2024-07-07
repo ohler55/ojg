@@ -407,4 +407,23 @@ func TestScriptRegisterUnaryFunction(t *testing.T) {
 
 	s = jp.MustNewScript(`("AbCd" == downcase(@.x))`)
 	tt.Equal(t, 0, len(s.Eval([]any{}, []any{map[string]any{"x": "AbCd"}}).([]any)))
+
+	tt.Panic(t, func() { jp.RegisterUnaryFunction("length", false, func(arg any) any { return nil }) })
+}
+
+func TestScriptRegisterBinaryFunction(t *testing.T) {
+	jp.RegisterBinaryFunction("equalfold", false, false, func(left, right any) any {
+		if s0, ok := left.(string); ok {
+			if s1, ok := right.(string); ok {
+				return strings.EqualFold(s0, s1)
+			}
+		}
+		return false
+	})
+	s := jp.MustNewScript("equalfold(@.x, @.y)")
+	tt.Equal(t, "(equalfold(@.x, @.y))", s.String())
+
+	tt.Equal(t, 1, len(s.Eval([]any{}, []any{map[string]any{"x": "abc", "y": "ABC"}}).([]any)))
+
+	tt.Panic(t, func() { jp.RegisterBinaryFunction("length", false, false, func(left, right any) any { return nil }) })
 }
