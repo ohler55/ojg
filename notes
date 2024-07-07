@@ -1,6 +1,9 @@
 
 - script.go
  - API to add functions
+  - handle parse
+  - handle eval
+
   - RegisterUnaryFunction(name string, get bool, f func(arg any) any)
   - RegisterBinaryFunction(name string, getLeft, getRight bool, f func(left, right any) any)
    - handle in EvalWithRoot

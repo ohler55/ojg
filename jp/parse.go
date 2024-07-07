@@ -619,6 +619,7 @@ func (p *parser) readEq() (eq *Equation) {
 		eq = &Equation{}
 		p.readFunc(search, eq)
 	default:
+		// TBD check ops for a match of xxx(
 		p.raise("expected a value")
 	}
 	for p.pos < len(p.buf) {

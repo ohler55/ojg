@@ -49,7 +49,10 @@ var (
 		{path: "[?(@[1].a > 230)][1].b", expect: []any{322, 422}},
 		{path: "[?(@ > 1)]", expect: []any{2, 3}, data: []any{1, 2, 3}},
 		{path: "$[?(1==1)]", expect: []any{1, 2, 3}, data: []any{1, 2, 3}},
-		{path: "$.*[*].a", expect: []any{111, 121, 131, 141, 211, 221, 231, 241, 311, 321, 331, 341, 411, 421, 431, 441}},
+		{
+			path:   "$.*[*].a",
+			expect: []any{111, 121, 131, 141, 211, 221, 231, 241, 311, 321, 331, 341, 411, 421, 431, 441},
+		},
 		{path: `$['\\']`, expect: []any{3}, data: map[string]any{`\`: 3}},
 		{path: `$['\x41']`, expect: []any{3}, data: map[string]any{"A": 3}},
 		{path: `$['\x4A']`, expect: []any{3}, data: map[string]any{"J": 3}},

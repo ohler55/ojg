@@ -3,9 +3,11 @@
 package jp
 
 import (
+	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
@@ -79,6 +81,8 @@ var (
 
 type op struct {
 	name     string
+	uniFun   func(arg any) any
+	duoFun   func(left, right any) any
 	prec     byte
 	cnt      byte
 	code     byte
@@ -752,6 +756,8 @@ func evalStack(sstack []any) []any {
 					}
 				}
 			}
+		default:
+			// TBD o is unary or duo
 		}
 		if i+int(o.cnt)+1 <= len(sstack) {
 			copy(sstack[i+1:], sstack[i+int(o.cnt)+1:])
@@ -853,4 +859,65 @@ func (s *Script) appendValue(buf []byte, v any, prec byte) []byte {
 		}
 	}
 	return buf
+}
+
+var builtInOpNames = map[string]bool{
+	"==":     true,
+	"!=":     true,
+	"<":      true,
+	">":      true,
+	"<=":     true,
+	">=":     true,
+	"||":     true,
+	"&&":     true,
+	"!":      true,
+	"+":      true,
+	"-":      true,
+	"*":      true,
+	"/":      true,
+	"get":    true,
+	"in":     true,
+	"empty":  true,
+	"~=":     true,
+	"=~":     true,
+	"has":    true,
+	"exists": true,
+	"length": true,
+	"count":  true,
+	"match":  true,
+	"search": true,
+}
+
+// RegisterUnaryFunction registers a unary function for scripts. The 'get'
+// argument if true indicates a get operation to provide the argument to the
+// provided function otherwise the first match is used.
+func RegisterUnaryFunction(name string, get bool, f func(arg any) any) {
+	name = strings.ToLower(name)
+	if builtInOpNames[name] {
+		panic(fmt.Errorf("operation %s can not be replaced", name))
+	}
+	opMap[name] = &op{
+		name:    name,
+		uniFun:  f,
+		cnt:     1,
+		getLeft: get,
+	}
+}
+
+// RegisterBinaryFunction registers a function that takes two argument for
+// scripts. The 'getLeft' and 'getRight' arguments if true indicates a get
+// operation to provide the argument to the provided function otherwise the
+// first match is used.
+func RegisterBinaryFunction(name string, getLeft, getRight bool, f func(left, right any) any) {
+	name = strings.ToLower(name)
+	if builtInOpNames[name] {
+		panic(fmt.Errorf("operation %s can not be replaced", name))
+	}
+	opMap[name] = &op{
+		name:     name,
+		duoFun:   f,
+		cnt:      2,
+		getLeft:  getLeft,
+		getRight: getRight,
+	}
 }
