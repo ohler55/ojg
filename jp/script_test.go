@@ -4,6 +4,7 @@ package jp_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/ohler55/ojg/gen"
@@ -110,7 +111,7 @@ func TestScriptParse(t *testing.T) {
 		{src: "(length(@.xyz) == 3)", expect: "(length(@.xyz) == 3)"},
 		{src: "(length(@.xyz) == Nothing)", expect: "(length(@.xyz) == Nothing)"},
 		{src: "(length(@.xyz == 3)", err: "not terminated at 20 in (length(@.xyz == 3)"},
-		{src: "(leng(@.xyz) == 3)", err: "expected a length function at 2 in (leng(@.xyz) == 3)"},
+		{src: "(leng(@.xyz) == 3)", err: "'leng' is not a value or function at 2 in (leng(@.xyz) == 3)"},
 		{src: "length(@.xyz == 3", err: "not terminated at 18 in length(@.xyz == 3"},
 
 		{src: "(count(@.xyz))", expect: "(count(@.xyz))"},
@@ -118,17 +119,17 @@ func TestScriptParse(t *testing.T) {
 		{src: "(count(@.xyz) == 3)", expect: "(count(@.xyz) == 3)"},
 		{src: "(count(7) == 3)", expect: "(count(7) == 3)"},
 		{src: "(count(@.xyz == 3)", err: "not terminated at 19 in (count(@.xyz == 3)"},
-		{src: "(coun(@.xyz) == 3)", err: "expected a count function at 2 in (coun(@.xyz) == 3)"},
+		{src: "(coun(@.xyz) == 3)", err: "'coun' is not a value or function at 2 in (coun(@.xyz) == 3)"},
 
 		{src: "(match(@.x, 'xy.'))", expect: "(match(@.x, 'xy.'))"},
 		{src: "(match(@.x, 'xy.') == false)", expect: "(match(@.x, 'xy.') == false)"},
 		{src: "(false == match(@.x, 'xy.'))", expect: "(false == match(@.x, 'xy.'))"},
-		{src: "(matc(@.x, 'xy.'))", err: "expected a match function at 2 in (matc(@.x, 'xy.'))"},
+		{src: "(matc(@.x, 'xy.'))", err: "'matc' is not a value or function at 2 in (matc(@.x, 'xy.'))"},
 
 		{src: "(search(@.x, 'xy.'))", expect: "(search(@.x, 'xy.'))"},
 		{src: "(search(@.x, 'xy.') == false)", expect: "(search(@.x, 'xy.') == false)"},
 		{src: "(false == search(@.x, 'xy.'))", expect: "(false == search(@.x, 'xy.'))"},
-		{src: "(sear(@.x, 'xy.'))", err: "expected a search function at 2 in (sear(@.x, 'xy.'))"},
+		{src: "(sear(@.x, 'xy.'))", err: "'sear' is not a value or function at 2 in (sear(@.x, 'xy.'))"},
 
 		{src: "@.x == 4", expect: "(@.x == 4)"},
 		{src: "(@.x ++ 4)", err: "'++' is not a valid operation at 8 in (@.x ++ 4)"},
@@ -383,22 +384,46 @@ func BenchmarkOjScriptDev(b *testing.B) {
 	}
 }
 
-// func TestScriptFoo(t *testing.T) {
-// 	src := "(@ ~= /a\\/c/)"
-// 	// src := "(@.x)"
-// 	// src = "@.x + 3 * 2 - 1 > 4"
-
-// 	s := jp.MustNewScript(src)
-// 	fmt.Printf("*** %q => script: %s\n", src, s)
-
-// 	// result := s.Eval([]any{}, []any{5})
-// 	// fmt.Printf("*** %s\n", result)
-// }
-
 func TestScriptMatchWithNotGroup(t *testing.T) {
 	data := map[string]any{
 		"text": "my Expected text NotExpected",
 	}
 	expr := jp.MustNewScript("!(@.text ~= /(?i)notexpected/)")
 	tt.Equal(t, false, expr.Match(data))
+}
+
+func TestScriptRegisterUnaryFunction(t *testing.T) {
+	jp.RegisterUnaryFunction("downcase", false, func(arg any) any {
+		if str, ok := arg.(string); ok {
+			arg = strings.ToLower(str)
+		}
+		return arg
+	})
+	s := jp.MustNewScript("downcase(@.x)")
+	tt.Equal(t, "(downcase(@.x))", s.String())
+
+	s = jp.MustNewScript(`("abcd" == downcase(@.x))`)
+	tt.Equal(t, 1, len(s.Eval([]any{}, []any{map[string]any{"x": "AbCd"}}).([]any)))
+
+	s = jp.MustNewScript(`("AbCd" == downcase(@.x))`)
+	tt.Equal(t, 0, len(s.Eval([]any{}, []any{map[string]any{"x": "AbCd"}}).([]any)))
+
+	tt.Panic(t, func() { jp.RegisterUnaryFunction("length", false, func(arg any) any { return nil }) })
+}
+
+func TestScriptRegisterBinaryFunction(t *testing.T) {
+	jp.RegisterBinaryFunction("equalfold", false, false, func(left, right any) any {
+		if s0, ok := left.(string); ok {
+			if s1, ok := right.(string); ok {
+				return strings.EqualFold(s0, s1)
+			}
+		}
+		return false
+	})
+	s := jp.MustNewScript("equalfold(@.x, @.y)")
+	tt.Equal(t, "(equalfold(@.x, @.y))", s.String())
+
+	tt.Equal(t, 1, len(s.Eval([]any{}, []any{map[string]any{"x": "abc", "y": "ABC"}}).([]any)))
+
+	tt.Panic(t, func() { jp.RegisterBinaryFunction("length", false, false, func(left, right any) any { return nil }) })
 }

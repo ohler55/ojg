@@ -3,15 +3,19 @@
 package jp
 
 import (
+	"fmt"
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
 )
 
 type nothing int
+
+const userOpCode = 'U'
 
 var (
 	// Lower precedence is evaluated first.
@@ -79,6 +83,8 @@ var (
 
 type op struct {
 	name     string
+	uniFun   func(arg any) any
+	duoFun   func(left, right any) any
 	prec     byte
 	cnt      byte
 	code     byte
@@ -752,6 +758,12 @@ func evalStack(sstack []any) []any {
 					}
 				}
 			}
+		default:
+			if o.uniFun != nil {
+				sstack[i] = o.uniFun(left)
+			} else if o.duoFun != nil {
+				sstack[i] = o.duoFun(left, right)
+			}
 		}
 		if i+int(o.cnt)+1 <= len(sstack) {
 			copy(sstack[i+1:], sstack[i+int(o.cnt)+1:])
@@ -801,6 +813,15 @@ func (s *Script) appendOp(o *op, left, right any) (pb *precBuf) {
 		pb.buf = s.appendValue(pb.buf, left, o.prec)
 		pb.buf = append(pb.buf, ',', ' ')
 		pb.buf = s.appendValue(pb.buf, right, o.prec)
+		pb.buf = append(pb.buf, ')')
+	case userOpCode:
+		pb.buf = append(pb.buf, o.name...)
+		pb.buf = append(pb.buf, '(')
+		pb.buf = s.appendValue(pb.buf, left, o.prec)
+		if 1 < o.cnt {
+			pb.buf = append(pb.buf, ',', ' ')
+			pb.buf = s.appendValue(pb.buf, right, o.prec)
+		}
 		pb.buf = append(pb.buf, ')')
 	default:
 		pb.buf = s.appendValue(pb.buf, left, o.prec)
@@ -853,4 +874,71 @@ func (s *Script) appendValue(buf []byte, v any, prec byte) []byte {
 		}
 	}
 	return buf
+}
+
+var builtInNames = map[string]bool{
+	"==":     true,
+	"!=":     true,
+	"<":      true,
+	">":      true,
+	"<=":     true,
+	">=":     true,
+	"||":     true,
+	"&&":     true,
+	"!":      true,
+	"+":      true,
+	"-":      true,
+	"*":      true,
+	"/":      true,
+	"get":    true,
+	"in":     true,
+	"empty":  true,
+	"~=":     true,
+	"=~":     true,
+	"has":    true,
+	"exists": true,
+	"length": true,
+	"count":  true,
+	"match":  true,
+	"search": true,
+	"true":   true,
+	"false":  true,
+	"null":   true,
+}
+
+// RegisterUnaryFunction registers a unary function for scripts. The 'get'
+// argument if true indicates a get operation to provide the argument to the
+// provided function otherwise the first match is used. Names must be alpha
+// characters only.
+func RegisterUnaryFunction(name string, get bool, f func(arg any) any) {
+	name = strings.ToLower(name)
+	if builtInNames[name] {
+		panic(fmt.Errorf("operation %s can not be replaced", name))
+	}
+	opMap[name] = &op{
+		name:    name,
+		uniFun:  f,
+		code:    userOpCode,
+		cnt:     1,
+		getLeft: get,
+	}
+}
+
+// RegisterBinaryFunction registers a function that takes two argument for
+// scripts. The 'getLeft' and 'getRight' arguments if true indicates a get
+// operation to provide the argument to the provided function otherwise the
+// first match is used. Names must be alpha characters only.
+func RegisterBinaryFunction(name string, getLeft, getRight bool, f func(left, right any) any) {
+	name = strings.ToLower(name)
+	if builtInNames[name] {
+		panic(fmt.Errorf("operation %s can not be replaced", name))
+	}
+	opMap[name] = &op{
+		name:     name,
+		duoFun:   f,
+		code:     userOpCode,
+		cnt:      2,
+		getLeft:  getLeft,
+		getRight: getRight,
+	}
 }
