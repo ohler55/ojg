@@ -1,4 +1,26 @@
 
+- path-handler
+ - jp.PathMatch(target, path Expr) bool
+  - match.go
+  - path is expected to normalized path (just, root, at, child, nth)
+  - walk target and match path elements
+   - have to be a bit smart with ancester and wilds
+ - jp.PathHandler
+  - builds path from Key() callbacks
+ - PathDataHandler
+  - embded PthHandler
+  - also collects data once there is a match then call func or method when path backs off to no match
+   - dataDepth or collectDepth or StopLen (length of path when collection started and when it should stop)
+   - Data being built
+    - nil after callback
+   - OnData func(path jp.Path, data any)
+
+ - oj.ReaderFind(r io.Reader, target jp.Expr, cb func(path jp.Path, data any))
+ - oj.Find(b []byte, target jp.Expr, cb func(path jp.Path, data any))
+  - use Tokenizer with PathDataHandler
+  - top level match, not top and leaves for $.. matches root only
+ - same for sen
+
 
  - @.foo without a comparison indicates existance
 
