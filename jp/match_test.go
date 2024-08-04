@@ -32,6 +32,12 @@ func TestPathMatchCheck(t *testing.T) {
 		{target: "[1,'a']", path: "b", expect: false},
 		{target: "[1,'a']", path: "[0]", expect: false},
 		{target: "$.x[1,'a']", path: "x[1]", expect: true},
+		{target: "..x", path: "a.b.x", expect: true},
+		{target: "..x", path: "a.b.c", expect: false},
+		{target: "x[1:5:2]", path: "x[2]", expect: true},
+		{target: "x[1:5:2]", path: "x.y", expect: false},
+		{target: "x[?@.a == 2]", path: "x[2]", expect: true},
+		{target: "x.y.z", path: "x.y", expect: false},
 	} {
 		tt.Equal(t, md.expect, jp.PathMatch(jp.MustParseString(md.target), jp.MustParseString(md.path)),
 			"%d: %s %s", i, md.target, md.path)

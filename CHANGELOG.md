@@ -4,6 +4,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.24.0] - unreleased
+### Added
+- Added the `jp.PathMatch` function that compares a normalized JSONPath with a target JSONPath.
+- TBD Added `jp.PathHandler` a TokenHandler that can be used to build
+  a path while processing a JSON document.
+- TBD Added `jp.PathDataHandler` a TokenHandler that can be used to
+  build a path and data while processing a JSON document.
+
 ## [1.23.0] - 2024-07-07
 ### Added
 - New script functions can now be added with `jp.RegisterUnaryFunction()` and `jp.RegisterBinaryFunction()`.

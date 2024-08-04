@@ -6,7 +6,8 @@ package jp
 // expression. The path argument is expected to be a normalized path with only
 // elements of Root ($), At (@), Child (string), or Nth (int). A Filter
 // fragment in the target expression will match any value in path since it
-// requires data from a JSON document to be evaluated.
+// requires data from a JSON document to be evaluated. Slice fragments always
+// return true as long as the path element is an Nth.
 func PathMatch(target, path Expr) bool {
 	if 0 < len(path) {
 		switch path[0].(type) {
@@ -59,12 +60,22 @@ func PathMatch(target, path Expr) bool {
 			}
 			path = path[1:]
 		case Slice:
-			// TBD
-		case Filter:
+			if _, ok := path[0].(Nth); !ok {
+				return false
+			}
+			path = path[1:]
+		case *Filter:
 			// Assume a match since there is no data for comparison.
 			path = path[1:]
 		case Descent:
-			// TBD look for match on next target or if no next then return true
+			rest := target[i+1:]
+			for 0 < len(path) {
+				if PathMatch(rest, path) {
+					return true
+				}
+				path = path[1:]
+			}
+			return false
 		}
 	}
 	return true
