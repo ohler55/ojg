@@ -1,15 +1,7 @@
 
 - path-handler
- - jp.PathMatch(target, path Expr) bool
-  - match.go
-  - path is expected to normalized path (just, root, at, child, nth)
-  - walk target and match path elements
-   - have to be a bit smart with ancester and wilds
- - jp.PathHandler
-  - builds path from Key() callbacks
  - PathDataHandler
-  - embded PthHandler
-  - also collects data once there is a match then call func or method when path backs off to no match
+  - collects data once there is a match then call func or method when path backs off to no match
    - dataDepth or collectDepth or StopLen (length of path when collection started and when it should stop)
    - Data being built
     - nil after callback
