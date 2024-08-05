@@ -7,8 +7,9 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.24.0] - unreleased
 ### Added
 - Added the `jp.PathMatch` function that compares a normalized JSONPath with a target JSONPath.
-- TBD Added `jp.PathDataHandler` a TokenHandler that can be used to
+- Added `jp.MatchHandler` a TokenHandler that can be used to
   build a path and data while processing a JSON document.
+- Added `oj.Match` and `sen.Match` functions.
 
 ## [1.23.0] - 2024-07-07
 ### Added

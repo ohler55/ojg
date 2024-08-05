@@ -9,6 +9,12 @@ package jp
 // requires data from a JSON document to be evaluated. Slice fragments always
 // return true as long as the path element is an Nth.
 func PathMatch(target, path Expr) bool {
+	if 0 < len(target) {
+		switch target[0].(type) {
+		case Root, At:
+			target = target[1:]
+		}
+	}
 	if 0 < len(path) {
 		switch path[0].(type) {
 		case Root, At:
@@ -25,10 +31,6 @@ func PathMatch(target, path Expr) bool {
 			return false
 		}
 		switch tf := f.(type) {
-		case Root, At:
-			if 0 < i { // $ and @ can only be the first fragment
-				return false
-			}
 		case Child, Nth:
 			if tf != path[0] {
 				return false
@@ -75,6 +77,8 @@ func PathMatch(target, path Expr) bool {
 				}
 				path = path[1:]
 			}
+			return false
+		default:
 			return false
 		}
 	}

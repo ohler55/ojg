@@ -9,6 +9,7 @@ import (
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
+	"github.com/ohler55/ojg/jp"
 )
 
 // Options is an alias for ojg.Options
@@ -199,4 +200,22 @@ func pickWriter(arg any) (wr *Writer) {
 		wr = ta
 	}
 	return
+}
+
+// Match parses a JSON document and calls onData when a data element that
+// matches the target path is encountered.
+func Match(data []byte, target jp.Expr, onData func(path jp.Expr, data any)) error {
+	return Tokenize(data, jp.NewMatchHandler(target, onData))
+}
+
+// MatchString parses a JSON document and calls onData when a data element that
+// matches the target path is encountered.
+func MatchString(data string, target jp.Expr, onData func(path jp.Expr, data any)) error {
+	return Tokenize([]byte(data), jp.NewMatchHandler(target, onData))
+}
+
+// MatchLoad parses a JSON document from an io.Reader and calls onData when a
+// data element that matches the target path is encountered.
+func MatchLoad(r io.Reader, target jp.Expr, onData func(path jp.Expr, data any)) error {
+	return TokenizeLoad(r, jp.NewMatchHandler(target, onData))
 }
