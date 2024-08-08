@@ -202,20 +202,20 @@ func pickWriter(arg any) (wr *Writer) {
 	return
 }
 
-// Match parses a JSON document and calls onData when a data element that
+// Match parses a SEN document and calls onData when a data element that
 // matches the target path is encountered.
-func Match(data []byte, target jp.Expr, onData func(path jp.Expr, data any)) error {
-	return Tokenize(data, jp.NewMatchHandler(target, onData))
+func Match(data []byte, onData func(path jp.Expr, data any), targets ...jp.Expr) error {
+	return Tokenize(data, jp.NewMatchHandler(onData, targets...))
 }
 
 // MatchString parses a JSON document and calls onData when a data element that
 // matches the target path is encountered.
-func MatchString(data string, target jp.Expr, onData func(path jp.Expr, data any)) error {
-	return Tokenize([]byte(data), jp.NewMatchHandler(target, onData))
+func MatchString(data string, onData func(path jp.Expr, data any), targets ...jp.Expr) error {
+	return Tokenize([]byte(data), jp.NewMatchHandler(onData, targets...))
 }
 
 // MatchLoad parses a JSON document from an io.Reader and calls onData when a
 // data element that matches the target path is encountered.
-func MatchLoad(r io.Reader, target jp.Expr, onData func(path jp.Expr, data any)) error {
-	return TokenizeLoad(r, jp.NewMatchHandler(target, onData))
+func MatchLoad(r io.Reader, onData func(path jp.Expr, data any), targets ...jp.Expr) error {
+	return TokenizeLoad(r, jp.NewMatchHandler(onData, targets...))
 }

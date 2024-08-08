@@ -6,39 +6,45 @@ import (
 	"encoding/json"
 )
 
-// PathHandler is a TokenHandler compatible with both the oj.TokenHandler and
-// the sen.TokenHandler. Fields are public to allow derived types to access
-// those fields.
-type MatchHandler struct {
+// TargetRest is used by the MatchHandler to associate a Target and Rest of a
+// match search.
+type TargetRest struct {
 	Target Expr
 	// Rest is set when a Filter is included in the initializing target. Since
 	// Filters can only be evaluated when there is data for the evaluation a
 	// traget with a Filter is split with the pre-filter portion and the rest
 	// starting with the filter.
-	Rest   Expr
-	Path   Expr
-	Stack  []any
-	OnData func(path Expr, data any)
+	Rest Expr
+}
+
+// PathHandler is a TokenHandler compatible with both the oj.TokenHandler and
+// the sen.TokenHandler. Fields are public to allow derived types to access
+// those fields.
+type MatchHandler struct {
+	Targets []*TargetRest
+	Path    Expr
+	Stack   []any
+	OnData  func(path Expr, data any)
 }
 
 // NewMatchHandler creates a new MatchHandler.
-func NewMatchHandler(target Expr, onData func(path Expr, data any)) *MatchHandler {
-	// TBD if target has filter then take part before the filter and then
-	// apply the rest on each matched
-	var rest Expr
-	for i, f := range target {
-		if _, ok := f.(*Filter); ok {
-			rest = target[i:]
-			target = target[:i]
-			break
-		}
-	}
-	return &MatchHandler{
-		Target: target,
-		Rest:   rest,
+func NewMatchHandler(onData func(path Expr, data any), targets ...Expr) *MatchHandler {
+	h := MatchHandler{
 		Path:   R(),
 		OnData: onData,
 	}
+	for _, target := range targets {
+		tr := TargetRest{Target: target}
+		for i, f := range target {
+			if _, ok := f.(*Filter); ok {
+				tr.Rest = target[i:]
+				tr.Target = target[:i]
+				break
+			}
+		}
+		h.Targets = append(h.Targets, &tr)
+	}
+	return &h
 }
 
 // Null is called when a JSON null is encountered.
@@ -107,7 +113,7 @@ func (h *MatchHandler) AddValue(v any) {
 		case []any:
 			h.Stack[len(h.Stack)-1] = append(ts, v)
 		}
-	} else if PathMatch(h.Target, h.Path) && h.Rest == nil {
+	} else if h.pathMatch(true) {
 		h.OnData(h.Path, v)
 	}
 	h.incNth()
@@ -122,7 +128,7 @@ func (h *MatchHandler) objArrayStart(v any, frag Frag) {
 			h.Stack[len(h.Stack)-1] = append(ts, v)
 		}
 		h.Stack = append(h.Stack, v)
-	} else if PathMatch(h.Target, h.Path) {
+	} else if h.pathMatch(false) {
 		h.Stack = append(h.Stack, v)
 	}
 	h.Path = append(h.Path, frag)
@@ -150,14 +156,32 @@ func (h *MatchHandler) incNth() {
 }
 
 func (h *MatchHandler) checkRest(v any) (any, Expr, bool) {
+	var tr *TargetRest
+	for _, t := range h.Targets {
+		if PathMatch(t.Target, h.Path) {
+			tr = t
+			break
+		}
+	}
 	p := h.Path
-	if h.Rest != nil {
-		locs := h.Rest.Locate(v, 1)
+	if tr != nil && tr.Rest != nil {
+		locs := tr.Rest.Locate(v, 1)
 		if len(locs) == 0 {
 			return nil, p, false
 		}
 		p = append(p, locs[0]...)
-		v = h.Rest.First(v)
+		v = tr.Rest.First(v)
 	}
 	return v, p, true
+}
+
+func (h *MatchHandler) pathMatch(leaf bool) bool {
+	for _, tr := range h.Targets {
+		if PathMatch(tr.Target, h.Path) {
+			if !leaf || tr.Rest == nil {
+				return true
+			}
+		}
+	}
+	return false
 }
