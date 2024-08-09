@@ -339,6 +339,9 @@ func digParse(r io.Reader) error {
 	if color {
 		annotateColor = ojg.Gray
 	}
+	// Pick a function that satisfies omit, annotate, and senOut
+	// values. Determining the function before the actual calling means few
+	// conditional paths during the repeated calls later.
 	if omit {
 		if annotate {
 			if senOut {
