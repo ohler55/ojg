@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -277,7 +276,7 @@ func run() (err error) {
 	if 0 < len(planDef) {
 		if planDef[0] != '[' {
 			var b []byte
-			if b, err = ioutil.ReadFile(planDef); err != nil {
+			if b, err = os.ReadFile(planDef); err != nil {
 				return err
 			}
 			planDef = string(b)
