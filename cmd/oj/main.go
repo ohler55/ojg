@@ -296,7 +296,6 @@ func run() (err error) {
 		var f *os.File
 		for _, file := range files {
 			if f, err = os.Open(file); err == nil {
-				// TBD
 				if dig {
 					err = digParse(f)
 				} else {
@@ -315,8 +314,12 @@ func run() (err error) {
 		}
 	}
 	if len(files) == 0 && len(input) == 0 {
-		// TBD if dig ...
-		if _, err = p.ParseReader(os.Stdin, write); err != nil {
+		if dig {
+			err = digParse(os.Stdin)
+		} else {
+			_, err = p.ParseReader(os.Stdin, write)
+		}
+		if err != nil {
 			panic(err)
 		}
 	}
