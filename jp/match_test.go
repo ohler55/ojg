@@ -50,3 +50,7 @@ func TestPathMatchDoubleRoot(t *testing.T) {
 	tt.Equal(t, false, jp.PathMatch(jp.C("a"), jp.R().R().C("a")))
 	tt.Equal(t, false, jp.PathMatch(jp.C("a"), jp.A().A().C("a")))
 }
+
+func TestPathMatchSkipBracket(t *testing.T) {
+	tt.Equal(t, true, jp.PathMatch(jp.B().C("a"), jp.C("a")))
+}
