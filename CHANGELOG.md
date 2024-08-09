@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.24.0] - unreleased
+## [1.24.0] - 2024-08-09
 ### Added
 - Added the `jp.PathMatch` function that compares a normalized JSONPath with a target JSONPath.
 - Added `jp.MatchHandler` a TokenHandler that can be used to
