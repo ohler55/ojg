@@ -5,7 +5,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -38,6 +38,8 @@ var (
 	safe           = false
 	mongo          = false
 	omit           = false
+	dig            = false
+	annotate       = false
 
 	// If true wrap extracts with an array.
 	wrapExtract = false
@@ -72,13 +74,16 @@ func init() {
 	flag.BoolVar(&lazy, "z", lazy, "lazy mode accepts Simple Encoding Notation (quotes and commas mostly optional)")
 	flag.BoolVar(&senOut, "sen", senOut, "output in Simple Encoding Notation")
 	flag.BoolVar(&tab, "t", tab, "indent with tabs")
+	flag.BoolVar(&annotate, "annotate", annotate, "annotate dig extracts with a path comment")
 	flag.Var(&exValue{}, "x", "extract path")
 	flag.Var(&matchValue{}, "m", "match equation/script")
 	flag.Var(&delValue{}, "d", "delete path")
+	flag.BoolVar(&dig, "dig", dig, "dig into a large document using the tokenizer")
 	flag.BoolVar(&showVersion, "version", showVersion, "display version and exit")
 	flag.StringVar(&planDef, "a", planDef, "assembly plan or plan file using @<plan>")
 	flag.BoolVar(&showRoot, "r", showRoot, "print root if an assemble plan provided")
-	flag.StringVar(&prettyOpt, "p", prettyOpt, `pretty print with the width, depth, and align as <width>.<max-depth>.<align>`)
+	flag.StringVar(&prettyOpt, "p", prettyOpt,
+		`pretty print with the width, depth, and align as <width>.<max-depth>.<align>`)
 	flag.BoolVar(&html, "html", html, "output colored output as HTML")
 	flag.BoolVar(&safe, "safe", safe, "escape &, <, and > for HTML inclusion")
 	flag.StringVar(&confFile, "f", confFile, "configuration file (see -help-config), - indicates no file")
@@ -271,7 +276,7 @@ func run() (err error) {
 	if 0 < len(planDef) {
 		if planDef[0] != '[' {
 			var b []byte
-			if b, err = ioutil.ReadFile(planDef); err != nil {
+			if b, err = os.ReadFile(planDef); err != nil {
 				return err
 			}
 			planDef = string(b)
@@ -290,7 +295,11 @@ func run() (err error) {
 		var f *os.File
 		for _, file := range files {
 			if f, err = os.Open(file); err == nil {
-				_, err = p.ParseReader(f, write)
+				if dig {
+					err = digParse(f)
+				} else {
+					_, err = p.ParseReader(f, write)
+				}
 				_ = f.Close()
 			}
 			if err != nil {
@@ -304,7 +313,12 @@ func run() (err error) {
 		}
 	}
 	if len(files) == 0 && len(input) == 0 {
-		if _, err = p.ParseReader(os.Stdin, write); err != nil {
+		if dig {
+			err = digParse(os.Stdin)
+		} else {
+			_, err = p.ParseReader(os.Stdin, write)
+		}
+		if err != nil {
 			panic(err)
 		}
 	}
@@ -315,6 +329,79 @@ func run() (err error) {
 		write(root)
 	}
 	return
+}
+
+func digParse(r io.Reader) error {
+	var fn func(path jp.Expr, data any)
+	annotateColor := ""
+
+	if color {
+		annotateColor = ojg.Gray
+	}
+	// Pick a function that satisfies omit, annotate, and senOut
+	// values. Determining the function before the actual calling means few
+	// conditional paths during the repeated calls later.
+	if omit {
+		if annotate {
+			if senOut {
+				fn = func(path jp.Expr, data any) {
+					if data != nil && data != "" {
+						fmt.Printf("%s// %s\n", annotateColor, path)
+						writeSEN(data)
+					}
+				}
+			} else {
+				fn = func(path jp.Expr, data any) {
+					if data != nil && data != "" {
+						fmt.Printf("%s// %s\n", annotateColor, path)
+						writeJSON(data)
+					}
+				}
+			}
+		} else {
+			if senOut {
+				fn = func(path jp.Expr, data any) {
+					if data != nil && data != "" {
+						writeSEN(data)
+					}
+				}
+			} else {
+				fn = func(path jp.Expr, data any) {
+					if data != nil && data != "" {
+						writeJSON(data)
+					}
+				}
+			}
+		}
+	} else {
+		if annotate {
+			if senOut {
+				fn = func(path jp.Expr, data any) {
+					fmt.Printf("%s// %s\n", annotateColor, path)
+					writeSEN(data)
+				}
+			} else {
+				fn = func(path jp.Expr, data any) {
+					fmt.Printf("%s// %s\n", annotateColor, path)
+					writeJSON(data)
+				}
+			}
+		} else {
+			if senOut {
+				fn = func(path jp.Expr, data any) {
+					writeSEN(data)
+				}
+			} else {
+				fn = func(path jp.Expr, data any) {
+					writeJSON(data)
+				}
+			}
+		}
+	}
+	if lazy {
+		return sen.MatchLoad(r, fn, extracts...)
+	}
+	return oj.MatchLoad(r, fn, extracts...)
 }
 
 func write(v any) bool {
