@@ -666,3 +666,161 @@ func TestExprRemoveFilterMap(t *testing.T) {
 	result = x.MustRemoveOne(data)
 	tt.Equal(t, "{b: {x: 2} c: {x: 3}}", string(pw.Encode(result)))
 }
+
+func TestExprRemoveIndexedFilter(t *testing.T) {
+	x := jp.MustParseString("$[2][?@ > 11]")
+
+	data := indexedData()
+	result := x.MustRemove(data)
+	tt.Equal(t, 11, jp.N(2).N(0).First(result))
+	tt.Equal(t, false, jp.N(2).N(1).Has(result))
+	tt.Equal(t, false, jp.N(2).N(2).Has(result))
+
+	data = indexedData()
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, 11, jp.N(2).N(0).First(result))
+	tt.Equal(t, 13, jp.N(2).N(1).First(result))
+	tt.Equal(t, false, jp.N(2).N(2).Has(result))
+}
+
+func TestExprRemoveIndexedNth(t *testing.T) {
+	x := jp.MustParseString("$[2][1]")
+	data := indexedData()
+	result := x.MustRemove(data)
+	tt.Equal(t, 11, jp.N(2).N(0).First(result))
+	tt.Equal(t, 13, jp.N(2).N(1).First(result))
+	tt.Equal(t, false, jp.N(2).N(2).Has(result))
+
+	x = jp.MustParseString("$[2][-1]")
+	data = indexedData()
+	result = x.MustRemove(data)
+	tt.Equal(t, 11, jp.N(2).N(0).First(result))
+	tt.Equal(t, 12, jp.N(2).N(1).First(result))
+	tt.Equal(t, false, jp.N(2).N(2).Has(result))
+}
+
+func TestExprRemoveIndexedSlice(t *testing.T) {
+	x := jp.MustParseString("$[2][0:1]") // first two
+	data := indexedData()
+	result := x.MustRemove(data)
+	tt.Equal(t, 13, jp.N(2).N(0).First(result))
+	tt.Equal(t, false, jp.N(2).N(1).Has(result))
+	tt.Equal(t, false, jp.N(2).N(2).Has(result))
+	data = indexedData()
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, 12, jp.N(2).N(0).First(result))
+	tt.Equal(t, 13, jp.N(2).N(1).First(result))
+	tt.Equal(t, false, jp.N(2).N(2).Has(result))
+
+	x = jp.MustParseString("$[2][-2:-1]") // last two
+	data = indexedData()
+	result = x.MustRemove(data)
+	tt.Equal(t, 11, jp.N(2).N(0).First(result))
+	tt.Equal(t, false, jp.N(2).N(1).Has(result))
+	tt.Equal(t, false, jp.N(2).N(2).Has(result))
+	data = indexedData()
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, 11, jp.N(2).N(0).First(result))
+	tt.Equal(t, 13, jp.N(2).N(1).First(result))
+	tt.Equal(t, false, jp.N(2).N(2).Has(result))
+
+	x = jp.MustParseString("$[2][-999:999]") // out of bounds
+	data = indexedData()
+	result = x.MustRemove(data)
+	tt.Equal(t, 11, jp.N(2).N(0).First(result))
+	tt.Equal(t, 12, jp.N(2).N(1).First(result))
+	tt.Equal(t, 13, jp.N(2).N(2).First(result))
+	data = indexedData()
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, 11, jp.N(2).N(0).First(result))
+	tt.Equal(t, 12, jp.N(2).N(1).First(result))
+	tt.Equal(t, 13, jp.N(2).N(2).First(result))
+}
+
+func TestExprRemoveIndexedUnion(t *testing.T) {
+	x := jp.MustParseString("$[2][0,1]")
+
+	data := indexedData()
+	result := x.MustRemove(data)
+	tt.Equal(t, 13, jp.N(2).N(0).First(result))
+	tt.Equal(t, false, jp.N(2).N(1).Has(result))
+	tt.Equal(t, false, jp.N(2).N(2).Has(result))
+
+	data = indexedData()
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, 12, jp.N(2).N(0).First(result))
+	tt.Equal(t, 13, jp.N(2).N(1).First(result))
+	tt.Equal(t, false, jp.N(2).N(2).Has(result))
+}
+
+func TestExprRemoveIndexedWild(t *testing.T) {
+	x := jp.MustParseString("$[2][*]")
+
+	data := indexedData()
+	result := x.MustRemove(data)
+	tt.Equal(t, false, jp.N(2).N(0).Has(result))
+	tt.Equal(t, false, jp.N(2).N(1).Has(result))
+	tt.Equal(t, false, jp.N(2).N(2).Has(result))
+
+	data = indexedData()
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, 12, jp.N(2).N(0).First(result))
+	tt.Equal(t, 13, jp.N(2).N(1).First(result))
+	tt.Equal(t, false, jp.N(2).N(2).Has(result))
+}
+
+func TestExprRemoveKeyedChild(t *testing.T) {
+	x := jp.MustParseString("$.b")
+
+	data := keyedData()
+	result := x.MustRemove(data)
+	tt.Equal(t, false, jp.C("b").Has(result))
+}
+
+func TestExprRemoveKeyedFilter(t *testing.T) {
+	x := jp.MustParseString("$.c[?@ > 11]")
+
+	data := keyedData()
+	result := x.MustRemove(data)
+	tt.Equal(t, true, jp.C("c").C("c1").Has(result))
+	tt.Equal(t, false, jp.C("c").C("c2").Has(result))
+	tt.Equal(t, false, jp.C("c").C("c3").Has(result))
+
+	data = keyedData()
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, true, jp.C("c").C("c1").Has(result))
+	tt.Equal(t, false, jp.C("c").C("c2").Has(result))
+	tt.Equal(t, true, jp.C("c").C("c3").Has(result))
+}
+
+func TestExprRemoveKeyedUnion(t *testing.T) {
+	x := jp.MustParseString("$.c['c1', 'c2']")
+
+	data := keyedData()
+	result := x.MustRemove(data)
+	tt.Equal(t, false, jp.C("c").C("c1").Has(result))
+	tt.Equal(t, false, jp.C("c").C("c2").Has(result))
+	tt.Equal(t, true, jp.C("c").C("c3").Has(result))
+
+	data = keyedData()
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, false, jp.C("c").C("c1").Has(result))
+	tt.Equal(t, true, jp.C("c").C("c2").Has(result))
+	tt.Equal(t, true, jp.C("c").C("c3").Has(result))
+}
+
+func TestExprRemoveKeyedWild(t *testing.T) {
+	x := jp.MustParseString("$.c[*]")
+
+	data := keyedData()
+	result := x.MustRemove(data)
+	tt.Equal(t, false, jp.C("c").C("c1").Has(result))
+	tt.Equal(t, false, jp.C("c").C("c2").Has(result))
+	tt.Equal(t, false, jp.C("c").C("c3").Has(result))
+
+	data = keyedData()
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, false, jp.C("c").C("c1").Has(result))
+	tt.Equal(t, true, jp.C("c").C("c2").Has(result))
+	tt.Equal(t, true, jp.C("c").C("c3").Has(result))
+}
