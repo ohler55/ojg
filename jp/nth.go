@@ -59,7 +59,7 @@ func (f Nth) remove(value any) (out any, changed bool) {
 			out = append(tv[:i], tv[i+1:]...)
 			changed = true
 		}
-	case Indexed:
+	case RemovableIndexed:
 		size := tv.Size()
 		if i < 0 {
 			i = size + i

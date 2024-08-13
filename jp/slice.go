@@ -138,7 +138,7 @@ func (f Slice) remove(value any) (out any, changed bool) {
 		if changed {
 			out = ns
 		}
-	case Indexed:
+	case RemovableIndexed:
 		size := tv.Size()
 		if start < 0 {
 			start = size + start
@@ -304,7 +304,7 @@ func (f Slice) removeOne(value any) (out any, changed bool) {
 		if changed {
 			out = ns
 		}
-	case Indexed:
+	case RemovableIndexed:
 		size := tv.Size()
 		if start < 0 {
 			start = size + start

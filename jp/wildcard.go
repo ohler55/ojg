@@ -55,7 +55,7 @@ func (f Wildcard) remove(value any) (out any, changed bool) {
 				delete(tv, k)
 			}
 		}
-	case Indexed:
+	case RemovableIndexed:
 		size := tv.Size()
 		for i := (size - 1); i >= 0; i-- {
 			changed = true
@@ -120,7 +120,7 @@ func (f Wildcard) removeOne(value any) (out any, changed bool) {
 			sort.Strings(keys)
 			delete(tv, keys[0])
 		}
-	case Indexed:
+	case RemovableIndexed:
 		if 0 < tv.Size() {
 			changed = true
 			tv.RemoveValueAtIndex(0)

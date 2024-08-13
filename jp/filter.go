@@ -98,7 +98,7 @@ func (f Filter) remove(value any) (out any, changed bool) {
 				changed = true
 			}
 		}
-	case Indexed:
+	case RemovableIndexed:
 		size := tv.Size()
 		for i := (size - 1); i >= 0; i-- {
 			v := tv.ValueAtIndex(i)
@@ -219,7 +219,7 @@ func (f Filter) removeOne(value any) (out any, changed bool) {
 				}
 			}
 		}
-	case Indexed:
+	case RemovableIndexed:
 		size := tv.Size()
 		for i := 0; i < size; i++ {
 			v := tv.ValueAtIndex(i)

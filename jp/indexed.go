@@ -13,9 +13,15 @@ type Indexed interface {
 	// SetValueAtIndex should set the value at the provided index.
 	SetValueAtIndex(index int, value any)
 
-	// RemoveValueAtIndex removes an item from the collection.
-	RemoveValueAtIndex(index int)
-
 	// Size should return the size for the collection.
 	Size() int
+}
+
+// RemovableIndexed describes an indexed collection that can remove items.
+// Must be implemented to use [Expr.Remove].
+type RemovableIndexed interface {
+	Indexed
+
+	// RemoveValueAtIndex removes an item from the collection.
+	RemoveValueAtIndex(index int)
 }

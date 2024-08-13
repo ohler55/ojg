@@ -127,7 +127,7 @@ func (f Union) removeOne(value any) (out any, changed bool) {
 				}
 			}
 		}
-	case Indexed:
+	case RemovableIndexed:
 		size := tv.Size()
 		for i := 0; i < size; i++ {
 			if f.hasN(int64(i)) {
@@ -235,7 +235,7 @@ func (f Union) remove(value any) (out any, changed bool) {
 				changed = true
 			}
 		}
-	case Indexed:
+	case RemovableIndexed:
 		size := tv.Size()
 		for i := (size - 1); i >= 0; i-- {
 			if f.hasN(int64(i)) {
