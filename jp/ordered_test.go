@@ -64,6 +64,13 @@ func (o *ordered) SetValueAtIndex(index int, value any) {
 	}
 }
 
+func (o *ordered) RemoveValueAtIndex(index int) {
+	if 0 <= index && index < len(o.entries) {
+		copy(o.entries[index:], o.entries[index+1:])
+		o.entries = o.entries[:len(o.entries)-1]
+	}
+}
+
 type keyed struct {
 	ordered
 }

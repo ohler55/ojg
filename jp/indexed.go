@@ -13,6 +13,9 @@ type Indexed interface {
 	// SetValueAtIndex should set the value at the provided index.
 	SetValueAtIndex(index int, value any)
 
+	// RemoveValueAtIndex removes an item from the collection.
+	RemoveValueAtIndex(index int)
+
 	// Size should return the size for the collection.
 	Size() int
 }
