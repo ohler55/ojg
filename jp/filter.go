@@ -98,6 +98,24 @@ func (f Filter) remove(value any) (out any, changed bool) {
 				changed = true
 			}
 		}
+	case RemovableIndexed:
+		size := tv.Size()
+		for i := (size - 1); i >= 0; i-- {
+			v := tv.ValueAtIndex(i)
+			if f.Match(v) {
+				tv.RemoveValueAtIndex(i)
+				changed = true
+			}
+		}
+	case Keyed:
+		keys := tv.Keys()
+		for _, key := range keys {
+			v, _ := tv.ValueForKey(key)
+			if f.Match(v) {
+				tv.RemoveValueForKey(key)
+				changed = true
+			}
+		}
 	default:
 		rv := reflect.ValueOf(value)
 		switch rv.Kind() {
@@ -199,6 +217,27 @@ func (f Filter) removeOne(value any) (out any, changed bool) {
 					changed = true
 					break
 				}
+			}
+		}
+	case RemovableIndexed:
+		size := tv.Size()
+		for i := 0; i < size; i++ {
+			v := tv.ValueAtIndex(i)
+			if f.Match(v) {
+				tv.RemoveValueAtIndex(i)
+				changed = true
+				break
+			}
+		}
+	case Keyed:
+		keys := tv.Keys()
+		sort.Strings(keys)
+		for _, key := range keys {
+			v, _ := tv.ValueForKey(key)
+			if f.Match(v) {
+				tv.RemoveValueForKey(key)
+				changed = true
+				break
 			}
 		}
 	default:
