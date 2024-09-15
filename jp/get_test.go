@@ -1381,18 +1381,19 @@ func TestGetMultiFilter(t *testing.T) {
 	tt.Equal(t, "{c: 1}", pretty.SEN(x.First(data)))
 }
 
-// func TestGetDev(t *testing.T) {
-// 	data := map[string]any{
-// 		"a": []any{
-// 			map[string]any{
-// 				"b": []any{
-// 					map[string]any{"c": 1},
-// 					map[string]any{"c": 2},
-// 					map[string]any{"c": 3},
-// 				},
-// 			},
-// 		},
-// 	}
-// 	x := jp.MustParseString("a[?(@.b[*].c == 2)]")
-// 	fmt.Printf("*** result: %s\n", pretty.SEN(x.Get(data)))
-// }
+type Key string
+type X struct {
+	Y Key
+}
+
+func TestGetNonStringKey(t *testing.T) {
+	data := map[Key]*X{Key("a"): {Y: Key("xyz")}}
+	x := jp.MustParseString("$.a.y")
+	tt.Equal(t, "[xyz]", pretty.SEN(x.Get(data)))
+}
+
+func TestGetKeyMismatch(t *testing.T) {
+	data := map[int]*X{1: {Y: Key("xyz")}}
+	x := jp.MustParseString("$.a.y")
+	tt.Equal(t, "[]", pretty.SEN(x.Get(data)))
+}
