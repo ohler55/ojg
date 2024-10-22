@@ -96,6 +96,7 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@ has true)", expect: "(@ has true)"},
 		{src: "(@ exists true)", expect: "(@ exists true)"},
 		{src: "(@)", expect: "(@ exists true)"},
+		{src: "(@.x)", expect: "(@.x exists true)"},
 		{src: "@", expect: "(@ exists true)"},
 		{src: "(@ =~ /abc/)", expect: "(@ ~= /abc/)"},
 		{src: "(@ ~= /a\\/c/)", expect: "(@ ~= /a\\/c/)"},
