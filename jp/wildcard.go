@@ -330,3 +330,74 @@ func (f Wildcard) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 	}
 	return
 }
+
+// Walk follows the all elements in a map or slice like element.
+func (f Wildcard) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
+	path = append(path, nil)
+	data := nodes[len(nodes)-1]
+	nodes = append(nodes, nil)
+	switch tv := data.(type) {
+	case []any:
+		for i, v := range tv {
+			path[len(path)-1] = Nth(i)
+			nodes[len(nodes)-1] = v
+			if 0 < len(rest) {
+				rest[0].Walk(rest[1:], path, nodes, cb)
+			} else {
+				cb(path, nodes)
+			}
+		}
+	case map[string]any:
+		for k, v := range tv {
+			path[len(path)-1] = Child(k)
+			nodes[len(nodes)-1] = v
+			if 0 < len(rest) {
+				rest[0].Walk(rest[1:], path, nodes, cb)
+			} else {
+				cb(path, nodes)
+			}
+		}
+	case gen.Array:
+		for i, v := range tv {
+			path[len(path)-1] = Nth(i)
+			nodes[len(nodes)-1] = v
+			if 0 < len(rest) {
+				rest[0].Walk(rest[1:], path, nodes, cb)
+			} else {
+				cb(path, nodes)
+			}
+		}
+	case gen.Object:
+		for k, v := range tv {
+			path[len(path)-1] = Child(k)
+			nodes[len(nodes)-1] = v
+			if 0 < len(rest) {
+				rest[0].Walk(rest[1:], path, nodes, cb)
+			} else {
+				cb(path, nodes)
+			}
+		}
+	case Indexed:
+		for i := 0; i < tv.Size(); i++ {
+			path[len(path)-1] = Nth(i)
+			nodes[len(nodes)-1] = tv.ValueAtIndex(i)
+			if 0 < len(rest) {
+				rest[0].Walk(rest[1:], path, nodes, cb)
+			} else {
+				cb(path, nodes)
+			}
+		}
+	case Keyed:
+		for _, k := range tv.Keys() {
+			path[len(path)-1] = Child(k)
+			nodes[len(nodes)-1], _ = tv.ValueForKey(k)
+			if 0 < len(rest) {
+				rest[0].Walk(rest[1:], path, nodes, cb)
+			} else {
+				cb(path, nodes)
+			}
+		}
+	default:
+		// TBD reflect
+	}
+}

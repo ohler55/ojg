@@ -1,7 +1,4 @@
 
-- (x Expr) Walk(data any, cb func(path Expr, data, parent any))
- - walk tree the slow way and maintain a path like walk
-
 
 - parse
  - add discover option to find JSON or SEN in a string or file

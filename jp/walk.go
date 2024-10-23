@@ -72,70 +72,32 @@ top:
 	}
 }
 
-// Walk the matching elements in the data and call cb on the matches or follow
-// on to the matching if not the last fragment in an expression. The rest
-// argument is the rest of the expression after this fragment. The path is the
-// normalized path up to this point. Data is the data element to act on.
-func (x Expr) Walk(data any, cb func(path Expr, data, parent any)) {
+// Walk the matching elements in the data and call cb on the matches. The path
+// passed to the cb function is the normalized path to the current location
+// while the nodes are the chain of elements up to and including the current
+// element.
+func (x Expr) Walk(data any, cb func(path Expr, nodes []any)) {
 	if 0 < len(x) {
-		x[0].Walk(x[1:], Expr{}, data, cb)
+		x[0].Walk(x[1:], Expr{}, []any{data}, cb)
 	}
 }
 
-// Walk continues with the next in rest.
-func (f At) Walk(rest, path Expr, data any, cb func(path Expr, data, parent any)) {
-	if 0 < len(rest) {
-		rest[0].Walk(rest[1:], path, data, cb)
-	} else {
-		cb(path, data, data)
-	}
+// Walk each element in the tree of elements.
+func (f Descent) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
+	// TBD all like wildcard but rest remains the same, also call without f in rest
 }
 
-func (f Bracket) Walk(rest, path Expr, data any, cb func(path Expr, data, parent any)) {
+// Walk each element that matches the filter.
+func (f *Filter) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
 	// TBD
 }
 
-func (f Child) Walk(rest, path Expr, data any, cb func(path Expr, data, parent any)) {
+// Walk each element in a slice as defined by the Slice fragment.
+func (f Slice) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
 	// TBD
 }
 
-func (f Descent) Walk(rest, path Expr, data any, cb func(path Expr, data, parent any)) {
-	// TBD
-}
-
-func (f Filter) Walk(rest, path Expr, data any, cb func(path Expr, data, parent any)) {
-	// TBD
-}
-
-func (f Nth) Walk(rest, path Expr, data any, cb func(path Expr, data, parent any)) {
-	// TBD
-
-	// TBD if last ...
-	//     else cb
-
-	// TBD to delete in data, mod data at nth and update in parent (slice or map)
-	// how to deal with changes in index for unions and ranges?
-	//  keep data and just update parent each time.
-
-}
-
-// Walk continues with the next in rest.
-func (f Root) Walk(rest, path Expr, data any, cb func(path Expr, data, parent any)) {
-	if 0 < len(rest) {
-		rest[0].Walk(rest[1:], path, data, cb)
-	} else {
-		cb(path, data, data)
-	}
-}
-
-func (f Slice) Walk(rest, path Expr, data any, cb func(path Expr, data, parent any)) {
-	// TBD
-}
-
-func (f Union) Walk(rest, path Expr, data any, cb func(path Expr, data, parent any)) {
-	// TBD
-}
-
-func (f Wildcard) Walk(rest, path Expr, data any, cb func(path Expr, data, parent any)) {
+// Walk each element in a union.
+func (f Union) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
 	// TBD
 }
