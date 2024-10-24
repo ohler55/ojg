@@ -165,10 +165,10 @@ done:
 					}
 				}
 			default:
-				if v, has = wx.reflectGetChild(tv, key); has {
+				if v, has = reflectGetChild(tv, key); has {
 					if int(fi) == len(wx)-1 { // last one
 						if nv, changed := modifier(v); changed {
-							wx.reflectSetChild(tv, key, nv)
+							reflectSetChild(tv, key, nv)
 							if one && changed {
 								break done
 							}
@@ -237,10 +237,10 @@ done:
 				}
 			default:
 				var has bool
-				if v, has = wx.reflectGetNth(tv, i); has {
+				if v, has = reflectGetNth(tv, i); has {
 					if int(fi) == len(wx)-1 { // last one
 						if nv, changed := modifier(v); changed {
-							wx.reflectSetNth(tv, i, nv)
+							reflectSetNth(tv, i, nv)
 							if one && changed {
 								break done
 							}
@@ -384,7 +384,7 @@ done:
 						}
 					}
 				} else {
-					for _, v := range wx.reflectGetWild(tv) {
+					for _, v := range reflectGetWild(tv) {
 						stack = stackAddValue(stack, v)
 					}
 				}
@@ -439,10 +439,10 @@ done:
 						}
 					default:
 						var has bool
-						if v, has = wx.reflectGetChild(tv, tu); has {
+						if v, has = reflectGetChild(tv, tu); has {
 							if int(fi) == len(wx)-1 { // last one
 								if nv, changed := modifier(v); changed {
-									wx.reflectSetChild(tv, tu, nv)
+									reflectSetChild(tv, tu, nv)
 									if one && changed {
 										break done
 									}
@@ -530,7 +530,7 @@ done:
 							}
 						} else {
 							var has bool
-							if v, has = wx.reflectGetNth(tv, i); has {
+							if v, has = reflectGetNth(tv, i); has {
 								stack = stackAddValue(stack, v)
 							}
 						}
@@ -736,7 +736,7 @@ done:
 						}
 					}
 				} else {
-					for _, v = range wx.reflectGetSlice(tv, start, end, step) {
+					for _, v = range reflectGetSlice(tv, start, end, step) {
 						stack = stackAddValue(stack, v)
 					}
 				}

@@ -4,7 +4,6 @@ package jp_test
 
 import (
 	"bytes"
-	"fmt"
 	"sort"
 	"strings"
 	"testing"
@@ -60,11 +59,16 @@ var (
 		{path: "a", data: "{a:1 b:{c:3}}", xpath: "a", nodes: "1"},
 		{path: "b.c", data: "{a:1 b:{c:3}}", xpath: "b.c", nodes: "3"},
 		{path: "[0]", data: "[1 [2 3]]", xpath: "[0]", nodes: "1"},
+		{path: "[-1][-3]", data: "[1 [2 3]]", xpath: "", nodes: ""},
 		{path: "[1][1]", data: "[1 [2 3]]", xpath: "[1][1]", nodes: "3"},
 		{path: "*", data: "[1 [2 3]]", xpath: "[0] [1]", nodes: "1 [2 3]"},
 		{path: "*.*", data: "[1 [2 3]]", xpath: "[1][0] [1][1]", nodes: "2 3"},
 		{path: "*", data: "{a:1 b:{c:3}}", xpath: "a b", nodes: "1 {c:3}"},
 		{path: "*.*", data: "{a:1 b:{c:3}}", xpath: "b.c", nodes: "3"},
+		{path: "@", data: "{a:1}", xpath: "", nodes: "{a:1}"},
+		{path: "@.a", data: "{a:1 b:{c:3}}", xpath: "a", nodes: "1"},
+		{path: "$", data: "{a:1}", xpath: "", nodes: "{a:1}"},
+		{path: "$.a", data: "{a:1 b:{c:3}}", xpath: "a", nodes: "1"},
 	}
 )
 
@@ -100,10 +104,189 @@ func testExprWalk(t *testing.T, generic bool) {
 	}
 }
 
-func TestExprWalkDev(t *testing.T) {
-	data := sen.MustParse([]byte("{a:1 b:{c:3}}"))
-	x := jp.W()
+func TestExprWalkBracket(t *testing.T) {
+	opt := ojg.Options{Sort: true, Indent: 0}
+	data := sen.MustParse([]byte("{a:1}"))
+	x := jp.B()
+	var (
+		ps []byte
+		ns []byte
+	)
 	x.Walk(data, func(path jp.Expr, nodes []any) {
-		fmt.Printf("*** %s %v\n", path, nodes)
+		ps = append(ps, path.String()...)
+		ns = append(ns, bytes.ReplaceAll(sen.Bytes(nodes[len(nodes)-1], &opt), []byte{'\n'}, []byte{})...)
 	})
+	tt.Equal(t, "", string(ps))
+	tt.Equal(t, "{a:1}", string(ns))
+
+	x = jp.B().C("a")
+	ps = ps[:0]
+	ns = ns[:0]
+	x.Walk(data, func(path jp.Expr, nodes []any) {
+		ps = append(ps, path.String()...)
+		ns = append(ns, bytes.ReplaceAll(sen.Bytes(nodes[len(nodes)-1], &opt), []byte{'\n'}, []byte{})...)
+	})
+	tt.Equal(t, "a", string(ps))
+	tt.Equal(t, "1", string(ns))
+}
+
+func TestExprWalkIndexed(t *testing.T) {
+	opt := ojg.Options{Sort: true, Indent: 0}
+	data := &indexed{
+		ordered: ordered{
+			entries: []*entry{
+				{key: "a", value: 1},
+				{
+					key: "b",
+					value: &indexed{
+						ordered: ordered{
+							entries: []*entry{
+								{key: "b2", value: 2},
+								{key: "b3", value: 3},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for i, wd := range []*walkData{
+		{path: "[0]", xpath: "[0]", nodes: "1"},
+		{path: "[1][1]", xpath: "[1][1]", nodes: "3"},
+		{path: "[-1][-3]", xpath: "", nodes: ""},
+		{path: "*", xpath: "[0] [1]", nodes: "1 [{key:b2 value:2}{key:b3 value:3}]"},
+		{path: "*.*", xpath: "[1][0] [1][1]", nodes: "2 3"},
+	} {
+		x := jp.MustParseString(wd.path)
+		var (
+			ps []string
+			ns []string
+		)
+		x.Walk(data, func(path jp.Expr, nodes []any) {
+			ps = append(ps, path.String())
+			ns = append(ns, string(bytes.ReplaceAll(sen.Bytes(nodes[len(nodes)-1], &opt), []byte{'\n'}, []byte{})))
+		})
+		tt.Equal(t, wd.xpath, strings.Join(ps, " "), "%d: path mismatch for %s", i, wd.path)
+		tt.Equal(t, wd.nodes, strings.Join(ns, " "), "%d: nodes mismatch for %s", i, wd.path)
+	}
+}
+
+func TestExprWalkKeyed(t *testing.T) {
+	opt := ojg.Options{Sort: true, Indent: 0}
+	data := &keyed{
+		ordered: ordered{
+			entries: []*entry{
+				{key: "a", value: 1},
+				{
+					key: "b",
+					value: &keyed{
+						ordered: ordered{
+							entries: []*entry{
+								{key: "c", value: 3},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for i, wd := range []*walkData{
+		{path: "a", xpath: "a", nodes: "1"},
+		{path: "b.c", xpath: "b.c", nodes: "3"},
+		{path: "*", xpath: "a b", nodes: "1 [{key:c value:3}]"},
+		{path: "*.*", xpath: "b.c", nodes: "3"},
+	} {
+		x := jp.MustParseString(wd.path)
+		var (
+			ps []string
+			ns []string
+		)
+		x.Walk(data, func(path jp.Expr, nodes []any) {
+			ps = append(ps, path.String())
+			ns = append(ns, string(bytes.ReplaceAll(sen.Bytes(nodes[len(nodes)-1], &opt), []byte{'\n'}, []byte{})))
+		})
+		tt.Equal(t, wd.xpath, strings.Join(ps, " "), "%d: path mismatch for %s", i, wd.path)
+		tt.Equal(t, wd.nodes, strings.Join(ns, " "), "%d: nodes mismatch for %s", i, wd.path)
+	}
+}
+
+func TestExprWalkSliceReflect(t *testing.T) {
+	opt := ojg.Options{Sort: true, Indent: 0}
+	type AA []any
+	data := AA{1, AA{2, 3}}
+	for i, wd := range []*walkData{
+		{path: "[0]", xpath: "[0]", nodes: "1"},
+		{path: "[1][1]", xpath: "[1][1]", nodes: "3"},
+		{path: "[-1][-3]", xpath: "", nodes: ""},
+		{path: "*", xpath: "[0] [1]", nodes: "1 [2 3]"},
+		{path: "*.*", xpath: "[1][0] [1][1]", nodes: "2 3"},
+	} {
+		x := jp.MustParseString(wd.path)
+		var (
+			ps []string
+			ns []string
+		)
+		x.Walk(data, func(path jp.Expr, nodes []any) {
+			ps = append(ps, path.String())
+			ns = append(ns, string(bytes.ReplaceAll(sen.Bytes(nodes[len(nodes)-1], &opt), []byte{'\n'}, []byte{})))
+		})
+		tt.Equal(t, wd.xpath, strings.Join(ps, " "), "%d: path mismatch for %s", i, wd.path)
+		tt.Equal(t, wd.nodes, strings.Join(ns, " "), "%d: nodes mismatch for %s", i, wd.path)
+	}
+}
+
+func TestExprWalkStruct(t *testing.T) {
+	opt := ojg.Options{Sort: true, Indent: 0}
+	type B struct {
+		C int
+	}
+	type top struct {
+		A int
+		B B
+	}
+	data := &top{A: 1, B: B{C: 3}}
+	for i, wd := range []*walkData{
+		{path: "a", xpath: "a", nodes: "1"},
+		{path: "b.c", xpath: "b.c", nodes: "3"},
+		{path: "*", xpath: "A B", nodes: "1 {c:3}"},
+		{path: "*.*", xpath: "B.C", nodes: "3"},
+	} {
+		x := jp.MustParseString(wd.path)
+		var (
+			ps []string
+			ns []string
+		)
+		x.Walk(data, func(path jp.Expr, nodes []any) {
+			ps = append(ps, path.String())
+			ns = append(ns, string(bytes.ReplaceAll(sen.Bytes(nodes[len(nodes)-1], &opt), []byte{'\n'}, []byte{})))
+		})
+		tt.Equal(t, wd.xpath, strings.Join(ps, " "), "%d: path mismatch for %s", i, wd.path)
+		tt.Equal(t, wd.nodes, strings.Join(ns, " "), "%d: nodes mismatch for %s", i, wd.path)
+	}
+}
+
+func TestExprWalkMap(t *testing.T) {
+	opt := ojg.Options{Sort: true, Indent: 0}
+	type name string
+	type MM map[name]int
+
+	data := map[name]any{"b": MM{"c": 3}}
+	for i, wd := range []*walkData{
+		{path: "b", xpath: "b", nodes: "{c:3}"},
+		{path: "b.c", xpath: "b.c", nodes: "3"},
+		{path: "*", xpath: "b", nodes: "{c:3}"},
+		{path: "*.*", xpath: "b.c", nodes: "3"},
+	} {
+		x := jp.MustParseString(wd.path)
+		var (
+			ps []string
+			ns []string
+		)
+		x.Walk(data, func(path jp.Expr, nodes []any) {
+			ps = append(ps, path.String())
+			ns = append(ns, string(bytes.ReplaceAll(sen.Bytes(nodes[len(nodes)-1], &opt), []byte{'\n'}, []byte{})))
+		})
+		tt.Equal(t, wd.xpath, strings.Join(ps, " "), "%d: path mismatch for %s", i, wd.path)
+		tt.Equal(t, wd.nodes, strings.Join(ns, " "), "%d: nodes mismatch for %s", i, wd.path)
+	}
 }

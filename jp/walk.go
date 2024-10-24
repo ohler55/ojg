@@ -85,19 +85,23 @@ func (x Expr) Walk(data any, cb func(path Expr, nodes []any)) {
 // Walk each element in the tree of elements.
 func (f Descent) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
 	// TBD all like wildcard but rest remains the same, also call without f in rest
+	panic("Not implemented yet")
 }
 
 // Walk each element that matches the filter.
 func (f *Filter) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
 	// TBD
+	panic("Not implemented yet")
 }
 
 // Walk each element in a slice as defined by the Slice fragment.
 func (f Slice) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
 	// TBD
+	panic("Not implemented yet")
 }
 
 // Walk each element in a union.
 func (f Union) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
 	// TBD
+	panic("Not implemented yet")
 }

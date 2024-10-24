@@ -79,7 +79,7 @@ func (f Child) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 	case Keyed:
 		v, has = td.ValueForKey(string(f))
 	default:
-		v, has = pp.reflectGetChild(td, string(f))
+		v, has = reflectGetChild(td, string(f))
 	}
 	if has {
 		locs = locateNthChildHas(pp, f, v, rest, max)
@@ -101,7 +101,7 @@ func (f Child) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any
 	case Keyed:
 		value, has = tv.ValueForKey(string(f))
 	default:
-		// TBD reflection
+		value, has = reflectGetChild(tv, string(f))
 	}
 	if has {
 		path = append(path, f)

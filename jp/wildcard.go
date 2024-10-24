@@ -397,7 +397,62 @@ func (f Wildcard) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []
 				cb(path, nodes)
 			}
 		}
+	case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
+		int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
+		// A bypass to avoid using reflection in the default case.
 	default:
-		// TBD reflect
+		if rt := reflect.TypeOf(tv); rt != nil {
+			rd := reflect.ValueOf(tv)
+		rwalk:
+			switch rt.Kind() {
+			case reflect.Ptr:
+				rt = rt.Elem()
+				rd = rd.Elem()
+				goto rwalk
+			case reflect.Struct:
+				cnt := rd.NumField()
+				for i := 0; i < cnt; i++ {
+					rv := rd.Field(i)
+					if rv.CanInterface() {
+						path[len(path)-1] = Child(rt.Field(i).Name)
+						nodes[len(nodes)-1] = rv.Interface()
+						if 0 < len(rest) {
+							rest[0].Walk(rest[1:], path, nodes, cb)
+						} else {
+							cb(path, nodes)
+						}
+					}
+				}
+			case reflect.Slice, reflect.Array:
+				// Iterate in reverse order as that puts values on the stack in reverse.
+				for i := 0; i < rd.Len(); i++ {
+					rv := rd.Index(i)
+					if rv.CanInterface() {
+						path[len(path)-1] = Nth(i)
+						nodes[len(nodes)-1] = rv.Interface()
+						if 0 < len(rest) {
+							rest[0].Walk(rest[1:], path, nodes, cb)
+						} else {
+							cb(path, nodes)
+						}
+					}
+				}
+			case reflect.Map:
+				iter := rd.MapRange()
+				for iter.Next() {
+					rv := iter.Value()
+					kv := iter.Key()
+					if rv.CanInterface() {
+						path[len(path)-1] = Child(kv.String())
+						nodes[len(nodes)-1] = rv.Interface()
+						if 0 < len(rest) {
+							rest[0].Walk(rest[1:], path, nodes, cb)
+						} else {
+							cb(path, nodes)
+						}
+					}
+				}
+			}
+		}
 	}
 }

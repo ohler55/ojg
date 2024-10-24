@@ -127,7 +127,7 @@ func (f Nth) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			has = true
 		}
 	default:
-		v, has = pp.reflectGetNth(td, i)
+		v, has = reflectGetNth(td, i)
 	}
 	if has {
 		locs = locateNthChildHas(pp, Nth(i), v, rest, max)
@@ -166,7 +166,10 @@ func (f Nth) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any))
 		}
 		value = tv.ValueAtIndex(index)
 	default:
-		// TBD reflection
+		var has bool
+		if value, has = reflectGetNth(tv, index); !has {
+			return
+		}
 	}
 	if 0 < len(rest) {
 		rest[0].Walk(rest[1:], path, append(nodes, value), cb)

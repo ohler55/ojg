@@ -52,7 +52,7 @@ func (x Expr) Has(data any) bool {
 				v, has = tv[string(tf)]
 			default:
 				if !isNil(tv) {
-					v, has = x.reflectGetChild(tv, string(tf))
+					v, has = reflectGetChild(tv, string(tf))
 				}
 			}
 			if has {
@@ -103,7 +103,7 @@ func (x Expr) Has(data any) bool {
 				}
 			default:
 				if !isNil(tv) {
-					v, has = x.reflectGetNth(tv, i)
+					v, has = reflectGetNth(tv, i)
 				}
 			}
 			if has {
@@ -251,7 +251,7 @@ func (x Expr) Has(data any) bool {
 					}
 				}
 			default:
-				if v, has = x.reflectGetWildOne(tv); has {
+				if v, has = reflectGetWildOne(tv); has {
 					if int(fi) == len(x)-1 { // last one
 						return true
 					}
@@ -446,7 +446,7 @@ func (x Expr) Has(data any) bool {
 						case gen.Object:
 							v, has = tv[tu]
 						default:
-							v, has = x.reflectGetChild(tv, tu)
+							v, has = reflectGetChild(tv, tu)
 						}
 					case int64:
 						i := int(tu)
@@ -476,7 +476,7 @@ func (x Expr) Has(data any) bool {
 								has = true
 							}
 						default:
-							v, has = x.reflectGetNth(tv, i)
+							v, has = reflectGetNth(tv, i)
 						}
 					}
 					if has {
@@ -497,7 +497,7 @@ func (x Expr) Has(data any) bool {
 						case gen.Object:
 							v, has = tv[tu]
 						default:
-							v, has = x.reflectGetChild(tv, tu)
+							v, has = reflectGetChild(tv, tu)
 						}
 					case int64:
 						i := int(tu)
@@ -527,7 +527,7 @@ func (x Expr) Has(data any) bool {
 								has = true
 							}
 						default:
-							v, has = x.reflectGetNth(tv, i)
+							v, has = reflectGetNth(tv, i)
 						}
 					}
 					if has {
@@ -734,7 +734,7 @@ func (x Expr) Has(data any) bool {
 					}
 				}
 			default:
-				if v, has = x.reflectGetNth(tv, start); has {
+				if v, has = reflectGetNth(tv, start); has {
 					if int(fi) == len(x)-1 { // last one
 						return true
 					}

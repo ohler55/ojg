@@ -70,7 +70,7 @@ func (x Expr) Get(data any) (results []any) {
 			case Keyed:
 				v, has = tv.ValueForKey(string(tf))
 			default:
-				v, has = x.reflectGetChild(tv, string(tf))
+				v, has = reflectGetChild(tv, string(tf))
 			}
 			if has {
 				if int(fi) == len(x)-1 { // last one
@@ -119,7 +119,7 @@ func (x Expr) Get(data any) (results []any) {
 					has = true
 				}
 			default:
-				v, has = x.reflectGetNth(tv, i)
+				v, has = reflectGetNth(tv, i)
 			}
 			if has {
 				if int(fi) == len(x)-1 { // last one
@@ -262,7 +262,7 @@ func (x Expr) Get(data any) (results []any) {
 					}
 				}
 			default:
-				got := x.reflectGetWild(tv)
+				got := reflectGetWild(tv)
 				if int(fi) == len(x)-1 { // last one
 					for i := len(got) - 1; 0 <= i; i-- {
 						results = append(results, got[i])
@@ -433,7 +433,7 @@ func (x Expr) Get(data any) (results []any) {
 						}
 					}
 				default:
-					got := x.reflectGetWild(tv)
+					got := reflectGetWild(tv)
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
 					if int(fi) == len(x)-1 { // last one
@@ -495,7 +495,7 @@ func (x Expr) Get(data any) (results []any) {
 						case gen.Object:
 							v, has = tv[tu]
 						default:
-							v, has = x.reflectGetChild(tv, tu)
+							v, has = reflectGetChild(tv, tu)
 						}
 					case int64:
 						i := int(tu)
@@ -525,7 +525,7 @@ func (x Expr) Get(data any) (results []any) {
 								has = true
 							}
 						default:
-							v, has = x.reflectGetNth(tv, i)
+							v, has = reflectGetNth(tv, i)
 						}
 					}
 					if has {
@@ -546,7 +546,7 @@ func (x Expr) Get(data any) (results []any) {
 						case gen.Object:
 							v, has = tv[tu]
 						default:
-							v, has = x.reflectGetChild(tv, tu)
+							v, has = reflectGetChild(tv, tu)
 						}
 					case int64:
 						i := int(tu)
@@ -576,7 +576,7 @@ func (x Expr) Get(data any) (results []any) {
 								has = true
 							}
 						default:
-							v, has = x.reflectGetNth(tv, i)
+							v, has = reflectGetNth(tv, i)
 						}
 					}
 					if has {
@@ -801,7 +801,7 @@ func (x Expr) Get(data any) (results []any) {
 					}
 				}
 			default:
-				got := x.reflectGetSlice(tv, start, end, step)
+				got := reflectGetSlice(tv, start, end, step)
 				if int(fi) == len(x)-1 { // last one
 					for i := len(got) - 1; 0 <= i; i-- {
 						results = append(results, got[i])
@@ -902,7 +902,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 			case gen.Object:
 				v, has = tv[string(tf)]
 			default:
-				v, has = x.reflectGetChild(tv, string(tf))
+				v, has = reflectGetChild(tv, string(tf))
 			}
 			if has {
 				if int(fi) == len(x)-1 { // last one
@@ -950,7 +950,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 					has = true
 				}
 			default:
-				v, has = x.reflectGetNth(tv, i)
+				v, has = reflectGetNth(tv, i)
 			}
 			if has {
 				if int(fi) == len(x)-1 { // last one
@@ -1093,7 +1093,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 					}
 				}
 			default:
-				if v, has = x.reflectGetWildOne(tv); has {
+				if v, has = reflectGetWildOne(tv); has {
 					if int(fi) == len(x)-1 { // last one
 						return v, true
 					}
@@ -1253,7 +1253,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						}
 					}
 				default:
-					got := x.reflectGetWild(tv)
+					got := reflectGetWild(tv)
 					stack[len(stack)-1] = prev
 					stack = append(stack, di|descentFlag)
 					if int(fi) == len(x)-1 { // last one
@@ -1308,7 +1308,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						case gen.Object:
 							v, has = tv[tu]
 						default:
-							v, has = x.reflectGetChild(tv, tu)
+							v, has = reflectGetChild(tv, tu)
 						}
 					case int64:
 						i := int(tu)
@@ -1338,7 +1338,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 								has = true
 							}
 						default:
-							v, has = x.reflectGetNth(tv, i)
+							v, has = reflectGetNth(tv, i)
 						}
 					}
 					if has {
@@ -1359,7 +1359,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						case gen.Object:
 							v, has = tv[tu]
 						default:
-							v, has = x.reflectGetChild(tv, tu)
+							v, has = reflectGetChild(tv, tu)
 						}
 					case int64:
 						i := int(tu)
@@ -1389,7 +1389,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 								has = true
 							}
 						default:
-							v, has = x.reflectGetNth(tv, i)
+							v, has = reflectGetNth(tv, i)
 						}
 					}
 					if has {
@@ -1596,7 +1596,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 					}
 				}
 			default:
-				if v, has = x.reflectGetNth(tv, start); has {
+				if v, has = reflectGetNth(tv, start); has {
 					if int(fi) == len(x)-1 { // last one
 						return v, true
 					}
@@ -1638,7 +1638,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 	return nil, false
 }
 
-func (x Expr) reflectGetChild(data any, key string) (v any, has bool) {
+func reflectGetChild(data any, key string) (v any, has bool) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
@@ -1814,7 +1814,7 @@ func reflectGetStructFieldByNameOrJsonTag(structValue reflect.Value, key string)
 	return
 }
 
-func (x Expr) reflectGetNth(data any, i int) (v any, has bool) {
+func reflectGetNth(data any, i int) (v any, has bool) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
@@ -1836,7 +1836,7 @@ func (x Expr) reflectGetNth(data any, i int) (v any, has bool) {
 	return
 }
 
-func (x Expr) reflectGetWild(data any) (va []any) {
+func reflectGetWild(data any) (va []any) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
@@ -1865,7 +1865,7 @@ func (x Expr) reflectGetWild(data any) (va []any) {
 	return
 }
 
-func (x Expr) reflectGetWildOne(data any) (any, bool) {
+func reflectGetWildOne(data any) (any, bool) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
@@ -1894,7 +1894,7 @@ func (x Expr) reflectGetWildOne(data any) (any, bool) {
 	return nil, false
 }
 
-func (x Expr) reflectGetSlice(data any, start, end, step int) (va []any) {
+func reflectGetSlice(data any, start, end, step int) (va []any) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
