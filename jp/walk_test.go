@@ -69,6 +69,20 @@ var (
 		{path: "@.a", data: "{a:1 b:{c:3}}", xpath: "a", nodes: "1"},
 		{path: "$", data: "{a:1}", xpath: "", nodes: "{a:1}"},
 		{path: "$.a", data: "{a:1 b:{c:3}}", xpath: "a", nodes: "1"},
+		{path: "[1,'a']", data: "{a:1 b:{c:3}}", xpath: "a", nodes: "1"},
+		{path: "['b','a']['c',2]", data: "{a:1 b:{c:3}}", xpath: "b.c", nodes: "3"},
+		{path: "[0,'a']", data: "[1 [2 3]]", xpath: "[0]", nodes: "1"},
+		{path: "[1,2][0,4]", data: "[1 [2 3]]", xpath: "[1][0]", nodes: "2"},
+		{path: "[0:4:2]", data: "[1 2 3 4 5 6]", xpath: "[0] [2]", nodes: "1 3"},
+		{path: "[0:4:0]", data: "[1 2 3 4 5 6]", xpath: "", nodes: ""},
+		{path: "[4:0:-2]", data: "[1 2 3 4 5 6]", xpath: "[4] [2]", nodes: "5 3"},
+		{path: "[?(@.x == 1)]", data: "[{x:0}{x:1}]", xpath: "[1]", nodes: "{x:1}"},
+		{path: "[?(@.x == 1)].x", data: "[{x:0}{x:1}]", xpath: "[1].x", nodes: "1"},
+		{path: "[?(@.x == 1)]", data: "{y:{x:0} z:{x:1}}", xpath: "z", nodes: "{x:1}"},
+		{path: "[?(@.x == 1)].x", data: "{y:{x:0} z:{x:1}}", xpath: "z.x", nodes: "1"},
+		{path: "..", data: "{a:1 b:{c:3}}", xpath: "a b b.c", nodes: "1 {c:3} 3"},
+		{path: "..", data: "[1 [2 3]]", xpath: "[0] [1] [1][0] [1][1]", nodes: "1 [2 3] 2 3"},
+		{path: "a.b.c", data: "{a:1 b:{c:3}}", xpath: "", nodes: ""},
 	}
 )
 
@@ -97,8 +111,6 @@ func testExprWalk(t *testing.T, generic bool) {
 			ps = append(ps, path.String())
 			ns = append(ns, string(bytes.ReplaceAll(sen.Bytes(nodes[len(nodes)-1], &opt), []byte{'\n'}, []byte{})))
 		})
-		sort.Strings(ps)
-		sort.Strings(ns)
 		tt.Equal(t, wd.xpath, strings.Join(ps, " "), "%d: path mismatch for %s", i, wd.path)
 		tt.Equal(t, wd.nodes, strings.Join(ns, " "), "%d: nodes mismatch for %s", i, wd.path)
 	}
@@ -156,6 +168,10 @@ func TestExprWalkIndexed(t *testing.T) {
 		{path: "[-1][-3]", xpath: "", nodes: ""},
 		{path: "*", xpath: "[0] [1]", nodes: "1 [{key:b2 value:2}{key:b3 value:3}]"},
 		{path: "*.*", xpath: "[1][0] [1][1]", nodes: "2 3"},
+		{path: "[0:4:2]", xpath: "[0]", nodes: "1"},
+		{path: "[?(@ == 1)]", xpath: "[0]", nodes: "1"},
+		{path: "[?(@[0] == 2)][1]", xpath: "[1][1]", nodes: "3"},
+		{path: "..", xpath: "[0] [1] [1][0] [1][1]", nodes: "1 [{key:b2 value:2}{key:b3 value:3}] 2 3"},
 	} {
 		x := jp.MustParseString(wd.path)
 		var (
@@ -195,6 +211,9 @@ func TestExprWalkKeyed(t *testing.T) {
 		{path: "b.c", xpath: "b.c", nodes: "3"},
 		{path: "*", xpath: "a b", nodes: "1 [{key:c value:3}]"},
 		{path: "*.*", xpath: "b.c", nodes: "3"},
+		{path: "[?(@ == 1)]", xpath: "a", nodes: "1"},
+		{path: "[?(@.c == 3)].c", xpath: "b.c", nodes: "3"},
+		{path: "..", xpath: "a b b.c", nodes: "1 [{key:c value:3}] 3"},
 	} {
 		x := jp.MustParseString(wd.path)
 		var (
@@ -220,6 +239,10 @@ func TestExprWalkSliceReflect(t *testing.T) {
 		{path: "[-1][-3]", xpath: "", nodes: ""},
 		{path: "*", xpath: "[0] [1]", nodes: "1 [2 3]"},
 		{path: "*.*", xpath: "[1][0] [1][1]", nodes: "2 3"},
+		{path: "[0:4:2]", xpath: "[0]", nodes: "1"},
+		{path: "[?(@ == 1)]", xpath: "[0]", nodes: "1"},
+		{path: "[?(@[0] == 2)][1]", xpath: "[1][1]", nodes: "3"},
+		{path: "..", xpath: "[0] [1] [1][0] [1][1]", nodes: "1 [2 3] 2 3"},
 	} {
 		x := jp.MustParseString(wd.path)
 		var (
@@ -250,6 +273,7 @@ func TestExprWalkStruct(t *testing.T) {
 		{path: "b.c", xpath: "b.c", nodes: "3"},
 		{path: "*", xpath: "A B", nodes: "1 {c:3}"},
 		{path: "*.*", xpath: "B.C", nodes: "3"},
+		{path: "..", xpath: "A B B.C", nodes: "1 {c:3} 3"},
 	} {
 		x := jp.MustParseString(wd.path)
 		var (
@@ -270,12 +294,15 @@ func TestExprWalkMap(t *testing.T) {
 	type name string
 	type MM map[name]int
 
-	data := map[name]any{"b": MM{"c": 3}}
+	data := map[name]any{"a": 1, "b": MM{"c": 3}}
 	for i, wd := range []*walkData{
 		{path: "b", xpath: "b", nodes: "{c:3}"},
 		{path: "b.c", xpath: "b.c", nodes: "3"},
-		{path: "*", xpath: "b", nodes: "{c:3}"},
+		{path: "*", xpath: "a b", nodes: "1 {c:3}"},
 		{path: "*.*", xpath: "b.c", nodes: "3"},
+		{path: "[?(@.c == 3)]", xpath: "b", nodes: "{c:3}"},
+		{path: "[?(@.c == 3)].c", xpath: "b.c", nodes: "3"},
+		{path: "..", xpath: "a b b.c", nodes: "1 {c:3} 3"},
 	} {
 		x := jp.MustParseString(wd.path)
 		var (

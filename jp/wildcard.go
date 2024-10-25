@@ -333,6 +333,10 @@ func (f Wildcard) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 
 // Walk follows the all elements in a map or slice like element.
 func (f Wildcard) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
+	wildWalk(rest, path, nodes, cb, nil)
+}
+
+func wildWalk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any), f Frag) {
 	path = append(path, nil)
 	data := nodes[len(nodes)-1]
 	nodes = append(nodes, nil)
@@ -346,15 +350,29 @@ func (f Wildcard) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []
 			} else {
 				cb(path, nodes)
 			}
+			if f != nil {
+				f.Walk(rest, path, nodes, cb)
+			}
 		}
 	case map[string]any:
-		for k, v := range tv {
-			path[len(path)-1] = Child(k)
-			nodes[len(nodes)-1] = v
-			if 0 < len(rest) {
-				rest[0].Walk(rest[1:], path, nodes, cb)
-			} else {
-				cb(path, nodes)
+		if 0 < len(tv) {
+			keys := make([]string, 0, len(tv))
+			for k := range tv {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			for _, k := range keys {
+				v := tv[k]
+				path[len(path)-1] = Child(k)
+				nodes[len(nodes)-1] = v
+				if 0 < len(rest) {
+					rest[0].Walk(rest[1:], path, nodes, cb)
+				} else {
+					cb(path, nodes)
+				}
+				if f != nil {
+					f.Walk(rest, path, nodes, cb)
+				}
 			}
 		}
 	case gen.Array:
@@ -366,15 +384,29 @@ func (f Wildcard) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []
 			} else {
 				cb(path, nodes)
 			}
+			if f != nil {
+				f.Walk(rest, path, nodes, cb)
+			}
 		}
 	case gen.Object:
-		for k, v := range tv {
-			path[len(path)-1] = Child(k)
-			nodes[len(nodes)-1] = v
-			if 0 < len(rest) {
-				rest[0].Walk(rest[1:], path, nodes, cb)
-			} else {
-				cb(path, nodes)
+		if 0 < len(tv) {
+			keys := make([]string, 0, len(tv))
+			for k := range tv {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			for _, k := range keys {
+				v := tv[k]
+				path[len(path)-1] = Child(k)
+				nodes[len(nodes)-1] = v
+				if 0 < len(rest) {
+					rest[0].Walk(rest[1:], path, nodes, cb)
+				} else {
+					cb(path, nodes)
+				}
+				if f != nil {
+					f.Walk(rest, path, nodes, cb)
+				}
 			}
 		}
 	case Indexed:
@@ -386,15 +418,23 @@ func (f Wildcard) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []
 			} else {
 				cb(path, nodes)
 			}
+			if f != nil {
+				f.Walk(rest, path, nodes, cb)
+			}
 		}
 	case Keyed:
-		for _, k := range tv.Keys() {
+		keys := tv.Keys()
+		sort.Strings(keys)
+		for _, k := range keys {
 			path[len(path)-1] = Child(k)
 			nodes[len(nodes)-1], _ = tv.ValueForKey(k)
 			if 0 < len(rest) {
 				rest[0].Walk(rest[1:], path, nodes, cb)
 			} else {
 				cb(path, nodes)
+			}
+			if f != nil {
+				f.Walk(rest, path, nodes, cb)
 			}
 		}
 	case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
@@ -421,6 +461,9 @@ func (f Wildcard) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []
 						} else {
 							cb(path, nodes)
 						}
+						if f != nil {
+							f.Walk(rest, path, nodes, cb)
+						}
 					}
 				}
 			case reflect.Slice, reflect.Array:
@@ -435,13 +478,18 @@ func (f Wildcard) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []
 						} else {
 							cb(path, nodes)
 						}
+						if f != nil {
+							f.Walk(rest, path, nodes, cb)
+						}
 					}
 				}
 			case reflect.Map:
-				iter := rd.MapRange()
-				for iter.Next() {
-					rv := iter.Value()
-					kv := iter.Key()
+				keys := rd.MapKeys()
+				sort.Slice(keys, func(i, j int) bool {
+					return keys[i].String() < keys[j].String()
+				})
+				for _, kv := range keys {
+					rv := rd.MapIndex(kv)
 					if rv.CanInterface() {
 						path[len(path)-1] = Child(kv.String())
 						nodes[len(nodes)-1] = rv.Interface()
@@ -449,6 +497,9 @@ func (f Wildcard) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []
 							rest[0].Walk(rest[1:], path, nodes, cb)
 						} else {
 							cb(path, nodes)
+						}
+						if f != nil {
+							f.Walk(rest, path, nodes, cb)
 						}
 					}
 				}
