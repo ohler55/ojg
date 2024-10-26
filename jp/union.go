@@ -313,7 +313,7 @@ func (f Union) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			case gen.Object:
 				v, has = td[tu]
 			default:
-				v, has = pp.reflectGetChild(td, tu)
+				v, has = reflectGetChild(td, tu)
 			}
 			lf = Child(tu)
 		case int64:
@@ -344,7 +344,7 @@ func (f Union) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 					has = true
 				}
 			default:
-				v, has = pp.reflectGetNth(td, i)
+				v, has = reflectGetNth(td, i)
 			}
 			lf = Nth(i)
 		}
@@ -360,4 +360,16 @@ func (f Union) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 		}
 	}
 	return
+}
+
+// Walk each element in a union.
+func (f Union) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
+	for _, u := range f {
+		switch tu := u.(type) {
+		case int64:
+			Nth(tu).Walk(rest, path, nodes, cb)
+		case string:
+			Child(tu).Walk(rest, path, nodes, cb)
+		}
+	}
 }

@@ -79,10 +79,36 @@ func (f Child) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 	case Keyed:
 		v, has = td.ValueForKey(string(f))
 	default:
-		v, has = pp.reflectGetChild(td, string(f))
+		v, has = reflectGetChild(td, string(f))
 	}
 	if has {
 		locs = locateNthChildHas(pp, f, v, rest, max)
 	}
 	return
+}
+
+// Walk follows the matching element in a map or map like element.
+func (f Child) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
+	var (
+		value any
+		has   bool
+	)
+	switch tv := nodes[len(nodes)-1].(type) {
+	case map[string]any:
+		value, has = tv[string(f)]
+	case gen.Object:
+		value, has = tv[string(f)]
+	case Keyed:
+		value, has = tv.ValueForKey(string(f))
+	default:
+		value, has = reflectGetChild(tv, string(f))
+	}
+	if has {
+		path = append(path, f)
+		if 0 < len(rest) {
+			rest[0].Walk(rest[1:], path, append(nodes, value), cb)
+		} else {
+			cb(path, append(nodes, value))
+		}
+	}
 }

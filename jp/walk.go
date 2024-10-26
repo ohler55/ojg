@@ -71,3 +71,13 @@ top:
 		cb(path, data)
 	}
 }
+
+// Walk the matching elements in the data and call cb on the matches. The path
+// passed to the cb function is the normalized path to the current location
+// while the nodes are the chain of elements up to and including the current
+// element.
+func (x Expr) Walk(data any, cb func(path Expr, nodes []any)) {
+	if 0 < len(x) {
+		x[0].Walk(x[1:], Expr{}, []any{data}, cb)
+	}
+}

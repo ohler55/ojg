@@ -147,3 +147,8 @@ func (f Descent) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 	}
 	return
 }
+
+// Walk each element in the tree of elements.
+func (f Descent) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
+	wildWalk(rest, path, nodes, cb, f)
+}

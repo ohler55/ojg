@@ -127,10 +127,53 @@ func (f Nth) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			has = true
 		}
 	default:
-		v, has = pp.reflectGetNth(td, i)
+		v, has = reflectGetNth(td, i)
 	}
 	if has {
 		locs = locateNthChildHas(pp, Nth(i), v, rest, max)
 	}
 	return
+}
+
+// Walk follows the matching element in a slice or slice like element.
+func (f Nth) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
+	var value any
+	index := int(f)
+	path = append(path, f)
+	switch tv := nodes[len(nodes)-1].(type) {
+	case []any:
+		if index < 0 {
+			index += len(tv)
+		}
+		if index < 0 || len(tv) <= index {
+			return
+		}
+		value = tv[index]
+	case gen.Array:
+		if index < 0 {
+			index += len(tv)
+		}
+		if index < 0 || len(tv) <= index {
+			return
+		}
+		value = tv[index]
+	case Indexed:
+		if index < 0 {
+			index += tv.Size()
+		}
+		if index < 0 || tv.Size() <= index {
+			return
+		}
+		value = tv.ValueAtIndex(index)
+	default:
+		var has bool
+		if value, has = reflectGetNth(tv, index); !has {
+			return
+		}
+	}
+	if 0 < len(rest) {
+		rest[0].Walk(rest[1:], path, append(nodes, value), cb)
+	} else {
+		cb(path, append(nodes, value))
+	}
 }

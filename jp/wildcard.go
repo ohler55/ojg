@@ -330,3 +330,180 @@ func (f Wildcard) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 	}
 	return
 }
+
+// Walk follows the all elements in a map or slice like element.
+func (f Wildcard) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
+	wildWalk(rest, path, nodes, cb, nil)
+}
+
+func wildWalk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any), f Frag) {
+	path = append(path, nil)
+	data := nodes[len(nodes)-1]
+	nodes = append(nodes, nil)
+	switch tv := data.(type) {
+	case []any:
+		for i, v := range tv {
+			path[len(path)-1] = Nth(i)
+			nodes[len(nodes)-1] = v
+			if 0 < len(rest) {
+				rest[0].Walk(rest[1:], path, nodes, cb)
+			} else {
+				cb(path, nodes)
+			}
+			if f != nil {
+				f.Walk(rest, path, nodes, cb)
+			}
+		}
+	case map[string]any:
+		if 0 < len(tv) {
+			keys := make([]string, 0, len(tv))
+			for k := range tv {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			for _, k := range keys {
+				v := tv[k]
+				path[len(path)-1] = Child(k)
+				nodes[len(nodes)-1] = v
+				if 0 < len(rest) {
+					rest[0].Walk(rest[1:], path, nodes, cb)
+				} else {
+					cb(path, nodes)
+				}
+				if f != nil {
+					f.Walk(rest, path, nodes, cb)
+				}
+			}
+		}
+	case gen.Array:
+		for i, v := range tv {
+			path[len(path)-1] = Nth(i)
+			nodes[len(nodes)-1] = v
+			if 0 < len(rest) {
+				rest[0].Walk(rest[1:], path, nodes, cb)
+			} else {
+				cb(path, nodes)
+			}
+			if f != nil {
+				f.Walk(rest, path, nodes, cb)
+			}
+		}
+	case gen.Object:
+		if 0 < len(tv) {
+			keys := make([]string, 0, len(tv))
+			for k := range tv {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			for _, k := range keys {
+				v := tv[k]
+				path[len(path)-1] = Child(k)
+				nodes[len(nodes)-1] = v
+				if 0 < len(rest) {
+					rest[0].Walk(rest[1:], path, nodes, cb)
+				} else {
+					cb(path, nodes)
+				}
+				if f != nil {
+					f.Walk(rest, path, nodes, cb)
+				}
+			}
+		}
+	case Indexed:
+		for i := 0; i < tv.Size(); i++ {
+			path[len(path)-1] = Nth(i)
+			nodes[len(nodes)-1] = tv.ValueAtIndex(i)
+			if 0 < len(rest) {
+				rest[0].Walk(rest[1:], path, nodes, cb)
+			} else {
+				cb(path, nodes)
+			}
+			if f != nil {
+				f.Walk(rest, path, nodes, cb)
+			}
+		}
+	case Keyed:
+		keys := tv.Keys()
+		sort.Strings(keys)
+		for _, k := range keys {
+			path[len(path)-1] = Child(k)
+			nodes[len(nodes)-1], _ = tv.ValueForKey(k)
+			if 0 < len(rest) {
+				rest[0].Walk(rest[1:], path, nodes, cb)
+			} else {
+				cb(path, nodes)
+			}
+			if f != nil {
+				f.Walk(rest, path, nodes, cb)
+			}
+		}
+	case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
+		int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
+		// A bypass to avoid using reflection in the default case.
+	default:
+		if rt := reflect.TypeOf(tv); rt != nil {
+			rd := reflect.ValueOf(tv)
+		rwalk:
+			switch rt.Kind() {
+			case reflect.Ptr:
+				rt = rt.Elem()
+				rd = rd.Elem()
+				goto rwalk
+			case reflect.Struct:
+				cnt := rd.NumField()
+				for i := 0; i < cnt; i++ {
+					rv := rd.Field(i)
+					if rv.CanInterface() {
+						path[len(path)-1] = Child(rt.Field(i).Name)
+						nodes[len(nodes)-1] = rv.Interface()
+						if 0 < len(rest) {
+							rest[0].Walk(rest[1:], path, nodes, cb)
+						} else {
+							cb(path, nodes)
+						}
+						if f != nil {
+							f.Walk(rest, path, nodes, cb)
+						}
+					}
+				}
+			case reflect.Slice, reflect.Array:
+				// Iterate in reverse order as that puts values on the stack in reverse.
+				for i := 0; i < rd.Len(); i++ {
+					rv := rd.Index(i)
+					if rv.CanInterface() {
+						path[len(path)-1] = Nth(i)
+						nodes[len(nodes)-1] = rv.Interface()
+						if 0 < len(rest) {
+							rest[0].Walk(rest[1:], path, nodes, cb)
+						} else {
+							cb(path, nodes)
+						}
+						if f != nil {
+							f.Walk(rest, path, nodes, cb)
+						}
+					}
+				}
+			case reflect.Map:
+				keys := rd.MapKeys()
+				sort.Slice(keys, func(i, j int) bool {
+					return keys[i].String() < keys[j].String()
+				})
+				for _, kv := range keys {
+					rv := rd.MapIndex(kv)
+					if rv.CanInterface() {
+						path[len(path)-1] = Child(kv.String())
+						nodes[len(nodes)-1] = rv.Interface()
+						if 0 < len(rest) {
+							rest[0].Walk(rest[1:], path, nodes, cb)
+						} else {
+							cb(path, nodes)
+						}
+						if f != nil {
+							f.Walk(rest, path, nodes, cb)
+						}
+					}
+				}
+			}
+		}
+	}
+}

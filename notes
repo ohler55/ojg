@@ -1,5 +1,4 @@
 
- - @.foo without a comparison indicates existance
 
 - parse
  - add discover option to find JSON or SEN in a string or file

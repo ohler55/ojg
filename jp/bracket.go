@@ -18,3 +18,12 @@ func (f Bracket) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 	}
 	return
 }
+
+// Walk continues with the next in rest.
+func (f Bracket) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any)) {
+	if 0 < len(rest) {
+		rest[0].Walk(rest[1:], path, nodes, cb)
+	} else {
+		cb(path, nodes)
+	}
+}

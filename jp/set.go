@@ -244,11 +244,11 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 			default:
 				if int(fi) == len(x)-1 { // last one
 					if value != delFlag {
-						if x.reflectSetChild(tv, string(tf), value) && one {
+						if reflectSetChild(tv, string(tf), value) && one {
 							return nil
 						}
 					}
-				} else if v, has = x.reflectGetChild(tv, string(tf)); has {
+				} else if v, has = reflectGetChild(tv, string(tf)); has {
 					switch v.(type) {
 					case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 						bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
@@ -379,11 +379,11 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 				var has bool
 				if int(fi) == len(x)-1 { // last one
 					if value != delFlag {
-						if x.reflectSetNth(tv, i, value) && one {
+						if reflectSetNth(tv, i, value) && one {
 							return nil
 						}
 					}
-				} else if v, has = x.reflectGetNth(tv, i); has {
+				} else if v, has = reflectGetNth(tv, i); has {
 					switch v.(type) {
 					case bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64,
 						nil, gen.Bool, gen.Int, gen.Float, gen.String:
@@ -600,11 +600,11 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 				if int(fi) != len(x)-1 {
 					var va []any
 					if one {
-						if vv, has := x.reflectGetWildOne(tv); has {
+						if vv, has := reflectGetWildOne(tv); has {
 							va = []any{vv}
 						}
 					} else {
-						va = x.reflectGetWild(tv)
+						va = reflectGetWild(tv)
 					}
 					for _, v = range va {
 						switch v.(type) {
@@ -828,12 +828,12 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 						var has bool
 						if int(fi) == len(x)-1 { // last one
 							if value != delFlag {
-								if x.reflectSetChild(tv, tu, value) && one {
+								if reflectSetChild(tv, tu, value) && one {
 									return nil
 								}
 							}
 
-						} else if v, has = x.reflectGetChild(tv, tu); has {
+						} else if v, has = reflectGetChild(tv, tu); has {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
@@ -947,11 +947,11 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 						var has bool
 						if int(fi) == len(x)-1 { // last one
 							if value != delFlag {
-								if x.reflectSetNth(tv, i, value) && one {
+								if reflectSetNth(tv, i, value) && one {
 									return nil
 								}
 							}
-						} else if v, has = x.reflectGetNth(tv, i); has {
+						} else if v, has = reflectGetNth(tv, i); has {
 							switch v.(type) {
 							case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 								bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
@@ -1125,7 +1125,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 				}
 			default:
 				if int(fi) != len(x)-1 {
-					for _, v = range x.reflectGetSlice(tv, start, end, step) {
+					for _, v = range reflectGetSlice(tv, start, end, step) {
 						switch v.(type) {
 						case nil, gen.Bool, gen.Int, gen.Float, gen.String,
 							bool, string, float64, float32, int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64:
@@ -1163,7 +1163,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 	return nil
 }
 
-func (x Expr) reflectSetChild(data any, key string, v any) bool {
+func reflectSetChild(data any, key string, v any) bool {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
@@ -1199,7 +1199,7 @@ func (x Expr) reflectSetChild(data any, key string, v any) bool {
 	return false
 }
 
-func (x Expr) reflectSetNth(data any, i int, v any) bool {
+func reflectSetNth(data any, i int, v any) bool {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
