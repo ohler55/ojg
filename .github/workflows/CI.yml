@@ -42,10 +42,9 @@ jobs:
         go tool cover -func=cov.out
 
     - name: Coverage
-      uses: coverallsapp/github-action@v2
-      # env:
-      #   GO111MODULE: off
-      #   COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # run: |
-      #   go get github.com/mattn/goveralls
-      #   goveralls -coverprofile=cov.out -service=github
+      env:
+        GO111MODULE: off
+        COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        go get github.com/mattn/goveralls
+        goveralls -coverprofile=cov.out -service=github
