@@ -139,17 +139,18 @@ func (n *Number) AsNum() (num any) {
 		f := float64(n.I)
 		if 0 < n.Frac {
 			// Remove trailing zeros as they can cause precision loss due to
-			// the way go handles multiplication and division.
+			// the way go or the hardware handles multiplication and division.
 			for 1 < n.Div && n.Frac%10 == 0 {
 				n.Frac /= 10
 				n.Div /= 10
 			}
 			// A simple division loses precision yet dividing 1.0 by the
 			// divisor and then multiplying the fraction seems to solve the
-			// issue. As a guess it might have something to do with the
-			// operation being in base 2 with a special case for 1.0 divided
-			// by a number.
+			// issue on MacOS anyway. As a guess it might have something to do
+			// with the operation being in base 2 with a special case for 1.0
+			// divided by a number.
 			f += float64(n.Frac) * (1.0 / float64(n.Div))
+			// TBD fix for linux
 		}
 		if n.Neg {
 			f = -f
