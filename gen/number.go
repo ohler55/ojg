@@ -148,9 +148,7 @@ func (n *Number) AsNum() (num any) {
 				}
 				// A simple division loses precision yet dividing 1.0 by the
 				// divisor and then multiplying the fraction seems to solve the
-				// issue on MacOS anyway. As a guess it might have something to do
-				// with the operation being in base 2 with a special case for 1.0
-				// divided by a number.
+				// issue on arm64 anyway.
 				f += float64(n.Frac) * (1.0 / float64(n.Div))
 			}
 			if n.Neg {
