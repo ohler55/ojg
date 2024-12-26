@@ -43,7 +43,7 @@ jobs:
 
     - name: Coverage
       env:
-        GO111MODULE: off
+        #GO111MODULE: off
         COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         go get github.com/mattn/goveralls
