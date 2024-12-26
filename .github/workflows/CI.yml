@@ -12,12 +12,12 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@latest
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@latest
         with:
-          version: v1.51.2
+          version: v1.62.0
 
   test:
     strategy:
@@ -29,10 +29,10 @@ jobs:
 
     runs-on: ${{ matrix.os }}-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@latest
 
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@latest
       with:
         go-version: 1.23
 
@@ -47,4 +47,6 @@ jobs:
         COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         go install github.com/mattn/goveralls@latest
+        echo $GOPATH
+        ls $GOPATH/bin
         $GOPATH/bin/goveralls -coverprofile=cov.out -service=github
