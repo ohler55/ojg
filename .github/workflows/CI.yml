@@ -21,7 +21,7 @@ jobs:
 
   test:
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os:
           - ubuntu
