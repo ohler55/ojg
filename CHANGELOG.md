@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.25.1] - 2024-12-26
+### Fixed
+- Fixed precision loss with some fraction parsing.
+
 ## [1.25.0] - 2024-10-26
 ### Added
 - The `Expr.Walk()` function was added. Similar to jp.Walk but walk expression matches.

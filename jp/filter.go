@@ -49,7 +49,7 @@ func (f *Filter) String() string {
 
 // Append a fragment string representation of the fragment to the buffer
 // then returning the expanded buffer.
-func (f Filter) Append(buf []byte, _, _ bool) []byte {
+func (f *Filter) Append(buf []byte, _, _ bool) []byte {
 	buf = append(buf, "[?"...)
 	buf = f.Script.Append(buf)
 	buf = append(buf, ']')
@@ -57,7 +57,7 @@ func (f Filter) Append(buf []byte, _, _ bool) []byte {
 	return buf
 }
 
-func (f Filter) remove(value any) (out any, changed bool) {
+func (f *Filter) remove(value any) (out any, changed bool) {
 	out = value
 	switch tv := value.(type) {
 	case []any:
@@ -162,7 +162,7 @@ func (f Filter) remove(value any) (out any, changed bool) {
 	return
 }
 
-func (f Filter) removeOne(value any) (out any, changed bool) {
+func (f *Filter) removeOne(value any) (out any, changed bool) {
 	out = value
 	switch tv := value.(type) {
 	case []any:
@@ -290,7 +290,7 @@ func (f Filter) removeOne(value any) (out any, changed bool) {
 	return
 }
 
-func (f Filter) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
+func (f *Filter) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 	ns, lcs := f.evalWithRoot([]any{}, data, nil)
 	stack, _ := ns.([]any)
 	if len(rest) == 0 { // last one
