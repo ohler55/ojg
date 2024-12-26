@@ -47,6 +47,7 @@ jobs:
         COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         go install github.com/mattn/goveralls@latest
-        echo "go path:" $GOPATH
-        env
-        $GOPATH/bin/goveralls -coverprofile=cov.out -service=github
+        env | grep GO
+        ls $GOROOT
+        ls $GOROOT/bin
+        $GOROOT/bin/goveralls -coverprofile=cov.out -service=github
