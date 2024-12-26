@@ -1,7 +1,6 @@
 # [![{}j](assets/ojg_comet.svg)](https://github.com/ohler55/ojg)
 
 [![Build Status](https://github.com/ohler55/ojg/actions/workflows/CI.yml/badge.svg)](https://github.com/ohler55/ojg/actions)
-[![Coverage Status](https://coveralls.io/repos/github/ohler55/ojg/badge.svg?branch=master)](https://coveralls.io/github/ohler55/ojg?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ohler55/ojg)](https://goreportcard.com/report/github.com/ohler55/ojg)
 
 Optimized JSON for Go is a high performance parser with a variety of
