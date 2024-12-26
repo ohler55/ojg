@@ -5,6 +5,7 @@ package gen
 import (
 	"encoding/json"
 	"math"
+	"runtime"
 	"strconv"
 
 	"github.com/ohler55/ojg"
@@ -136,35 +137,38 @@ func (n *Number) AsNum() (num any) {
 			num = i
 		}
 	default:
-		// f := float64(n.I)
-		// if 0 < n.Frac {
-		// 	// Remove trailing zeros as they can cause precision loss due to
-		// 	// the way go or the hardware handles multiplication and division.
-		// 	for 1 < n.Div && n.Frac%10 == 0 {
-		// 		n.Frac /= 10
-		// 		n.Div /= 10
-		// 	}
-		// 	// A simple division loses precision yet dividing 1.0 by the
-		// 	// divisor and then multiplying the fraction seems to solve the
-		// 	// issue on MacOS anyway. As a guess it might have something to do
-		// 	// with the operation being in base 2 with a special case for 1.0
-		// 	// divided by a number.
-		// 	f += float64(n.Frac) * (1.0 / float64(n.Div))
-		// 	// TBD still need fix for linux
-		// }
-		// if n.Neg {
-		// 	f = -f
-		// }
-		// if 0 < n.Exp {
-		// 	x := int(n.Exp)
-		// 	if n.NegExp {
-		// 		x = -x
-		// 	}
-		// 	f *= math.Pow10(x)
-		// }
-		// num = f
-		n.FillBig()
-		num, _ = strconv.ParseFloat(string(n.BigBuf), 64)
+		if runtime.GOARCH == "arm64" {
+			f := float64(n.I)
+			if 0 < n.Frac {
+				// Remove trailing zeros as they can cause precision loss due to
+				// the way go or the hardware handles multiplication and division.
+				for 1 < n.Div && n.Frac%10 == 0 {
+					n.Frac /= 10
+					n.Div /= 10
+				}
+				// A simple division loses precision yet dividing 1.0 by the
+				// divisor and then multiplying the fraction seems to solve the
+				// issue on MacOS anyway. As a guess it might have something to do
+				// with the operation being in base 2 with a special case for 1.0
+				// divided by a number.
+				f += float64(n.Frac) * (1.0 / float64(n.Div))
+				// TBD still need fix for linux
+			}
+			if n.Neg {
+				f = -f
+			}
+			if 0 < n.Exp {
+				x := int(n.Exp)
+				if n.NegExp {
+					x = -x
+				}
+				f *= math.Pow10(x)
+			}
+			num = f
+		} else {
+			n.FillBig()
+			num, _ = strconv.ParseFloat(string(n.BigBuf), 64)
+		}
 	}
 	return
 }
