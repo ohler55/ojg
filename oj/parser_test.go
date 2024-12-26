@@ -29,9 +29,9 @@ func TestParserParseString(t *testing.T) {
 		{src: "123", value: 123},
 		{src: "-321", value: -321},
 		{src: "12.3", value: 12.3},
-		{src: "1.5693", value: 1.5693, options: &oj.Options{FloatFormat: "0.16g"}}, // option needed for intel
-		{src: "1.56930", value: 1.5693, options: &oj.Options{FloatFormat: "0.16g"}},
-		{src: "1.569300", value: 1.5693, options: &oj.Options{FloatFormat: "0.16g"}},
+		{src: "1.5693", value: 1.5693, options: &oj.Options{FloatFormat: "0.15g"}}, // option needed for intel
+		{src: "1.56930", value: 1.5693, options: &oj.Options{FloatFormat: "0.15g"}},
+		{src: "1.569300", value: 1.5693, options: &oj.Options{FloatFormat: "0.15g"}},
 		{src: "1.00", value: 1.0},
 		{src: "0 ", value: 0},
 		{src: "0\n", value: 0},

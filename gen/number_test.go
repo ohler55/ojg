@@ -17,6 +17,7 @@ func TestNumber(t *testing.T) {
 		{src: "123", value: 123},
 		{src: "-123", value: -123},
 		{src: "1.25", value: 1.25},
+		{src: "1.250", value: 1.25},
 		{src: "-1.25", value: -1.25},
 		{src: "1.25e3", value: 1.25e3},
 		{src: "-1.25e-1", value: -1.25e-1},
