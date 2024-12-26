@@ -42,7 +42,7 @@ jobs:
         go tool cover -func=cov.out
 
     - name: Coverage
-      uses: coverallsapp/github-action@v4
+      uses: coverallsapp/github-action@v2
       # env:
       #   COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # run: |
