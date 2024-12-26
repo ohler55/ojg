@@ -46,8 +46,6 @@ jobs:
         #GO111MODULE: off
         COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        go install github.com/mattn/goveralls@latest
+        go install -v github.com/mattn/goveralls@latest
         env | grep GO
-        ls $GOROOT
-        ls $GOROOT/bin
-        $GOROOT/bin/goveralls -coverprofile=cov.out -service=github
+        goveralls -coverprofile=cov.out -service=github
