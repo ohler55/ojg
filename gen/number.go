@@ -163,6 +163,8 @@ func (n *Number) AsNum() (num any) {
 			f *= math.Pow10(x)
 		}
 		num = f
+		n.FillBig()
+		num, _ = strconv.ParseFloat(string(n.BigBuf), 64)
 	}
 	return
 }
