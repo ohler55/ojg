@@ -152,7 +152,6 @@ func (n *Number) AsNum() (num any) {
 				// with the operation being in base 2 with a special case for 1.0
 				// divided by a number.
 				f += float64(n.Frac) * (1.0 / float64(n.Div))
-				// TBD still need fix for linux
 			}
 			if n.Neg {
 				f = -f
