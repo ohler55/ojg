@@ -13,7 +13,7 @@
       <g id="Graphic_3">
         <title>Text</title>
         <text transform="translate(5 -.3203125)" fill="white">
-          <tspan font-family="Helvetica" font-size="12" fill="white" x="0" y="15" xml:space="preserve">Coverage</tspan>
+          <tspan font-family="Helvetica" font-size="12" fill="#c0c0c0" x="0" y="15" xml:space="preserve">Coverage</tspan>
         </text>
       </g>
       <g id="Graphic_4">
