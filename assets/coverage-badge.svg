@@ -4,11 +4,11 @@
   <defs/>
   <g id="Canvas_1" fill="none" stroke-dasharray="none" stroke="none" fill-opacity="1" stroke-opacity="1">
     <title>Canvas 1</title>
-    <rect fill="white" x="0" y="0" width="128" height="20"/>
+    <rect fill="white" x="0" y="0" width="108" height="20"/>
     <g id="Canvas_1_Layer_1">
       <title>Layer 1</title>
       <g id="Graphic_2">
-        <rect x="0" y="0" width="80" height="20" fill="#404040"/>
+        <rect x="0" y="0" width="60" height="20" fill="#404040" rx="3" ry="3"/>
       </g>
       <g id="Graphic_3">
         <title>Text</title>
@@ -17,12 +17,12 @@
         </text>
       </g>
       <g id="Graphic_4">
-        <rect x="80" y="0" width="68" height="20" fill="#00a000"/>
+        <rect x="60" y="0" width="48" height="20" fill="#00c000" rx="3" ry="3"/>
       </g>
       <g id="Graphic_5">
         <title>Text</title>
         <text transform="translate(85 -.3203125)" fill="white">
-          <tspan font-family="Helvetica" font-size="14" fill="white" x="0" y="15" xml:space="preserve">99%</tspan>
+          <tspan font-family="Helvetica" font-size="14" fill="white" x="0" y="15" xml:space="preserve">100%</tspan>
         </text>
       </g>
     </g>
