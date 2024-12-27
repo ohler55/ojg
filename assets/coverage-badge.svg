@@ -4,22 +4,14 @@
   <g id="Canvas_1" fill="none" stroke-dasharray="none" stroke="none" fill-opacity="1" stroke-opacity="1">
     <rect fill="white" x="0" y="0" width="108" height="20"/>
     <g id="Canvas_1_Layer_1">
-      <g id="Graphic_2">
         <rect x="0" y="0" width="64" height="20" fill="#404040" rx="2" ry="2"/>
-      </g>
-      <g id="Graphic_3">
         <text transform="translate(5 -.3203125)" fill="white">
           <tspan font-family="Helvetica" font-size="12" fill="#d0d0d0" x="0" y="15" xml:space="preserve">Coverage</tspan>
         </text>
-      </g>
-      <g id="Graphic_4">
         <rect x="64" y="0" width="44" height="20" fill="#00c000" rx="2" ry="2"/>
-      </g>
-      <g id="Graphic_5">
         <text transform="translate(69 -.3203125)" fill="white">
           <tspan font-family="Helvetica" font-size="12" fill="white" x="0" y="15" xml:space="preserve"> 99%</tspan>
         </text>
-      </g>
     </g>
   </g>
 </svg>
