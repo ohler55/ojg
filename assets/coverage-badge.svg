@@ -4,7 +4,7 @@
   <g id="Canvas_1" fill="none" stroke-dasharray="none" stroke="none" fill-opacity="1" stroke-opacity="1">
     <rect fill="white" x="0" y="0" width="108" height="20"/>
       <rect x="0" y="0" width="64" height="20" fill="#404040" rx="2" ry="2"/>
-      <text font-family="Helvetica" font-size="12" fill="#d0d0d0" x="5" y="15" xml:space="preserve">Coverage</text>
+      <text font-family="Helvetica" font-size="12" fill="#d0d0d0" x="15" y="15" xml:space="preserve">Coverage</text>
       <rect x="64" y="0" width="44" height="20" fill="#00c000" rx="2" ry="2"/>
       <text font-family="Helvetica" font-size="12" fill="white" x="70" y="15" xml:space="preserve">99%</text>
   </g>
