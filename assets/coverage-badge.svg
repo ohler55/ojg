@@ -5,9 +5,7 @@
     <rect fill="white" x="0" y="0" width="108" height="20"/>
     <g id="Canvas_1_Layer_1">
       <rect x="0" y="0" width="64" height="20" fill="#404040" rx="2" ry="2"/>
-      <text transform="translate(5 0)" fill="white">
-        <tspan font-family="Helvetica" font-size="12" fill="#d0d0d0" x="0" y="15" xml:space="preserve">Coverage</tspan>
-      </text>
+      <text font-family="Helvetica" font-size="12" fill="#d0d0d0" x="0" y="15" xml:space="preserve">Coverage</text>
       <rect x="64" y="0" width="44" height="20" fill="#00c000" rx="2" ry="2"/>
       <text transform="translate(69 0)" fill="white">
         <tspan font-family="Helvetica" font-size="12" fill="white" x="0" y="15" xml:space="preserve">99%</tspan>
