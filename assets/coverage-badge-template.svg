@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 20" width="108" height="20">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 116 20" width="116" height="20">
   <rect x="0" y="0" width="64" height="20" fill="#404040" rx="2" ry="2"/>
   <text font-family="Helvetica" font-size="12" fill="#d0d0d0" x="5" y="15">Coverage</text>
-  <rect x="64" y="0" width="44" height="20" fill="#00c000" rx="2" ry="2"/>
-  <text font-family="Helvetica" font-size="12" fill="white" x="70" y="15">100.0%</text>
+  <rect x="64" y="0" width="52" height="20" fill="#888888" rx="2" ry="2"/>
+  <text font-family="Helvetica" font-size="12" fill="white" x="70" y="15">999%</text>
 </svg>
