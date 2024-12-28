@@ -1,8 +1,5 @@
 
 - coverage
- - badge
-  - orange #ffc000
-
  - option for fast vs accurate parse
   - doc should indicate 16th place variation and diff in performance for float parse
 

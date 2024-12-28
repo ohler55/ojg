@@ -4,5 +4,5 @@
   <rect x="0" y="0" width="64" height="20" fill="#404040" rx="2" ry="2"/>
   <text font-family="Helvetica" font-size="12" fill="#d0d0d0" x="5" y="15">Coverage</text>
   <rect x="64" y="0" width="44" height="20" fill="#00c000" rx="2" ry="2"/>
-  <text font-family="Helvetica" font-size="12" fill="white" x="70" y="15">99%</text>
+  <text font-family="Helvetica" font-size="12" fill="white" x="70" y="15">100.0%</text>
 </svg>
