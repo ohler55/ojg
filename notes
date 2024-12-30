@@ -1,8 +1,12 @@
 
-- coverage
- - option for fast vs accurate parse
-  - doc should indicate 16th place variation and diff in performance for float parse
+- option for fast vs accurate parse
+ - doc should indicate 16th place variation and diff in performance for float parse
 
+- jp [( scripts
+ - Get
+ + First
+ - Locate
+ - Walk
 
 - parse
  - add discover option to find JSON or SEN in a string or file

@@ -17,6 +17,7 @@ type xdata struct {
 }
 
 func TestParse(t *testing.T) {
+	jp.CompileScript = nil
 	for i, d := range []xdata{
 		{src: "@", expect: "@"},
 		{src: "$", expect: "$"},
@@ -87,7 +88,8 @@ func TestParse(t *testing.T) {
 		{src: "[]", err: "parse error at 2 in []"},
 		{src: "[**", err: "not terminated at 4 in [**"},
 		{src: "['x'z]", err: "invalid bracket fragment at 6 in ['x'z]"},
-		{src: "[(x)]", err: "scripts not implemented yet at 3 in [(x)]"},
+		{src: "[(x)]", err: "jp.CompileScript has not been set"},
+		{src: "[(x)", err: "not terminated at 3 in [(x)"},
 		{src: "[-x]", err: "expected a number at 4 in [-x]"},
 		{src: "[0x]", err: "invalid bracket fragment at 4 in [0x]"},
 		{src: "[x]", err: "parse error at 2 in [x]"},
