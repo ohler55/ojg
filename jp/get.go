@@ -836,6 +836,28 @@ func (x Expr) Get(data any) (results []any) {
 					stack = stack[:before]
 				}
 			}
+		case *Proc:
+			got := tf.Procedure.Get(prev)
+			if int(fi) == len(x)-1 { // last one
+				results = append(results, got...)
+			} else {
+				for i := len(got) - 1; 0 <= i; i-- {
+					v = got[i]
+					switch v.(type) {
+					case nil, bool, string, float64, float32, gen.Bool, gen.Float, gen.String,
+						int, uint, int8, int16, int32, int64, uint8, uint16, uint32, uint64, gen.Int:
+					case map[string]any, []any, gen.Object, gen.Array, Keyed, Indexed:
+						stack = append(stack, v)
+					default:
+						if rt := reflect.TypeOf(v); rt != nil {
+							switch rt.Kind() {
+							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								stack = append(stack, v)
+							}
+						}
+					}
+				}
+			}
 		}
 		if int(fi) < len(x)-1 {
 			if _, ok := stack[len(stack)-1].(fragIndex); !ok {

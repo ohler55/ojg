@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/ohler55/ojg/jp"
+	"github.com/ohler55/ojg/pretty"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -51,7 +52,49 @@ func compileMathProc(code []byte) jp.Procedure {
 	return &mp
 }
 
-func TestProc(t *testing.T) {
+type mapProc struct{}
+
+func (mp mapProc) Get(data any) (result []any) {
+	a, _ := data.([]any)
+	for i, v := range a {
+		result = append(result, map[string]any{"i": i, "v": v})
+	}
+	return
+}
+
+func (mp mapProc) First(data any) any {
+	if a, _ := data.([]any); 0 < len(a) {
+		return map[string]any{"i": 0, "v": a[0]}
+	}
+	return nil
+}
+
+func compileMapProc(code []byte) jp.Procedure {
+	return mapProc{}
+}
+
+type mapIntProc struct{}
+
+func (mip mapIntProc) Get(data any) (result []any) {
+	a, _ := data.([]int)
+	for i, v := range a {
+		result = append(result, map[string]int{"i": i, "v": v})
+	}
+	return
+}
+
+func (mip mapIntProc) First(data any) any {
+	if a, _ := data.([]int); 0 < len(a) {
+		return map[string]int{"i": 0, "v": a[0]}
+	}
+	return nil
+}
+
+func compileMapIntProc(code []byte) jp.Procedure {
+	return mapIntProc{}
+}
+
+func TestProcLast(t *testing.T) {
 	jp.CompileScript = compileMathProc
 
 	p := jp.MustNewProc([]byte("(+ 0 1)"))
@@ -64,5 +107,55 @@ func TestProc(t *testing.T) {
 	result := x.First(data)
 	tt.Equal(t, 5, result)
 
-	// TBD Get
+	got := x.Get(data)
+	tt.Equal(t, []any{5}, got)
+
+	locs := x.Locate(data, 1)
+	tt.Equal(t, "[[0]]", pretty.SEN(locs))
+
+	var buf []byte
+	x.Walk(data, func(path jp.Expr, nodes []any) {
+		buf = fmt.Appendf(buf, "%s : %v\n", path, nodes)
+	})
+	tt.Equal(t, "[0] : [[2 3 4] 5]\n", string(buf))
+}
+
+func TestProcNotLast(t *testing.T) {
+	jp.CompileScript = compileMapProc
+
+	x := jp.MustParseString("[(quux)].v")
+	tt.Equal(t, "[(quux)].v", x.String())
+
+	data := []any{2, 3, 4}
+	result := x.First(data)
+	tt.Equal(t, 2, result)
+
+	got := x.Get(data)
+	tt.Equal(t, []any{2, 3, 4}, got)
+
+	locs := x.Locate(data, 2)
+	tt.Equal(t, "[[0 v] [1 v]]", pretty.SEN(locs))
+
+	var buf []byte
+	x.Walk(data, func(path jp.Expr, nodes []any) {
+		buf = fmt.Appendf(buf, "%s : %v\n", path, nodes)
+	})
+	tt.Equal(t, `[0].v : [[2 3 4] map[i:0 v:2] 2]
+[1].v : [[2 3 4] map[i:1 v:3] 3]
+[2].v : [[2 3 4] map[i:2 v:4] 4]
+`, string(buf))
+}
+
+func TestProcNotLastReflect(t *testing.T) {
+	jp.CompileScript = compileMapIntProc
+
+	x := jp.MustParseString("[(quux)].v")
+	tt.Equal(t, "[(quux)].v", x.String())
+
+	data := []int{2, 3, 4}
+	result := x.First(data)
+	tt.Equal(t, 2, result)
+
+	got := x.Get(data)
+	tt.Equal(t, []any{2, 3, 4}, got)
 }

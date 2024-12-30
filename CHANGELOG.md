@@ -4,6 +4,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.26.0] - 2024-12-31
+### Added
+- Support for non-selector scripts added to the jp package. See the
+  `jp.CompileScript` variable along with the `Proc` fragment type and
+  `Procedure` interface.
+
 ## [1.25.1] - 2024-12-26
 ### Fixed
 - Fixed precision loss with some fraction parsing.
