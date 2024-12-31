@@ -213,7 +213,7 @@ func (p *parser) afterBracket() Frag {
 	case '?':
 		return p.readFilter()
 	case '(':
-		p.raise("scripts not implemented yet")
+		return p.readProc()
 	case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 		var i int
 		i, b = p.readInt(b)
@@ -559,6 +559,19 @@ func (p *parser) readFilter() *Filter {
 	p.pos++
 
 	return eq.Filter()
+}
+
+func (p *parser) readProc() *Proc {
+	end := bytes.Index(p.buf, []byte{')', ']'})
+	if end < 0 {
+		p.raise("not terminated")
+	}
+	end++
+	code := p.buf[p.pos-1 : end]
+	p.pos = end + 1
+
+	return MustNewProc(code)
+
 }
 
 // Reads an equation by reading the left value first and then seeing if there
