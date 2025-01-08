@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.26.1] - 2025-01-09
+### Fixed
+- Fixed issue #197 where nested array elements were not filled when using `oj.Match()`.
+
 ## [1.26.0] - 2024-12-31
 ### Added
 - Support for non-selector scripts added to the jp package. See the

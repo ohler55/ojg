@@ -104,7 +104,7 @@ func (h *MatchHandler) ArrayEnd() {
 	h.objArrayEnd()
 }
 
-// AddValue is called when a leave value is encountered.
+// AddValue is called when a leaf value is encountered.
 func (h *MatchHandler) AddValue(v any) {
 	if 0 < len(h.Stack) {
 		switch ts := h.Stack[len(h.Stack)-1].(type) {
@@ -142,7 +142,16 @@ func (h *MatchHandler) objArrayEnd() {
 				h.OnData(p, v)
 			}
 		}
+		v := h.Stack[len(h.Stack)-1]
 		h.Stack = h.Stack[:len(h.Stack)-1]
+		if 0 < len(h.Stack) {
+			switch ts := h.Stack[len(h.Stack)-1].(type) {
+			case map[string]any:
+				ts[string(h.Path[len(h.Path)-1].(Child))] = v
+			case []any:
+				ts[h.Path[len(h.Path)-1].(Nth)] = v
+			}
+		}
 	}
 	h.incNth()
 }

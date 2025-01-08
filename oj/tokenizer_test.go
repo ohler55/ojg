@@ -279,3 +279,10 @@ func TestTokenizerMany(t *testing.T) {
 		}
 	}
 }
+
+func TestTokenizerNesting(t *testing.T) {
+	var h testHandler
+	err := oj.TokenizeString(`[{"a":[1, 2]}]`, &h)
+	tt.Nil(t, err)
+	tt.Equal(t, "[ { a: [ 1 2 ] } ] ", string(h.buf))
+}
