@@ -3,9 +3,13 @@
 package jp_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/ohler55/ojg/jp"
+	"github.com/ohler55/ojg/oj"
+	"github.com/ohler55/ojg/pretty"
+	"github.com/ohler55/ojg/sen"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -53,4 +57,31 @@ func TestPathMatchDoubleRoot(t *testing.T) {
 
 func TestPathMatchSkipBracket(t *testing.T) {
 	tt.Equal(t, true, jp.PathMatch(jp.B().C("a"), jp.C("a")))
+}
+
+func TestMatchNestedMapArray(t *testing.T) {
+	var buf []byte
+	err := oj.Match([]byte(`[{"a":[1, 2]}]`), func(path jp.Expr, data any) {
+		buf = fmt.Appendf(buf, "%s: %s", path, pretty.SEN(data))
+	}, jp.MustParseString("$[*]"))
+	tt.Nil(t, err)
+	tt.Equal(t, "$[0]: {a: [1 2]}", string(buf))
+}
+
+func TestMatchNestedArrays(t *testing.T) {
+	var buf []byte
+	err := oj.Match([]byte(`[[[1, [2]]]]`), func(path jp.Expr, data any) {
+		buf = fmt.Appendf(buf, "%s: %s", path, sen.Bytes(data))
+	}, jp.MustParseString("$[*]"))
+	tt.Nil(t, err)
+	tt.Equal(t, "$[0]: [[1 [2]]]", string(buf))
+}
+
+func TestMatchNestedMap(t *testing.T) {
+	var buf []byte
+	err := oj.Match([]byte(`{"a": {"b": 1, "c": {"d": 2}}}`), func(path jp.Expr, data any) {
+		buf = fmt.Appendf(buf, "%s: %s", path, pretty.SEN(data))
+	}, jp.MustParseString("$[*]"))
+	tt.Nil(t, err)
+	tt.Equal(t, "$.a: {b: 1 c: {d: 2}}", string(buf))
 }
