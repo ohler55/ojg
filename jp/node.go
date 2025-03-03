@@ -95,7 +95,7 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 				if i < 0 {
 					i = len(tv) + i
 				}
-				if 0 < i && i < len(tv) {
+				if 0 <= i && i < len(tv) {
 					v = tv[i]
 					if fi == index(len(x))-1 { // last one
 						results = append(results, v)
