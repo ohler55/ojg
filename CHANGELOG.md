@@ -4,6 +4,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.26.2] - 2025-03-09
+### Fixed
+- Index on node get fixed.
+### Changed
+- Updated to go v1.24
+
 ## [1.26.1] - 2025-01-09
 ### Fixed
 - Fixed issue #197 where nested array elements were not filled when using `oj.Match()`.

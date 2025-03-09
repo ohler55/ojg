@@ -326,7 +326,7 @@ func (p *parser) readNum(b byte) any {
 	default:
 		i, err := strconv.ParseInt(string(num), 10, 64)
 		if err != nil {
-			p.raise(err.Error())
+			p.raise("%s", err)
 		}
 		return i
 	}
@@ -541,7 +541,7 @@ out:
 	}
 	rx, err := regexp.Compile(string(p.buf[start : p.pos-1]))
 	if err != nil {
-		p.raise(err.Error())
+		p.raise("%s", err)
 	}
 	return rx
 }
