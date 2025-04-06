@@ -65,7 +65,7 @@ func equalVals(v0, v1 any) (eq bool) {
 		eq = v0 == a && ok
 	case time.Time:
 		tm, _ := v1.(time.Time)
-		eq = tm == t0
+		eq = tm.Equal(t0)
 	case []any:
 		if t1, ok := v1.([]any); ok && len(t0) == len(t1) {
 			eq = true

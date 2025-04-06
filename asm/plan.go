@@ -29,7 +29,7 @@ func NewPlan(plan []any) *Plan {
 		}
 		p.Args = plan[1:]
 	}
-	if p.Fn.Eval == nil {
+	if p.Eval == nil {
 		p.Fn = asmFn
 		p.Args = plan
 	}

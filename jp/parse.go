@@ -260,10 +260,7 @@ func (p *parser) readInt(b byte) (int, byte) {
 	}
 	start := p.pos
 	var i int
-	for {
-		if b < '0' || '9' < b {
-			break
-		}
+	for '0' <= b && b <= '9' {
 		i = i*10 + int(b-'0')
 		if len(p.buf) <= p.pos {
 			break
