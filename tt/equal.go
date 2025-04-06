@@ -91,7 +91,7 @@ func valuesEqual(expect, actual any) (eq bool) {
 		*/
 	case time.Time:
 		tm, _ := actual.(time.Time)
-		eq = tm == te
+		eq = tm.Equal(te)
 	case gen.Time:
 		ta, _ := actual.(gen.Time)
 		eq = ta == te

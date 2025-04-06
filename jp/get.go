@@ -1730,10 +1730,7 @@ func reflectGetStructFieldByNameOrJsonTag(structValue reflect.Value, key string)
 		tagValue := f.Tag.Get("json")
 		jsonKey, _, _ := strings.Cut(tagValue, ",")
 		jsonKey = strings.Trim(jsonKey, " ")
-		if strings.EqualFold(jsonKey, key) {
-			return true
-		}
-		return false
+		return strings.EqualFold(jsonKey, key)
 	}
 
 	type fieldScan struct {

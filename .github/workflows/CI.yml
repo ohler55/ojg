@@ -15,9 +15,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v4
-        with:
-          version: v1.64
+        uses: golangci/golangci-lint-action@v7
 
   test:
     strategy:

@@ -880,9 +880,7 @@ func TestSetKeyedIndexedReflect(t *testing.T) {
 		},
 	} {
 		x := jp.MustParseString(d.src)
-		var err error
-
-		err = x.Set(d.data, d.value)
+		err := x.Set(d.data, d.value)
 		if d.err {
 			tt.NotNil(t, err, "%s", d.src)
 		} else {
@@ -896,7 +894,7 @@ func TestSetMapPtrNil(t *testing.T) {
 	data := map[string]any{
 		"a": nil,
 	}
-	jp.C("a").Set(&data, nil)
+	_ = jp.C("a").Set(&data, nil)
 	tt.Nil(t, data["a"])
 }
 
@@ -905,6 +903,6 @@ func TestSetStructPtrNil(t *testing.T) {
 		B any
 	}
 	data := A{B: 1}
-	jp.C("b").Set(&data, nil)
+	_ = jp.C("b").Set(&data, nil)
 	tt.Nil(t, data.B)
 }
