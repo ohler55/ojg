@@ -225,7 +225,7 @@ func reflectGenStruct(rv reflect.Value, opt *Options) gen.Node {
 	}
 	for i := rv.NumField() - 1; 0 <= i; i-- {
 		name := []byte(t.Field(i).Name)
-		if len(name) == 0 || 'a' <= name[0] {
+		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
 			// not a public field
 			continue
 		}

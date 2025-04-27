@@ -96,7 +96,7 @@ func buildTagFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
+		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
 			continue
 		}
 		var fx byte
@@ -149,7 +149,7 @@ func buildExactFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
+		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
 			continue
 		}
 		switch {
@@ -180,7 +180,7 @@ func buildLowFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
+		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
 			continue
 		}
 		if f.Anonymous && nested {

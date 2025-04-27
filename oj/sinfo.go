@@ -88,7 +88,7 @@ func buildTagFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (fa 
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
+		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
 			continue
 		}
 		if f.Anonymous && !out {
@@ -141,7 +141,7 @@ func buildExactFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (f
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
+		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
 			continue
 		}
 		if f.Anonymous && !out {
@@ -169,7 +169,7 @@ func buildLowFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (fa 
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
 		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] {
+		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
 			continue
 		}
 		if f.Anonymous && !out {
