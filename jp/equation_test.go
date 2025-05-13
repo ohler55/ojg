@@ -96,3 +96,24 @@ func TestParseEquation(t *testing.T) {
 	eq := jp.MustParseEquation("!(@.text ~= /(?i)notexpected/)")
 	tt.Equal(t, "!(@.text ~= /(?i)notexpected/)", eq.String())
 }
+
+func TestEquationUnary(t *testing.T) {
+	jp.RegisterUnaryFunction("double", false, func(v any) any {
+		return v.(int64) * 2
+	})
+	jp.RegisterUnaryFunction("triple", false, func(v any) any {
+		return v.(int64) * 3
+	})
+	eq := jp.MustParseEquation("(double(@.x) < triple(@.y))")
+	s := eq.Script()
+
+	data := []any{
+		map[string]any{"x": 2, "y": 1},
+		map[string]any{"x": 2, "y": 2},
+	}
+
+	stack, _ := s.Eval([]any{}, data).([]any)
+	tt.Equal(t, 1, len(stack))
+	tt.Equal(t, 2, jp.MustParseString("[0].x").First(stack))
+	tt.Equal(t, 2, jp.MustParseString("[0].y").First(stack))
+}
