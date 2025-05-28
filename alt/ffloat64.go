@@ -41,20 +41,20 @@ func valFloat64NotEmptyAsString(fi *finfo, rv reflect.Value, addr uintptr) (any,
 }
 
 func ivalFloat64(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	return rv.FieldByIndex(fi.index).Interface().(float64), nilValue, false
+	return rv.FieldByIndex(fi.index).Float(), nilValue, false
 }
 
 func ivalFloat64AsString(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	return strconv.FormatFloat(rv.FieldByIndex(fi.index).Interface().(float64), 'g', -1, 64), nilValue, false
+	return strconv.FormatFloat(rv.FieldByIndex(fi.index).Float(), 'g', -1, 64), nilValue, false
 }
 
 func ivalFloat64NotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	v := rv.FieldByIndex(fi.index).Interface().(float64)
+	v := rv.FieldByIndex(fi.index).Float()
 	return v, nilValue, v == 0.0
 }
 
 func ivalFloat64NotEmptyAsString(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	v := rv.FieldByIndex(fi.index).Interface().(float64)
+	v := rv.FieldByIndex(fi.index).Float()
 	if v == 0.0 {
 		return nil, nilValue, true
 	}
