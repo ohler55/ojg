@@ -42,23 +42,23 @@ func valBoolNotEmptyAsString(fi *finfo, rv reflect.Value, addr uintptr) (any, re
 }
 
 func ivalBool(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	return rv.FieldByIndex(fi.index).Interface(), nilValue, false
+	return rv.FieldByIndex(fi.index).Bool(), nilValue, false
 }
 
 func ivalBoolAsString(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	if rv.FieldByIndex(fi.index).Interface().(bool) {
+	if rv.FieldByIndex(fi.index).Bool() {
 		return "true", nilValue, false
 	}
 	return "false", nilValue, false
 }
 
 func ivalBoolNotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	v := rv.FieldByIndex(fi.index).Interface().(bool)
+	v := rv.FieldByIndex(fi.index).Bool()
 	return v, nilValue, !v
 }
 
 func ivalBoolNotEmptyAsString(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	if rv.FieldByIndex(fi.index).Interface().(bool) {
+	if rv.FieldByIndex(fi.index).Bool() {
 		return "true", nilValue, false
 	}
 	return "false", nilValue, true

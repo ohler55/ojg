@@ -41,22 +41,22 @@ func valUint16NotEmptyAsString(fi *finfo, rv reflect.Value, addr uintptr) (any, 
 }
 
 func ivalUint16(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	return rv.FieldByIndex(fi.index).Interface().(uint16), nilValue, false
+	return rv.FieldByIndex(fi.index).Uint(), nilValue, false
 }
 
 func ivalUint16AsString(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	return strconv.FormatUint(uint64(rv.FieldByIndex(fi.index).Interface().(uint16)), 10), nilValue, false
+	return strconv.FormatUint(rv.FieldByIndex(fi.index).Uint(), 10), nilValue, false
 }
 
 func ivalUint16NotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	v := rv.FieldByIndex(fi.index).Interface().(uint16)
+	v := rv.FieldByIndex(fi.index).Uint()
 	return v, nilValue, v == 0
 }
 
 func ivalUint16NotEmptyAsString(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	v := rv.FieldByIndex(fi.index).Interface().(uint16)
+	v := rv.FieldByIndex(fi.index).Uint()
 	if v == 0 {
 		return nil, nilValue, true
 	}
-	return strconv.FormatUint(uint64(v), 10), nilValue, false
+	return strconv.FormatUint(v, 10), nilValue, false
 }

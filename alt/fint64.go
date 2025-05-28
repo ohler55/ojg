@@ -41,20 +41,20 @@ func valInt64NotEmptyAsString(fi *finfo, rv reflect.Value, addr uintptr) (any, r
 }
 
 func ivalInt64(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	return rv.FieldByIndex(fi.index).Interface().(int64), nilValue, false
+	return rv.FieldByIndex(fi.index).Int(), nilValue, false
 }
 
 func ivalInt64AsString(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	return strconv.FormatInt(rv.FieldByIndex(fi.index).Interface().(int64), 10), nilValue, false
+	return strconv.FormatInt(rv.FieldByIndex(fi.index).Int(), 10), nilValue, false
 }
 
 func ivalInt64NotEmpty(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	v := rv.FieldByIndex(fi.index).Interface().(int64)
+	v := rv.FieldByIndex(fi.index).Int()
 	return v, nilValue, v == 0
 }
 
 func ivalInt64NotEmptyAsString(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
-	v := rv.FieldByIndex(fi.index).Interface().(int64)
+	v := rv.FieldByIndex(fi.index).Int()
 	if v == 0 {
 		return nil, nilValue, true
 	}
