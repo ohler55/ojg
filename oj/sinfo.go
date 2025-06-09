@@ -91,7 +91,7 @@ func buildTagFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (fa 
 		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
 			continue
 		}
-		if f.Anonymous && !out {
+		if f.Anonymous && !out && f.Type.Kind() != reflect.Interface {
 			if f.Type.Kind() == reflect.Ptr {
 				for _, fi := range buildTagFields(f.Type.Elem(), out, pretty, embedded, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
@@ -145,7 +145,7 @@ func buildExactFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (f
 		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
 			continue
 		}
-		if f.Anonymous && !out {
+		if f.Anonymous && !out && f.Type.Kind() != reflect.Interface {
 			if f.Type.Kind() == reflect.Ptr {
 				for _, fi := range buildExactFields(f.Type.Elem(), out, pretty, embedded, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
@@ -173,7 +173,7 @@ func buildLowFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (fa 
 		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
 			continue
 		}
-		if f.Anonymous && !out {
+		if f.Anonymous && !out && f.Type.Kind() != reflect.Interface {
 			if f.Type.Kind() == reflect.Ptr {
 				for _, fi := range buildLowFields(f.Type.Elem(), out, pretty, embedded, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)

@@ -1075,10 +1075,25 @@ func TestWriteOmitemptyDecoration(t *testing.T) {
 	tt.Equal(t, `{"a":null,"c":null}`, string(j))
 }
 
+type A interface {
+}
+
+type B struct {
+	A
+}
+
+func TestWriteAnonInterface(t *testing.T) {
+	j, err := oj.Marshal(&B{})
+	tt.Nil(t, err)
+	tt.Equal(t, `{"A":null}`, string(j))
+}
+
 // func TestWriteDev(t *testing.T) {
-// 	var wd WithDec
+// 	b := B{}
+// 	b.A = 7
 
-// 	j, err := oj.Marshal(wd, ojg.GoOptions)
+// 	j, err := oj.Marshal(&b)
+// 	tt.Nil(t, err)
 
-// 	fmt.Printf("%s %s\n", err, j)
+// 	fmt.Printf("%s - %s\n", err, j)
 // }

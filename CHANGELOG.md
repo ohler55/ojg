@@ -7,6 +7,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ## [1.26.7] - unreleased
 ### Fixed
 - Fixed then bleed over of omitempty in struct tags. Issue #205.
+- Fixed encoding anonymous interface in structs. Issue #115
 
 ## [1.26.6] - 2025-05-27
 ### Fixed
