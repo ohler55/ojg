@@ -107,6 +107,7 @@ func buildTagFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (fa 
 			}
 		} else {
 			asString := false
+			omit := omitEmpty
 			key := f.Name
 			if tag, ok := f.Tag.Lookup("json"); ok && 0 < len(tag) {
 				parts := strings.Split(tag, ",")
@@ -125,13 +126,13 @@ func buildTagFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (fa 
 				for _, p := range parts[1:] {
 					switch p {
 					case "omitempty":
-						omitEmpty = true
+						omit = true
 					case "string":
 						asString = true
 					}
 				}
 			}
-			fa = append(fa, newFinfo(&f, key, omitEmpty, asString, pretty, embedded))
+			fa = append(fa, newFinfo(&f, key, omit, asString, pretty, embedded))
 		}
 	}
 	return

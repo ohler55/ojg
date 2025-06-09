@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.26.7] - unreleased
+### Fixed
+- Fixed then bleed over of omitempty in struct tags. Issue #205.
+
 ## [1.26.6] - 2025-05-27
 ### Fixed
 - Types derived from core type such as `type Quux int` now alt.Decompose correctly.
