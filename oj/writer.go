@@ -484,10 +484,12 @@ func (wr *Writer) appendStruct(rv reflect.Value, depth int, si *sinfo) {
 	fields := si.fields[wr.findex]
 	wr.buf = append(wr.buf, '{')
 	empty := true
-	var v any
 	indented := false
-	var is string
-	var cs string
+	var (
+		v  any
+		is string
+		cs string
+	)
 	if wr.Tab {
 		x := depth + 1
 		if len(tabs) < x {

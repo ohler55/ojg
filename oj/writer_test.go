@@ -1061,9 +1061,39 @@ func BenchmarkMarshalMap(b *testing.B) {
 	}
 }
 
-func TestWriteDev(t *testing.T) {
-	data := map[string]any{"x": "", "y": []any{}, "z": map[string]any{}}
-	opt := oj.Options{OmitEmpty: true}
-	s := oj.JSON(data, &opt)
-	tt.Equal(t, `{}`, s)
+type WithDec struct {
+	A any `json:"a"`
+	B any `json:"b,omitempty"`
+	C any `json:"c"`
 }
+
+func TestWriteOmitemptyDecoration(t *testing.T) {
+	var wd WithDec
+
+	j, err := oj.Marshal(wd, ojg.GoOptions)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"a":null,"c":null}`, string(j))
+}
+
+type A interface {
+}
+
+type B struct {
+	A
+}
+
+func TestWriteAnonInterface(t *testing.T) {
+	j, err := oj.Marshal(&B{})
+	tt.Nil(t, err)
+	tt.Equal(t, `{"A":null}`, string(j))
+}
+
+// func TestWriteDev(t *testing.T) {
+// 	b := B{}
+// 	b.A = 7
+
+// 	j, err := oj.Marshal(&b)
+// 	tt.Nil(t, err)
+
+// 	fmt.Printf("%s - %s\n", err, j)
+// }
