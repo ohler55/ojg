@@ -186,9 +186,6 @@ func (s *Script) Eval(stack, data any) any {
 }
 
 func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
-	// Checking the type each iteration adds 2.5% but allows code not to be
-	// duplicated and not to call a separate function. Using just one more
-	// function call for each iteration adds 6.5%.
 	var (
 		dlen    int
 		locKeys Expr
@@ -241,6 +238,7 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 	}
 	sstack := make([]any, len(s.template))
 	var v any
+
 	for vi := dlen - 1; 0 <= vi; vi-- {
 		switch td := data.(type) {
 		case []any:
@@ -252,7 +250,58 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 		}
 		// Eval script for each member of the list.
 		copy(sstack, s.template)
-		var multi bool
+		// match, multi := s.evalStackWithData(sstack, v, root)
+		// if multi {
+		// 	max := 1
+		// 	for _, v := range sstack {
+		// 		if mv, ok := v.(multivalue); ok {
+		// 			max *= len(mv)
+		// 		}
+		// 	}
+		// 	for mi := 0; mi < max; mi++ {
+		// 		xstack := evalStack(expandStack(sstack, mi))
+		// 		if match, _ = xstack[0].(bool); match {
+		// 			break
+		// 		}
+		// 	}
+		// } else {
+		// 	sstack = evalStack(sstack)
+		// 	match, _ = sstack[0].(bool)
+		// }
+		// if match {
+		// 	switch tstack := stack.(type) {
+		// 	case []any:
+		// 		tstack = append(tstack, v)
+		// 		if 0 < len(locKeys) {
+		// 			locs = append(locs, locKeys[vi])
+		// 		} else {
+		// 			locs = append(locs, Nth(vi))
+		// 		}
+		// 		stack = tstack
+		// 	case []gen.Node:
+		// 		if n, ok := v.(gen.Node); ok {
+		// 			tstack = append(tstack, n)
+		// 			if 0 < len(locKeys) {
+		// 				locs = append(locs, locKeys[vi])
+		// 			} else {
+		// 				locs = append(locs, Nth(vi))
+		// 			}
+		// 			stack = tstack
+		// 		}
+		// 	}
+		// }
+		// continue
+		var (
+			match bool
+			multi bool
+		)
+
+		// TBD resolve later or check parent for boolean op
+		//  maybe flag on value or wrap in type indicating expr lookup
+
+		// TBD or better, wait until needed to lookup, better for && and ||
+		//  pass data to evalStack
+
 		// resolve all expr members
 		for i, ev := range sstack {
 			if 0 < i {
@@ -295,7 +344,8 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 				case Root:
 					dv = root
 				}
-				if x.Normal() {
+				if _, ok := x[0].(norm); ok {
+					x = x[1:]
 					if ev, has = x.FirstFound(dv); has {
 						sstack[i] = ev
 						goto Normalize
@@ -352,7 +402,6 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 				// handled and will fail later.
 			}
 		}
-		var match bool
 		if multi {
 			max := 1
 			for _, v := range sstack {
@@ -398,6 +447,13 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 	}
 	return stack, locs
 }
+
+// func (s *Script) evalStackWithData(stack []any, data, root any) (match, multi bool) {
+
+// 	// TBD walk forward
+
+// 	return
+// }
 
 func normalize(v any) any {
 	switch tv := v.(type) {
@@ -445,6 +501,9 @@ func expandStack(stack []any, mi int) []any {
 	}
 	return nstack
 }
+
+// TBD walk forward keeping track of farthest
+//  if needs right then just to one past farthest
 
 func evalStack(sstack []any) []any {
 	for i := len(sstack) - 1; 0 <= i; i-- {
@@ -589,6 +648,7 @@ func evalStack(sstack []any) []any {
 			// If both are a boolean true then true else false.
 			lb, _ := left.(bool)
 			rb, _ := right.(bool)
+			// TBD
 			sstack[i] = lb && rb
 		case not.code:
 			lb, _ := left.(bool)

@@ -428,3 +428,28 @@ func TestScriptRegisterBinaryFunction(t *testing.T) {
 
 	tt.Panic(t, func() { jp.RegisterBinaryFunction("length", false, false, func(left, right any) any { return nil }) })
 }
+
+func TestScriptExistEval(t *testing.T) {
+	data := []any{
+		map[string]any{
+			"a": 1,
+			"b": 2,
+			"c": 3,
+			"z": 4,
+		},
+		map[string]any{
+			"a": 10,
+			"b": 20,
+			"c": 30,
+		},
+	}
+
+	//x := jp.MustParseString("[?(@.z)]")
+	//x := jp.MustParseString("[?(@.a exists true)]")
+	x := jp.MustParseString("[?(@.a < 2 && @.z)]")
+	fmt.Printf("*** %s\n", x)
+
+	result := x.Get(data)
+
+	fmt.Printf("*** stack result: %s\n", result)
+}

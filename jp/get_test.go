@@ -1397,3 +1397,16 @@ func TestGetKeyMismatch(t *testing.T) {
 	x := jp.MustParseString("$.a.y")
 	tt.Equal(t, "[]", pretty.SEN(x.Get(data)))
 }
+
+// func TestGetAncestorFilter(t *testing.T) {
+// 	data := map[string]any{
+// 		"array": []any{
+// 			map[string]any{"x": 1, "y": 1},
+// 			map[string]any{"y": 2},
+// 			map[string]any{"child": map[string]any{"x": 1, "y": 3}},
+// 		},
+// 	}
+// 	// x := jp.MustParseString("$..[?(@.x)]")
+// 	x := jp.MustParseString("$..[?(@.x exists true)]")
+// 	tt.Equal(t, "[{x: 1 y: 3} {x: 1 y: 1}]", pretty.SEN(x.Get(data)))
+// }
