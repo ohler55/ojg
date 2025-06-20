@@ -1,9 +1,4 @@
 
-- jp.Script
- - add invisible frag for a normal expression, just a pass through
-  - or use wild for non-normal
-
-
 - option for fast vs accurate parse
  - doc should indicate 16th place variation and diff in performance for float parse
 

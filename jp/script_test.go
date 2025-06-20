@@ -7,10 +7,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/pretty"
+	"github.com/ohler55/ojg/sen"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -267,14 +269,17 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@ ~= 'a.c')", value: "abb", noMatch: true},
 		{src: "(@ =~ 'a.c')", value: int64(3), noMatch: true},
 
-		{src: "(@.x || @.y)", value: map[string]any{"x": false, "y": false}, noMatch: true},
-		{src: "(@.x || @.y)", value: map[string]any{"x": false, "y": true}},
+		// A bare @.x is an existence check.
+		{src: "(@.x || @.y)", value: map[string]any{"a": false, "b": false}, noMatch: true},
+		{src: "(@.x || @.y)", value: map[string]any{"x": false, "y": false}},
+		{src: "(@.a || @.y)", value: map[string]any{"x": false, "y": true}},
 
-		{src: "(@.x && @.y)", value: map[string]any{"x": true, "y": false}, noMatch: true},
+		{src: "(@.x && @.y)", value: map[string]any{"a": true, "y": false}, noMatch: true},
+		{src: "(@.y && @.x)", value: map[string]any{"a": true, "y": false}, noMatch: true},
 		{src: "(@.x && @.y)", value: map[string]any{"x": true, "y": true}},
 
 		{src: "(!@.x)", value: map[string]any{"x": true}, noMatch: true},
-		{src: "(!@.x)", value: map[string]any{"x": false}},
+		{src: "(!@.x)", value: map[string]any{"y": true}},
 
 		{src: "(@.x + @.y == 0)", value: map[string]any{"x": 1, "y": 2}, noMatch: true},
 		{src: "(@.x + @.y == 3)", value: map[string]any{"x": 1, "y": 2}},
@@ -344,9 +349,9 @@ func TestScriptEval(t *testing.T) {
 		tt.Nil(t, err)
 		result, _ := s.Eval([]any{}, []any{d.value}).([]any)
 		if d.noMatch {
-			tt.Equal(t, 0, len(result), d.src, " in ", d.value)
+			tt.Equal(t, 0, len(result), "%s in %s", d.src, sen.String(d.value))
 		} else {
-			tt.Equal(t, 1, len(result), d.src, " in ", d.value)
+			tt.Equal(t, 1, len(result), "%s in %s", d.src, sen.String(d.value))
 		}
 	}
 }
@@ -434,7 +439,6 @@ func TestScriptExistEval(t *testing.T) {
 		map[string]any{
 			"a": 1,
 			"b": 2,
-			"c": 3,
 			"z": 4,
 		},
 		map[string]any{
@@ -443,13 +447,8 @@ func TestScriptExistEval(t *testing.T) {
 			"c": 30,
 		},
 	}
-
-	//x := jp.MustParseString("[?(@.z)]")
-	//x := jp.MustParseString("[?(@.a exists true)]")
-	x := jp.MustParseString("[?(@.a < 2 && @.z)]")
-	fmt.Printf("*** %s\n", x)
-
+	x := jp.MustParseString("[?(@.z)]")
 	result := x.Get(data)
 
-	fmt.Printf("*** stack result: %s\n", result)
+	tt.Equal(t, "[{a:1 b:2 z:4}]", sen.String(result, &ojg.Options{Sort: true}))
 }
