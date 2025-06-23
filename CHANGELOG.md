@@ -4,7 +4,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.26.7] - unreleased
+## [1.26.7] - 2025-06-23
 ### Fixed
 - Fixed then bleed over of omitempty in struct tags. Issue #205.
 - Fixed encoding anonymous interface in structs. Issue #115
