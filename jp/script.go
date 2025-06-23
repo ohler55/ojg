@@ -99,6 +99,10 @@ type precBuf struct {
 
 type multivalue []any
 
+type got struct {
+	value any
+}
+
 // Script represents JSON Path script used in filters as well.
 type Script struct {
 	template []any
@@ -186,9 +190,6 @@ func (s *Script) Eval(stack, data any) any {
 }
 
 func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
-	// Checking the type each iteration adds 2.5% but allows code not to be
-	// duplicated and not to call a separate function. Using just one more
-	// function call for each iteration adds 6.5%.
 	var (
 		dlen    int
 		locKeys Expr
@@ -241,6 +242,7 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 	}
 	sstack := make([]any, len(s.template))
 	var v any
+
 	for vi := dlen - 1; 0 <= vi; vi-- {
 		switch td := data.(type) {
 		case []any:
@@ -252,10 +254,13 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 		}
 		// Eval script for each member of the list.
 		copy(sstack, s.template)
-		var multi bool
-		// resolve all expr members
+		var (
+			match bool
+			multi bool
+		)
 		for i, ev := range sstack {
 			if 0 < i {
+				// Check for functions like 'count'.
 				if o, ok := sstack[i-1].(*op); ok && o.getLeft {
 					var x Expr
 					if x, ok = ev.(Expr); ok {
@@ -267,11 +272,7 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 				}
 				// TBD one more for getRight once function extensions are supported
 			}
-			// Normalize into nil, bool, int64, float64, and string early so
-			// that each comparison doesn't have to.
-		Normalize:
-			switch x := ev.(type) {
-			case Expr:
+			if x, ok := ev.(Expr); ok {
 				var has bool
 				dv := v
 				switch x[0].(type) {
@@ -285,20 +286,20 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 						var c Child
 						if c, ok = x[1].(Child); ok {
 							if ev, has = m[string(c)]; has {
-								sstack[i] = ev
-								goto Normalize
+								sstack[i] = &got{value: normalize(ev)}
 							} else {
 								sstack[i] = Nothing
 							}
+							continue
 						}
 					}
 				case Root:
 					dv = root
 				}
-				if x.Normal() {
+				if _, ok := x[0].(norm); ok {
+					x = x[1:]
 					if ev, has = x.FirstFound(dv); has {
-						sstack[i] = ev
-						goto Normalize
+						sstack[i] = &got{value: normalize(ev)}
 					} else {
 						sstack[i] = Nothing
 					}
@@ -308,51 +309,18 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 					case 0:
 						sstack[i] = Nothing
 					case 1:
-						sstack[i] = normalize(values[0])
+						sstack[i] = &got{value: normalize(values[0])}
 					default:
 						multi = true
 						mval := make(multivalue, len(values))
 						for gi, gv := range values {
-							mval[gi] = normalize(gv)
+							mval[gi] = &got{value: normalize(gv)}
 						}
 						sstack[i] = mval
 					}
 				}
-			case int:
-				sstack[i] = int64(x)
-			case int8:
-				sstack[i] = int64(x)
-			case int16:
-				sstack[i] = int64(x)
-			case int32:
-				sstack[i] = int64(x)
-			case uint:
-				sstack[i] = int64(x)
-			case uint8:
-				sstack[i] = int64(x)
-			case uint16:
-				sstack[i] = int64(x)
-			case uint32:
-				sstack[i] = int64(x)
-			case uint64:
-				sstack[i] = int64(x)
-			case float32:
-				sstack[i] = float64(x)
-			case gen.Bool:
-				sstack[i] = bool(x)
-			case gen.String:
-				sstack[i] = string(x)
-			case gen.Int:
-				sstack[i] = int64(x)
-			case gen.Float:
-				sstack[i] = float64(x)
-
-			default:
-				// Any other type are already simplified or are not
-				// handled and will fail later.
 			}
 		}
-		var match bool
 		if multi {
 			max := 1
 			for _, v := range sstack {
@@ -362,13 +330,18 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 			}
 			for mi := 0; mi < max; mi++ {
 				xstack := evalStack(expandStack(sstack, mi))
-				if match, _ = xstack[0].(bool); match {
+				if _, match = xstack[0].(*got); !match {
+					match, _ = xstack[0].(bool)
+				}
+				if match {
 					break
 				}
 			}
 		} else {
 			sstack = evalStack(sstack)
-			match, _ = sstack[0].(bool)
+			if _, match = sstack[0].(*got); !match {
+				match, _ = sstack[0].(bool)
+			}
 		}
 		if match {
 			switch tstack := stack.(type) {
@@ -454,14 +427,24 @@ func evalStack(sstack []any) []any {
 			continue
 		}
 		var (
-			left  any
-			right any
+			left   any
+			right  any
+			gleft  bool
+			gright bool
 		)
 		if 1 < len(sstack)-i {
 			left = sstack[i+1]
+			if g, ok := left.(*got); ok {
+				left = g.value
+				gleft = true
+			}
 		}
 		if 2 < len(sstack)-i {
 			right = sstack[i+2]
+			if g, ok := right.(*got); ok {
+				right = g.value
+				gright = true
+			}
 		}
 		switch o.code {
 		case group.code:
@@ -582,16 +565,31 @@ func evalStack(sstack []any) []any {
 			}
 		case or.code:
 			// If one is a boolean true then true.
-			lb, _ := left.(bool)
-			rb, _ := right.(bool)
+			lb := gleft
+			if !lb {
+				lb, _ = left.(bool)
+			}
+			rb := gright
+			if !rb {
+				rb, _ = right.(bool)
+			}
 			sstack[i] = lb || rb
 		case and.code:
 			// If both are a boolean true then true else false.
-			lb, _ := left.(bool)
-			rb, _ := right.(bool)
+			lb := gleft
+			if !lb {
+				lb, _ = left.(bool)
+			}
+			rb := gright
+			if !rb {
+				rb, _ = right.(bool)
+			}
 			sstack[i] = lb && rb
 		case not.code:
-			lb, _ := left.(bool)
+			lb := gleft
+			if !lb {
+				lb, _ = left.(bool)
+			}
 			sstack[i] = !lb
 		case add.code:
 			sstack[i] = Nothing

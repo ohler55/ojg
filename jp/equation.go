@@ -337,6 +337,9 @@ func (e *Equation) buildScript(stack []any) []any {
 	}
 	if e.o.code == get.code {
 		if e.left != nil {
+			if x, ok := e.left.result.(Expr); ok {
+				e.left.result = normalExpr(x)
+			}
 			stack = append(stack, e.left.result) // should always be an Expr
 		}
 	} else {

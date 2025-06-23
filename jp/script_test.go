@@ -7,10 +7,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/pretty"
+	"github.com/ohler55/ojg/sen"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -267,14 +269,17 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@ ~= 'a.c')", value: "abb", noMatch: true},
 		{src: "(@ =~ 'a.c')", value: int64(3), noMatch: true},
 
-		{src: "(@.x || @.y)", value: map[string]any{"x": false, "y": false}, noMatch: true},
-		{src: "(@.x || @.y)", value: map[string]any{"x": false, "y": true}},
+		// A bare @.x is an existence check.
+		{src: "(@.x || @.y)", value: map[string]any{"a": false, "b": false}, noMatch: true},
+		{src: "(@.x || @.y)", value: map[string]any{"x": false, "y": false}},
+		{src: "(@.a || @.y)", value: map[string]any{"x": false, "y": true}},
 
-		{src: "(@.x && @.y)", value: map[string]any{"x": true, "y": false}, noMatch: true},
+		{src: "(@.x && @.y)", value: map[string]any{"a": true, "y": false}, noMatch: true},
+		{src: "(@.y && @.x)", value: map[string]any{"a": true, "y": false}, noMatch: true},
 		{src: "(@.x && @.y)", value: map[string]any{"x": true, "y": true}},
 
 		{src: "(!@.x)", value: map[string]any{"x": true}, noMatch: true},
-		{src: "(!@.x)", value: map[string]any{"x": false}},
+		{src: "(!@.x)", value: map[string]any{"y": true}},
 
 		{src: "(@.x + @.y == 0)", value: map[string]any{"x": 1, "y": 2}, noMatch: true},
 		{src: "(@.x + @.y == 3)", value: map[string]any{"x": 1, "y": 2}},
@@ -344,9 +349,9 @@ func TestScriptEval(t *testing.T) {
 		tt.Nil(t, err)
 		result, _ := s.Eval([]any{}, []any{d.value}).([]any)
 		if d.noMatch {
-			tt.Equal(t, 0, len(result), d.src, " in ", d.value)
+			tt.Equal(t, 0, len(result), "%s in %s", d.src, sen.String(d.value))
 		} else {
-			tt.Equal(t, 1, len(result), d.src, " in ", d.value)
+			tt.Equal(t, 1, len(result), "%s in %s", d.src, sen.String(d.value))
 		}
 	}
 }
@@ -427,4 +432,23 @@ func TestScriptRegisterBinaryFunction(t *testing.T) {
 	tt.Equal(t, 1, len(s.Eval([]any{}, []any{map[string]any{"x": "abc", "y": "ABC"}}).([]any)))
 
 	tt.Panic(t, func() { jp.RegisterBinaryFunction("length", false, false, func(left, right any) any { return nil }) })
+}
+
+func TestScriptExistEval(t *testing.T) {
+	data := []any{
+		map[string]any{
+			"a": 1,
+			"b": 2,
+			"z": 4,
+		},
+		map[string]any{
+			"a": 10,
+			"b": 20,
+			"c": 30,
+		},
+	}
+	x := jp.MustParseString("[?(@.z)]")
+	result := x.Get(data)
+
+	tt.Equal(t, "[{a:1 b:2 z:4}]", sen.String(result, &ojg.Options{Sort: true}))
 }
