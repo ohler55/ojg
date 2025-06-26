@@ -229,6 +229,9 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 		data = da
 	default:
 		rv := reflect.ValueOf(td)
+		if rt := rv.Type(); rt.Kind() == reflect.Ptr {
+			rv = rv.Elem()
+		}
 		if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
 			return stack, locs
 		}
@@ -373,6 +376,7 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 }
 
 func normalize(v any) any {
+Start:
 	switch tv := v.(type) {
 	case int:
 		v = int64(tv)
@@ -402,6 +406,14 @@ func normalize(v any) any {
 		v = int64(tv)
 	case gen.Float:
 		v = float64(tv)
+	default:
+		if rt := reflect.TypeOf(v); rt != nil && rt.Kind() == reflect.Ptr {
+			rv := reflect.ValueOf(v)
+			if !rv.IsNil() {
+				v = rv.Elem().Interface()
+				goto Start
+			}
+		}
 	}
 	return v
 }

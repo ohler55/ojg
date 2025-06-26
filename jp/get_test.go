@@ -26,6 +26,12 @@ type Sample struct {
 	B string
 }
 
+type NestedSample struct {
+	A *bool
+	B *string
+	C *[]NestedSample
+}
+
 type One struct {
 	A int
 }
@@ -211,6 +217,11 @@ var (
 		{path: "$[-10:]", expect: []any{1, 2, 3}, data: []int{1, 2, 3}},
 		{path: "$[1:-10:-1]", expect: []any{1, 2}, data: []int{1, 2, 3}},
 		{path: "$[2:10]", expect: []any{3}, data: []int{1, 2, 3}},
+		{
+			path:   "$.x[*].c[0].b",
+			expect: []any{ptr("1")},
+			data:   Any{X: []*NestedSample{{C: &[]NestedSample{{A: ptr(false), B: ptr("1")}, {A: ptr(true), B: ptr("2")}}}}},
+		},
 		// filter with map
 		{
 			path:   "$.x[?(@.b=='sample1')].a",
@@ -243,6 +254,11 @@ var (
 			expect: []any{"sample2"},
 			data:   Any{X: []*Sample{{A: 4, B: "sample2"}}},
 		},
+		{
+			path:   "$.x[*].c[?(@.a==true)].b",
+			expect: []any{ptr("2")},
+			data:   Any{X: []*NestedSample{{C: &[]NestedSample{{A: ptr(false), B: ptr("1")}, {A: ptr(true), B: ptr("2")}}}}},
+		},
 		{path: "$.*", expect: []any{}, data: &one},
 		{path: "['a',-1]", expect: []any{3}, data: []any{1, 2, 3}},
 		{path: "['a','b']", expect: []any{}, data: []any{1, 2, 3}},
@@ -252,6 +268,10 @@ var (
 		{path: "[0:1].z", expect: []any{}, data: []int{1}},
 	}
 )
+
+func ptr[T any](v T) *T {
+	return &v
+}
 
 var (
 	firstData1    = map[string]any{"a": []any{map[string]any{"b": 2}}}
