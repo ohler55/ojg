@@ -1859,6 +1859,10 @@ func reflectGetNth(data any, i int) (v any, has bool) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
+		if rt.Kind() == reflect.Ptr {
+			rt = rt.Elem()
+			rd = rd.Elem()
+		}
 		switch rt.Kind() {
 		case reflect.Slice, reflect.Array:
 			size := rd.Len()
