@@ -376,8 +376,23 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 }
 
 func normalize(v any) any {
+	// handle special values
+	if v == Nothing {
+		return v
+	}
+
+	if v == nil {
+		return nil
+	}
+
 Start:
 	switch tv := v.(type) {
+	// optimize for already normalized values
+	case bool:
+	case int64:
+	case float64:
+	case string:
+	// handle inter-convertible values
 	case int:
 		v = int64(tv)
 	case int8:
@@ -407,12 +422,43 @@ Start:
 	case gen.Float:
 		v = float64(tv)
 	default:
-		if rt := reflect.TypeOf(v); rt != nil && rt.Kind() == reflect.Ptr {
-			rv := reflect.ValueOf(v)
+		switch rv := reflect.ValueOf(v); rv.Kind() {
+		// recursively handle pointers
+		case reflect.Ptr:
 			if !rv.IsNil() {
 				v = rv.Elem().Interface()
 				goto Start
 			}
+
+		// handle named types that implement common types
+		case reflect.Bool:
+			v = rv.Bool()
+		case reflect.Int:
+			v = rv.Int()
+		case reflect.Int8:
+			v = rv.Int()
+		case reflect.Int16:
+			v = rv.Int()
+		case reflect.Int32:
+			v = rv.Int()
+		case reflect.Int64:
+			v = rv.Int()
+		case reflect.Uint:
+			v = int64(rv.Uint())
+		case reflect.Uint8:
+			v = int64(rv.Uint())
+		case reflect.Uint16:
+			v = int64(rv.Uint())
+		case reflect.Uint32:
+			v = int64(rv.Uint())
+		case reflect.Uint64:
+			v = int64(rv.Uint())
+		case reflect.Float32:
+			v = rv.Float()
+		case reflect.Float64:
+			v = rv.Float()
+		case reflect.String:
+			v = rv.String()
 		}
 	}
 	return v
@@ -673,7 +719,6 @@ func evalStack(sstack []any) []any {
 				case float64:
 					if tr != 0.0 {
 						sstack[i] = float64(tl) / tr
-
 					}
 				}
 			case float64:
