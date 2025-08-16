@@ -184,6 +184,7 @@ func TestScriptNormalizeEval(t *testing.T) {
 		result, _ := s.Eval([]any{}, []any{v}).([]any)
 		tt.Equal(t, 1, len(result), fmt.Sprintf("%T %v", v, v))
 	}
+
 	s, err = jp.NewScript("(@ == 'x')")
 	tt.Nil(t, err)
 	result, _ := s.Eval([]any{}, []any{"x"}).([]any)
@@ -195,6 +196,48 @@ func TestScriptNormalizeEval(t *testing.T) {
 	tt.Nil(t, err)
 	result, _ = s.Eval([]any{}, gen.Array{gen.True}).([]any)
 	tt.Equal(t, 1, len(result), "bool normalize")
+
+	type (
+		customBool    bool
+		customInt     int
+		customInt8    int8
+		customInt16   int16
+		customInt32   int32
+		customInt64   int64
+		customUint    uint
+		customUint8   uint8
+		customUint16  uint16
+		customUint32  uint32
+		customUint64  uint64
+		customFloat32 float32
+		customFloat64 float64
+		customString  string
+	)
+
+	for _, tc := range []struct {
+		v         any
+		scriptStr string
+	}{
+		{customBool(true), "(@ == true)"},
+		{customInt(3), "(@ == 3)"},
+		{customInt8(3), "(@ == 3)"},
+		{customInt16(3), "(@ == 3)"},
+		{customInt32(3), "(@ == 3)"},
+		{customInt64(3), "(@ == 3)"},
+		{customUint(3), "(@ == 3)"},
+		{customUint8(3), "(@ == 3)"},
+		{customUint16(3), "(@ == 3)"},
+		{customUint32(3), "(@ == 3)"},
+		{customUint64(3), "(@ == 3)"},
+		{customFloat32(3.0), "(@ == 3.0)"},
+		{customFloat64(3.0), "(@ == 3.0)"},
+		{customString("x"), "(@ == 'x')"},
+	} {
+		s, err = jp.NewScript(tc.scriptStr)
+		tt.Nil(t, err)
+		result, _ = s.Eval([]any{}, []any{tc.v}).([]any)
+		tt.Equal(t, 1, len(result), fmt.Sprintf("custom type %T normalize", tc.v))
+	}
 }
 
 func TestScriptNonListEval(t *testing.T) {
