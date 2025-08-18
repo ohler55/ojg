@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.26.9] - 2025-08-18
+### Fixed
+- Filtering now supports typed core type such as `type Color string` thans to @rdumont
+
 ## [1.26.8] - 2025-06-29
 ### Fixed
 - Fixed support for pointers to slice and pointer to value thanks to @edward-frankieone.
