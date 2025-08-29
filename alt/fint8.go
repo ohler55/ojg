@@ -58,5 +58,5 @@ func ivalInt8NotEmptyAsString(fi *finfo, rv reflect.Value, addr uintptr) (any, r
 	if v == 0 {
 		return nil, nilValue, true
 	}
-	return strconv.FormatInt(int64(v), 10), nilValue, false
+	return strconv.FormatInt(v, 10), nilValue, false
 }

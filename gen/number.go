@@ -11,9 +11,15 @@ import (
 	"github.com/ohler55/ojg"
 )
 
-// BigLimit is the limit before a number is converted into a Big
-// instance. (9223372036854775807 / 10 = 922337203685477580)
-const BigLimit = math.MaxInt64 / 10
+const (
+	// BigLimit is the limit before a number is converted into a Big
+	// instance. (9223372036854775807 / 10 = 922337203685477580)
+	BigLimit = math.MaxInt64 / 10
+
+	// DivLimit is the divisor limit before a number is converted into a Big
+	// instance. (nearest multiple of 10 below max int64)
+	DivLimit = 1000000000000000000
+)
 
 // Number is used internally by parsers.
 type Number struct {
@@ -65,7 +71,7 @@ func (n *Number) AddFrac(b byte) {
 	case n.Frac <= BigLimit:
 		n.Frac = n.Frac*10 + uint64(b-'0')
 		n.Div *= 10.0
-		if math.MaxInt64 < n.Frac {
+		if math.MaxInt64 < n.Frac || DivLimit <= n.Div {
 			n.FillBig()
 		}
 	default: // big
@@ -96,13 +102,13 @@ func (n *Number) FillBig() {
 		n.BigBuf = append(n.BigBuf, '-')
 	}
 	n.BigBuf = append(n.BigBuf, strconv.FormatUint(n.I, 10)...)
-	if 0 < n.Frac {
+	if 0 < n.Frac || DivLimit <= n.Div {
 		n.BigBuf = append(n.BigBuf, '.')
-		if 1000000000000000000 <= n.Frac { // nearest multiple of 10 below max int64
-			n.BigBuf = append(n.BigBuf, strconv.FormatUint(n.Frac, 10)...)
+		if DivLimit <= n.Frac {
+			n.BigBuf = strconv.AppendUint(n.BigBuf, n.Frac, 10)
 		} else {
-			s := strconv.FormatUint(n.Frac+n.Div, 10)
-			n.BigBuf = append(n.BigBuf, s[1:]...)
+			buf := strconv.AppendUint(nil, n.Frac+n.Div, 10)
+			n.BigBuf = append(n.BigBuf, buf[1:]...)
 		}
 	}
 	if 0 < n.Exp {
@@ -110,7 +116,7 @@ func (n *Number) FillBig() {
 		if n.NegExp {
 			n.BigBuf = append(n.BigBuf, '-')
 		}
-		n.BigBuf = append(n.BigBuf, strconv.FormatUint(n.Exp, 10)...)
+		n.BigBuf = strconv.AppendUint(n.BigBuf, n.Exp, 10)
 	}
 }
 
