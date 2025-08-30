@@ -3,6 +3,7 @@
 package oj_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -382,4 +383,30 @@ func TestParserNumConv(t *testing.T) {
 
 	v = oj.MustLoad(strings.NewReader("0.1234567890123456789"), ojg.NumConvFloat64)
 	tt.Equal(t, 0.123456789012345678, v)
+}
+
+func TestParserDecimal(t *testing.T) {
+	for i, str := range []string{
+		"0.12345",
+		"0.00012345",
+		"0.000000000000012345",
+		"0.000000000000000000123456",
+	} {
+		v := oj.MustParseString(str)
+		j := oj.JSON(v)
+		tt.Equal(t, str, j, "%d: %s", i, str)
+	}
+}
+
+func TestParserDecimalSplit(t *testing.T) {
+	// Verifies that a decimal number that is split by then buffered read size
+	// (4096 for oj and sen parsers) is parsed correctly.
+	numStr := "0.00044885930032905006"
+	b := bytes.Repeat([]byte{' '}, 4080)
+	b = append(b, numStr...)
+
+	v := oj.MustLoad(bytes.NewReader(b))
+	num, ok := v.(json.Number)
+	tt.Equal(t, true, ok)
+	tt.Equal(t, numStr, num.String())
 }

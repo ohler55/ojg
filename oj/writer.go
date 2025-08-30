@@ -259,6 +259,9 @@ func (wr *Writer) appendJSON(data any, depth int) {
 		}
 		wr.buf = wr.appendString(wr.buf, string(out), !wr.HTMLUnsafe)
 
+	case json.Number:
+		wr.buf = append(wr.buf, td.String()...)
+
 	default:
 		wr.appendDefault(wr, data, depth)
 	}

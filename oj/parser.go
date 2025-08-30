@@ -445,8 +445,8 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 					break
 				}
 				p.num.Frac = p.num.Frac*10 + uint64(b-'0')
-				p.num.Div *= 10.0
-				if gen.BigLimit <= p.num.Div {
+				p.num.Div *= 10
+				if gen.DivLimit <= p.num.Div {
 					p.num.FillBig()
 					break
 				}
