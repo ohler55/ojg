@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -154,6 +155,7 @@ func (r *Recomposer) Recompose(v any, tv ...any) (out any, err error) {
 		if rec := recover(); rec != nil {
 			err = ojg.NewError(rec)
 			out = nil
+			debug.PrintStack()
 		}
 	}()
 	out = r.MustRecompose(v, tv...)

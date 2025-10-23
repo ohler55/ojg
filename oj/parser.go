@@ -116,7 +116,9 @@ func (p *Parser) Parse(buf []byte, args ...any) (any, error) {
 			return nil, fmt.Errorf("expected BOM at 1:3")
 		}
 	} else {
+		fmt.Printf("*** before parse buffer\n")
 		err = p.parseBuffer(buf, true)
+		fmt.Printf("*** after parse buffer %s\n", err)
 	}
 	p.stack = p.stack[:cap(p.stack)]
 	for i := len(p.stack) - 1; 0 <= i; i-- {
@@ -124,6 +126,7 @@ func (p *Parser) Parse(buf []byte, args ...any) (any, error) {
 	}
 	p.stack = p.stack[:0]
 
+	fmt.Printf("*** parse buffer result %s\n", err)
 	return p.result, err
 }
 
