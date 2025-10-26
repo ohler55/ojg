@@ -79,6 +79,7 @@ func (r *Recomposer) RegisterUnmarshalerComposer(fun RecomposeAnyFunc) {
 }
 
 func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*composer, error) {
+	fmt.Printf("*** reg comp\n")
 	if rt.Kind() == reflect.Ptr {
 		rt = rt.Elem()
 	}
@@ -107,6 +108,8 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*comp
 	}
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
+		// TBD should indices include children? or handle better later?
+		fmt.Printf("*** reg comp %d %#v\n", i, f)
 		// Private fields should be skipped.
 		if len(f.Name) == 0 || ([]byte(f.Name)[0]&0x20) != 0 {
 			continue
@@ -463,9 +466,13 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 		} else {
 			c, _ = r.registerComposer(rv.Type(), nil)
 			im = c.indexes
+			fmt.Printf("*** no compose: %v\n", c.indexes)
 		}
+		fmt.Printf("*** struct map: %v\n", im)
 		for k := range im {
 			sf := im[k]
+			fmt.Printf("*** sf: %s: %v\n", k, sf.Index)
+			fmt.Printf("*** sf by name: %s: %#v\n", k, rv.FieldByName(k))
 			f := rv.FieldByIndex(sf.Index)
 			var m any
 			var has bool
