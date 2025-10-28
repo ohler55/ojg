@@ -1,8 +1,4 @@
 
-- embedded struct pointer encoding issue
- - issue is then composer map, need a unique identifier for anonymous structs
-
-
 
 - parse
  - add discover option to find JSON or SEN in a string or file
@@ -47,9 +43,3 @@
 
 - Match a JavaScript regular expression. For example, [?(@.description =~ /cat.*/i)]
 - Exists syntax? [?(@.x exists)]
-
----------
-
-- test for Recompose with anonymous embeded struct
-
----------
