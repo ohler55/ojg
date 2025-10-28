@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math"
 	"reflect"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -78,19 +77,16 @@ func (r *Recomposer) RegisterUnmarshalerComposer(fun RecomposeAnyFunc) {
 	}
 }
 
-// TBD add parents argument ([]string{parent-type, field-name} or "parent-type.field-name") for nested anonymous types
-//
-//	use when rt.Name() is empty
-func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc, parent string) (*composer, error) {
-	fmt.Printf("*** reg comp %T %#v\n", rt, rt)
+func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc, typeName string) (*composer, error) {
 	if rt.Kind() == reflect.Ptr {
 		rt = rt.Elem()
 	}
 	name := rt.Name()
-	full := rt.PkgPath() + "/" + name
 	if len(name) == 0 {
-		// TBD is anonymous, recalc name and full
+		name = typeName
 	}
+	full := rt.PkgPath() + "/" + name
+
 	// TBD could loosen this up and allow any type as long as a function is provided. id is path through field names
 	if rt.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("only structs can be recomposed. %s is not a struct type", rt)
@@ -124,11 +120,21 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc, parent
 		case reflect.Array, reflect.Slice, reflect.Map, reflect.Ptr:
 			ft = ft.Elem()
 		}
-		// TBD if ft.Name is empty then calc based on parent name
-		if _, has := r.composers[ft.Name()]; has {
+		fname := ft.Name()
+		if len(fname) == 0 {
+			if len(typeName) == 0 {
+				typeName = rt.Name()
+			}
+			fname = typeName + "." + f.Name
+		}
+		if _, has := r.composers[fname]; has {
 			continue
 		}
-		_, _ = r.registerComposer(ft, nil, "") // TBD add parent name
+		if 0 < len(ft.Name()) {
+			_, _ = r.registerComposer(ft, nil, "")
+		} else {
+			_, _ = r.registerComposer(ft, nil, fname)
+		}
 	}
 	return c, nil
 }
@@ -164,7 +170,6 @@ func (r *Recomposer) Recompose(v any, tv ...any) (out any, err error) {
 		if rec := recover(); rec != nil {
 			err = ojg.NewError(rec)
 			out = nil
-			debug.PrintStack()
 		}
 	}()
 	out = r.MustRecompose(v, tv...)
@@ -320,8 +325,6 @@ func (r *Recomposer) recompAny(v any) any {
 	return v
 }
 
-// TBD add parents for structs, []string to avoid creating extra strings? Need
-// string for compose lookup any way so only create if anonymous
 func (r *Recomposer) recomp(v any, rv reflect.Value, typeName string) {
 	as, _ := rv.Interface().(AttrSetter)
 	if rv.Kind() == reflect.Ptr {
@@ -419,9 +422,7 @@ func (r *Recomposer) recomp(v any, rv reflect.Value, typeName string) {
 	case reflect.Struct:
 		vm, ok := (v).(map[string]any)
 		rt := rv.Type()
-		fmt.Printf("--------- struct - %q vs %q\n", rt.Name(), typeName)
-
-		if len(typeName) == 0 {
+		if len(typeName) == 0 || 0 < len(rt.Name()) {
 			typeName = rt.Name()
 		}
 		if !ok {
@@ -478,16 +479,11 @@ func (r *Recomposer) recomp(v any, rv reflect.Value, typeName string) {
 			}
 			im = c.indexes
 		} else {
-			// TBD calculate parent path
-			c, _ = r.registerComposer(rt, nil, "") // TBD add parent name
+			c, _ = r.registerComposer(rt, nil, typeName)
 			im = c.indexes
-			fmt.Printf("*** no compose: %s %v\n", rt.Name(), c.indexes)
 		}
 		for k := range im {
 			sf := im[k]
-			fmt.Printf("*** sf: %s: %v\n", k, sf.Index)
-			fmt.Printf("*** sf by name: %s: %#v\n", k, rv.FieldByName(k))
-			fmt.Printf("*** rv: %v\n", rv)
 			f := rv.FieldByIndex(sf.Index)
 			var m any
 			var has bool

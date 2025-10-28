@@ -858,7 +858,7 @@ func TestRecomposeReflectArray(t *testing.T) {
 }
 
 func TestRecomposeAnonymousEmbeddedStructs(t *testing.T) {
-	type Sample struct {
+	type AnonBed struct {
 		F1 int
 		F2 struct {
 			F21 int
@@ -883,8 +883,11 @@ func TestRecomposeAnonymousEmbeddedStructs(t *testing.T) {
 		},
 		"f3": 3,
 	}
-	var sample Sample
-	_ = r.MustRecompose(src, &sample)
-	fmt.Printf("*** %v\n", pretty.SEN(sample))
-
+	var ab AnonBed
+	_ = r.MustRecompose(src, &ab)
+	tt.Equal(t, `{
+  f1: 1
+  f2: {f21: 21 f22: {f221: 221 f222: 222} f23: 23}
+  f3: 3
+}`, pretty.SEN(ab))
 }
