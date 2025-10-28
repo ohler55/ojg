@@ -1,4 +1,9 @@
 
+- embedded struct pointer encoding issue
+ - issue is then composer map, need a unique identifier for anonymous structs
+
+
+
 - parse
  - add discover option to find JSON or SEN in a string or file
   - 3 states
@@ -21,10 +26,6 @@
   - maybe a optimistic mode that assumes json/sen so count and minimal modes
    - regular mode - attempt parse, if fails then try next
 
-
-- embedded struct pointer encoding issue
-- json.Unmarshaler
- - use alt.Recompose and convert simple to bytes and pass to unmarshaller
 
 - pretty
  - align maps as well as arrays

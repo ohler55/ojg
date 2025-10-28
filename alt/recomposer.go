@@ -53,7 +53,7 @@ func init() {
 // RegisterComposer regsiters a composer function for a value type. A nil
 // function will still register the default composer which uses reflection.
 func (r *Recomposer) RegisterComposer(val any, fun RecomposeFunc) error {
-	_, err := r.registerComposer(reflect.TypeOf(val), fun)
+	_, err := r.registerComposer(reflect.TypeOf(val), fun, "")
 
 	return err
 }
@@ -78,13 +78,20 @@ func (r *Recomposer) RegisterUnmarshalerComposer(fun RecomposeAnyFunc) {
 	}
 }
 
-func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*composer, error) {
-	fmt.Printf("*** reg comp\n")
+// TBD add parents argument ([]string{parent-type, field-name} or "parent-type.field-name") for nested anonymous types
+//
+//	use when rt.Name() is empty
+func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc, parent string) (*composer, error) {
+	fmt.Printf("*** reg comp %T %#v\n", rt, rt)
 	if rt.Kind() == reflect.Ptr {
 		rt = rt.Elem()
 	}
-	full := rt.PkgPath() + "/" + rt.Name()
-	// TBD could loosen this up and allow any type as long as a function is provided.
+	name := rt.Name()
+	full := rt.PkgPath() + "/" + name
+	if len(name) == 0 {
+		// TBD is anonymous, recalc name and full
+	}
+	// TBD could loosen this up and allow any type as long as a function is provided. id is path through field names
 	if rt.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("only structs can be recomposed. %s is not a struct type", rt)
 	}
@@ -92,7 +99,7 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*comp
 	if c == nil {
 		c = &composer{
 			fun:   fun,
-			short: rt.Name(),
+			short: name,
 			full:  full,
 			rtype: rt,
 		}
@@ -108,8 +115,6 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*comp
 	}
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
-		// TBD should indices include children? or handle better later?
-		fmt.Printf("*** reg comp %d %#v\n", i, f)
 		// Private fields should be skipped.
 		if len(f.Name) == 0 || ([]byte(f.Name)[0]&0x20) != 0 {
 			continue
@@ -119,10 +124,11 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*comp
 		case reflect.Array, reflect.Slice, reflect.Map, reflect.Ptr:
 			ft = ft.Elem()
 		}
+		// TBD if ft.Name is empty then calc based on parent name
 		if _, has := r.composers[ft.Name()]; has {
 			continue
 		}
-		_, _ = r.registerComposer(ft, nil)
+		_, _ = r.registerComposer(ft, nil, "") // TBD add parent name
 	}
 	return c, nil
 }
@@ -182,12 +188,12 @@ func (r *Recomposer) MustRecompose(v any, tv ...any) (out any) {
 		switch rv.Kind() {
 		case reflect.Array, reflect.Slice:
 			rv = reflect.New(rv.Type())
-			r.recomp(v, rv)
+			r.recomp(v, rv, "")
 			out = rv.Elem().Interface()
 		case reflect.Map:
-			r.recomp(v, rv)
+			r.recomp(v, rv, "")
 		case reflect.Ptr:
-			r.recomp(v, rv)
+			r.recomp(v, rv, "")
 			switch rv.Elem().Kind() {
 			case reflect.Slice, reflect.Array, reflect.Map, reflect.Interface:
 				out = rv.Elem().Interface()
@@ -246,7 +252,7 @@ func (r *Recomposer) recompAny(v any) any {
 					return val
 				}
 				rv := reflect.New(c.rtype)
-				r.recomp(v, rv)
+				r.recomp(v, rv, "")
 				return rv.Interface()
 			}
 		}
@@ -288,7 +294,7 @@ func (r *Recomposer) recompAny(v any) any {
 					return val
 				}
 				rv := reflect.New(c.rtype)
-				r.recomp(simple, rv)
+				r.recomp(simple, rv, "")
 				return rv.Interface()
 			}
 		}
@@ -314,7 +320,9 @@ func (r *Recomposer) recompAny(v any) any {
 	return v
 }
 
-func (r *Recomposer) recomp(v any, rv reflect.Value) {
+// TBD add parents for structs, []string to avoid creating extra strings? Need
+// string for compose lookup any way so only create if anonymous
+func (r *Recomposer) recomp(v any, rv reflect.Value, typeName string) {
 	as, _ := rv.Interface().(AttrSetter)
 	if rv.Kind() == reflect.Ptr {
 		if v == nil {
@@ -342,12 +350,12 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 			et = et.Elem()
 			for i := 0; i < size; i++ {
 				ev := reflect.New(et)
-				r.recomp(va[i], ev)
+				r.recomp(va[i], ev, "")
 				av.Index(i).Set(ev)
 			}
 		} else {
 			for i := 0; i < size; i++ {
-				r.setValue(va[i], av.Index(i), nil)
+				r.setValue(va[i], av.Index(i), nil, "")
 			}
 		}
 		rv.Set(av)
@@ -366,7 +374,7 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 			// actual type of the element value if the slice input is []any.
 			ev := vv.Index(i).Interface()
 			ri := rv.Index(i)
-			r.setValue(ev, ri, nil)
+			r.setValue(ev, ri, nil, "")
 		}
 	case reflect.Map:
 		if v == nil {
@@ -398,20 +406,26 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 			et = et.Elem()
 			for k, m := range vm {
 				ev := reflect.New(et)
-				r.recomp(m, ev)
+				r.recomp(m, ev, "")
 				rv.SetMapIndex(reflect.ValueOf(k), ev)
 			}
 		default:
 			for k, m := range vm {
 				ev := reflect.New(et)
-				r.recomp(m, ev)
+				r.recomp(m, ev, "")
 				rv.SetMapIndex(reflect.ValueOf(k), ev.Elem())
 			}
 		}
 	case reflect.Struct:
 		vm, ok := (v).(map[string]any)
+		rt := rv.Type()
+		fmt.Printf("--------- struct - %q vs %q\n", rt.Name(), typeName)
+
+		if len(typeName) == 0 {
+			typeName = rt.Name()
+		}
 		if !ok {
-			if c := r.composers[rv.Type().Name()]; c != nil && c.any != nil {
+			if c := r.composers[rt.Name()]; c != nil && c.any != nil {
 				if val, err := c.any(v); err == nil {
 					if val == nil {
 						break
@@ -449,7 +463,7 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 			return
 		}
 		var im map[string]reflect.StructField
-		if c := r.composers[rv.Type().Name()]; c != nil {
+		if c := r.composers[typeName]; c != nil {
 			if c.fun != nil {
 				if val, err := c.fun(vm); err == nil {
 					vv := reflect.ValueOf(val)
@@ -464,15 +478,16 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 			}
 			im = c.indexes
 		} else {
-			c, _ = r.registerComposer(rv.Type(), nil)
+			// TBD calculate parent path
+			c, _ = r.registerComposer(rt, nil, "") // TBD add parent name
 			im = c.indexes
-			fmt.Printf("*** no compose: %v\n", c.indexes)
+			fmt.Printf("*** no compose: %s %v\n", rt.Name(), c.indexes)
 		}
-		fmt.Printf("*** struct map: %v\n", im)
 		for k := range im {
 			sf := im[k]
 			fmt.Printf("*** sf: %s: %v\n", k, sf.Index)
 			fmt.Printf("*** sf by name: %s: %#v\n", k, rv.FieldByName(k))
+			fmt.Printf("*** rv: %v\n", rv)
 			f := rv.FieldByIndex(sf.Index)
 			var m any
 			var has bool
@@ -486,7 +501,7 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 				}
 			}
 			if has && m != nil {
-				r.setValue(m, f, &sf)
+				r.setValue(m, f, &sf, typeName)
 			}
 		}
 	case reflect.Interface:
@@ -506,7 +521,7 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 	}
 }
 
-func (r *Recomposer) setValue(v any, rv reflect.Value, sf *reflect.StructField) {
+func (r *Recomposer) setValue(v any, rv reflect.Value, sf *reflect.StructField, parent string) {
 	switch rv.Kind() {
 	case reflect.Bool:
 		if s, ok := v.(string); ok && sf != nil && strings.Contains(sf.Tag.Get("json"), ",string") {
@@ -558,7 +573,7 @@ func (r *Recomposer) setValue(v any, rv reflect.Value, sf *reflect.StructField) 
 		rv.Set(reflect.ValueOf(v))
 	case reflect.Ptr:
 		ev := reflect.New(rv.Type().Elem())
-		r.recomp(v, ev)
+		r.recomp(v, ev, "")
 		rv.Set(ev)
 	default:
 		if reflect.PtrTo(rv.Type()).Implements(jsonUnmarshalerType) {
@@ -571,6 +586,9 @@ func (r *Recomposer) setValue(v any, rv reflect.Value, sf *reflect.StructField) 
 				return
 			}
 		}
-		r.recomp(v, rv)
+		if 0 < len(parent) {
+			parent += "." + sf.Name
+		}
+		r.recomp(v, rv, parent)
 	}
 }
