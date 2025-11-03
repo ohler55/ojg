@@ -104,3 +104,28 @@ func TestFindArrayEscape2Unicode(t *testing.T) {
 	})
 	tt.Equal(t, `[ "\u0065" "\u12ab"]`, string(found))
 }
+
+func TestFindMapEmpty(t *testing.T) {
+	var found []byte
+	discover.Find([]byte(`  {} `), func(f []byte) (back, stop bool) {
+		found = f
+		return false, false
+	})
+	tt.Equal(t, `{}`, string(found))
+
+	found = found[:0]
+	discover.Find([]byte(`{ }`), func(f []byte) (back, stop bool) {
+		found = f
+		return false, false
+	})
+	tt.Equal(t, `{ }`, string(found))
+}
+
+// func TestFindMapDev(t *testing.T) {
+// 	var found []byte
+// 	discover.Find([]byte(`  {abc:} `), func(f []byte) (back, stop bool) {
+// 		found = f
+// 		return false, false
+// 	})
+// 	tt.Equal(t, `{abc:}`, string(found))
+// }

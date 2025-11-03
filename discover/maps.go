@@ -3,10 +3,9 @@
 package discover
 
 const (
-	skip      = '.'
-	errChar   = 'e'
-	whiteChar = 'W'
-	popMode   = 'p'
+	skip    = '.'
+	errChar = 'e'
+	popMode = 'p'
 
 	quote2   = 'Q'
 	quote1   = 'q'
@@ -20,6 +19,8 @@ const (
 
 	openObject  = '{'
 	closeObject = '}'
+	keyChar     = 'k'
+	keyDoneChar = 'K'
 
 	//   0123456789abcdef0123456789abcdef
 	scanMap = "" +
@@ -42,6 +43,41 @@ const (
 		"................................" + // 0xa0
 		"................................" + // 0xc0
 		"................................A" //  0xe0
+
+	//   0123456789abcdef0123456789abcdef
+	senPreKeyMap = "" +
+		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
+		".eQekkkqeekkekkkeeeeeeeeeeeekkkk" + // 0x20
+		"kkkkkkkkkkkkkkkkkkkkkkkkkkkeeekk" + // 0x40
+		"ekkkkkkkkkkkkkkkkkkkkkkkkkkek}ke" + // 0x60
+		"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk" + // 0x80
+		"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk" + // 0xa0
+		"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk" + // 0xc0
+		"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk" //  0xe0
+
+	//   0123456789abcdef0123456789abcdef
+	senKeyMap = "" +
+		"eeeeeeeeeKKeeKeeeeeeeeeeeeeeeeee" + // 0x00
+		"Keee...eee..K.............Ke...." + // 0x20
+		"...........................eee.." + // 0x40
+		"e..........................e.e.e" + // 0x60
+		"................................" + // 0x80
+		"................................" + // 0xa0
+		"................................" + // 0xc0
+		"................................K" //  0xe0
+
+	//   0123456789abcdef0123456789abcdef
+	colonMap = "" +
+		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
+		".eeeeeeeeeeeeeeeeeeeeeeeeepeeeee" + // 0x20
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x40
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x60
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x80
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0xa0
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0xc0
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee:" //  0xe0
+
+	/////
 
 	//   0123456789abcdef0123456789abcdef
 	quoteOkMap = "" +
