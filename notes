@@ -1,12 +1,4 @@
 
-- option for fast vs accurate parse
- - doc should indicate 16th place variation and diff in performance for float parse
-
-- jp [( scripts
- - Get
- + First
- - Locate
- - Walk
 
 - parse
  - add discover option to find JSON or SEN in a string or file
@@ -19,10 +11,17 @@
     - if number then cb and drop
   - errors don't panic but close off current (if whole) and then back to discover maps
  - implement on all parsers
+ - sen.Discover(b []byte, optimistic bool, f func(v any))
+ - fast scan to identify block
+  - look for { or [
+  - then count up and down matching on {} []
+   - detect start and end of " and ', skipping escaped
+  - if much faster then parse in separater channel
+  - handles embedded json
+   - maybe faster in some cases
+  - maybe a optimistic mode that assumes json/sen so count and minimal modes
+   - regular mode - attempt parse, if fails then try next
 
-- embedded struct pointer encoding issue
-- json.Unmarshaler
- - use alt.Recompose and convert simple to bytes and pass to unmarshaller
 
 - pretty
  - align maps as well as arrays

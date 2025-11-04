@@ -52,7 +52,7 @@ func init() {
 // RegisterComposer regsiters a composer function for a value type. A nil
 // function will still register the default composer which uses reflection.
 func (r *Recomposer) RegisterComposer(val any, fun RecomposeFunc) error {
-	_, err := r.registerComposer(reflect.TypeOf(val), fun)
+	_, err := r.registerComposer(reflect.TypeOf(val), fun, "")
 
 	return err
 }
@@ -77,12 +77,17 @@ func (r *Recomposer) RegisterUnmarshalerComposer(fun RecomposeAnyFunc) {
 	}
 }
 
-func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*composer, error) {
+func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc, typeName string) (*composer, error) {
 	if rt.Kind() == reflect.Ptr {
 		rt = rt.Elem()
 	}
-	full := rt.PkgPath() + "/" + rt.Name()
-	// TBD could loosen this up and allow any type as long as a function is provided.
+	name := rt.Name()
+	if len(name) == 0 {
+		name = typeName
+	}
+	full := rt.PkgPath() + "/" + name
+
+	// TBD could loosen this up and allow any type as long as a function is provided. id is path through field names
 	if rt.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("only structs can be recomposed. %s is not a struct type", rt)
 	}
@@ -90,7 +95,7 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*comp
 	if c == nil {
 		c = &composer{
 			fun:   fun,
-			short: rt.Name(),
+			short: name,
 			full:  full,
 			rtype: rt,
 		}
@@ -115,10 +120,21 @@ func (r *Recomposer) registerComposer(rt reflect.Type, fun RecomposeFunc) (*comp
 		case reflect.Array, reflect.Slice, reflect.Map, reflect.Ptr:
 			ft = ft.Elem()
 		}
-		if _, has := r.composers[ft.Name()]; has {
+		fname := ft.Name()
+		if len(fname) == 0 {
+			if len(typeName) == 0 {
+				typeName = rt.Name()
+			}
+			fname = typeName + "." + f.Name
+		}
+		if _, has := r.composers[fname]; has {
 			continue
 		}
-		_, _ = r.registerComposer(ft, nil)
+		if 0 < len(ft.Name()) {
+			_, _ = r.registerComposer(ft, nil, "")
+		} else {
+			_, _ = r.registerComposer(ft, nil, fname)
+		}
 	}
 	return c, nil
 }
@@ -177,12 +193,12 @@ func (r *Recomposer) MustRecompose(v any, tv ...any) (out any) {
 		switch rv.Kind() {
 		case reflect.Array, reflect.Slice:
 			rv = reflect.New(rv.Type())
-			r.recomp(v, rv)
+			r.recomp(v, rv, "")
 			out = rv.Elem().Interface()
 		case reflect.Map:
-			r.recomp(v, rv)
+			r.recomp(v, rv, "")
 		case reflect.Ptr:
-			r.recomp(v, rv)
+			r.recomp(v, rv, "")
 			switch rv.Elem().Kind() {
 			case reflect.Slice, reflect.Array, reflect.Map, reflect.Interface:
 				out = rv.Elem().Interface()
@@ -241,7 +257,7 @@ func (r *Recomposer) recompAny(v any) any {
 					return val
 				}
 				rv := reflect.New(c.rtype)
-				r.recomp(v, rv)
+				r.recomp(v, rv, "")
 				return rv.Interface()
 			}
 		}
@@ -283,7 +299,7 @@ func (r *Recomposer) recompAny(v any) any {
 					return val
 				}
 				rv := reflect.New(c.rtype)
-				r.recomp(simple, rv)
+				r.recomp(simple, rv, "")
 				return rv.Interface()
 			}
 		}
@@ -309,7 +325,7 @@ func (r *Recomposer) recompAny(v any) any {
 	return v
 }
 
-func (r *Recomposer) recomp(v any, rv reflect.Value) {
+func (r *Recomposer) recomp(v any, rv reflect.Value, typeName string) {
 	as, _ := rv.Interface().(AttrSetter)
 	if rv.Kind() == reflect.Ptr {
 		if v == nil {
@@ -337,12 +353,12 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 			et = et.Elem()
 			for i := 0; i < size; i++ {
 				ev := reflect.New(et)
-				r.recomp(va[i], ev)
+				r.recomp(va[i], ev, "")
 				av.Index(i).Set(ev)
 			}
 		} else {
 			for i := 0; i < size; i++ {
-				r.setValue(va[i], av.Index(i), nil)
+				r.setValue(va[i], av.Index(i), nil, "")
 			}
 		}
 		rv.Set(av)
@@ -361,7 +377,7 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 			// actual type of the element value if the slice input is []any.
 			ev := vv.Index(i).Interface()
 			ri := rv.Index(i)
-			r.setValue(ev, ri, nil)
+			r.setValue(ev, ri, nil, "")
 		}
 	case reflect.Map:
 		if v == nil {
@@ -393,20 +409,24 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 			et = et.Elem()
 			for k, m := range vm {
 				ev := reflect.New(et)
-				r.recomp(m, ev)
+				r.recomp(m, ev, "")
 				rv.SetMapIndex(reflect.ValueOf(k), ev)
 			}
 		default:
 			for k, m := range vm {
 				ev := reflect.New(et)
-				r.recomp(m, ev)
+				r.recomp(m, ev, "")
 				rv.SetMapIndex(reflect.ValueOf(k), ev.Elem())
 			}
 		}
 	case reflect.Struct:
 		vm, ok := (v).(map[string]any)
+		rt := rv.Type()
+		if len(typeName) == 0 || 0 < len(rt.Name()) {
+			typeName = rt.Name()
+		}
 		if !ok {
-			if c := r.composers[rv.Type().Name()]; c != nil && c.any != nil {
+			if c := r.composers[rt.Name()]; c != nil && c.any != nil {
 				if val, err := c.any(v); err == nil {
 					if val == nil {
 						break
@@ -444,7 +464,7 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 			return
 		}
 		var im map[string]reflect.StructField
-		if c := r.composers[rv.Type().Name()]; c != nil {
+		if c := r.composers[typeName]; c != nil {
 			if c.fun != nil {
 				if val, err := c.fun(vm); err == nil {
 					vv := reflect.ValueOf(val)
@@ -459,7 +479,7 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 			}
 			im = c.indexes
 		} else {
-			c, _ = r.registerComposer(rv.Type(), nil)
+			c, _ = r.registerComposer(rt, nil, typeName)
 			im = c.indexes
 		}
 		for k := range im {
@@ -477,7 +497,7 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 				}
 			}
 			if has && m != nil {
-				r.setValue(m, f, &sf)
+				r.setValue(m, f, &sf, typeName)
 			}
 		}
 	case reflect.Interface:
@@ -497,7 +517,7 @@ func (r *Recomposer) recomp(v any, rv reflect.Value) {
 	}
 }
 
-func (r *Recomposer) setValue(v any, rv reflect.Value, sf *reflect.StructField) {
+func (r *Recomposer) setValue(v any, rv reflect.Value, sf *reflect.StructField, parent string) {
 	switch rv.Kind() {
 	case reflect.Bool:
 		if s, ok := v.(string); ok && sf != nil && strings.Contains(sf.Tag.Get("json"), ",string") {
@@ -549,7 +569,7 @@ func (r *Recomposer) setValue(v any, rv reflect.Value, sf *reflect.StructField) 
 		rv.Set(reflect.ValueOf(v))
 	case reflect.Ptr:
 		ev := reflect.New(rv.Type().Elem())
-		r.recomp(v, ev)
+		r.recomp(v, ev, "")
 		rv.Set(ev)
 	default:
 		if reflect.PtrTo(rv.Type()).Implements(jsonUnmarshalerType) {
@@ -562,6 +582,9 @@ func (r *Recomposer) setValue(v any, rv reflect.Value, sf *reflect.StructField) 
 				return
 			}
 		}
-		r.recomp(v, rv)
+		if 0 < len(parent) {
+			parent += "." + sf.Name
+		}
+		r.recomp(v, rv, parent)
 	}
 }

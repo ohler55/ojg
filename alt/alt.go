@@ -121,7 +121,7 @@ func MustNewRecomposer(
 	}
 	for v, fun := range composers {
 		rt := reflect.TypeOf(v)
-		if _, err := r.registerComposer(rt, fun); err != nil {
+		if _, err := r.registerComposer(rt, fun, ""); err != nil {
 			panic(err)
 		}
 	}

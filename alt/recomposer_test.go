@@ -856,3 +856,38 @@ func TestRecomposeReflectArray(t *testing.T) {
 
 	tt.Panic(t, func() { _ = r.MustRecompose(map[string]any{"a": 1}, &tri) })
 }
+
+func TestRecomposeAnonymousEmbeddedStructs(t *testing.T) {
+	type AnonBed struct {
+		F1 int
+		F2 struct {
+			F21 int
+			F22 struct {
+				F221 int
+				F222 int
+			}
+			F23 int
+		}
+		F3 int
+	}
+	r := alt.MustNewRecomposer("^", nil)
+	src := map[string]any{
+		"f1": 1,
+		"f2": map[string]any{
+			"f21": 21,
+			"f22": map[string]any{
+				"f221": 221,
+				"f222": 222,
+			},
+			"f23": 23,
+		},
+		"f3": 3,
+	}
+	var ab AnonBed
+	_ = r.MustRecompose(src, &ab)
+	tt.Equal(t, `{
+  f1: 1
+  f2: {f21: 21 f22: {f221: 221 f222: 222} f23: 23}
+  f3: 3
+}`, pretty.SEN(ab))
+}
