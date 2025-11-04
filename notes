@@ -1,5 +1,4 @@
 
-
 - discover package
  - must handle key like "abc"x: as an error
   - pop on end quote should go to colonMap, maybe pre-load in modes
