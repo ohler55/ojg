@@ -121,11 +121,11 @@ func TestFindMapEmpty(t *testing.T) {
 	tt.Equal(t, `{ }`, string(found))
 }
 
-// func TestFindMapDev(t *testing.T) {
-// 	var found []byte
-// 	discover.Find([]byte(`  {abc:} `), func(f []byte) (back, stop bool) {
-// 		found = f
-// 		return false, false
-// 	})
-// 	tt.Equal(t, `{abc:}`, string(found))
-// }
+func TestFindMapDev(t *testing.T) {
+	var found []byte
+	discover.Find([]byte(`  {abc:123} `), func(f []byte) (back, stop bool) {
+		found = f
+		return false, false
+	})
+	tt.Equal(t, `{abc:123}`, string(found))
+}

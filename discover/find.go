@@ -2,8 +2,6 @@
 
 package discover
 
-import "fmt"
-
 // Find occurrence of SEN documents that are either maps or arrays. This is a
 // best effort search to find potential JSON or SEN documents. It is possible
 // that document will not parse without errors. The callback function should
@@ -53,20 +51,17 @@ func Find(buf []byte, cb func(found []byte) (back, stop bool)) {
 			if len(modes) == 0 {
 				start = i
 			}
-			// TBD append sendValueMap
 			modes = append(modes, mode)
 			mode = senPreKeyMap
-			// TBD keyMode and map - keyMap->colonMap->valueMapp
-			//  looks end of token with : or space terminator
-			//  after key, need :
-			//  read value next with space or }
-			//    value can also be [] or {}
 		case keyChar:
 			mode = senKeyMap
 		case keyDoneChar:
-			fmt.Printf("*** key done at %q\n", buf[:i])
-			// TBD colonMap
-			return
+			if b == ':' {
+				mode = senPreValueMap
+			} else {
+				modes = append(modes, senPreValueMap)
+				mode = senColonMap
+			}
 		case quote1, quote2:
 			if quoteOkMap[buf[i-1]] != 'o' {
 				reset()
@@ -78,6 +73,10 @@ func Find(buf []byte, cb func(found []byte) (back, stop bool)) {
 			} else {
 				mode = quote1Map
 			}
+		case valueChar:
+			mode = senValueMap
+		case valueDoneChar:
+			mode = senPreKeyMap
 		case popMode:
 			mode = modes[len(modes)-1]
 			modes = modes[:len(modes)-1]

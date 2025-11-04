@@ -1,6 +1,12 @@
 
 
 - discover package
+ - must handle key like "abc"x: as an error
+  - pop on end quote should go to colonMap, maybe pre-load in modes
+   - maybe a keyQuoteChar in senPreKeyMap
+   - or maybe always preload colonMap and terminate key with a pop
+    - need to deal with } though, maybe pop until ??? dummy map marker for objects start or just senPreKey
+
  - discover.SEN(b []byte, f func(v any) bool)
   - use Find and then parse, if err then backup
  - discover.JSON(b []byte, f func(v any) bool)

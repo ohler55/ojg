@@ -22,6 +22,9 @@ const (
 	keyChar     = 'k'
 	keyDoneChar = 'K'
 
+	valueChar     = 'v'
+	valueDoneChar = 'V'
+
 	//   0123456789abcdef0123456789abcdef
 	scanMap = "" +
 		"................................" + // 0x00
@@ -38,7 +41,7 @@ const (
 		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
 		".eQe...qee................ee...." + // 0x20
 		"...........................[e].." + // 0x40
-		"e..........................{.}.e" + // 0x60
+		"e..........................{.e.e" + // 0x60
 		"................................" + // 0x80
 		"................................" + // 0xa0
 		"................................" + // 0xc0
@@ -47,7 +50,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	senPreKeyMap = "" +
 		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
-		".eQekkkqeekkekkkeeeeeeeeeeeekkkk" + // 0x20
+		".eQekkkqeekk.kkkeeeeeeeeeeeekkkk" + // 0x20
 		"kkkkkkkkkkkkkkkkkkkkkkkkkkkeeekk" + // 0x40
 		"ekkkkkkkkkkkkkkkkkkkkkkkkkkek}ke" + // 0x60
 		"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk" + // 0x80
@@ -67,7 +70,7 @@ const (
 		"................................K" //  0xe0
 
 	//   0123456789abcdef0123456789abcdef
-	colonMap = "" +
+	senColonMap = "" +
 		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
 		".eeeeeeeeeeeeeeeeeeeeeeeeepeeeee" + // 0x20
 		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x40
@@ -76,6 +79,34 @@ const (
 		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0xa0
 		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0xc0
 		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee:" //  0xe0
+
+	//   0123456789abcdef0123456789abcdef
+	senPreValueMap = "" +
+		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
+		".eQevvvqeevvevvvvvvvvvvvvveevvvv" + // 0x20
+		"vvvvvvvvvvvvvvvvvvvvvvvvvvv[eevv" + // 0x40
+		"evvvvvvvvvvvvvvvvvvvvvvvvvv{veve" + // 0x60
+		"vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" + // 0x80
+		"vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" + // 0xa0
+		"vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" + // 0xc0
+		"vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" //  0xe0
+
+	//   0123456789abcdef0123456789abcdef
+	senValueMap = "" +
+		"eeeeeeeeeVVeeVeeeeeeeeeeeeeeeeee" + // 0x00
+		"Veee...eee..V.............ee...." + // 0x20
+		"...........................eee.." + // 0x40
+		"e..........................e.}.e" + // 0x60
+		"................................" + // 0x80
+		"................................" + // 0xa0
+		"................................" + // 0xc0
+		"................................V" //  0xe0
+
+	// TBD senValueMap like senArrayMap
+	//  ] is e
+	// } is close
+	// " or ' ok at start so senPreValueMap
+	//
 
 	/////
 
