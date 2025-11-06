@@ -112,40 +112,6 @@ func Find(buf []byte, cb func(found []byte) (back, stop bool)) {
 			}
 		case errChar:
 			reset()
-
-			///////// TBD
-			// case openObject:
-			// 	if len(modes) == 0 {
-			// 		start = i
-			// 	}
-			// 	modes = append(modes, mode)
-			// 	mode = keyMap
-			// case closeObject:
-			// 	mode = modes[len(modes)-1]
-			// 	modes = modes[:len(modes)-1]
-			// 	if len(modes) == 0 {
-			// 		back, stop := cb(buf[start : i+1])
-			// 		if stop {
-			// 			return
-			// 		}
-			// 		if back {
-			// 			i = start
-			// 		}
-			// 	}
-
-			// do nothing
-			// TBD if starts is not empty
-			//  must match starts
-			//  shorten starts
-			//  if starts is empty then cb
-			// TBD if no match then back to start+1 or maybe keep track of next
-
-			// TBD note in quotes, single or double
-			// do we care about : and , - probably for better results
-			// white space is important as a separator
-
-			// TBD maybe , and required quotes for JSON and not SEN
-
 		}
 	}
 }

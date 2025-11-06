@@ -164,10 +164,27 @@ func TestFindMapQuote2(t *testing.T) {
 	tt.Equal(t, `{"abc":"123"}`, string(found))
 }
 
+func TestFindMapQuote1(t *testing.T) {
+	var found []byte
+	discover.Find([]byte(`  { 'abc' : '123' } `), func(f []byte) (back, stop bool) {
+		found = f
+		return false, false
+	})
+	tt.Equal(t, `{ 'abc' : '123' }`, string(found))
+
+	found = found[:0]
+	discover.Find([]byte(`  {'abc':'123'} `), func(f []byte) (back, stop bool) {
+		found = f
+		return false, false
+	})
+	tt.Equal(t, `{'abc':'123'}`, string(found))
+}
+
 // func TestFindMapDev(t *testing.T) {
 // 	var found []byte
-// 	discover.Find([]byte(`  { "abc" : "123" } `), func(f []byte) (back, stop bool) {
-// 		found = f
+// 	discover.Find([]byte(`  { x:{} } `), func(f []byte) (back, stop bool) {
+// 		found = append(found, f...)
+// 		found = append(found, '\n')
 // 		return false, false
 // 	})
 // 	tt.Equal(t, `{abc:123}`, string(found))
