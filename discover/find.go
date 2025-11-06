@@ -25,7 +25,7 @@ func Find(buf []byte, cb func(found []byte) (back, stop bool)) {
 	}
 	for i = 0; i < len(buf); i++ {
 		b = buf[i]
-		// fmt.Printf("%d: '%c' 0x%02x - 0x%02x in %c\n", i, b, b, mode[b], mode[256])
+		// fmt.Printf("%d: '%c' 0x%02x - %c in %c\n", i, b, b, mode[b], mode[256])
 		switch mode[b] {
 		case skip:
 			// no change
@@ -37,6 +37,10 @@ func Find(buf []byte, cb func(found []byte) (back, stop bool)) {
 			mode = senArrayMap
 		case closeArray, closeObject:
 			mode = modes[len(modes)-1]
+			if mode == senPreValueMap {
+				modes = modes[:len(modes)-1]
+				mode = modes[len(modes)-1]
+			}
 			modes = modes[:len(modes)-1]
 			if len(modes) == 0 {
 				back, stop := cb(buf[start : i+1])
@@ -62,6 +66,9 @@ func Find(buf []byte, cb func(found []byte) (back, stop bool)) {
 				modes = append(modes, senPreValueMap)
 				mode = senColonMap
 			}
+		case colonChar:
+			mode = senPreValueMap
+
 		case quote1, quote2:
 			if quoteOkMap[buf[i-1]] != 'o' {
 				reset()
@@ -72,6 +79,15 @@ func Find(buf []byte, cb func(found []byte) (back, stop bool)) {
 				mode = quote2Map
 			} else {
 				mode = quote1Map
+			}
+		case quoteEnd:
+			mode = modes[len(modes)-1]
+			modes = modes[:len(modes)-1]
+			switch mode {
+			case senPreKeyMap:
+				mode = senColonMap
+			case senPreValueMap:
+				mode = senPreKeyMap
 			}
 		case valueChar:
 			mode = senValueMap

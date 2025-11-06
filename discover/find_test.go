@@ -121,7 +121,7 @@ func TestFindMapEmpty(t *testing.T) {
 	tt.Equal(t, `{ }`, string(found))
 }
 
-func TestFindMapDev(t *testing.T) {
+func TestFindMapOneTight(t *testing.T) {
 	var found []byte
 	discover.Find([]byte(`  {abc:123} `), func(f []byte) (back, stop bool) {
 		found = f
@@ -129,3 +129,46 @@ func TestFindMapDev(t *testing.T) {
 	})
 	tt.Equal(t, `{abc:123}`, string(found))
 }
+
+func TestFindMapOneLoose(t *testing.T) {
+	var found []byte
+	discover.Find([]byte(`  { abc : 123 } `), func(f []byte) (back, stop bool) {
+		found = f
+		return false, false
+	})
+	tt.Equal(t, `{ abc : 123 }`, string(found))
+}
+
+func TestFindMapMultipleTight(t *testing.T) {
+	var found []byte
+	discover.Find([]byte(`  {abc:123 d : e, f:2} `), func(f []byte) (back, stop bool) {
+		found = f
+		return false, false
+	})
+	tt.Equal(t, `{abc:123 d : e, f:2}`, string(found))
+}
+
+func TestFindMapQuote2(t *testing.T) {
+	var found []byte
+	discover.Find([]byte(`  { "abc" : "123" } `), func(f []byte) (back, stop bool) {
+		found = f
+		return false, false
+	})
+	tt.Equal(t, `{ "abc" : "123" }`, string(found))
+
+	found = found[:0]
+	discover.Find([]byte(`  {"abc":"123"} `), func(f []byte) (back, stop bool) {
+		found = f
+		return false, false
+	})
+	tt.Equal(t, `{"abc":"123"}`, string(found))
+}
+
+// func TestFindMapDev(t *testing.T) {
+// 	var found []byte
+// 	discover.Find([]byte(`  { "abc" : "123" } `), func(f []byte) (back, stop bool) {
+// 		found = f
+// 		return false, false
+// 	})
+// 	tt.Equal(t, `{abc:123}`, string(found))
+// }

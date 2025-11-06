@@ -17,11 +17,11 @@ const (
 	openArray  = '['
 	closeArray = ']'
 
-	openObject  = '{'
-	closeObject = '}'
-	keyChar     = 'k'
-	keyDoneChar = 'K'
-
+	openObject    = '{'
+	closeObject   = '}'
+	keyChar       = 'k'
+	keyDoneChar   = 'K'
+	colonChar     = ':'
 	valueChar     = 'v'
 	valueDoneChar = 'V'
 
@@ -72,7 +72,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	senColonMap = "" +
 		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
-		".eeeeeeeeeeeeeeeeeeeeeeeeepeeeee" + // 0x20
+		".eeeeeeeeeeeeeeeeeeeeeeeee:eeeee" + // 0x20
 		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x40
 		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x60
 		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x80
@@ -102,18 +102,10 @@ const (
 		"................................" + // 0xc0
 		"................................V" //  0xe0
 
-	// TBD senValueMap like senArrayMap
-	//  ] is e
-	// } is close
-	// " or ' ok at start so senPreValueMap
-	//
-
-	/////
-
 	//   0123456789abcdef0123456789abcdef
 	quoteOkMap = "" +
 		".........oo..o.................." + // 0x00
-		"o...........o..................." + // 0x20
+		"o...........o.............o....." + // 0x20
 		"...........................o.o.." + // 0x40
 		"...........................o.o.." + // 0x60
 		"................................" + // 0x80
@@ -124,7 +116,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	quote1Map = "" +
 		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
-		".......p........................" + // 0x20
+		".......z........................" + // 0x20
 		"............................b..." + // 0x40
 		"...............................e" + // 0x60
 		"................................" + // 0x80
@@ -135,7 +127,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	quote2Map = "" +
 		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
-		"..p............................." + // 0x20
+		"..z............................." + // 0x20
 		"............................b..." + // 0x40
 		"...............................e" + // 0x60
 		"................................" + // 0x80
