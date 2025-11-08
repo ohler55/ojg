@@ -48,7 +48,7 @@ const (
 		"................................A" //  0xe0
 
 	//   0123456789abcdef0123456789abcdef
-	senPreKeyMap = "" +
+	senObjectMap = "" +
 		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
 		".eQekkkqeekk.kkkeeeeeeeeeeeekkkk" + // 0x20
 		"kkkkkkkkkkkkkkkkkkkkkkkkkkkeeekk" + // 0x40
@@ -56,7 +56,7 @@ const (
 		"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk" + // 0x80
 		"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk" + // 0xa0
 		"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk" + // 0xc0
-		"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk" //  0xe0
+		"kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkO" //  0xe0
 
 	//   0123456789abcdef0123456789abcdef
 	senKeyMap = "" +

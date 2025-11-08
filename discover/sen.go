@@ -2,20 +2,37 @@
 
 package discover
 
-// Find occurrence of SEN documents that are either maps or arrays. This is a
+import (
+	"github.com/ohler55/ojg/sen"
+)
+
+// TBD uncomment for debugging
+// func modesString(modes []string) string {
+// 	var b []byte
+// 	b = append(b, '[')
+// 	for i, m := range modes {
+// 		if 0 < i {
+// 			b = append(b, ' ')
+// 		}
+// 		b = append(b, m[256])
+// 	}
+// 	return string(append(b, ']'))
+// }
+
+// SENbytes occurrence of SEN documents that are either maps or arrays. This is a
 // best effort search to find potential JSON or SEN documents. It is possible
 // that document will not parse without errors. The callback function should
 // return a true back return value to back up to the next open character after
 // the current start. If back is false scanning continues after the end of the
 // found section. If stop is true then no further scanning is attempted and
 // the function returns.
-func Find(buf []byte, cb func(found []byte) (back, stop bool)) {
+func SENbytes(buf []byte, cb func(found []byte) (back, stop bool)) {
 	var (
 		b     byte
 		start int
 		modes []string
-		i     int
 		ucnt  int
+		i     int
 	)
 	mode := scanMap
 	reset := func() {
@@ -23,9 +40,10 @@ func Find(buf []byte, cb func(found []byte) (back, stop bool)) {
 		modes = modes[:0]
 		mode = scanMap
 	}
-	for i = 0; i < len(buf); i++ {
+retry:
+	for i = start; i < len(buf); i++ {
 		b = buf[i]
-		// fmt.Printf("%d: '%c' 0x%02x - %c in %c\n", i, b, b, mode[b], mode[256])
+		// fmt.Printf("%d: '%c' 0x%02x - %c in %c in %s\n", i, b, b, mode[b], mode[256], modesString(modes))
 		switch mode[b] {
 		case skip:
 			// no change
@@ -33,14 +51,24 @@ func Find(buf []byte, cb func(found []byte) (back, stop bool)) {
 			if len(modes) == 0 {
 				start = i
 			}
-			modes = append(modes, mode)
+			if mode == senPreValueMap || mode == senValueMap {
+				modes = append(modes, senObjectMap)
+			} else {
+				modes = append(modes, mode)
+			}
 			mode = senArrayMap
+		case openObject:
+			if len(modes) == 0 {
+				start = i
+			}
+			if mode == senPreValueMap || mode == senValueMap {
+				modes = append(modes, senObjectMap)
+			} else {
+				modes = append(modes, mode)
+			}
+			mode = senObjectMap
 		case closeArray, closeObject:
 			mode = modes[len(modes)-1]
-			if mode == senPreValueMap {
-				modes = modes[:len(modes)-1]
-				mode = modes[len(modes)-1]
-			}
 			modes = modes[:len(modes)-1]
 			if len(modes) == 0 {
 				back, stop := cb(buf[start : i+1])
@@ -51,19 +79,12 @@ func Find(buf []byte, cb func(found []byte) (back, stop bool)) {
 					i = start
 				}
 			}
-		case openObject:
-			if len(modes) == 0 {
-				start = i
-			}
-			modes = append(modes, mode)
-			mode = senPreKeyMap
 		case keyChar:
 			mode = senKeyMap
 		case keyDoneChar:
 			if b == ':' {
 				mode = senPreValueMap
 			} else {
-				modes = append(modes, senPreValueMap)
 				mode = senColonMap
 			}
 		case colonChar:
@@ -84,15 +105,15 @@ func Find(buf []byte, cb func(found []byte) (back, stop bool)) {
 			mode = modes[len(modes)-1]
 			modes = modes[:len(modes)-1]
 			switch mode {
-			case senPreKeyMap:
+			case senObjectMap:
 				mode = senColonMap
 			case senPreValueMap:
-				mode = senPreKeyMap
+				mode = senObjectMap
 			}
 		case valueChar:
 			mode = senValueMap
 		case valueDoneChar:
-			mode = senPreKeyMap
+			mode = senObjectMap
 		case popMode:
 			mode = modes[len(modes)-1]
 			modes = modes[:len(modes)-1]
@@ -114,4 +135,21 @@ func Find(buf []byte, cb func(found []byte) (back, stop bool)) {
 			reset()
 		}
 	}
+	if 0 < len(modes) {
+		start++
+		if start < len(buf) {
+			reset()
+			goto retry
+		}
+	}
+}
+
+// SEN calls the cb callback when a SEN document is discovered in the buf.
+func SEN(buf []byte, cb func(value any) (stop bool)) {
+	SENbytes(buf, func(found []byte) (bool, bool) {
+		if value, err := sen.Parse(found); err == nil {
+			return false, cb(value)
+		}
+		return true, false
+	})
 }
