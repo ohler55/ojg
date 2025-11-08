@@ -3,6 +3,10 @@
 package discover
 
 import (
+	"errors"
+	"fmt"
+	"io"
+
 	"github.com/ohler55/ojg/sen"
 )
 
@@ -19,14 +23,22 @@ import (
 // 	return string(append(b, ']'))
 // }
 
-// SENbytes occurrence of SEN documents that are either maps or arrays. This is a
-// best effort search to find potential JSON or SEN documents. It is possible
-// that document will not parse without errors. The callback function should
-// return a true back return value to back up to the next open character after
-// the current start. If back is false scanning continues after the end of the
-// found section. If stop is true then no further scanning is attempted and
-// the function returns.
+// SENbytes finds potential occurrence of SEN documents that are either maps
+// or arrays. This is a best effort search to find potential SEN documents. It
+// is possible that document will not parse without errors. The callback
+// function should return a true back return value to back up to the next open
+// character after the current start. If back is false scanning continues
+// after the end of the found section. If stop is true then no further
+// scanning is attempted and the function returns.
 func SENbytes(buf []byte, cb func(found []byte) (back, stop bool)) {
+	senBytes(buf, cb, nil)
+}
+
+func senBytes(
+	buf []byte,
+	cb func(found []byte) (back, stop bool),
+	more func(buf []byte, start, i int) ([]byte, int, int, bool)) {
+
 	var (
 		b     byte
 		start int
@@ -135,6 +147,15 @@ retry:
 			reset()
 		}
 	}
+	// fmt.Printf("*** out of loop\n")
+
+	if more != nil {
+		var eof bool
+		buf, start, i, eof = more(buf, start, i)
+		if !eof {
+			goto retry
+		}
+	}
 	if 0 < len(modes) {
 		start++
 		if start < len(buf) {
@@ -144,7 +165,8 @@ retry:
 	}
 }
 
-// SEN calls the cb callback when a SEN document is discovered in the buf.
+// SEN finds occurrence of SEN documents that are either maps or arrays. The
+// callback function should return true to stop discovering.
 func SEN(buf []byte, cb func(value any) (stop bool)) {
 	SENbytes(buf, func(found []byte) (bool, bool) {
 		if value, err := sen.Parse(found); err == nil {
@@ -152,4 +174,55 @@ func SEN(buf []byte, cb func(value any) (stop bool)) {
 		}
 		return true, false
 	})
+}
+
+// ReadSENbytes finds potential occurrence of SEN documents that are either
+// maps or arrays in a stream. This is a best effort search to find potential
+// SEN documents. It is possible that document will not parse without
+// errors. The callback function should return a true back return value to
+// back up to the next open character after the current start. If back is
+// false scanning continues after the end of the found section. If stop is
+// true then no further scanning is attempted and the function returns.
+func ReadSENbytes(r io.Reader, cb func(b []byte) (back, stop bool)) {
+	senBytes(nil, cb, func(buf []byte, start, i int) ([]byte, int, int, bool) {
+		return readMore(r, buf, start, i)
+	})
+}
+
+// ReadSEN finds occurrence of SEN documents that are either maps or arrays in
+// a stream. The callback function should return true to stop discovering.
+func ReadSEN(r io.Reader, f func(v any) bool) {
+	// TBD
+}
+
+const readBufSize = 4096
+
+func readMore(r io.Reader, b []byte, start, i int) ([]byte, int, int, bool) {
+	fmt.Printf("*** readMore %d %d\n", start, i)
+	bc := cap(b)
+	used := i - start
+	orig := b
+	if used+readBufSize < bc {
+		b = make([]byte, used+readBufSize)
+		// if 0 < used {
+		// 	// shift existing
+		// 	copy(b, orig[start:i])
+		// 	i = used
+		// 	start = 0
+		// }
+	}
+	if 0 < start {
+		copy(b, orig[start:i])
+		i = used
+		start = 0
+	}
+	cnt, err := r.Read(b[i:])
+	if err != nil {
+		if !errors.Is(err, io.EOF) {
+			panic(err)
+		}
+	}
+	b = b[:used+cnt]
+
+	return b, start, i, cnt == 0
 }

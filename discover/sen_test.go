@@ -10,6 +10,15 @@ import (
 	"github.com/ohler55/ojg/tt"
 )
 
+func TestSENbytesNil(t *testing.T) {
+	var found []byte
+	discover.SENbytes(nil, func(f []byte) (back, stop bool) {
+		found = f
+		return false, false
+	})
+	tt.Equal(t, "", string(found))
+}
+
 func TestSENbytesArrayEmpty(t *testing.T) {
 	var found []byte
 	discover.SENbytes([]byte("  [  ] "), func(f []byte) (back, stop bool) {
@@ -262,3 +271,14 @@ func TestSENShort(t *testing.T) {
 	})
 	tt.Equal(t, `[4]`, pretty.SEN(found))
 }
+
+// func TestReadSENSplit(t *testing.T) {
+// 	var found any
+// 	r, err := os.Open("testdata/with-sen.txt")
+// 	tt.Nil(t, err)
+// 	discover.ReadSENbytes(r, func(f []byte) (back, stop bool) {
+// 		found = f
+// 		return false, false
+// 	})
+// 	tt.Equal(t, `xxx`, pretty.SEN(found))
+// }
