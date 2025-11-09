@@ -1,0 +1,157 @@
+// Copyright (c) 2025, Peter Ohler, All rights reserved.
+
+package discover
+
+import "io"
+
+// Find potential occurrence of SEN documents that are either maps or
+// arrays. This is a best effort search to find potential SEN documents. It is
+// possible that document will not parse without errors. The callback function
+// should return a true back return value to back up to the next open
+// character after the current start. If back is false scanning continues
+// after the end of the found section. If stop is true then no further
+// scanning is attempted and the function returns.
+func Find(buf []byte, cb func(found []byte) (back, stop bool)) {
+	find(buf, cb, nil)
+}
+
+func find(
+	buf []byte,
+	cb func(found []byte) (back, stop bool),
+	more func(buf []byte, start, i int) ([]byte, int, int, bool)) {
+
+	var (
+		b     byte
+		start int
+		modes []string
+		ucnt  int
+		i     int
+	)
+	mode := scanMap
+	reset := func() {
+		i = start
+		modes = modes[:0]
+		mode = scanMap
+	}
+retry:
+	for ; i < len(buf); i++ {
+		b = buf[i]
+		switch mode[b] {
+		case skip:
+			// no change
+		case openArray:
+			if len(modes) == 0 {
+				start = i
+			}
+			if mode == senPreValueMap || mode == senValueMap {
+				modes = append(modes, senObjectMap)
+			} else {
+				modes = append(modes, mode)
+			}
+			mode = senArrayMap
+		case openObject:
+			if len(modes) == 0 {
+				start = i
+			}
+			if mode == senPreValueMap || mode == senValueMap {
+				modes = append(modes, senObjectMap)
+			} else {
+				modes = append(modes, mode)
+			}
+			mode = senObjectMap
+		case closeArray, closeObject:
+			mode = modes[len(modes)-1]
+			modes = modes[:len(modes)-1]
+			if len(modes) == 0 {
+				back, stop := cb(buf[start : i+1])
+				if stop {
+					return
+				}
+				if back {
+					i = start
+				}
+			}
+		case keyChar:
+			mode = senKeyMap
+		case keyDoneChar:
+			if b == ':' {
+				mode = senPreValueMap
+			} else {
+				mode = senColonMap
+			}
+		case colonChar:
+			mode = senPreValueMap
+
+		case quote1, quote2:
+			if quoteOkMap[buf[i-1]] != 'o' {
+				reset()
+				break
+			}
+			modes = append(modes, mode)
+			if b == '"' {
+				mode = quote2Map
+			} else {
+				mode = quote1Map
+			}
+		case quoteEnd:
+			mode = modes[len(modes)-1]
+			modes = modes[:len(modes)-1]
+			switch mode {
+			case senObjectMap:
+				mode = senColonMap
+			case senPreValueMap:
+				mode = senObjectMap
+			}
+		case valueChar:
+			mode = senValueMap
+		case valueDoneChar:
+			mode = senObjectMap
+		case popMode:
+			mode = modes[len(modes)-1]
+			modes = modes[:len(modes)-1]
+		case escape:
+			modes = append(modes, mode)
+			mode = escMap
+		case escU:
+			ucnt = 0
+			modes = append(modes, mode)
+			mode = uMap
+		case uOk:
+			if ucnt == 3 {
+				mode = modes[len(modes)-2]
+				modes = modes[:len(modes)-2]
+			} else {
+				ucnt++
+			}
+		case errChar:
+			reset()
+		}
+	}
+	if more != nil {
+		var eof bool
+		buf, start, i, eof = more(buf, start, i)
+		if !eof {
+			goto retry
+		}
+	}
+	if 0 < len(modes) {
+		start++
+		if start < len(buf) {
+			reset()
+			goto retry
+		}
+	}
+}
+
+// Read finds potential occurrence of SEN documents that are either maps or
+// arrays in a stream. This is a best effort search to find potential SEN
+// documents. It is possible that document will not parse without errors. The
+// callback function should return a true back return value to back up to the
+// next open character after the current start. If back is false scanning
+// continues after the end of the found section. If stop is true then no
+// further scanning is attempted and the function returns.
+func Read(r io.Reader, cb func(b []byte) (back, stop bool)) {
+	find(nil, cb, func(buf []byte, start, i int) ([]byte, int, int, bool) {
+		return readMore(r, buf, start, i)
+	})
+}

@@ -1,24 +1,4 @@
 
-- discover package
- + discover.SENbytes
- + discover.SEN
- + discover.ReadSENbytes
- + discover.ReadSEN
-
- - discover.JSONbytes(b []byte, f func(found []byte) (back, stop bool)
- - discover.JSON(b []byte, f func(v any) bool)
- - discover.ReadJSONbytes(r io.Reader, cb func(b []byte) (back, stop bool))
- - discover.ReadJSON(r io.Reader, f func(v any) bool)
-
- - add discovery to oj app
-  - -discover (bool)
-   - use lazy flag for json vs sen
-  - update docs
-   - not compatible with dig
-
-
----------
-
 - pretty
  - align maps as well as arrays
 

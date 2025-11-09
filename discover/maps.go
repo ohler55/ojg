@@ -90,10 +90,7 @@ const (
 		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0xa0
 		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0xc0
 		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeu" //   0xe0
-)
 
-// SEN specific character maps.
-const (
 	//   0123456789abcdef0123456789abcdef
 	senArrayMap = "" +
 		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
