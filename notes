@@ -2,7 +2,7 @@
 - discover package
  + discover.SENbytes
  + discover.SEN
- - discover.ReadSENbytes(r io.Reader, cb func(b []byte) (back, stop bool))
+ + discover.ReadSENbytes(r io.Reader, cb func(b []byte) (back, stop bool))
  - discover.ReadSEN(r io.Reader, f func(v any) bool)
 
  - discover.JSONbytes(b []byte, f func(found []byte) (back, stop bool)
@@ -11,19 +11,6 @@
  - discover.ReadJSON(r io.Reader, f func(v any) bool)
 
  - add discovery to oj app
-
- - ReadSEN
-  - maybe optional arg that handles expanding or shortening buffer
-   - expand when last char reached
-   - condense after successful callback
-   - maybe interface for expand and condense should also has cb for []byte or rather an add-on interface
-    - better separate to allow for easier reuse without forcing a new type
-   - readMore(buf []byte, start, i int) ([]byte, int, int)
-    - when end reached
-     - if start is 0 then slide
-     - expand buf
-     - read into space then shorten if needed (eof)
-
 
 
 ---------

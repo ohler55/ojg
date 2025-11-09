@@ -3,6 +3,7 @@
 package discover_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/ohler55/ojg/discover"
@@ -272,13 +273,27 @@ func TestSENShort(t *testing.T) {
 	tt.Equal(t, `[4]`, pretty.SEN(found))
 }
 
-// func TestReadSENSplit(t *testing.T) {
-// 	var found any
-// 	r, err := os.Open("testdata/with-sen.txt")
-// 	tt.Nil(t, err)
-// 	discover.ReadSENbytes(r, func(f []byte) (back, stop bool) {
-// 		found = f
-// 		return false, false
-// 	})
-// 	tt.Equal(t, `xxx`, pretty.SEN(found))
-// }
+func TestReadSENSplit(t *testing.T) {
+	var found []byte
+	r, err := os.Open("testdata/with-sen.txt")
+	tt.Nil(t, err)
+	discover.ReadSENbytes(r, func(f []byte) (back, stop bool) {
+		found = f
+		return false, false
+	})
+	tt.Equal(t, `{
+  abc: [
+    1
+    2
+    3
+    4
+  ]
+
+  xyz: [
+    5
+    6
+    7
+    8
+  ]
+}`, string(found))
+}

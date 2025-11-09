@@ -4,7 +4,6 @@ package discover
 
 import (
 	"errors"
-	"fmt"
 	"io"
 
 	"github.com/ohler55/ojg/sen"
@@ -53,7 +52,7 @@ func senBytes(
 		mode = scanMap
 	}
 retry:
-	for i = start; i < len(buf); i++ {
+	for ; i < len(buf); i++ {
 		b = buf[i]
 		// fmt.Printf("%d: '%c' 0x%02x - %c in %c in %s\n", i, b, b, mode[b], mode[256], modesString(modes))
 		switch mode[b] {
@@ -147,8 +146,6 @@ retry:
 			reset()
 		}
 	}
-	// fmt.Printf("*** out of loop\n")
-
 	if more != nil {
 		var eof bool
 		buf, start, i, eof = more(buf, start, i)
@@ -198,24 +195,21 @@ func ReadSEN(r io.Reader, f func(v any) bool) {
 const readBufSize = 4096
 
 func readMore(r io.Reader, b []byte, start, i int) ([]byte, int, int, bool) {
-	fmt.Printf("*** readMore %d %d\n", start, i)
 	bc := cap(b)
 	used := i - start
 	orig := b
-	if used+readBufSize < bc {
+	if bc < used+readBufSize {
 		b = make([]byte, used+readBufSize)
-		// if 0 < used {
-		// 	// shift existing
-		// 	copy(b, orig[start:i])
-		// 	i = used
-		// 	start = 0
-		// }
+		if start == 0 {
+			copy(b, orig)
+		}
 	}
 	if 0 < start {
 		copy(b, orig[start:i])
 		i = used
 		start = 0
 	}
+
 	cnt, err := r.Read(b[i:])
 	if err != nil {
 		if !errors.Is(err, io.EOF) {
