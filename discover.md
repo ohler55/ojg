@@ -1,13 +1,13 @@
 # OjG Discover
 
 The `discover` package and **oj** application option will scan a
-stream or file for text that could be a JSON or SEN document embedded
-in the input. The JSON or SEN document must be an array or object
-(map). The approach take is to first look for a starting character of
-`{` or `[` and then use a simplified SEN scanner to determine if the
-bytes that follow could be part of a SEN document. If the scan
-determines all bytes up to a matching closing `}` or `]` then an
-attempt is made to parse the bytes as either SEN or JSON. If that
+stream or file for text that could be a JSON or SEN array or object
+(map) embedded in the input. The JSON or SEN document must be an array
+or object (map). The approach taken is to first look for a starting
+character of `{` or `[` and then use a simplified SEN scanner to
+determine if the bytes that follow could be part of a SEN document. If
+the scan determines all bytes up to a matching closing `}` or `]` then
+an attempt is made to parse the bytes as either SEN or JSON. If that
 fails the scanner backs up to the starting `{` or `[` and moves
 forward one byte and continues scanning for a start byte. This process
 continues until the end of the stream or file.
@@ -17,7 +17,7 @@ continues until the end of the stream or file.
 The discover package includes access to the basic scanner with the
 `discover.Find` and `discover.Read` functions. These function takes a
 callback that is called for each potential match. The callback can
-then determine what to do with the potential bytes. If it is
+then determine what to do with the candidate bytes. If it is
 determined the text is not parseable as JSON or SEN or for what ever
 other reason the callback can return a flag indicating the scanner
 should backup to one after the start of the candidate bytes and
@@ -33,25 +33,25 @@ package parser on the candidate bytes.
 
 The **oj** application has a `-discover` option that will use the
 `discover` package to seearch for candidates and then use then
-appropriate parser depending on the whether then `-lazy` option wasa
+appropriate parser depending on the whether then `-lazy` option wa
 specified.
 
 ## Use Cases
 
-Some use cases for discovery option include working with messaging
-tools and tutorial or markdown text.
+Some use cases for the discovery option include working with messaging
+tools and markdown text.
 
 ### Messaging
 
-My go to messaging tool is [NATS
+My go-to messaging engine is [NATS
 JetStream](https://docs.nats.io/nats-concepts/jetstream). JetStream
 includes an inspection tool that allows viewing of messages in a
-queue. It provides information about each message as well as the
+stream. It provides information about each message as well as the
 contents of the message. If JSON is being used as the message content
 then viewing a stream might look like:
 
 ```
->nats stream view quux
+> nats stream view quux
 [205456] Subject: quux.example Received: 2025-11-11 17:03:44
 
   Nats-Expected-Stream: quux
@@ -67,7 +67,7 @@ then viewing a stream might look like:
 18:21:48 Reached apparent end of data
 ```
 
-There is JSON in there that might be useful to extract and use. By
+There is JSON in the output that might be useful to extract and use. By
 using **oj** (or the discover package) the JSON is easily extracted.
 
 ```
@@ -80,8 +80,8 @@ using **oj** (or the discover package) the JSON is easily extracted.
 
 ### Markdown
 
-Some tutorials or really any text document sometimes include JSON or
-Javascript data. With the discover those elements can be
+Some markdown or really any text document sometimes include JSON or
+Javascript data. With the discover package or option those elements can be
 extracted. SEN handles Javascript and other pseudo JSON data fairly
 well which opens up some possibilities. As an example use **oj** to
 extract the JSON elements in this markdown.

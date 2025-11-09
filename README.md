@@ -19,6 +19,7 @@ where data does not necessarily conform to a fixed structure.
  - Simple data builders using a push and pop approach.
  - Object encoding and decoding using an approach similar to that used with Oj for Ruby.
  - [Simple Encoding Notation](sen.md), a lazy way to write JSON omitting commas and quotes.
+ - [JSON and SEN Discovery](discover.md) as a package or option to the **oj** application.
 
 ## Using
 
@@ -42,8 +43,8 @@ Using JSONPath expressions:
 ```
 
 The **oj** command (cmd/oj) uses JSON path for filtering and
-extracting JSON elements. It also includes sorting, reformatting, and
-colorizing options.
+extracting JSON elements. It also includes sorting, reformatting,
+discovery of JSON in documents, and colorizing options.
 
 ```
 $ oj -m "(@.name == 'Pete')" myfile.json
@@ -72,6 +73,7 @@ import (
     "github.com/ohler55/ojg/jp"
     "github.com/ohler55/ojg/oj"
     "github.com/ohler55/ojg/sen"
+    "github.com/ohler55/ojg/discover"
 )
 ```
 
