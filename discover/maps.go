@@ -37,6 +37,64 @@ const (
 		"................................S" //  0xe0
 
 	//   0123456789abcdef0123456789abcdef
+	quoteOkMap = "" +
+		".........oo..o.................." + // 0x00
+		"o...........o.............o....." + // 0x20
+		"...........................o.o.." + // 0x40
+		"...........................o.o.." + // 0x60
+		"................................" + // 0x80
+		"................................" + // 0xa0
+		"................................" + // 0xc0
+		"................................" //   0xe0
+
+	//   0123456789abcdef0123456789abcdef
+	quote1Map = "" +
+		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
+		".......z........................" + // 0x20
+		"............................b..." + // 0x40
+		"...............................e" + // 0x60
+		"................................" + // 0x80
+		"................................" + // 0xa0
+		"................................" + // 0xc0
+		"................................q" //  0xe0
+
+	//   0123456789abcdef0123456789abcdef
+	quote2Map = "" +
+		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
+		"..z............................." + // 0x20
+		"............................b..." + // 0x40
+		"...............................e" + // 0x60
+		"................................" + // 0x80
+		"................................" + // 0xa0
+		"................................" + // 0xc0
+		"................................Q" //  0xe0
+
+	//   0123456789abcdef0123456789abcdef
+	escMap = "" +
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x00
+		"eepeeeepeeeeeeepeeeeeeeeeeeeeeee" + // 0x20
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeepeee" + // 0x40
+		"eepeeepeeeeeeepeeepepUeeeeeeeeee" + // 0x60
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x80
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0xa0
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0xc0
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeb" //  0xe0
+
+	//   0123456789abcdef0123456789abcdef
+	uMap = "" +
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x00
+		"eeeeeeeeeeeeeeeeuuuuuuuuuueeeeee" + // 0x20
+		"euuuuuueeeeeeeeeeeeeeeeeeeeeeeee" + // 0x40
+		"euuuuuueeeeeeeeeeeeeeeeeeeeeeeee" + // 0x60
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x80
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0xa0
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0xc0
+		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeu" //   0xe0
+)
+
+// SEN specific character maps.
+const (
+	//   0123456789abcdef0123456789abcdef
 	senArrayMap = "" +
 		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
 		".eQe...qee................ee...." + // 0x20
@@ -101,60 +159,4 @@ const (
 		"................................" + // 0xa0
 		"................................" + // 0xc0
 		"................................V" //  0xe0
-
-	//   0123456789abcdef0123456789abcdef
-	quoteOkMap = "" +
-		".........oo..o.................." + // 0x00
-		"o...........o.............o....." + // 0x20
-		"...........................o.o.." + // 0x40
-		"...........................o.o.." + // 0x60
-		"................................" + // 0x80
-		"................................" + // 0xa0
-		"................................" + // 0xc0
-		"................................" //   0xe0
-
-	//   0123456789abcdef0123456789abcdef
-	quote1Map = "" +
-		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
-		".......z........................" + // 0x20
-		"............................b..." + // 0x40
-		"...............................e" + // 0x60
-		"................................" + // 0x80
-		"................................" + // 0xa0
-		"................................" + // 0xc0
-		"................................q" //  0xe0
-
-	//   0123456789abcdef0123456789abcdef
-	quote2Map = "" +
-		"eeeeeeeee..ee.eeeeeeeeeeeeeeeeee" + // 0x00
-		"..z............................." + // 0x20
-		"............................b..." + // 0x40
-		"...............................e" + // 0x60
-		"................................" + // 0x80
-		"................................" + // 0xa0
-		"................................" + // 0xc0
-		"................................Q" //  0xe0
-
-	//   0123456789abcdef0123456789abcdef
-	escMap = "" +
-		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x00
-		"eepeeeepeeeeeeepeeeeeeeeeeeeeeee" + // 0x20
-		"eeeeeeeeeeeeeeeeeeeeeeeeeeeepeee" + // 0x40
-		"eepeeepeeeeeeepeeepepUeeeeeeeeee" + // 0x60
-		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x80
-		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0xa0
-		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0xc0
-		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeb" //  0xe0
-
-	//   0123456789abcdef0123456789abcdef
-	uMap = "" +
-		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x00
-		"eeeeeeeeeeeeeeeeuuuuuuuuuueeeeee" + // 0x20
-		"euuuuuueeeeeeeeeeeeeeeeeeeeeeeee" + // 0x40
-		"euuuuuueeeeeeeeeeeeeeeeeeeeeeeee" + // 0x60
-		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0x80
-		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0xa0
-		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" + // 0xc0
-		"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeu" //   0xe0
-
 )

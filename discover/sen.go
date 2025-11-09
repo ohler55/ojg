@@ -3,7 +3,6 @@
 package discover
 
 import (
-	"errors"
 	"io"
 
 	"github.com/ohler55/ojg/sen"
@@ -188,35 +187,11 @@ func ReadSENbytes(r io.Reader, cb func(b []byte) (back, stop bool)) {
 
 // ReadSEN finds occurrence of SEN documents that are either maps or arrays in
 // a stream. The callback function should return true to stop discovering.
-func ReadSEN(r io.Reader, f func(v any) bool) {
-	// TBD
-}
-
-const readBufSize = 4096
-
-func readMore(r io.Reader, b []byte, start, i int) ([]byte, int, int, bool) {
-	bc := cap(b)
-	used := i - start
-	orig := b
-	if bc < used+readBufSize {
-		b = make([]byte, used+readBufSize)
-		if start == 0 {
-			copy(b, orig)
+func ReadSEN(r io.Reader, cb func(value any) bool) {
+	ReadSENbytes(r, func(found []byte) (bool, bool) {
+		if value, err := sen.Parse(found); err == nil {
+			return false, cb(value)
 		}
-	}
-	if 0 < start {
-		copy(b, orig[start:i])
-		i = used
-		start = 0
-	}
-
-	cnt, err := r.Read(b[i:])
-	if err != nil {
-		if !errors.Is(err, io.EOF) {
-			panic(err)
-		}
-	}
-	b = b[:used+cnt]
-
-	return b, start, i, cnt == 0
+		return true, false
+	})
 }

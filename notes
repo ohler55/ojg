@@ -2,8 +2,8 @@
 - discover package
  + discover.SENbytes
  + discover.SEN
- + discover.ReadSENbytes(r io.Reader, cb func(b []byte) (back, stop bool))
- - discover.ReadSEN(r io.Reader, f func(v any) bool)
+ + discover.ReadSENbytes
+ + discover.ReadSEN
 
  - discover.JSONbytes(b []byte, f func(found []byte) (back, stop bool)
  - discover.JSON(b []byte, f func(v any) bool)
@@ -11,6 +11,10 @@
  - discover.ReadJSON(r io.Reader, f func(v any) bool)
 
  - add discovery to oj app
+  - -discover (bool)
+   - use lazy flag for json vs sen
+  - update docs
+   - not compatible with dig
 
 
 ---------
