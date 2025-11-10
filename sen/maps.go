@@ -50,9 +50,9 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	valueMap = "" +
 		".........ab..a.................." + // 0x00
-		"a.i.j..i.pjeafjcghhhhhhhhh..j.jj" + // 0x20
+		"a.i.jjji.pjeafjcghhhhhhhhh..j.jj" + // 0x20
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjk.mjj" + // 0x40
-		".jjjjjjjjjjjjjjjjjjjjjjjjjjl.nj." + // 0x60
+		".jjjjjjjjjjjjjjjjjjjjjjjjjjljnj." + // 0x60
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" + // 0x80
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" + // 0xa0
 		"jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj" + // 0xc0
@@ -60,9 +60,9 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	tokenMap = "" +
 		".........GJ..G.................." + // 0x00
-		"G...u...dpuuGuucuuuuuuuuuuI.u.uu" + // 0x20
+		"G...uuu.dpuuGuucuuuuuuuuuuI.u.uu" + // 0x20
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuk.muu" + // 0x40
-		".uuuuuuuuuuuuuuuuuuuuuuuuuul.nu." + // 0x60
+		".uuuuuuuuuuuuuuuuuuuuuuuuuulunu." + // 0x60
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0x80
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0xa0
 		"uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu" + // 0xc0

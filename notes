@@ -1,28 +1,4 @@
 
-
-- parse
- - add discover option to find JSON or SEN in a string or file
-  - 3 states
-   - DiscoverOff
-   - DiscoverAny
-   - DiscoverSets - only discover {} and []
-  - starting map/mode is like value but no errors on invalid
-   - same as value but replace errChar with a skip or skip and drop to drop current
-    - if number then cb and drop
-  - errors don't panic but close off current (if whole) and then back to discover maps
- - implement on all parsers
- - sen.Discover(b []byte, optimistic bool, f func(v any))
- - fast scan to identify block
-  - look for { or [
-  - then count up and down matching on {} []
-   - detect start and end of " and ', skipping escaped
-  - if much faster then parse in separater channel
-  - handles embedded json
-   - maybe faster in some cases
-  - maybe a optimistic mode that assumes json/sen so count and minimal modes
-   - regular mode - attempt parse, if fails then try next
-
-
 - pretty
  - align maps as well as arrays
 

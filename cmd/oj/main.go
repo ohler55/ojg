@@ -16,6 +16,7 @@ import (
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/asm"
+	"github.com/ohler55/ojg/discover"
 	"github.com/ohler55/ojg/jp"
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/pretty"
@@ -40,6 +41,7 @@ var (
 	omit           = false
 	dig            = false
 	annotate       = false
+	discovery      = false
 
 	// If true wrap extracts with an array.
 	wrapExtract = false
@@ -79,6 +81,7 @@ func init() {
 	flag.Var(&matchValue{}, "m", "match equation/script")
 	flag.Var(&delValue{}, "d", "delete path")
 	flag.BoolVar(&dig, "dig", dig, "dig into a large document using the tokenizer")
+	flag.BoolVar(&discovery, "discover", discovery, "discover JSON or SEN in a file")
 	flag.BoolVar(&showVersion, "version", showVersion, "display version and exit")
 	flag.StringVar(&planDef, "a", planDef, "assembly plan or plan file using @<plan>")
 	flag.BoolVar(&showRoot, "r", showRoot, "print root if an assemble plan provided")
@@ -145,6 +148,9 @@ Pretty mode output can be used with JSON or the -sen option. It indents
 according to a defined width and maximum depth in a best effort approach. The
 -p takes a pattern of <width>.<max-depth>.<align> where width and max-depth
 are integers and align is a boolean.
+
+The -discover flag will attempt to discover JSON or SEN in a file and process
+the discovered document according to the -lazy flag.
 
 `, filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
@@ -295,9 +301,16 @@ func run() (err error) {
 		var f *os.File
 		for _, file := range files {
 			if f, err = os.Open(file); err == nil {
-				if dig {
+				switch {
+				case dig:
 					err = digParse(f)
-				} else {
+				case discovery:
+					if lazy {
+						discover.ReadSEN(f, write)
+					} else {
+						discover.ReadJSON(f, write)
+					}
+				default:
 					_, err = p.ParseReader(f, write)
 				}
 				_ = f.Close()
@@ -308,14 +321,27 @@ func run() (err error) {
 		}
 	}
 	if 0 < len(input) {
-		if _, err = p.Parse(input, write); err != nil {
+		if discovery {
+			if lazy {
+				discover.SEN(input, write)
+			} else {
+				discover.JSON(input, write)
+			}
+		} else if _, err = p.Parse(input, write); err != nil {
 			panic(err)
 		}
 	}
 	if len(files) == 0 && len(input) == 0 {
-		if dig {
+		switch {
+		case dig:
 			err = digParse(os.Stdin)
-		} else {
+		case discovery:
+			if lazy {
+				discover.ReadSEN(os.Stdin, write)
+			} else {
+				discover.ReadJSON(os.Stdin, write)
+			}
+		default:
 			_, err = p.ParseReader(os.Stdin, write)
 		}
 		if err != nil {
@@ -679,6 +705,7 @@ func applyConf(conf any) {
 	}
 	safe, _ = jp.C("html-safe").First(conf).(bool)
 	lazy, _ = jp.C("lazy").First(conf).(bool)
+	discovery, _ = jp.C("discover").First(conf).(bool)
 	senOut, _ = jp.C("sen").First(conf).(bool)
 	convName, _ = jp.C("conv").First(conf).(string)
 	mongo, _ = jp.C("mongo").First(conf).(bool)
