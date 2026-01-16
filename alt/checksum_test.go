@@ -10,6 +10,15 @@ import (
 	"github.com/ohler55/ojg/tt"
 )
 
+type checker struct {
+	a int
+	b int
+}
+
+func (c *checker) Simplify() any {
+	return map[string]any{"a": c.a, "b": c.b}
+}
+
 func TestChecksumNil(t *testing.T) {
 	tt.Equal(t, uint64(2282658103124508505), alt.Checksum(nil))
 }
@@ -57,4 +66,16 @@ func TestChecksumArray(t *testing.T) {
 func TestChecksumMap(t *testing.T) {
 	tt.Equal(t, uint64(18395434359605210485),
 		alt.Checksum(map[string]any{"a": 1, "b": map[string]any{"c": true, "d": false}, "e": 3}))
+}
+
+func TestChecksumSimplifier(t *testing.T) {
+	tt.Equal(t, uint64(15053623628309097403), alt.Checksum(&checker{a: 1, b: 2}))
+}
+
+func TestChecksumDecompose(t *testing.T) {
+	type quux struct {
+		a int
+		b int
+	}
+	tt.Equal(t, uint64(10091151871759098234), alt.Checksum(&quux{a: 1, b: 2}))
 }

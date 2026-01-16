@@ -11,7 +11,8 @@ import (
 
 var emcaTable = crc64.MakeTable(crc64.ECMA)
 
-// Checksum of the provided data using a custom encoding and checksum routine.
+// Checksum of the provided data using a custom encoding and checksum
+// routine. The functions is most efficient with simple data.
 func Checksum(v any) uint64 {
 	return crc64.Checksum(checksumAppend(nil, v), emcaTable)
 }
