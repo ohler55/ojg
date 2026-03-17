@@ -51,6 +51,7 @@ linters:
         - -QF*
         - -ST1003
         - -ST1016
+        - -SA5008
     revive:
       rules:
         - name: unused-parameter

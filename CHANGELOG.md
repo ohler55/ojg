@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.28.1] - 2026-03-16
+### Changed
+- Removed the dependency on go1.22 caused by the `alt.Checksum()` implementation which now avoids `time.AppendBinary()`.
+
 ## [1.28.0] - 2026-01-15
 ### Added
 - Added `alt.Checksum()` function.

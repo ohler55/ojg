@@ -54,7 +54,7 @@ func TestChecksumString(t *testing.T) {
 }
 
 func TestChecksumTime(t *testing.T) {
-	tt.Equal(t, uint64(11794479198235629926),
+	tt.Equal(t, uint64(9582208693272125924),
 		alt.Checksum(time.Date(2026, time.January, 21, 40, 29, 04, 123456789, time.UTC)))
 }
 

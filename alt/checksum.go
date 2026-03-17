@@ -56,7 +56,9 @@ func checksumAppend(b []byte, v any) []byte {
 	case []byte:
 		b = append(b, tv...)
 	case time.Time:
-		b, _ = tv.AppendBinary(b)
+		b = appendUint64(b, uint64(tv.UnixNano()))
+		_, zone := tv.Zone()
+		b = appendUint64(b, uint64(zone))
 	case []any:
 		b = append(b, '[')
 		for _, v2 := range tv {
