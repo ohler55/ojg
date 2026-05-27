@@ -124,6 +124,32 @@ var (
 			expect: []any{1},
 			data:   map[string]any{"a-b": 1, "c-d": 2},
 		},
+		// colon in member name: bracket notation retrieves correctly
+		{path: "$['cognito:username']",
+			expect: []any{"alice"},
+			data:   map[string]any{"cognito:username": "alice", "other": "bob"},
+		},
+		{path: "$[':']",
+			expect: []any{1},
+			data:   map[string]any{":": 1},
+		},
+		{path: "$[':start']",
+			expect: []any{2},
+			data:   map[string]any{":start": 2},
+		},
+		{path: "$['end:']",
+			expect: []any{3},
+			data:   map[string]any{"end:": 3},
+		},
+		{path: "$['a::b']",
+			expect: []any{4},
+			data:   map[string]any{"a::b": 4},
+		},
+		// colon key with nested access
+		{path: "$['ns:obj'].x",
+			expect: []any{42},
+			data:   map[string]any{"ns:obj": map[string]any{"x": 42}},
+		},
 		{path: "$.a..x",
 			expect: []any{1, 2, 3, 4, 5},
 			data: map[string]any{
@@ -242,6 +268,15 @@ var (
 			path:   "$.x[?@.a==3].b",
 			expect: []any{"sample1"},
 			data:   map[string]any{"x": []any{map[string]any{"a": 3, "b": "sample1"}}},
+		},
+		// filter with colon key in bracket notation
+		{
+			path:   "$[?(@['ns:type'] == 'jwt')].name",
+			expect: []any{"session1"},
+			data: []any{
+				map[string]any{"ns:type": "jwt", "name": "session1"},
+				map[string]any{"ns:type": "cookie", "name": "session2"},
+			},
 		},
 		// filter with struct
 		{

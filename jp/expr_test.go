@@ -64,6 +64,21 @@ func TestExprBuild(t *testing.T) {
 
 	x = jp.R().Child("a & b")
 	tt.Equal(t, `$['a & b']`, x.String())
+
+	x = jp.R().Child("cognito:username")
+	tt.Equal(t, `$['cognito:username']`, x.String())
+
+	x = jp.R().Child(":")
+	tt.Equal(t, `$[':']`, x.String())
+
+	x = jp.R().Child(":start")
+	tt.Equal(t, `$[':start']`, x.String())
+
+	x = jp.R().Child("end:")
+	tt.Equal(t, `$['end:']`, x.String())
+
+	x = jp.R().Child("a::b")
+	tt.Equal(t, `$['a::b']`, x.String())
 }
 
 func TestExprFilter(t *testing.T) {

@@ -16,7 +16,7 @@ const (
 	//   0123456789abcdef0123456789abcdef
 	tokenMap = "" +
 		"................................" + // 0x00
-		"...o.o..........oooooooooooo...o" + // 0x20
+		"...o.o..........oooooooooo.o...o" + // 0x20
 		".oooooooooooooooooooooooooo...oo" + // 0x40
 		".oooooooooooooooooooooooooooooo." + // 0x60
 		"oooooooooooooooooooooooooooooooo" + // 0x80
