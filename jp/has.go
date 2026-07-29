@@ -549,7 +549,7 @@ func (x Expr) Has(data any) bool {
 			}
 		case Slice:
 			start := 0
-			end := maxEnd
+			end := SliceNotSet
 			step := 1
 			if 0 < len(tf) {
 				start = tf[0]

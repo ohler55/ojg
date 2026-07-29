@@ -13,13 +13,6 @@ const (
 	fragIndexMask    = 0x0000ffff
 	descentFlag      = 0x00010000
 	descentChildFlag = 0x00020000
-
-	// The standard math package fails to compile on 32bit architectures (ARM)
-	// with an int overflow. Most likley due to math.MaxInt64 being defined as
-	// 1<<63 - 1 which default to integer values. Since arrays are not likely
-	// to be over 2147483647 on a 32 bit system that is set as the max end
-	// specifier for a array range.
-	maxEnd = 2147483647
 )
 
 type fragIndex int
@@ -598,7 +591,7 @@ func (x Expr) Get(data any) (results []any) {
 			}
 		case Slice:
 			start := 0
-			end := maxEnd
+			end := SliceNotSet
 			step := 1
 			if 0 < len(tf) {
 				start = tf[0]
@@ -1433,7 +1426,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 			}
 		case Slice:
 			start := 0
-			end := maxEnd
+			end := SliceNotSet
 			step := 1
 			if 0 < len(tf) {
 				start = tf[0]

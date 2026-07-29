@@ -53,7 +53,7 @@ func TestExprBuild(t *testing.T) {
 	x = jp.U(1, "a")
 	tt.Equal(t, "[1,'a']", x.String())
 
-	x = jp.Expr{jp.Slice{}}
+	x = jp.Expr{jp.NewSlice()}
 	tt.Equal(t, "[:]", x.String())
 
 	x = jp.R().Child("'")
