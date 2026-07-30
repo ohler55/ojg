@@ -3,6 +3,7 @@
 package jp
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -590,45 +591,19 @@ func (x Expr) Get(data any) (results []any) {
 				}
 			}
 		case Slice:
-			start := 0
-			end := SliceNotSet
-			step := 1
-			if 0 < len(tf) {
-				start = tf[0]
-			}
-			if 1 < len(tf) {
-				end = tf[1]
-			}
-			if 2 < len(tf) {
-				step = tf[2]
-				if step == 0 {
-					continue
-				}
-			}
 			switch tv := prev.(type) {
 			case []any:
-				if start < 0 {
-					start = len(tv) + start
-					if start < 0 {
-						start = 0
-					}
-				}
-				if end < 0 {
-					end = len(tv) + end
-				}
-				if len(tv) <= start {
+				start, end, step, outside := tf.startEndStepOutside(len(tv))
+				if outside {
 					continue
 				}
-				if len(tv) < end {
-					end = len(tv)
-				}
+				fmt.Printf("*** %d %d %d %t - %v\n", start, end, step, outside, tf)
 				if 0 < step {
 					if int(fi) == len(x)-1 { // last one
-						for i := start; i < end; i += step {
+						for i := start; i <= end; i += step {
 							results = append(results, tv[i])
 						}
 					} else {
-						end = start + (end-start-1)/step*step
 						for i := end; start <= i; i -= step {
 							v = tv[i]
 							switch v.(type) {
@@ -647,15 +622,11 @@ func (x Expr) Get(data any) (results []any) {
 						}
 					}
 				} else {
-					if end < -1 {
-						end = -1
-					}
 					if int(fi) == len(x)-1 { // last one
-						for i := start; end < i; i += step {
+						for i := start; end <= i; i += step {
 							results = append(results, tv[i])
 						}
 					} else {
-						end = start - (start-end-1)/step*step
 						for i := end; i <= start; i -= step {
 							v = tv[i]
 							switch v.(type) {
@@ -675,29 +646,16 @@ func (x Expr) Get(data any) (results []any) {
 					}
 				}
 			case Indexed:
-				size := tv.Size()
-				if start < 0 {
-					start = size + start
-					if start < 0 {
-						start = 0
-					}
-				}
-				if end < 0 {
-					end = size + end
-				}
-				if size <= start {
+				start, end, step, outside := tf.startEndStepOutside(tv.Size())
+				if outside {
 					continue
-				}
-				if size < end {
-					end = size
 				}
 				if 0 < step {
 					if int(fi) == len(x)-1 { // last one
-						for i := start; i < end; i += step {
+						for i := start; i <= end; i += step {
 							results = append(results, tv.ValueAtIndex(i))
 						}
 					} else {
-						end = start + (end-start-1)/step*step
 						for i := end; start <= i; i -= step {
 							v = tv.ValueAtIndex(i)
 							switch v.(type) {
@@ -716,15 +674,11 @@ func (x Expr) Get(data any) (results []any) {
 						}
 					}
 				} else {
-					if end < -1 {
-						end = -1
-					}
 					if int(fi) == len(x)-1 { // last one
-						for i := start; end < i; i += step {
+						for i := start; end <= i; i += step {
 							results = append(results, tv.ValueAtIndex(i))
 						}
 					} else {
-						end = start - (start-end-1)/step*step
 						for i := end; i <= start; i -= step {
 							v = tv.ValueAtIndex(i)
 							switch v.(type) {
@@ -744,28 +698,16 @@ func (x Expr) Get(data any) (results []any) {
 					}
 				}
 			case gen.Array:
-				if start < 0 {
-					start = len(tv) + start
-					if start < 0 {
-						start = 0
-					}
-				}
-				if end < 0 {
-					end = len(tv) + end
-				}
-				if len(tv) <= start {
+				start, end, step, outside := tf.startEndStepOutside(len(tv))
+				if outside {
 					continue
 				}
 				if 0 < step {
-					if len(tv) < end {
-						end = len(tv)
-					}
 					if int(fi) == len(x)-1 { // last one
-						for i := start; i < end; i += step {
+						for i := start; i <= end; i += step {
 							results = append(results, tv[i])
 						}
 					} else {
-						end = start + (end-start-1)/step*step
 						for i := end; start <= i; i -= step {
 							v = tv[i]
 							switch v.(type) {
@@ -775,15 +717,11 @@ func (x Expr) Get(data any) (results []any) {
 						}
 					}
 				} else {
-					if end < -1 {
-						end = -1
-					}
 					if int(fi) == len(x)-1 { // last one
-						for i := start; end < i; i += step {
+						for i := start; end <= i; i += step {
 							results = append(results, tv[i])
 						}
 					} else {
-						end = start - (start-end-1)/step*step
 						for i := end; i <= start; i -= step {
 							v = tv[i]
 							switch v.(type) {
@@ -794,7 +732,7 @@ func (x Expr) Get(data any) (results []any) {
 					}
 				}
 			default:
-				got := reflectGetSlice(tv, start, end, step)
+				got := reflectGetSlice2(tv, tf)
 				if int(fi) == len(x)-1 { // last one
 					for i := len(got) - 1; 0 <= i; i-- {
 						results = append(results, got[i])
@@ -1932,6 +1870,38 @@ func reflectGetWildOne(data any) (any, bool) {
 	return nil, false
 }
 
+func reflectGetSlice2(data any, f Slice) (va []any) {
+	if !isNil(data) {
+		rd := reflect.ValueOf(data)
+		rt := rd.Type()
+		switch rt.Kind() {
+		case reflect.Slice, reflect.Array:
+			size := rd.Len()
+			start, end, step, outside := f.startEndStepOutside(size)
+			if outside {
+				return
+			}
+			if 0 < step {
+				for i := start; i <= end; i += step {
+					rv := rd.Index(i)
+					if rv.CanInterface() {
+						va = append([]any{rv.Interface()}, va...)
+					}
+				}
+			} else {
+				for i := start; end <= i; i += step {
+					rv := rd.Index(i)
+					if rv.CanInterface() {
+						va = append([]any{rv.Interface()}, va...)
+					}
+				}
+			}
+		}
+	}
+	return
+}
+
+// TBD remove after modify is updated
 func reflectGetSlice(data any, start, end, step int) (va []any) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)

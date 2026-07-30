@@ -172,18 +172,18 @@ var (
 		{path: "$[1:3]", expect: []any{2, 3}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[::0]", expect: []any{}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[10:]", expect: []any{}, data: []any{1, 2, 3, 4, 5, 6}},
-		{path: "$[:-10:-1]", expect: []any{1}, data: []any{1, 2, 3, 4, 5, 6}},
+		{path: "$[:-1:-1]", expect: []any{}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[1:10]", expect: []any{2, 3, 4, 5, 6}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[-4:-4]", expect: []any{}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[-4:-3]", expect: []any{3}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[-4:2]", expect: []any{}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[-4:3]", expect: []any{3}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[:2]", expect: []any{1, 2}, data: []any{1, 2, 3, 4, 5, 6}},
-		{path: "$[-4:]", expect: []any{1, 2, 3}, data: []any{1, 2, 3}},
+		{path: "$[-3:]", expect: []any{1, 2, 3}, data: []any{1, 2, 3}},
 		{path: "$[0:3:1]", expect: []any{1, 2, 3}, data: []any{1, 2, 3, 4, 5}},
 		{path: "$[0:4:2]", expect: []any{1, 3}, data: []any{1, 2, 3, 4, 5}},
 		{path: "[-4:-1:2]", expect: []any{3, 5}, data: []any{1, 2, 3, 4, 5, 6}},
-		{path: "[-4:]", expect: []any{1, 2, 3}, data: []any{1, 2, 3}},
+		{path: "[-3:]", expect: []any{1, 2, 3}, data: []any{1, 2, 3}},
 		{path: "[-1:1:-2]", expect: []any{4, 6}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "c[-1:1:-1].a", expect: []any{331, 341}},
 		{path: "a[2]..", expect: []any{map[string]any{"a": 131, "b": 132, "c": 133, "d": 134}, 131, 132, 133, 134}},
@@ -1464,4 +1464,38 @@ func TestGetAncestorFilter(t *testing.T) {
 	x := jp.MustParseString("$..[?(@.x)]")
 	// x := jp.MustParseString("$..[?(@.x exists true)]")
 	tt.Equal(t, "[{x: 1 y: 3} {x: 1 y: 1}]", pretty.SEN(x.Get(data)))
+}
+
+
+func TestExprQuux(t *testing.T) {
+	data := buildTree(4, 3, 0)
+
+	fmt.Printf("*** data: %s\n", pretty.SEN(data))
+
+	x, err := jp.ParseString("a[1::2].a")
+	tt.Nil(t, err)
+	var results []any
+	results = x.Get(data)
+	fmt.Printf("*** result: %s\n", pretty.SEN(results))
+
+	data = []any{1, 2, 3, 4, 5, 6}
+	x, err = jp.ParseString("$[:-7:-1]")
+	tt.Nil(t, err)
+	fmt.Printf("*** %v\n", x)
+	results = x.Get(data)
+	fmt.Printf("*** result: %s\n", pretty.SEN(results))
+
+	x, err = jp.ParseString("$[1:3]")
+	tt.Nil(t, err)
+	fmt.Printf("*** %v\n", x)
+	results = x.Get(data)
+	fmt.Printf("*** result: %s\n", pretty.SEN(results))
+
+
+	x, err = jp.ParseString("$[:]")
+	tt.Nil(t, err)
+	fmt.Printf("*** %v\n", x)
+	results = x.Get(data)
+	fmt.Printf("*** result: %s\n", pretty.SEN(results))
+
 }

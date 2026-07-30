@@ -51,25 +51,30 @@ func (f Slice) startEndStepOutside(size int) (start, end, step int, outside bool
 	if step == SliceNotSet {
 		step = 1
 	}
-	if start == SliceNotSet {
-		if 0 <= step {
-			start = 0
-		} else {
-			start = size - 1
-		}
+	if end < 0 {
+		end = size + end
 	}
-	if end == SliceNotSet {
-		if 0 <= step {
+	if 0 <= step {
+		if start == SliceNotSet {
+			start = 0
+		}
+		if end == SliceNotSet {
 			end = size - 1
 		} else {
+			end--
+		}
+	} else {
+		if start == SliceNotSet {
+			start = size - 1
+		}
+		if end == SliceNotSet {
 			end = 0
+		} else {
+			end++
 		}
 	}
 	if start < 0 {
 		start = size + start
-	}
-	if end < 0 {
-		end = size + end
 	}
 	if 0 <= step {
 		if size <= end {
