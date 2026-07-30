@@ -44,172 +44,113 @@ func (f Slice) Append(buf []byte, _, _ bool) []byte {
 	return buf
 }
 
-func (f Slice) startEndStepOutside(size int) (start, end, step int, outside bool) {
-	start = f[0]
-	end = f[1]
-	step = f[2]
-	if step == SliceNotSet {
-		step = 1
-	}
-	if end < 0 {
-		end = size + end
-	}
-	if 0 <= step {
-		if start == SliceNotSet {
-			start = 0
-		}
-		if end == SliceNotSet {
-			end = size - 1
-		} else {
-			end--
-		}
-	} else {
-		if start == SliceNotSet {
-			start = size - 1
-		}
-		if end == SliceNotSet {
-			end = 0
-		} else {
-			end++
-		}
-	}
-	if start < 0 {
-		start = size + start
-	}
-	if 0 <= step {
-		if size <= end {
-			end = size - 1
-		}
-		outside = size <= start
-	} else {
-		if size <= start {
-			start = size - 1
-		}
-		outside = size <= end
-	}
-	outside = outside || start < 0 || end < 0 || step == 0
-
-	return
-}
-
 func (f Slice) remove(value any) (out any, changed bool) {
 	out = value
-	start := f[0]
-	end := f[1]
-	step := f[2]
-	var outside bool
-	if step == SliceNotSet {
-		step = 1
-	}
 	switch tv := value.(type) {
 	case []any:
-		if start, end, step, outside = f.startEndStepOutside(len(tv)); outside {
-			break
-		}
-		ns := make([]any, 0, len(tv))
-		if 0 < step {
-			for i, v := range tv {
-				if inStep(i, start, end, step) {
-					changed = true
-				} else {
-					ns = append(ns, v)
+		if start, end, step := f.startEndStep(len(tv)); step != 0 {
+			ns := make([]any, 0, len(tv))
+			if 0 < step {
+				for i, v := range tv {
+					if inStep(i, start, end, step) {
+						changed = true
+					} else {
+						ns = append(ns, v)
+					}
+				}
+			} else {
+				// Walk in reverse to handle the just-one condition.
+				for i := len(tv) - 1; 0 <= i; i-- {
+					if inStep(i, start, end, step) {
+						changed = true
+					} else {
+						ns = append(ns, tv[i])
+					}
+				}
+				for i := len(ns)/2 - 1; 0 <= i; i-- {
+					ns[i], ns[len(ns)-i-1] = ns[len(ns)-i-1], ns[i]
 				}
 			}
-		} else {
-			// Walk in reverse to handle the just-one condition.
-			for i := len(tv) - 1; 0 <= i; i-- {
-				if inStep(i, start, end, step) {
-					changed = true
-				} else {
-					ns = append(ns, tv[i])
-				}
+			if changed {
+				out = ns
 			}
-			for i := len(ns)/2 - 1; 0 <= i; i-- {
-				ns[i], ns[len(ns)-i-1] = ns[len(ns)-i-1], ns[i]
-			}
-		}
-		if changed {
-			out = ns
 		}
 	case gen.Array:
-		if start, end, step, outside = f.startEndStepOutside(len(tv)); outside {
-			break
-		}
-		ns := make(gen.Array, 0, len(tv))
-		if 0 < step {
-			for i, v := range tv {
-				if inStep(i, start, end, step) {
-					changed = true
-				} else {
-					ns = append(ns, v)
+		if start, end, step := f.startEndStep(len(tv)); step != 0 {
+			ns := make(gen.Array, 0, len(tv))
+			if 0 < step {
+				for i, v := range tv {
+					if inStep(i, start, end, step) {
+						changed = true
+					} else {
+						ns = append(ns, v)
+					}
+				}
+			} else {
+				for i := len(tv) - 1; 0 <= i; i-- {
+					if inStep(i, start, end, step) {
+						changed = true
+					} else {
+						ns = append(ns, tv[i])
+					}
+				}
+				for i := len(ns)/2 - 1; 0 <= i; i-- {
+					ns[i], ns[len(ns)-i-1] = ns[len(ns)-i-1], ns[i]
 				}
 			}
-		} else {
-			for i := len(tv) - 1; 0 <= i; i-- {
-				if inStep(i, start, end, step) {
-					changed = true
-				} else {
-					ns = append(ns, tv[i])
-				}
+			if changed {
+				out = ns
 			}
-			for i := len(ns)/2 - 1; 0 <= i; i-- {
-				ns[i], ns[len(ns)-i-1] = ns[len(ns)-i-1], ns[i]
-			}
-		}
-		if changed {
-			out = ns
 		}
 	case RemovableIndexed:
 		size := tv.Size()
-		if start, end, step, outside = f.startEndStepOutside(size); outside {
-			break
-		}
-		for i := size - 1; 0 <= i; i-- {
-			if inStep(i, start, end, step) {
-				changed = true
-				tv.RemoveValueAtIndex(i)
+		if start, end, step := f.startEndStep(size); step != 0 {
+			for i := size - 1; 0 <= i; i-- {
+				if inStep(i, start, end, step) {
+					changed = true
+					tv.RemoveValueAtIndex(i)
+				}
 			}
 		}
 	default:
 		rv := reflect.ValueOf(value)
 		if rv.Kind() == reflect.Slice {
 			cnt := rv.Len()
-			if start, end, step, outside = f.startEndStepOutside(cnt); outside {
-				break
-			}
-			nc := 0
-			for i := 0; i < cnt; i++ {
-				if inStep(i, start, end, step) {
-					changed = true
-				} else {
-					nc++
-				}
-			}
-			if changed {
-				changed = false
-				ns := reflect.MakeSlice(rv.Type(), nc, nc)
-				if 0 < step {
-					ni := 0
-					for i := 0; i < cnt; i++ {
-						if inStep(i, start, end, step) {
-							changed = true
-						} else {
-							ns.Index(ni).Set(rv.Index(i))
-							ni++
-						}
-					}
-				} else {
-					ni := nc - 1
-					for i := cnt - 1; 0 <= i; i-- {
-						if inStep(i, start, end, step) {
-							changed = true
-						} else {
-							ns.Index(ni).Set(rv.Index(i))
-							ni--
-						}
+			if start, end, step := f.startEndStep(cnt); step != 0 {
+				nc := 0
+				for i := 0; i < cnt; i++ {
+					if inStep(i, start, end, step) {
+						changed = true
+					} else {
+						nc++
 					}
 				}
-				out = ns.Interface()
+				if changed {
+					changed = false
+					ns := reflect.MakeSlice(rv.Type(), nc, nc)
+					if 0 < step {
+						ni := 0
+						for i := 0; i < cnt; i++ {
+							if inStep(i, start, end, step) {
+								changed = true
+							} else {
+								ns.Index(ni).Set(rv.Index(i))
+								ni++
+							}
+						}
+					} else {
+						ni := nc - 1
+						for i := cnt - 1; 0 <= i; i-- {
+							if inStep(i, start, end, step) {
+								changed = true
+							} else {
+								ns.Index(ni).Set(rv.Index(i))
+								ni--
+							}
+						}
+					}
+					out = ns.Interface()
+				}
 			}
 		}
 	}
@@ -391,41 +332,70 @@ func inStep(i, start, end, step int) bool {
 }
 
 func (f Slice) startEndStep(size int) (start, end, step int) {
+	// The returns start and end are inclusive, not exclusive.
 	start = f[0]
 	end = f[1]
 	step = f[2]
 	if step == SliceNotSet {
 		step = 1
 	}
-	if start == SliceNotSet {
+	switch {
+	case start == SliceNotSet:
 		if 0 <= step {
 			start = 0
 		} else {
-			start = size
+			start = size - 1
+		}
+	case start < 0:
+		start = size + start
+		if start < 0 {
+			start = 0
+		}
+	case size <= start:
+		if 0 <= step {
+			// in theory, start = size
+			step = 0 // start outside of array; step of 0 indicates not to process
+		} else {
+			start = size - 1
 		}
 	}
-	if end == SliceNotSet {
+	switch {
+	case end == SliceNotSet:
 		if 0 <= step {
-			end = size
+			end = size - 1
 		} else {
 			end = 0
 		}
-	}
-	if start < 0 {
-		start = size + start
-	} else if size <= start {
-		start = size - 1
-	}
-	if start < 0 {
-		start = 0
-	}
-	if end < 0 {
-		end = size + end + 1
-		if end < 0 && step < 0 {
-			end = -1
+	case end < 0:
+		end = size + end
+		if end < 0 {
+			if 0 < step {
+				step = 0
+			} else {
+				end = 0
+			}
+		} else if 0 < step {
+			end--
+		} else {
+			end++
+			if size <= end {
+				step = 0
+			}
 		}
-	} else if size < end {
-		end = size
+	case size <= end:
+		end = size - 1
+	default:
+		if 0 < step {
+			end--
+		} else {
+			end++
+			if size <= end {
+				step = 0
+			}
+		}
+	}
+	if step != 0 {
+		end = start + (end-start)/step*step
 	}
 	return
 }

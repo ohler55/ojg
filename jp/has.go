@@ -548,43 +548,16 @@ func (x Expr) Has(data any) bool {
 				}
 			}
 		case Slice:
-			start := 0
-			end := SliceNotSet
-			step := 1
-			if 0 < len(tf) {
-				start = tf[0]
-			}
-			if 1 < len(tf) {
-				end = tf[1]
-			}
-			if 2 < len(tf) {
-				step = tf[2]
+			switch tv := prev.(type) {
+			case []any:
+				start, end, step := tf.startEndStep(len(tv))
 				if step == 0 {
 					continue
 				}
-			}
-			switch tv := prev.(type) {
-			case []any:
-				if start < 0 {
-					start = len(tv) + start
-					if start < 0 {
-						start = 0
-					}
-				}
-				if len(tv) <= start {
-					continue
-				}
-				if end < 0 {
-					end = len(tv) + end
-				}
-				if len(tv) < end {
-					end = len(tv)
-				}
 				if 0 < step {
-					if int(fi) == len(x)-1 && start < end { // last one
+					if int(fi) == len(x)-1 && start <= end { // last one
 						return true
 					}
-					end = start + (end-start-1)/step*step
 					for i := end; start <= i; i -= step {
 						v = tv[i]
 						switch v.(type) {
@@ -602,13 +575,9 @@ func (x Expr) Has(data any) bool {
 						}
 					}
 				} else {
-					if end < -1 {
-						end = -1
-					}
-					if int(fi) == len(x)-1 && end < start { // last one
+					if int(fi) == len(x)-1 && end <= start { // last one
 						return true
 					}
-					end = start - (start-end-1)/step*step
 					for i := end; i <= start; i -= step {
 						v = tv[i]
 						switch v.(type) {
@@ -628,26 +597,14 @@ func (x Expr) Has(data any) bool {
 				}
 			case Indexed:
 				size := tv.Size()
-				if start < 0 {
-					start = size + start
-					if start < 0 {
-						start = 0
-					}
-				}
-				if size <= start {
+				start, end, step := tf.startEndStep(size)
+				if step == 0 {
 					continue
 				}
-				if end < 0 {
-					end = size + end
-				}
-				if size < end {
-					end = size
-				}
 				if 0 < step {
-					if int(fi) == len(x)-1 && start < end { // last one
+					if int(fi) == len(x)-1 && start <= end { // last one
 						return true
 					}
-					end = start + (end-start-1)/step*step
 					for i := end; start <= i; i -= step {
 						v = tv.ValueAtIndex(i)
 						switch v.(type) {
@@ -665,13 +622,9 @@ func (x Expr) Has(data any) bool {
 						}
 					}
 				} else {
-					if end < -1 {
-						end = -1
-					}
-					if int(fi) == len(x)-1 && end < start { // last one
+					if int(fi) == len(x)-1 && end <= start { // last one
 						return true
 					}
-					end = start - (start-end-1)/step*step
 					for i := end; i <= start; i -= step {
 						v = tv.ValueAtIndex(i)
 						switch v.(type) {
@@ -690,26 +643,14 @@ func (x Expr) Has(data any) bool {
 					}
 				}
 			case gen.Array:
-				if start < 0 {
-					start = len(tv) + start
-					if start < 0 {
-						start = 0
-					}
-				}
-				if len(tv) <= start {
+				start, end, step := tf.startEndStep(len(tv))
+				if step == 0 {
 					continue
 				}
-				if end < 0 {
-					end = len(tv) + end
-				}
-				if len(tv) < end {
-					end = len(tv)
-				}
 				if 0 < step {
-					if int(fi) == len(x)-1 && start < end { // last one
+					if int(fi) == len(x)-1 && start <= end { // last one
 						return true
 					}
-					end = start + (end-start-1)/step*step
 					for i := end; start <= i; i -= step {
 						v = tv[i]
 						switch v.(type) {
@@ -718,13 +659,9 @@ func (x Expr) Has(data any) bool {
 						}
 					}
 				} else {
-					if end < -1 {
-						end = -1
-					}
-					if int(fi) == len(x)-1 && end < start { // last one
+					if int(fi) == len(x)-1 && end <= start { // last one
 						return true
 					}
-					end = start - (start-end-1)/step*step
 					for i := end; i <= start; i -= step {
 						v = tv[i]
 						switch v.(type) {
@@ -734,6 +671,10 @@ func (x Expr) Has(data any) bool {
 					}
 				}
 			default:
+				start := tf[0]
+				if start == SliceNotSet {
+					start = 0
+				}
 				if v, has = reflectGetNth(tv, start); has {
 					if int(fi) == len(x)-1 { // last one
 						return true

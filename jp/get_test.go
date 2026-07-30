@@ -235,7 +235,7 @@ var (
 		{path: "$[2:1:-1].a", expect: []any{3}, data: []any{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
 		{path: "[0::2].a", expect: []any{1, 3}, data: []*One{{A: 1}, {A: 2}, {A: 3}}},
 		{path: "[-1:0:-2].a", expect: []any{3}, data: []*One{{A: 1}, {A: 2}, {A: 3}}},
-		{path: "[4:0:-2].a", expect: []any{}, data: []*One{{A: 1}, {A: 2}, {A: 3}}},
+		{path: "[4:0:-2].a", expect: []any{3}, data: []*One{{A: 1}, {A: 2}, {A: 3}}},
 		{path: "$.*[0]", expect: []any{3}, data: &Any{X: []any{3}}},
 		{path: "$[1:2]", expect: []any{2}, data: []int{1, 2, 3}},
 		{path: "$[1:2][0]", expect: []any{gen.Int(2)},
@@ -343,7 +343,7 @@ var (
 		{path: "[-1,'a']", expect: []any{3}, data: []int{1, 2, 3}},
 		{path: "[::0]", expect: []any{nil}, data: []any{1, 2, 3}},
 		{path: "[10:]", expect: []any{nil}, data: []any{1, 2, 3}},
-		{path: "[:-10:-1]", expect: []any{1}, data: []any{1, 2, 3}},
+		{path: "[:-10:-1]", expect: []any{3}, data: []any{1, 2, 3}},
 		{path: "[-1:0:-1].x", expect: []any{2}, data: []any{
 			map[string]any{"x": 1},
 			map[string]any{"x": 2},
@@ -1464,38 +1464,4 @@ func TestGetAncestorFilter(t *testing.T) {
 	x := jp.MustParseString("$..[?(@.x)]")
 	// x := jp.MustParseString("$..[?(@.x exists true)]")
 	tt.Equal(t, "[{x: 1 y: 3} {x: 1 y: 1}]", pretty.SEN(x.Get(data)))
-}
-
-
-func TestExprQuux(t *testing.T) {
-	data := buildTree(4, 3, 0)
-
-	fmt.Printf("*** data: %s\n", pretty.SEN(data))
-
-	x, err := jp.ParseString("a[1::2].a")
-	tt.Nil(t, err)
-	var results []any
-	results = x.Get(data)
-	fmt.Printf("*** result: %s\n", pretty.SEN(results))
-
-	data = []any{1, 2, 3, 4, 5, 6}
-	x, err = jp.ParseString("$[:-7:-1]")
-	tt.Nil(t, err)
-	fmt.Printf("*** %v\n", x)
-	results = x.Get(data)
-	fmt.Printf("*** result: %s\n", pretty.SEN(results))
-
-	x, err = jp.ParseString("$[1:3]")
-	tt.Nil(t, err)
-	fmt.Printf("*** %v\n", x)
-	results = x.Get(data)
-	fmt.Printf("*** result: %s\n", pretty.SEN(results))
-
-
-	x, err = jp.ParseString("$[:]")
-	tt.Nil(t, err)
-	fmt.Printf("*** %v\n", x)
-	results = x.Get(data)
-	fmt.Printf("*** result: %s\n", pretty.SEN(results))
-
 }
