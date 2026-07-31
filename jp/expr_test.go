@@ -10,7 +10,7 @@ import (
 )
 
 func TestExprBuild(t *testing.T) {
-	x := jp.X().D().C("abc").W().N(3).U(2, "x").S(1, 5, 2).S(1, 5).S(1)
+	x := jp.X().D().C("abc").W().N(3).U(2, "x").S(1, 5, 2, 100).S(1, 5).S(1)
 	tt.Equal(t, "..abc.*[3][2,'x'][1:5:2][1:5][1:]", x.String())
 
 	x = jp.R().Descent().Child("abc").Wildcard().Nth(3).Union(int64(2), "x").Slice(1, 5, 2).Slice(1, 5).Slice(1)
@@ -47,13 +47,19 @@ func TestExprBuild(t *testing.T) {
 	x = jp.S(3, 4)
 	tt.Equal(t, "[3:4]", x.String())
 
+	x = jp.S(3, 4, 5, 6) // values after 3 args are ignored
+	tt.Equal(t, "[3:4:5]", x.String())
+
+	x = jp.R().Slice(3, 4, 5, 6) // values after 3 args are ignored
+	tt.Equal(t, "$[3:4:5]", x.String())
+
 	x = jp.D()
 	tt.Equal(t, "..", x.String())
 
 	x = jp.U(1, "a")
 	tt.Equal(t, "[1,'a']", x.String())
 
-	x = jp.Expr{jp.Slice{}}
+	x = jp.Expr{jp.NewSlice()}
 	tt.Equal(t, "[:]", x.String())
 
 	x = jp.R().Child("'")

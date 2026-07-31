@@ -275,7 +275,7 @@ func TestExprModifyIndexedUnion(t *testing.T) {
 
 func TestExprModifyIndexedSlice(t *testing.T) {
 	data := indexedData()
-	x := jp.S(-2, -1).S(0, 4)
+	x := jp.S(-2, jp.SliceNotSet).S(0, 4)
 	result := x.MustModifyOne(data, func(element any) (any, bool) {
 		if num, ok := element.(int); ok {
 			element = num + 5

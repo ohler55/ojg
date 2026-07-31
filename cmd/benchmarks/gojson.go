@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -15,7 +14,7 @@ import (
 )
 
 func goParse(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+	sample, _ := os.ReadFile(filename)
 	b.ResetTimer()
 	var result any
 	for n := 0; n < b.N; n++ {
@@ -26,7 +25,7 @@ func goParse(b *testing.B) {
 }
 
 func goUnmarshalPatient(b *testing.B) {
-	sample, _ := ioutil.ReadFile(patFilename)
+	sample, _ := os.ReadFile(patFilename)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		var out Patient
@@ -37,7 +36,7 @@ func goUnmarshalPatient(b *testing.B) {
 }
 
 func goUnmarshalCatalog(b *testing.B) {
-	sample, _ := ioutil.ReadFile(catFilename)
+	sample, _ := os.ReadFile(catFilename)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		var out Catalog
@@ -68,7 +67,7 @@ func goDecodeReader(b *testing.B) {
 }
 
 func goDecode(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+	sample, _ := os.ReadFile(filename)
 	for n := 0; n < b.N; n++ {
 		dec := json.NewDecoder(bytes.NewReader(sample))
 		for {
@@ -84,7 +83,7 @@ func goDecode(b *testing.B) {
 }
 
 func goParseChan(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+	sample, _ := os.ReadFile(filename)
 	rc := make(chan any, b.N)
 	ready := make(chan bool)
 	go func() {
@@ -110,7 +109,7 @@ func goParseChan(b *testing.B) {
 }
 
 func goValidate(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+	sample, _ := os.ReadFile(filename)
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		if !json.Valid(sample) {
@@ -120,7 +119,7 @@ func goValidate(b *testing.B) {
 }
 
 func goMarshalCatalog(b *testing.B) {
-	sample, _ := ioutil.ReadFile(catFilename)
+	sample, _ := os.ReadFile(catFilename)
 	var cat Catalog
 	if err := json.Unmarshal(sample, &cat); err != nil {
 		panic(err)
@@ -134,7 +133,7 @@ func goMarshalCatalog(b *testing.B) {
 }
 
 func goMarshalPatient(b *testing.B) {
-	sample, _ := ioutil.ReadFile(patFilename)
+	sample, _ := os.ReadFile(patFilename)
 	var patient Patient
 	if err := json.Unmarshal(sample, &patient); err != nil {
 		panic(err)

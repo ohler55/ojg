@@ -19,6 +19,7 @@ type getData struct {
 	path   string
 	data   any
 	expect []any
+	noSort bool
 }
 
 type Sample struct {
@@ -172,20 +173,26 @@ var (
 		{path: "$[1:3]", expect: []any{2, 3}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[::0]", expect: []any{}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[10:]", expect: []any{}, data: []any{1, 2, 3, 4, 5, 6}},
-		{path: "$[:-10:-1]", expect: []any{1}, data: []any{1, 2, 3, 4, 5, 6}},
+		{path: "$[:-1:-1]", expect: []any{}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[1:10]", expect: []any{2, 3, 4, 5, 6}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[-4:-4]", expect: []any{}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[-4:-3]", expect: []any{3}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[-4:2]", expect: []any{}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[-4:3]", expect: []any{3}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "$[:2]", expect: []any{1, 2}, data: []any{1, 2, 3, 4, 5, 6}},
-		{path: "$[-4:]", expect: []any{1, 2, 3}, data: []any{1, 2, 3}},
+		{path: "$[-3:]", expect: []any{1, 2, 3}, data: []any{1, 2, 3}},
 		{path: "$[0:3:1]", expect: []any{1, 2, 3}, data: []any{1, 2, 3, 4, 5}},
 		{path: "$[0:4:2]", expect: []any{1, 3}, data: []any{1, 2, 3, 4, 5}},
 		{path: "[-4:-1:2]", expect: []any{3, 5}, data: []any{1, 2, 3, 4, 5, 6}},
-		{path: "[-4:]", expect: []any{1, 2, 3}, data: []any{1, 2, 3}},
+		{path: "[-3:]", expect: []any{1, 2, 3}, data: []any{1, 2, 3}},
 		{path: "[-1:1:-2]", expect: []any{4, 6}, data: []any{1, 2, 3, 4, 5, 6}},
 		{path: "c[-1:1:-1].a", expect: []any{331, 341}},
+		{path: "[4:0:-1]", expect: []any{4, 3, 2, 1}, data: []any{0, 1, 2, 3, 4}, noSort: true},
+		{path: "[::-1]", expect: []any{4, 3, 2, 1, 0}, data: []any{0, 1, 2, 3, 4}, noSort: true},
+		{path: "[4::-1]", expect: []any{4, 3, 2, 1, 0}, data: []any{0, 1, 2, 3, 4}, noSort: true},
+		{path: "[:0:-1]", expect: []any{4, 3, 2, 1}, data: []any{0, 1, 2, 3, 4}, noSort: true},
+		{path: "[-1::-1]", expect: []any{4, 3, 2, 1, 0}, data: []any{0, 1, 2, 3, 4}, noSort: true},
+		{path: "[0::-1]", expect: []any{0}, data: []any{0, 1, 2, 3, 4}, noSort: true},
 		{path: "a[2]..", expect: []any{map[string]any{"a": 131, "b": 132, "c": 133, "d": 134}, 131, 132, 133, 134}},
 		{path: "..", expect: []any{[]any{1, 2}, 1, 2}, data: []any{1, 2}},
 		{path: "..a", expect: []any{}, data: []any{1, 2}},
@@ -234,10 +241,12 @@ var (
 		{path: "$[1:2].a", expect: []any{2}, data: []any{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
 		{path: "$[2:1:-1].a", expect: []any{3}, data: []any{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
 		{path: "[0::2].a", expect: []any{1, 3}, data: []*One{{A: 1}, {A: 2}, {A: 3}}},
+		{path: "[::2].a", expect: []any{1, 3}, data: []*One{{A: 1}, {A: 2}, {A: 3}}},
 		{path: "[-1:0:-2].a", expect: []any{3}, data: []*One{{A: 1}, {A: 2}, {A: 3}}},
-		{path: "[4:0:-2].a", expect: []any{}, data: []*One{{A: 1}, {A: 2}, {A: 3}}},
+		{path: "[4:0:-2].a", expect: []any{3}, data: []*One{{A: 1}, {A: 2}, {A: 3}}},
 		{path: "$.*[0]", expect: []any{3}, data: &Any{X: []any{3}}},
 		{path: "$[1:2]", expect: []any{2}, data: []int{1, 2, 3}},
+		{path: "$[2:-5]", expect: []any{}, data: []int{1, 2, 3}},
 		{path: "$[1:2][0]", expect: []any{gen.Int(2)},
 			data: []gen.Array{{gen.Int(1)}, {gen.Int(2)}, {gen.Int(3)}}},
 		{path: "$[-10:]", expect: []any{1, 2, 3}, data: []int{1, 2, 3}},
@@ -342,8 +351,9 @@ var (
 		{path: "[-1]", expect: []any{3}, data: []int{1, 2, 3}},
 		{path: "[-1,'a']", expect: []any{3}, data: []int{1, 2, 3}},
 		{path: "[::0]", expect: []any{nil}, data: []any{1, 2, 3}},
+		{path: "[::]", expect: []any{1}, data: []any{1, 2, 3}},
 		{path: "[10:]", expect: []any{nil}, data: []any{1, 2, 3}},
-		{path: "[:-10:-1]", expect: []any{1}, data: []any{1, 2, 3}},
+		{path: "[:-10:-1]", expect: []any{3}, data: []any{1, 2, 3}},
 		{path: "[-1:0:-1].x", expect: []any{2}, data: []any{
 			map[string]any{"x": 1},
 			map[string]any{"x": 2},
@@ -369,8 +379,11 @@ var (
 		{path: "$..a", expect: []any{3}, data: map[string]any{"x": &Sample{A: 3, B: "sample"}}},
 		{path: "$..a", expect: []any{3}, data: []any{&Sample{A: 3, B: "sample"}}},
 		{path: "$[1:2].a", expect: []any{2}, data: []any{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
+		{path: "$[1:2:0].a", expect: []any{nil}, data: []any{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
+		{path: "$[:2].a", expect: []any{1}, data: []any{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
 		{path: "$[2:1:-1].a", expect: []any{3}, data: []any{&One{A: 1}, &One{A: 2}, &One{A: 3}}},
 		{path: "[0:-1:2].a", expect: []any{1}, data: []*One{{A: 1}, {A: 2}, {A: 3}}},
+		{path: "[:-1:2].a", expect: []any{1}, data: []*One{{A: 1}, {A: 2}, {A: 3}}},
 		{path: "[-1:0:-2].a", expect: []any{3}, data: []*One{{A: 1}, {A: 2}, {A: 3}}},
 		{path: "$.*[0]", expect: []any{3}, data: &Any{X: []any{3}}},
 		{path: "$[1:2]", expect: []any{2}, data: []int{1, 2, 3}},
@@ -402,11 +415,13 @@ func TestExprGet(t *testing.T) {
 		} else {
 			results = x.Get(d.data)
 		}
-		sort.Slice(results, func(i, j int) bool {
-			iv, _ := results[i].(int)
-			jv, _ := results[j].(int)
-			return iv < jv
-		})
+		if !d.noSort {
+			sort.Slice(results, func(i, j int) bool {
+				iv, _ := results[i].(int)
+				jv, _ := results[j].(int)
+				return iv < jv
+			})
+		}
 		tt.Equal(t, d.expect, results, i, " : ", x)
 	}
 }
@@ -425,11 +440,13 @@ func TestExprGetOnNode(t *testing.T) {
 		} else {
 			results = x.Get(alt.Generify(d.data))
 		}
-		sort.Slice(results, func(i, j int) bool {
-			iv, _ := results[i].(gen.Int)
-			jv, _ := results[j].(gen.Int)
-			return iv < jv
-		})
+		if !d.noSort {
+			sort.Slice(results, func(i, j int) bool {
+				iv, _ := results[i].(gen.Int)
+				jv, _ := results[j].(gen.Int)
+				return iv < jv
+			})
+		}
 		var expect []any
 		for _, n := range d.expect {
 			expect = append(expect, alt.Generify(n))
@@ -488,11 +505,13 @@ func TestExprGetNodes(t *testing.T) {
 		} else {
 			results = x.GetNodes(alt.Generify(d.data))
 		}
-		sort.Slice(results, func(i, j int) bool {
-			iv, _ := results[i].(gen.Int)
-			jv, _ := results[j].(gen.Int)
-			return iv < jv
-		})
+		if !d.noSort {
+			sort.Slice(results, func(i, j int) bool {
+				iv, _ := results[i].(gen.Int)
+				jv, _ := results[j].(gen.Int)
+				return iv < jv
+			})
+		}
 		ar := gen.Array{}
 		for _, r := range results {
 			ar = append(ar, r)

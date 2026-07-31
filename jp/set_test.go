@@ -47,8 +47,9 @@ var (
 		{path: "..a", data: `[{"a":1,"b":2},{"a":2}]`, value: 5, expect: `[{"a":5,"b":2},{"a":5}]`},
 		{path: "[-1,'x'].a", data: `[{"a":1,"b":2},{"a":2}]`, value: 5, expect: `[{"a":1,"b":2},{"a":5}]`},
 		{path: "[1,'a'].a", data: `{"a":{"a":1,"b":2},"b":{"a":2}}`, value: 5, expect: `{"a":{"a":5,"b":2},"b":{"a":2}}`},
-		{path: "[:-1:2].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":5}]`},
-		{path: "[-1:0:-2].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":5}]`},
+		{path: "[::2].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":5}]`},
+		{path: "[:-5].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":1,"b":2},{"a":2},{"a":3}]`},
+		{path: "[-1::-2].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":5}]`},
 		{path: "[:5].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":5},{"a":5}]`},
 		{path: "[?(@.b == 2)].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":3}]`},
 		{path: "a[0]", data: `{}`, value: 3, expect: `{"a":[3]}`},
@@ -93,7 +94,7 @@ var (
 		{path: "[-1:0:-2].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":1,"b":2},{"a":2},{"a":5}]`},
 		{path: "[:5].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":3}]`},
 		{path: "[?(@.b == 2)].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":3}]`},
-		{path: "[-5:3].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":1,"b":2},{"a":2},{"a":3}]`},
+		{path: "[-5:3].a", data: `[{"a":1,"b":2},{"a":2},{"a":3}]`, value: 5, expect: `[{"a":5,"b":2},{"a":2},{"a":3}]`},
 		{path: "a[0]", data: `{}`, value: 3, expect: `{"a":[3]}`},
 		{path: "*.x", data: `{"a":null}`, value: 3, expect: `{"a":null}`},
 		{path: "[*].x", data: "[null]", value: 3, expect: `[null]`},
@@ -661,7 +662,7 @@ func TestSetKeyedIndexed(t *testing.T) {
 			del:   true,
 		},
 		{
-			src:   "$[0:-1][1]",
+			src:   "$[0:][1]",
 			value: 5,
 			data:  deepIndexed(),
 			after: `[
@@ -859,7 +860,7 @@ func TestSetKeyedIndexedReflect(t *testing.T) {
 ]`,
 		},
 		{
-			src:   "$[0:1].x",
+			src:   "$[0:2].x",
 			value: 5,
 			data:  flatReflectIndexed(),
 			after: `[
@@ -869,7 +870,7 @@ func TestSetKeyedIndexedReflect(t *testing.T) {
 ]`,
 		},
 		{
-			src:   "$[1:0:-1].x",
+			src:   "$[1::-1].x",
 			value: 5,
 			data:  flatReflectIndexed(),
 			after: `[

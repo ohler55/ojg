@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -334,7 +333,7 @@ func getSpecs() (s *specs) {
 		if 1 < len(parts) {
 			s.os = strings.TrimSpace(parts[1])
 		}
-		if out, err = ioutil.ReadFile("/proc/cpuinfo"); err == nil {
+		if out, err = os.ReadFile("/proc/cpuinfo"); err == nil {
 			cnt := 0
 			for _, line := range strings.Split(string(out), "\n") {
 				if strings.Contains(line, "processor") {
