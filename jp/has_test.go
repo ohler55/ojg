@@ -83,6 +83,7 @@ var (
 		{path: "[-1:0:-2].a", expect: true, data: []*One{{A: 1}, {A: 2}, {A: 3}}},
 		{path: "$.*[0]", expect: true, data: &Any{X: []any{3}}},
 		{path: "$[1:2]", expect: true, data: []int{1, 2, 3}},
+		{path: "$[:2]", expect: true, data: []int{1, 2, 3}},
 		{path: "$[1:1][0]", expect: true, data: []gen.Array{{gen.Int(1)}, {gen.Int(2)}, {gen.Int(3)}}},
 		{path: "$.*", expect: false, data: &one},
 		{path: "['a',-1]", expect: true, data: []any{1, 2, 3}},

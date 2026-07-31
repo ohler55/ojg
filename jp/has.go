@@ -68,7 +68,7 @@ func (x Expr) Has(data any) bool {
 				default:
 					if rt := reflect.TypeOf(v); rt != nil {
 						switch rt.Kind() {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+						case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 							stack = append(stack, v)
 						}
 					}
@@ -118,7 +118,7 @@ func (x Expr) Has(data any) bool {
 				default:
 					if rt := reflect.TypeOf(v); rt != nil {
 						switch rt.Kind() {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+						case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 							stack = append(stack, v)
 						}
 					}
@@ -142,7 +142,7 @@ func (x Expr) Has(data any) bool {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
 							}
@@ -166,7 +166,7 @@ func (x Expr) Has(data any) bool {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
 							}
@@ -191,7 +191,7 @@ func (x Expr) Has(data any) bool {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
 							}
@@ -216,7 +216,7 @@ func (x Expr) Has(data any) bool {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
 							}
@@ -264,7 +264,7 @@ func (x Expr) Has(data any) bool {
 					default:
 						if rt := reflect.TypeOf(v); rt != nil {
 							switch rt.Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
 						}
@@ -296,7 +296,7 @@ func (x Expr) Has(data any) bool {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
 							}
@@ -323,7 +323,7 @@ func (x Expr) Has(data any) bool {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
 							}
@@ -351,7 +351,7 @@ func (x Expr) Has(data any) bool {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
 							}
@@ -379,7 +379,7 @@ func (x Expr) Has(data any) bool {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
 							}
@@ -539,7 +539,7 @@ func (x Expr) Has(data any) bool {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
 							}
@@ -568,7 +568,7 @@ func (x Expr) Has(data any) bool {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
 							}
@@ -588,7 +588,7 @@ func (x Expr) Has(data any) bool {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
 							}
@@ -615,7 +615,7 @@ func (x Expr) Has(data any) bool {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
 							}
@@ -635,7 +635,7 @@ func (x Expr) Has(data any) bool {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 									stack = append(stack, v)
 								}
 							}
@@ -687,7 +687,7 @@ func (x Expr) Has(data any) bool {
 					default:
 						if rt := reflect.TypeOf(v); rt != nil {
 							switch rt.Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array:
+							case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array:
 								stack = append(stack, v)
 							}
 						}

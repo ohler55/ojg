@@ -5,7 +5,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"testing"
@@ -15,7 +14,7 @@ import (
 )
 
 func ojParse(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+	sample, _ := os.ReadFile(filename)
 	b.ResetTimer()
 	p := &oj.Parser{}
 	for n := 0; n < b.N; n++ {
@@ -26,7 +25,7 @@ func ojParse(b *testing.B) {
 }
 
 func ojParseReuse(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+	sample, _ := os.ReadFile(filename)
 	b.ResetTimer()
 	p := &oj.Parser{Reuse: true}
 	for n := 0; n < b.N; n++ {
@@ -67,7 +66,7 @@ func ojParseReaderReuse(b *testing.B) {
 }
 
 func ojTokenize(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+	sample, _ := os.ReadFile(filename)
 	b.ResetTimer()
 	h := oj.ZeroHandler{}
 	t := oj.Tokenizer{}
@@ -95,7 +94,7 @@ func ojTokenizeLoad(b *testing.B) {
 }
 
 func ojMarshalCatalog(b *testing.B) {
-	sample, _ := ioutil.ReadFile(catFilename)
+	sample, _ := os.ReadFile(catFilename)
 	var cat Catalog
 	if err := json.Unmarshal(sample, &cat); err != nil {
 		panic(err)
@@ -109,7 +108,7 @@ func ojMarshalCatalog(b *testing.B) {
 }
 
 func ojMarshalPatient(b *testing.B) {
-	sample, _ := ioutil.ReadFile(patFilename)
+	sample, _ := os.ReadFile(patFilename)
 	var patient Patient
 	if err := json.Unmarshal(sample, &patient); err != nil {
 		panic(err)
@@ -123,7 +122,7 @@ func ojMarshalPatient(b *testing.B) {
 }
 
 func ojUnmarshalPatient(b *testing.B) {
-	sample, _ := ioutil.ReadFile(patFilename)
+	sample, _ := os.ReadFile(patFilename)
 	p := oj.Parser{Reuse: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -135,7 +134,7 @@ func ojUnmarshalPatient(b *testing.B) {
 }
 
 func ojUnmarshalCatalog(b *testing.B) {
-	sample, _ := ioutil.ReadFile(catFilename)
+	sample, _ := os.ReadFile(catFilename)
 	p := oj.Parser{Reuse: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -147,7 +146,7 @@ func ojUnmarshalCatalog(b *testing.B) {
 }
 
 func ojParseChan(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+	sample, _ := os.ReadFile(filename)
 	rc := make(chan any, b.N)
 	ready := make(chan bool)
 	go func() {
@@ -170,7 +169,7 @@ func ojParseChan(b *testing.B) {
 }
 
 func ojValidate(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+	sample, _ := os.ReadFile(filename)
 	b.ResetTimer()
 	var v oj.Validator
 	for n := 0; n < b.N; n++ {

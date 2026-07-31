@@ -50,22 +50,22 @@ var (
 		{path: "*[*][*]", data: `[[1,2,[1,2,3,4]]]`, expect: `[[1 2 []]]`},
 		{path: "['a','b']['x','y'][1]", data: `{a:[] b:{x:[1,2,3]}}`, expect: `{a: [] b: {x: [1 3]}}`},
 		{path: "[0,1][0,-1][1]", data: `[[[][1,2,3]]]`, expect: `[[[] [1 3]]]`},
-		{path: "[1:3:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6] [8 9]]"},
-		{path: "[3:1:-2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6] [8 9]]"},
-		{path: "[-4:-2:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6] [8 9]]"},
-		{path: "[-6:-2:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 2 3] [4 5] [6 7] [8 9]]"},
-		{path: "[:3][1:3:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6] [8 9]]]"},
-		{path: "[-1:0:-1][1:3:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6] [8 9]]]"},
+		{path: "[1:4:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6] [8 9]]"},
+		{path: "[3:0:-2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6] [8 9]]"},
+		{path: "[-4:-1:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6] [8 9]]"},
+		{path: "[-6:-1:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 2 3] [4] [6 7] [8 9]]"},
+		{path: "[:3][1:4:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6] [8 9]]]"},
+		{path: "[-1::-1][1:4:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6] [8 9]]]"},
 		{path: "[?(@.x == 1)].y", data: `[{x:1 y:2}]`, expect: `[{x: 1}]`},
 		{path: "[?(@[0] != 0)][?(@.x == 1)].y", data: `[[{x:1 y:2}]]`, expect: `[[{x: 1}]]`},
 		{path: "['a','b']", data: `{a:1 b:2 c:3}`, expect: `{c: 3}`},
 		{path: "[0]['a','b']", data: `[{a:1 b:2 c:3}]`, expect: `[{c: 3}]`},
 		{path: "[1,2]", data: `[1,2,3]`, expect: `[1]`},
 		{path: "[0][1,2]", data: `[[1,2,3]]`, expect: `[[1]]`},
-		{path: "[1:3:2]", data: `[0,1,2,3,4,5]`, expect: "[0 2 4 5]"},
-		{path: "[0][1:3:2]", data: `[[0,1,2,3,4,5]]`, expect: "[[0 2 4 5]]"},
-		{path: "[-3:-5:-2]", data: `[0,1,2,3,4,5]`, expect: "[0 2 4 5]"},
-		{path: "[0][-3:-5:-2]", data: `[[0,1,2,3,4,5]]`, expect: "[[0 2 4 5]]"},
+		{path: "[1:4:2]", data: `[0,1,2,3,4,5]`, expect: "[0 2 4 5]"},
+		{path: "[0][1:4:2]", data: `[[0,1,2,3,4,5]]`, expect: "[[0 2 4 5]]"},
+		{path: "[-3:-6:-2]", data: `[0,1,2,3,4,5]`, expect: "[0 2 4 5]"},
+		{path: "[0][-3:-6:-2]", data: `[[0,1,2,3,4,5]]`, expect: "[[0 2 4 5]]"},
 		{path: "[7:8]", data: `[0,1,2,3,4,5]`, expect: "[0 1 2 3 4 5]"},
 		{path: "[0][7:8]", data: `[[0,1,2,3,4,5]]`, expect: "[[0 1 2 3 4 5]]"},
 		{path: "[?(@.x < 3)]", data: `[{x:1}{x:2}{x:3}]`, expect: `[{x: 3}]`},
@@ -83,11 +83,11 @@ var (
 		{path: "[1:3:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6 7] [8 9]]"},
 		{path: "[3:1:-2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 2 3] [4 5] [6] [8 9]]"},
 		{path: "[-4:-2:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 3] [4 5] [6 7] [8 9]]"},
-		{path: "[-6:-2:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 2 3] [4 5] [6 7] [8 9]]"},
-		{path: "[:3][1:3:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6 7] [8 9]]]"},
-		{path: "[-1:0:-1][1:3:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6 7] [8 9]]]"},
+		{path: "[-6:-2:2][1]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 2 3] [4] [6 7] [8 9]]"},
+		{path: "[:3][1:4:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6 7] [8 9]]]"},
+		{path: "[-1::-1][1:4:2][1]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6 7] [8 9]]]"},
 		{path: "[0][1:9:2][1:4:2]", data: `[[[][1,2,3][4,5][6,7][8,9]]]`, expect: "[[[] [1 3] [4 5] [6 7] [8 9]]]"},
-		{path: "[1:3:2][-9:4:2]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [1 2 3] [4 5] [6 7] [8 9]]"},
+		{path: "[1:3:2][-9:4:2]", data: `[[][1,2,3][4,5][6,7][8,9]]`, expect: "[[] [2 3] [4 5] [6 7] [8 9]]"},
 
 		{path: "@[2]", data: `[1,2,3,4]`, expect: `[1 2 4]`},
 		{path: "$[2]", data: `[1,2,3,4]`, expect: `[1 2 4]`},
@@ -569,7 +569,7 @@ func TestExprRemoveSliceReflect(t *testing.T) {
 	tt.Equal(t, "[[2 3] [4 5 6]]", string(pw.Encode(result)))
 	tt.Equal(t, "[[2 3] [4 5 6]]", string(pw.Encode(data3)))
 
-	x, err = jp.ParseString("[-1:-2:-1][0]")
+	x, err = jp.ParseString("[-1:-3:-1][0]")
 	tt.Nil(t, err)
 	data3 = [][]any{{1, 2, 3}, {4, 5, 6}}
 	result = x.MustRemove(data3)
@@ -588,7 +588,7 @@ func TestExprRemoveSliceReflect(t *testing.T) {
 	tt.Equal(t, "[[1 2 3] [4 5 6]]", string(pw.Encode(result)))
 	tt.Equal(t, "[[1 2 3] [4 5 6]]", string(pw.Encode(data3)))
 
-	x, err = jp.ParseString("[1:2]")
+	x, err = jp.ParseString("[1:3]")
 	tt.Nil(t, err)
 	data3 = [][]any{{1}, {2}, {3}, {4}}
 	result = x.MustRemove(data3)
@@ -598,7 +598,7 @@ func TestExprRemoveSliceReflect(t *testing.T) {
 	result = x.MustRemoveOne(data3)
 	tt.Equal(t, "[[1] [3] [4]]", string(pw.Encode(result)))
 
-	x, err = jp.ParseString("[-2:-3:-1]")
+	x, err = jp.ParseString("[-2:-4:-1]")
 	tt.Nil(t, err)
 	data3 = [][]any{{1}, {2}, {3}, {4}}
 	result = x.MustRemove(data3)
@@ -700,7 +700,7 @@ func TestExprRemoveIndexedNth(t *testing.T) {
 }
 
 func TestExprRemoveIndexedSlice(t *testing.T) {
-	x := jp.MustParseString("$[2][0:1]") // first two
+	x := jp.MustParseString("$[2][0:2]") // first two
 	data := indexedData()
 	result := x.MustRemove(data)
 	tt.Equal(t, 13, jp.N(2).N(0).First(result))
@@ -712,7 +712,7 @@ func TestExprRemoveIndexedSlice(t *testing.T) {
 	tt.Equal(t, 13, jp.N(2).N(1).First(result))
 	tt.Equal(t, false, jp.N(2).N(2).Has(result))
 
-	x = jp.MustParseString("$[2][-2:-1]") // last two
+	x = jp.MustParseString("$[2][-2:]") // last two
 	data = indexedData()
 	result = x.MustRemove(data)
 	tt.Equal(t, 11, jp.N(2).N(0).First(result))
@@ -724,7 +724,7 @@ func TestExprRemoveIndexedSlice(t *testing.T) {
 	tt.Equal(t, 13, jp.N(2).N(1).First(result))
 	tt.Equal(t, false, jp.N(2).N(2).Has(result))
 
-	x = jp.MustParseString("$[2][-999:999]") // out of bounds
+	x = jp.MustParseString("$[2][999:-999]") // end less than start
 	data = indexedData()
 	result = x.MustRemove(data)
 	tt.Equal(t, 11, jp.N(2).N(0).First(result))
@@ -823,15 +823,4 @@ func TestExprRemoveKeyedWild(t *testing.T) {
 	tt.Equal(t, false, jp.C("c").C("c1").Has(result))
 	tt.Equal(t, true, jp.C("c").C("c2").Has(result))
 	tt.Equal(t, true, jp.C("c").C("c3").Has(result))
-}
-
-func TestExprRemoveQuux(t *testing.T) {
-	x := jp.MustParseString("[:3][1:3:2][1]")
-
-	fmt.Printf("*** expr: %s\n", x)
-	data := sen.MustParse([]byte(`[[[][1,2,3][4,5][6,7][8,9]]]`))
-	// expect: "[[[] [1 3] [4 5] [6] [8 9]]]"},
-	out := x.MustRemove(data)
-
-	fmt.Printf("*** %s\n", pretty.SEN(out))
 }

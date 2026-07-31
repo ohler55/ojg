@@ -316,15 +316,16 @@ func (f Slice) startEndStep(size int) (start, end, step int) {
 		}
 	case end < 0:
 		end = size + end
-		if end < 0 {
+		switch {
+		case end < 0:
 			if 0 < step {
 				step = 0
 			} else {
 				end = 0
 			}
-		} else if 0 < step {
+		case 0 < step:
 			end--
-		} else {
+		default:
 			end++
 			if size <= end {
 				step = 0

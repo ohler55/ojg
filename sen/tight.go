@@ -17,7 +17,7 @@ func tightDefault(wr *Writer, data any, _ int) {
 	if !wr.NoReflect {
 		rv := reflect.ValueOf(data)
 		kind := rv.Kind()
-		if kind == reflect.Ptr {
+		if kind == reflect.Pointer {
 			rv = rv.Elem()
 			kind = rv.Kind()
 		}
@@ -194,7 +194,7 @@ func (wr *Writer) tightStruct(rv reflect.Value, si *sinfo) {
 		kind := fi.kind
 	Retry:
 		switch kind {
-		case reflect.Ptr:
+		case reflect.Pointer:
 			if (*[2]uintptr)(unsafe.Pointer(&v))[1] != 0 { // Check for nil of any type
 				fv = reflect.ValueOf(v).Elem()
 				kind = fv.Kind()
@@ -275,7 +275,7 @@ func (wr *Writer) tightMap(rv reflect.Value, si *sinfo) {
 	comma := false
 	for _, kv := range keys {
 		rm := rv.MapIndex(kv)
-		if rm.Kind() == reflect.Ptr {
+		if rm.Kind() == reflect.Pointer {
 			if rm.IsNil() {
 				if wr.OmitNil {
 					continue

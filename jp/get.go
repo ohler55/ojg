@@ -77,7 +77,7 @@ func (x Expr) Get(data any) (results []any) {
 					default:
 						if rt := reflect.TypeOf(v); rt != nil {
 							switch rt.Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+							case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -126,7 +126,7 @@ func (x Expr) Get(data any) (results []any) {
 					default:
 						if rt := reflect.TypeOf(v); rt != nil {
 							switch rt.Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+							case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -150,7 +150,7 @@ func (x Expr) Get(data any) (results []any) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -171,7 +171,7 @@ func (x Expr) Get(data any) (results []any) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -196,7 +196,7 @@ func (x Expr) Get(data any) (results []any) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -220,7 +220,7 @@ func (x Expr) Get(data any) (results []any) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -270,7 +270,7 @@ func (x Expr) Get(data any) (results []any) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -303,7 +303,7 @@ func (x Expr) Get(data any) (results []any) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 									stack = append(stack, fi|descentChildFlag)
 								}
@@ -328,7 +328,7 @@ func (x Expr) Get(data any) (results []any) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 									stack = append(stack, fi|descentChildFlag)
 								}
@@ -357,7 +357,7 @@ func (x Expr) Get(data any) (results []any) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 									stack = append(stack, fi|descentChildFlag) // TBD ??
 								}
@@ -385,7 +385,7 @@ func (x Expr) Get(data any) (results []any) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 									stack = append(stack, fi|descentChildFlag)
 								}
@@ -444,7 +444,7 @@ func (x Expr) Get(data any) (results []any) {
 							default:
 								if rt := reflect.TypeOf(v); rt != nil {
 									switch rt.Kind() {
-									case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+									case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 										stack = append(stack, v)
 										stack = append(stack, fi|descentChildFlag)
 									}
@@ -581,7 +581,7 @@ func (x Expr) Get(data any) (results []any) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -612,7 +612,7 @@ func (x Expr) Get(data any) (results []any) {
 							default:
 								if rt := reflect.TypeOf(v); rt != nil {
 									switch rt.Kind() {
-									case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+									case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 										stack = append(stack, v)
 									}
 								}
@@ -635,7 +635,7 @@ func (x Expr) Get(data any) (results []any) {
 							default:
 								if rt := reflect.TypeOf(v); rt != nil {
 									switch rt.Kind() {
-									case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+									case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 										stack = append(stack, v)
 									}
 								}
@@ -664,7 +664,7 @@ func (x Expr) Get(data any) (results []any) {
 							default:
 								if rt := reflect.TypeOf(v); rt != nil {
 									switch rt.Kind() {
-									case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+									case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 										stack = append(stack, v)
 									}
 								}
@@ -687,7 +687,7 @@ func (x Expr) Get(data any) (results []any) {
 							default:
 								if rt := reflect.TypeOf(v); rt != nil {
 									switch rt.Kind() {
-									case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+									case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 										stack = append(stack, v)
 									}
 								}
@@ -730,7 +730,7 @@ func (x Expr) Get(data any) (results []any) {
 					}
 				}
 			default:
-				got := reflectGetSlice2(tv, tf)
+				got := reflectGetSlice(tv, tf)
 				if int(fi) == len(x)-1 { // last one
 					for i := len(got) - 1; 0 <= i; i-- {
 						results = append(results, got[i])
@@ -745,7 +745,7 @@ func (x Expr) Get(data any) (results []any) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -780,7 +780,7 @@ func (x Expr) Get(data any) (results []any) {
 					default:
 						if rt := reflect.TypeOf(v); rt != nil {
 							switch rt.Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+							case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -867,7 +867,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 				default:
 					if rt := reflect.TypeOf(v); rt != nil {
 						switch rt.Kind() {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+						case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 							stack = append(stack, v)
 						}
 					}
@@ -915,7 +915,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 				default:
 					if rt := reflect.TypeOf(v); rt != nil {
 						switch rt.Kind() {
-						case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+						case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 							stack = append(stack, v)
 						}
 					}
@@ -938,7 +938,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -961,7 +961,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -985,7 +985,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -1009,7 +1009,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -1056,7 +1056,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 					default:
 						if rt := reflect.TypeOf(v); rt != nil {
 							switch rt.Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+							case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -1087,7 +1087,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -1113,7 +1113,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -1140,7 +1140,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -1163,7 +1163,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 							default:
 								if rt := reflect.TypeOf(v); rt != nil {
 									switch rt.Kind() {
-									case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+									case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 										stack = append(stack, v)
 									}
 								}
@@ -1222,7 +1222,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 							default:
 								if rt := reflect.TypeOf(v); rt != nil {
 									switch rt.Kind() {
-									case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+									case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 										stack = append(stack, v)
 										stack = append(stack, fi|descentChildFlag)
 									}
@@ -1352,7 +1352,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -1381,7 +1381,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -1401,7 +1401,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -1428,7 +1428,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -1448,7 +1448,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 						default:
 							if rt := reflect.TypeOf(v); rt != nil {
 								switch rt.Kind() {
-								case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+								case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 									stack = append(stack, v)
 								}
 							}
@@ -1500,7 +1500,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 					default:
 						if rt := reflect.TypeOf(v); rt != nil {
 							switch rt.Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+							case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -1533,7 +1533,7 @@ func (x Expr) FirstFound(data any) (any, bool) {
 					default:
 						if rt := reflect.TypeOf(v); rt != nil {
 							switch rt.Kind() {
-							case reflect.Ptr, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
+							case reflect.Pointer, reflect.Slice, reflect.Struct, reflect.Array, reflect.Map:
 								stack = append(stack, v)
 							}
 						}
@@ -1556,7 +1556,7 @@ func reflectGetChild(data any, key string) (v any, has bool) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
-		if rt.Kind() == reflect.Ptr {
+		if rt.Kind() == reflect.Pointer {
 			rt = rt.Elem()
 			rd = rd.Elem()
 		}
@@ -1669,7 +1669,7 @@ func reflectGetStructFieldByNameOrJsonTag(structValue reflect.Value, key string)
 						nestedTyp = fieldValue.Type()
 					}
 
-					if nestedTyp.Kind() == reflect.Ptr {
+					if nestedTyp.Kind() == reflect.Pointer {
 						fieldValue = fieldValue.Elem()
 						nestedTyp = nestedTyp.Elem()
 					}
@@ -1729,7 +1729,7 @@ func reflectGetNth(data any, i int) (v any, has bool) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
-		if rt.Kind() == reflect.Ptr {
+		if rt.Kind() == reflect.Pointer {
 			rt = rt.Elem()
 			rd = rd.Elem()
 		}
@@ -1755,7 +1755,7 @@ func reflectGetWild(data any) (va []any) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
-		if rt.Kind() == reflect.Ptr {
+		if rt.Kind() == reflect.Pointer {
 			rt = rt.Elem()
 			rd = rd.Elem()
 		}
@@ -1784,7 +1784,7 @@ func reflectGetWildOne(data any) (any, bool) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
-		if rt.Kind() == reflect.Ptr {
+		if rt.Kind() == reflect.Pointer {
 			rt = rt.Elem()
 			rd = rd.Elem()
 		}
@@ -1809,7 +1809,7 @@ func reflectGetWildOne(data any) (any, bool) {
 	return nil, false
 }
 
-func reflectGetSlice2(data any, f Slice) (va []any) {
+func reflectGetSlice(data any, f Slice) (va []any) {
 	if !isNil(data) {
 		rd := reflect.ValueOf(data)
 		rt := rd.Type()
@@ -1832,51 +1832,6 @@ func reflectGetSlice2(data any, f Slice) (va []any) {
 					rv := rd.Index(i)
 					if rv.CanInterface() {
 						va = append([]any{rv.Interface()}, va...)
-					}
-				}
-			}
-		}
-	}
-	return
-}
-
-// TBD remove after modify is updated
-func reflectGetSlice(data any, start, end, step int) (va []any) {
-	if !isNil(data) {
-		rd := reflect.ValueOf(data)
-		rt := rd.Type()
-		switch rt.Kind() {
-		case reflect.Slice, reflect.Array:
-			size := rd.Len()
-			if start < 0 {
-				start = size + start
-				if start < 0 {
-					start = 0
-				}
-			}
-			if end < 0 {
-				end = size + end
-				if end < -1 {
-					end = -1
-				}
-			}
-			if size < end {
-				end = size
-			}
-			if 0 <= start && start < size {
-				if 0 < step {
-					for i := start; i < end; i += step {
-						rv := rd.Index(i)
-						if rv.CanInterface() {
-							va = append([]any{rv.Interface()}, va...)
-						}
-					}
-				} else {
-					for i := start; end < i; i += step {
-						rv := rd.Index(i)
-						if rv.CanInterface() {
-							va = append([]any{rv.Interface()}, va...)
-						}
 					}
 				}
 			}

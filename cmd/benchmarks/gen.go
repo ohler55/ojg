@@ -3,7 +3,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"testing"
@@ -12,7 +11,7 @@ import (
 )
 
 func genParse(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+	sample, _ := os.ReadFile(filename)
 	b.ResetTimer()
 	p := &gen.Parser{}
 	for n := 0; n < b.N; n++ {
@@ -23,7 +22,7 @@ func genParse(b *testing.B) {
 }
 
 func genParseReuse(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+	sample, _ := os.ReadFile(filename)
 	b.ResetTimer()
 	p := &gen.Parser{Reuse: true}
 	for n := 0; n < b.N; n++ {
@@ -64,7 +63,7 @@ func genParseReaderReuse(b *testing.B) {
 }
 
 func genParseChan(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+	sample, _ := os.ReadFile(filename)
 	rc := make(chan gen.Node, b.N)
 	ready := make(chan bool)
 	go func() {

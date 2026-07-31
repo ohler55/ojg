@@ -3,7 +3,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"testing"
@@ -14,7 +13,7 @@ import (
 )
 
 func senParse(b *testing.B) {
-	j, _ := ioutil.ReadFile(filename)
+	j, _ := os.ReadFile(filename)
 	var sample []byte
 	if data, err := (&oj.Parser{}).Parse(j); err == nil {
 		sample = []byte(sen.String(data, &sen.Options{Indent: 2}))
@@ -31,7 +30,7 @@ func senParse(b *testing.B) {
 }
 
 func senParseReuse(b *testing.B) {
-	j, _ := ioutil.ReadFile(filename)
+	j, _ := os.ReadFile(filename)
 	var sample []byte
 	if data, err := (&oj.Parser{}).Parse(j); err == nil {
 		sample = []byte(sen.String(data, &sen.Options{Indent: 2}))
@@ -48,7 +47,7 @@ func senParseReuse(b *testing.B) {
 }
 
 func senTokenize(b *testing.B) {
-	sample, _ := ioutil.ReadFile(filename)
+	sample, _ := os.ReadFile(filename)
 	b.ResetTimer()
 	h := oj.ZeroHandler{}
 	t := sen.Tokenizer{}
@@ -106,7 +105,7 @@ func senParseReaderReuse(b *testing.B) {
 }
 
 func senUnmarshalPatient(b *testing.B) {
-	sample, _ := ioutil.ReadFile(patFilename)
+	sample, _ := os.ReadFile(patFilename)
 	p := sen.Parser{Reuse: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -118,7 +117,7 @@ func senUnmarshalPatient(b *testing.B) {
 }
 
 func senUnmarshalCatalog(b *testing.B) {
-	sample, _ := ioutil.ReadFile(catFilename)
+	sample, _ := os.ReadFile(catFilename)
 	p := sen.Parser{Reuse: true}
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
@@ -130,7 +129,7 @@ func senUnmarshalCatalog(b *testing.B) {
 }
 
 func senParseChan(b *testing.B) {
-	j, _ := ioutil.ReadFile(filename)
+	j, _ := os.ReadFile(filename)
 	var sample []byte
 	if data, err := (&oj.Parser{}).Parse(j); err == nil {
 		sample = []byte(sen.String(data, &sen.Options{Indent: 2}))
