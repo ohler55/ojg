@@ -824,3 +824,14 @@ func TestExprRemoveKeyedWild(t *testing.T) {
 	tt.Equal(t, true, jp.C("c").C("c2").Has(result))
 	tt.Equal(t, true, jp.C("c").C("c3").Has(result))
 }
+
+func TestExprRemoveQuux(t *testing.T) {
+	x := jp.MustParseString("[:3][1:3:2][1]")
+
+	fmt.Printf("*** expr: %s\n", x)
+	data := sen.MustParse([]byte(`[[[][1,2,3][4,5][6,7][8,9]]]`))
+	// expect: "[[[] [1 3] [4 5] [6] [8 9]]]"},
+	out := x.MustRemove(data)
+
+	fmt.Printf("*** %s\n", pretty.SEN(out))
+}

@@ -159,165 +159,113 @@ func (f Slice) remove(value any) (out any, changed bool) {
 
 func (f Slice) removeOne(value any) (out any, changed bool) {
 	out = value
-	start := 0
-	end := -1
-	step := 1
-	if 0 < len(f) {
-		start = f[0]
-	}
-	if 1 < len(f) {
-		end = f[1]
-	}
-	if 2 < len(f) {
-		step = f[2]
-	}
 	switch tv := value.(type) {
 	case []any:
-		if start < 0 {
-			start = len(tv) + start
-		}
-		if end < 0 {
-			end = len(tv) + end
-		}
-		if len(tv) <= end {
-			end = len(tv) - 1
-		}
-		if start < 0 || end < 0 || len(tv) <= start || step == 0 {
-			return
-		}
-		ns := make([]any, 0, len(tv))
-		if 0 < step {
-			for i, v := range tv {
-				if !changed && inStep(i, start, end, step) {
-					changed = true
-				} else {
-					ns = append(ns, v)
+		if start, end, step := f.startEndStep(len(tv)); step != 0 {
+			ns := make([]any, 0, len(tv))
+			if 0 < step {
+				for i, v := range tv {
+					if !changed && inStep(i, start, end, step) {
+						changed = true
+					} else {
+						ns = append(ns, v)
+					}
+				}
+			} else {
+				// Walk in reverse to handle the just-one condition.
+				for i := len(tv) - 1; 0 <= i; i-- {
+					if !changed && inStep(i, start, end, step) {
+						changed = true
+					} else {
+						ns = append(ns, tv[i])
+					}
+				}
+				for i := len(ns)/2 - 1; 0 <= i; i-- {
+					ns[i], ns[len(ns)-i-1] = ns[len(ns)-i-1], ns[i]
 				}
 			}
-		} else {
-			// Walk in reverse to handle the just-one condition.
-			for i := len(tv) - 1; 0 <= i; i-- {
-				if !changed && inStep(i, start, end, step) {
-					changed = true
-				} else {
-					ns = append(ns, tv[i])
-				}
+			if changed {
+				out = ns
 			}
-			for i := len(ns)/2 - 1; 0 <= i; i-- {
-				ns[i], ns[len(ns)-i-1] = ns[len(ns)-i-1], ns[i]
-			}
-		}
-		if changed {
-			out = ns
 		}
 	case gen.Array:
-		if start < 0 {
-			start = len(tv) + start
-		}
-		if end < 0 {
-			end = len(tv) + end
-		}
-		if len(tv) <= end {
-			end = len(tv) - 1
-		}
-		if start < 0 || end < 0 || len(tv) <= start || step == 0 {
-			return
-		}
-		ns := make(gen.Array, 0, len(tv))
-		if 0 < step {
-			for i, v := range tv {
-				if !changed && inStep(i, start, end, step) {
-					changed = true
-				} else {
-					ns = append(ns, v)
+		if start, end, step := f.startEndStep(len(tv)); step != 0 {
+			ns := make(gen.Array, 0, len(tv))
+			if 0 < step {
+				for i, v := range tv {
+					if !changed && inStep(i, start, end, step) {
+						changed = true
+					} else {
+						ns = append(ns, v)
+					}
+				}
+			} else {
+				// Walk in reverse to handle the just-one condition.
+				for i := len(tv) - 1; 0 <= i; i-- {
+					if !changed && inStep(i, start, end, step) {
+						changed = true
+					} else {
+						ns = append(ns, tv[i])
+					}
+				}
+				for i := len(ns)/2 - 1; 0 <= i; i-- {
+					ns[i], ns[len(ns)-i-1] = ns[len(ns)-i-1], ns[i]
 				}
 			}
-		} else {
-			// Walk in reverse to handle the just-one condition.
-			for i := len(tv) - 1; 0 <= i; i-- {
-				if !changed && inStep(i, start, end, step) {
-					changed = true
-				} else {
-					ns = append(ns, tv[i])
-				}
+			if changed {
+				out = ns
 			}
-			for i := len(ns)/2 - 1; 0 <= i; i-- {
-				ns[i], ns[len(ns)-i-1] = ns[len(ns)-i-1], ns[i]
-			}
-		}
-		if changed {
-			out = ns
 		}
 	case RemovableIndexed:
 		size := tv.Size()
-		if start < 0 {
-			start = size + start
-		}
-		if end < 0 {
-			end = size + end
-		}
-		if size <= end {
-			end = size - 1
-		}
-		if start < 0 || end < 0 || size <= start || size <= end || step == 0 {
-			return
-		}
-		for i := 0; i < size; i++ {
-			if inStep(i, start, end, step) {
-				changed = true
-				tv.RemoveValueAtIndex(i)
-				break
+		if start, end, step := f.startEndStep(size); step != 0 {
+			for i := 0; i < size; i++ {
+				if inStep(i, start, end, step) {
+					changed = true
+					tv.RemoveValueAtIndex(i)
+					break
+				}
 			}
 		}
 	default:
 		rv := reflect.ValueOf(value)
 		if rv.Kind() == reflect.Slice {
 			cnt := rv.Len()
-			if start < 0 {
-				start = cnt + start
-			}
-			if end < 0 {
-				end = cnt + end
-			}
-			if cnt <= end {
-				end = cnt - 1
-			}
-			if start < 0 || end < 0 || cnt <= start || step == 0 {
-				return
-			}
-			nc := 0
-			for i := 0; i < cnt; i++ {
-				if !changed && inStep(i, start, end, step) {
-					changed = true
-				} else {
-					nc++
-				}
-			}
-			if changed {
-				changed = false
-				ns := reflect.MakeSlice(rv.Type(), nc, nc)
-				if 0 < step {
-					ni := 0
-					for i := 0; i < cnt; i++ {
-						if !changed && inStep(i, start, end, step) {
-							changed = true
-						} else {
-							ns.Index(ni).Set(rv.Index(i))
-							ni++
-						}
-					}
-				} else {
-					ni := nc - 1
-					for i := cnt - 1; 0 <= i; i-- {
-						if !changed && inStep(i, start, end, step) {
-							changed = true
-						} else {
-							ns.Index(ni).Set(rv.Index(i))
-							ni--
-						}
+			if start, end, step := f.startEndStep(cnt); step != 0 {
+				nc := 0
+				for i := 0; i < cnt; i++ {
+					if !changed && inStep(i, start, end, step) {
+						changed = true
+					} else {
+						nc++
 					}
 				}
-				out = ns.Interface()
+				if changed {
+					changed = false
+					ns := reflect.MakeSlice(rv.Type(), nc, nc)
+					if 0 < step {
+						ni := 0
+						for i := 0; i < cnt; i++ {
+							if !changed && inStep(i, start, end, step) {
+								changed = true
+							} else {
+								ns.Index(ni).Set(rv.Index(i))
+								ni++
+							}
+						}
+					} else {
+						ni := nc - 1
+						for i := cnt - 1; 0 <= i; i-- {
+							if !changed && inStep(i, start, end, step) {
+								changed = true
+							} else {
+								ns.Index(ni).Set(rv.Index(i))
+								ni--
+							}
+						}
+					}
+					out = ns.Interface()
+				}
 			}
 		}
 	}
@@ -409,12 +357,12 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 		}
 		if 0 < step {
 			if len(rest) == 0 { // last one
-				for i := start; i < end; i += step {
+				for i := start; i <= end; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
 				}
 			} else {
 				cp := append(pp, nil) // place holder
-				for i := start; i < end; i += step {
+				for i := start; i <= end; i += step {
 					cp[len(pp)] = Nth(i)
 					locs = locateContinueFrag(locs, cp, td[i], rest, max)
 					if 0 < max && max <= len(locs) {
@@ -424,12 +372,12 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			}
 		} else {
 			if len(rest) == 0 { // last one
-				for i := start; end < i; i += step {
+				for i := start; end <= i; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
 				}
 			} else {
 				cp := append(pp, nil) // place holder
-				for i := start; end < i; i += step {
+				for i := start; end <= i; i += step {
 					cp[len(pp)] = Nth(i)
 					locs = locateContinueFrag(locs, cp, td[i], rest, max)
 					if 0 < max && max <= len(locs) {
@@ -445,12 +393,12 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 		}
 		if 0 < step {
 			if len(rest) == 0 { // last one
-				for i := start; i < end; i += step {
+				for i := start; i <= end; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
 				}
 			} else {
 				cp := append(pp, nil) // place holder
-				for i := start; i < end; i += step {
+				for i := start; i <= end; i += step {
 					cp[len(pp)] = Nth(i)
 					locs = locateContinueFrag(locs, cp, td[i], rest, max)
 					if 0 < max && max <= len(locs) {
@@ -460,12 +408,12 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			}
 		} else {
 			if len(rest) == 0 { // last one
-				for i := start; end < i; i += step {
+				for i := start; end <= i; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
 				}
 			} else {
 				cp := append(pp, nil) // place holder
-				for i := start; end < i; i += step {
+				for i := start; end <= i; i += step {
 					cp[len(pp)] = Nth(i)
 					locs = locateContinueFrag(locs, cp, td[i], rest, max)
 					if 0 < max && max <= len(locs) {
@@ -481,12 +429,12 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 		}
 		if 0 < step {
 			if len(rest) == 0 { // last one
-				for i := start; i < end; i += step {
+				for i := start; i <= end; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
 				}
 			} else {
 				cp := append(pp, nil) // place holder
-				for i := start; i < end; i += step {
+				for i := start; i <= end; i += step {
 					cp[len(pp)] = Nth(i)
 					locs = locateContinueFrag(locs, cp, td.ValueAtIndex(i), rest, max)
 					if 0 < max && max <= len(locs) {
@@ -496,12 +444,12 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			}
 		} else {
 			if len(rest) == 0 { // last one
-				for i := start; end < i; i += step {
+				for i := start; end <= i; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
 				}
 			} else {
 				cp := append(pp, nil) // place holder
-				for i := start; end < i; i += step {
+				for i := start; end <= i; i += step {
 					cp[len(pp)] = Nth(i)
 					locs = locateContinueFrag(locs, cp, td.ValueAtIndex(i), rest, max)
 					if 0 < max && max <= len(locs) {
@@ -520,7 +468,7 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			start, end, step := f.startEndStep(rd.Len())
 			if 0 < step {
 				if len(rest) == 0 { // last one
-					for i := start; i < end; i += step {
+					for i := start; i <= end; i += step {
 						rv := rd.Index(i)
 						if rv.CanInterface() {
 							locs = locateAppendFrag(locs, pp, Nth(i))
@@ -531,7 +479,7 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 					}
 				} else {
 					cp := append(pp, nil) // place holder
-					for i := start; i < end; i += step {
+					for i := start; i <= end; i += step {
 						cp[len(pp)] = Nth(i)
 						rv := rd.Index(i)
 						if rv.CanInterface() {
@@ -544,7 +492,7 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 				}
 			} else {
 				if len(rest) == 0 { // last one
-					for i := start; end < i; i += step {
+					for i := start; end <= i; i += step {
 						rv := rd.Index(i)
 						if rv.CanInterface() {
 							locs = locateAppendFrag(locs, pp, Nth(i))
@@ -555,7 +503,7 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 					}
 				} else {
 					cp := append(pp, nil) // place holder
-					for i := start; end < i; i += step {
+					for i := start; end <= i; i += step {
 						cp[len(pp)] = Nth(i)
 						rv := rd.Index(i)
 						if rv.CanInterface() {
@@ -593,11 +541,11 @@ func (f Slice) Walk(rest, path Expr, nodes []any, cb func(path Expr, nodes []any
 		return
 	}
 	if 0 < step {
-		for i := start; i < end; i += step {
+		for i := start; i <= end; i += step {
 			Nth(i).Walk(rest, path, nodes, cb)
 		}
 	} else {
-		for i := start; end < i; i += step {
+		for i := start; end <= i; i += step {
 			Nth(i).Walk(rest, path, nodes, cb)
 		}
 	}
