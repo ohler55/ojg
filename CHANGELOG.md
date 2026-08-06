@@ -4,6 +4,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.28.4] - unreleased
+### Fixed
+- JSONPath slice for `[::2]` against an empty slice works correctly now.
+
 ## [1.28.3] - 2026-08-01
 ### Fixed
 - JSONPath slices support negative ranges correctly now and the slice
