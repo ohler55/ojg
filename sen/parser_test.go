@@ -553,3 +553,48 @@ func TestParserCComment(t *testing.T) {
 	v = sen.MustParse([]byte(src))
 	tt.Equal(t, []any{"abc", "ghi"}, v)
 }
+
+// TestParserParseConcat exercises the '+' string-concatenation operator,
+// including malformed uses that must return an error rather than panic.
+func TestParserParseConcat(t *testing.T) {
+	// Valid concatenations.
+	for _, d := range []rdata{
+		{src: `["a" + "b"]`, value: []any{"ab"}},
+		{src: `["a" + "b" + "c"]`, value: []any{"abc"}},
+		{src: `[abc + "d"]`, value: []any{"abcd"}},
+		{src: `{x:"a" + "b"}`, value: map[string]any{"x": "ab"}},
+		{src: `{x:"a" + "b" + "c"}`, value: map[string]any{"x": "abc"}},
+	} {
+		var p sen.Parser
+		v, err := p.Parse([]byte(d.src))
+		tt.Nil(t, err, d.src)
+		tt.Equal(t, d.value, v, d.src)
+	}
+
+	// Malformed uses of '+' must error, not panic. A leading '+' has no
+	// operand and a '+' after a non-string value has no string to extend.
+	for _, src := range []string{
+		`+""`,
+		`+"x"`,
+		`[1 +"x"]`,
+		`[true +"x"]`,
+		`[null +"x"]`,
+		`{x:1 +"y"}`,
+	} {
+		var p sen.Parser
+		_, err := p.Parse([]byte(src))
+		tt.NotNil(t, err, src)
+	}
+}
+
+// TestParserParseConcatReuse verifies that a parser reused after a failed
+// parse that ended mid-concatenation does not carry the concatenation state
+// into the next parse (which previously caused an index-out-of-range panic).
+func TestParserParseConcatReuse(t *testing.T) {
+	var p sen.Parser
+	_, err := p.Parse([]byte(`["a" +`)) // incomplete, leaves concat pending
+	tt.NotNil(t, err)
+	v, err := p.Parse([]byte(`""`))
+	tt.Nil(t, err)
+	tt.Equal(t, "", v)
+}
