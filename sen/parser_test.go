@@ -574,8 +574,10 @@ func TestParserParseConcat(t *testing.T) {
 	// Malformed uses of '+' must error, not panic. A leading '+' has no
 	// operand and a '+' after a non-string value has no string to extend.
 	for _, src := range []string{
+		`+`,
 		`+""`,
 		`+"x"`,
+		`"x"+`,
 		`[1 +"x"]`,
 		`[true +"x"]`,
 		`[null +"x"]`,

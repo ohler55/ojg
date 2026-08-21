@@ -815,18 +815,16 @@ func (p *Parser) addTokenWith(s string, off int) {
 // leading '+' with nothing on the stack, or a '+' following a non-string
 // value) that would otherwise panic in addString().
 func (p *Parser) concatOperandOK() bool {
-	if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 { // object value
-		if 0 < len(p.stack) {
+	if 0 < len(p.stack) {
+		if 0 < len(p.starts) && p.starts[len(p.starts)-1] == -1 { // object value
 			if obj, ok := p.stack[len(p.stack)-1].(map[string]any); ok {
 				_, ok = obj[string(p.lastKey)].(string)
 				return ok
 			}
+		} else {
+			_, ok := p.stack[len(p.stack)-1].(string)
+			return ok
 		}
-		return false
-	}
-	if 0 < len(p.stack) {
-		_, ok := p.stack[len(p.stack)-1].(string)
-		return ok
 	}
 	return false
 }
