@@ -199,6 +199,8 @@ func TestExprLocateReflect(t *testing.T) {
 		{path: "[1,2]", data: []int{1, 2, 3}, expect: []string{"[1]", "[2]"}},
 		{path: "[1:2]", data: nil, expect: []string{}},
 		{path: "[1:3]", data: []int{1, 2, 3}, expect: []string{"[1]", "[2]"}},
+		{path: "[2:0]", data: []int{1, 2, 3}, expect: []string{}},
+		{path: "[5:]", data: []int{1, 2, 3}, expect: []string{}},
 		{path: "[1:3]", max: 1, data: []int{1, 2, 3}, expect: []string{"[1]"}},
 		{path: "[2:0:-1]", max: 1, data: []int{1, 2, 3}, expect: []string{"[2]"}},
 		{path: "[0:3].b", max: 1, data: []map[string]any{{"a": 1}, {"b": 1}}, expect: []string{"[1].b"}},
