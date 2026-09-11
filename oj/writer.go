@@ -677,7 +677,7 @@ func (wr *Writer) appendSlice(rv reflect.Value, depth int, si *sinfo) {
 func (wr *Writer) appendMap(rv reflect.Value, depth int, si *sinfo) {
 	keys := rv.MapKeys()
 	if wr.Sort {
-		sort.Slice(keys, func(i, j int) bool { return 0 > strings.Compare(keys[i].String(), keys[j].String()) })
+		sort.Slice(keys, func(i, j int) bool { return 0 > strings.Compare(ojg.KeyString(keys[i]), ojg.KeyString(keys[j])) })
 	}
 	d2 := depth + 1
 	var is string
@@ -721,7 +721,7 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, si *sinfo) {
 		switch rm.Kind() {
 		case reflect.Struct:
 			wr.buf = append(wr.buf, cs...)
-			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = wr.appendString(wr.buf, ojg.KeyString(kv), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendStruct(rm, d2, si)
 		case reflect.Slice, reflect.Array:
@@ -729,7 +729,7 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, si *sinfo) {
 				continue
 			}
 			wr.buf = append(wr.buf, cs...)
-			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = wr.appendString(wr.buf, ojg.KeyString(kv), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendSlice(rm, d2, si)
 		case reflect.Map:
@@ -737,7 +737,7 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, si *sinfo) {
 				continue
 			}
 			wr.buf = append(wr.buf, cs...)
-			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = wr.appendString(wr.buf, ojg.KeyString(kv), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendMap(rm, d2, si)
 		case reflect.String:
@@ -745,12 +745,12 @@ func (wr *Writer) appendMap(rv reflect.Value, depth int, si *sinfo) {
 				continue
 			}
 			wr.buf = append(wr.buf, cs...)
-			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = wr.appendString(wr.buf, ojg.KeyString(kv), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendJSON(rm.Interface(), d2)
 		default:
 			wr.buf = append(wr.buf, cs...)
-			wr.buf = wr.appendString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = wr.appendString(wr.buf, ojg.KeyString(kv), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ": "...)
 			wr.appendJSON(rm.Interface(), d2)
 		}

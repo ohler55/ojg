@@ -270,7 +270,7 @@ func (wr *Writer) tightMap(rv reflect.Value, si *sinfo) {
 	wr.buf = append(wr.buf, '{')
 	keys := rv.MapKeys()
 	if wr.Sort {
-		sort.Slice(keys, func(i, j int) bool { return 0 > strings.Compare(keys[i].String(), keys[j].String()) })
+		sort.Slice(keys, func(i, j int) bool { return 0 > strings.Compare(ojg.KeyString(keys[i]), ojg.KeyString(keys[j])) })
 	}
 	comma := false
 	for _, kv := range keys {
@@ -286,32 +286,32 @@ func (wr *Writer) tightMap(rv reflect.Value, si *sinfo) {
 		}
 		switch rm.Kind() {
 		case reflect.Struct:
-			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = ojg.AppendSENString(wr.buf, ojg.KeyString(kv), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
 			wr.tightStruct(rm, si)
 		case reflect.Slice, reflect.Array:
 			if (wr.OmitNil || wr.OmitEmpty) && rm.Len() == 0 {
 				continue
 			}
-			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = ojg.AppendSENString(wr.buf, ojg.KeyString(kv), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
 			wr.tightSlice(rm, si)
 		case reflect.Map:
 			if (wr.OmitNil || wr.OmitEmpty) && rm.Len() == 0 {
 				continue
 			}
-			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = ojg.AppendSENString(wr.buf, ojg.KeyString(kv), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
 			wr.tightMap(rm, si)
 		case reflect.String:
 			if (wr.OmitNil || wr.OmitEmpty) && rm.Len() == 0 {
 				continue
 			}
-			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = ojg.AppendSENString(wr.buf, ojg.KeyString(kv), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
 			wr.appendSEN(rm.Interface(), 0)
 		default:
-			wr.buf = ojg.AppendSENString(wr.buf, kv.String(), !wr.HTMLUnsafe)
+			wr.buf = ojg.AppendSENString(wr.buf, ojg.KeyString(kv), !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, ':')
 			wr.appendSEN(rm.Interface(), 0)
 		}
