@@ -247,6 +247,31 @@ func TestScriptNonListEval(t *testing.T) {
 	tt.Equal(t, 0, len(result))
 }
 
+func TestScriptNilDataEval(t *testing.T) {
+	// A filter against a nil document (JSON null) must return nothing rather
+	// than panic, the same as every other fragment type does.
+	for _, src := range []string{
+		"[?(@.x > 1)]",
+		"[?(@.x)]",
+		"[?(@ > 1)]",
+		"[?(@.a == 'x')]",
+		"[?(!@.x)]",
+		"$..[?(@.x)]",
+	} {
+		x, err := jp.ParseString(src)
+		tt.Nil(t, err)
+
+		tt.Equal(t, 0, len(x.Get(nil)), src)
+		tt.Equal(t, 0, len(x.Locate(nil, 0)), src)
+		tt.Equal(t, nil, x.First(nil), src)
+		tt.Equal(t, false, x.Has(nil), src)
+
+		got, found := x.FirstFound(nil)
+		tt.Equal(t, nil, got, src)
+		tt.Equal(t, false, found, src)
+	}
+}
+
 func TestScriptEval(t *testing.T) {
 	for i, d := range []edata{
 		{src: "(@ == 3)", value: int64(3)},

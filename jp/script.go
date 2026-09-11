@@ -229,7 +229,9 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 		data = da
 	default:
 		rv := reflect.ValueOf(td)
-		if rt := rv.Type(); rt.Kind() == reflect.Pointer {
+		// Kind() is used instead of Type().Kind() since data can be nil, and
+		// Type() panics on the zero Value while Kind() returns reflect.Invalid.
+		if rv.Kind() == reflect.Pointer {
 			rv = rv.Elem()
 		}
 		if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
