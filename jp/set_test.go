@@ -899,6 +899,59 @@ func TestSetMapPtrNil(t *testing.T) {
 	tt.Nil(t, data["a"])
 }
 
+func TestSetNilMap(t *testing.T) {
+	// Writing a key into a nil map used to panic with "assignment to entry in
+	// nil map". An error is returned instead. Both the Child and the Union
+	// fragments write a known key, for simple maps and for gen.Object.
+	for _, d := range []struct {
+		path string
+		data any
+		err  string
+	}{
+		{path: "a", data: map[string]any(nil),
+			err: "can not set into a nil map[string]interface {} at 'a'"},
+		{path: "a.b", data: map[string]any(nil),
+			err: "can not set into a nil map[string]interface {} at 'a'"},
+		{path: "a.b", data: map[string]any{"a": map[string]any(nil)},
+			err: "can not set into a nil map[string]interface {} at 'a.b'"},
+		{path: "['a','b']", data: map[string]any(nil),
+			err: "can not set into a nil map[string]interface {} at '['a','b']'"},
+		{path: "a", data: gen.Object(nil),
+			err: "can not set into a nil gen.Object at 'a'"},
+		{path: "a.b", data: gen.Object{"a": gen.Object(nil)},
+			err: "can not set into a nil gen.Object at 'a.b'"},
+		{path: "['a','b']", data: gen.Object(nil),
+			err: "can not set into a nil gen.Object at '['a','b']'"},
+	} {
+		x, err := jp.ParseString(d.path)
+		tt.Nil(t, err, d.path)
+
+		var value any = 3
+		if _, ok := d.data.(gen.Object); ok {
+			value = gen.Int(3)
+		}
+		err = x.Set(d.data, value)
+		tt.NotNil(t, err, d.path)
+		tt.Equal(t, d.err, err.Error(), d.path)
+
+		err = x.SetOne(d.data, value)
+		tt.NotNil(t, err, d.path)
+		tt.Equal(t, d.err, err.Error(), d.path)
+	}
+}
+
+func TestDelNilMap(t *testing.T) {
+	// Deleting from a nil map is a no-op, not an error.
+	for _, path := range []string{"a", "a.b", "['a','b']", "*", "..a"} {
+		x, err := jp.ParseString(path)
+		tt.Nil(t, err, path)
+		tt.Nil(t, x.Del(map[string]any(nil)), path)
+		tt.Nil(t, x.DelOne(map[string]any(nil)), path)
+		tt.Nil(t, x.Del(gen.Object(nil)), path)
+		tt.Nil(t, x.DelOne(gen.Object(nil)), path)
+	}
+}
+
 func TestSetStructPtrNil(t *testing.T) {
 	type A struct {
 		B any
