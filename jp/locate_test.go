@@ -213,6 +213,8 @@ func TestExprLocateReflect(t *testing.T) {
 		{path: "$.*", max: 2, data: []int{1, 2, 3}, expect: []string{"$[0]", "$[1]"}},
 		{path: "$.*.a", max: 1, data: []map[string]any{{"a": 1}}, expect: []string{"$[0].a"}},
 		{path: "$..", data: nil, expect: []string{"$"}},
+		{path: "[?(@.x > 1)]", data: nil, expect: []string{}},
+		{path: "$..[?(@.x)]", data: nil, expect: []string{}},
 		{path: "$..", data: &Sample{A: 3, B: "sample"}, expect: []string{"$", "$.A", "$.B"}},
 		{path: "$..", max: 2, data: &Sample{A: 3, B: "sample"}, expect: []string{"$", "$.B"}},
 		{path: "$..", max: 2, data: []int{1, 2, 3}, expect: []string{"$", "$[0]"}},
