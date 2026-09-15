@@ -4,6 +4,7 @@ package pretty_test
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -487,4 +488,56 @@ func TestWriteFloatFormat(t *testing.T) {
 
 	j = wr.Encode(float32(1.234))
 	tt.Equal(t, `01.23`, string(j))
+}
+
+func TestWriteNaN(t *testing.T) {
+	var wr pretty.Writer
+	wr.SEN = true
+	wr.Strict = false
+
+	j, err := wr.Marshal(math.NaN())
+	tt.Nil(t, err)
+	tt.Equal(t, `NaN`, string(j))
+
+	j, err = wr.Marshal(float32(math.NaN()))
+	tt.Nil(t, err)
+	tt.Equal(t, `NaN`, string(j))
+
+	j, err = wr.Marshal(math.Inf(-1))
+	tt.Nil(t, err)
+	tt.Equal(t, `"-Inf"`, string(j))
+
+	j, err = wr.Marshal(float32(math.Inf(1)))
+	tt.Nil(t, err)
+	tt.Equal(t, `"+Inf"`, string(j))
+
+	wr.SEN = false
+	j, err = wr.Marshal(math.NaN())
+	tt.Nil(t, err)
+	tt.Equal(t, `"NaN"`, string(j))
+
+	j, err = wr.Marshal(float32(math.NaN()))
+	tt.Nil(t, err)
+	tt.Equal(t, `"NaN"`, string(j))
+
+	j, err = wr.Marshal(math.Inf(1))
+	tt.Nil(t, err)
+	tt.Equal(t, `"+Inf"`, string(j))
+
+	j, err = wr.Marshal(float32(math.Inf(1)))
+	tt.Nil(t, err)
+	tt.Equal(t, `"+Inf"`, string(j))
+
+	wr.Strict = true
+	_, err = wr.Marshal(math.NaN())
+	tt.NotNil(t, err)
+
+	_, err = wr.Marshal(float32(math.NaN()))
+	tt.NotNil(t, err)
+
+	_, err = wr.Marshal(math.Inf(1))
+	tt.NotNil(t, err)
+
+	_, err = wr.Marshal(float32(math.Inf(1)))
+	tt.NotNil(t, err)
 }

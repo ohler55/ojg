@@ -201,7 +201,9 @@ func (wr *Writer) appendSEN(data any, depth int) {
 
 	case float32:
 		switch {
-		case td != td || math.IsInf(float64(td), 0):
+		case td != td && wr.Strict:
+			panic(fmt.Errorf("%v can not be encoded as a JSON element", td))
+		case math.IsInf(float64(td), 0):
 			if wr.Strict {
 				panic(fmt.Errorf("%v can not be encoded as a JSON element", td))
 			} else {
@@ -214,7 +216,9 @@ func (wr *Writer) appendSEN(data any, depth int) {
 		}
 	case float64:
 		switch {
-		case td != td || math.IsInf(td, 0):
+		case td != td && wr.Strict:
+			panic(fmt.Errorf("%v can not be encoded as a JSON element", td))
+		case math.IsInf(td, 0):
 			if wr.Strict {
 				panic(fmt.Errorf("%v can not be encoded as a JSON element", td))
 			} else {

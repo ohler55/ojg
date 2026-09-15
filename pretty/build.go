@@ -141,11 +141,28 @@ func (w *Writer) buildInt(v int64) (n *node) {
 
 func (w *Writer) buildFloat32(v float32) (n *node) {
 	switch {
-	case v != v || math.IsInf(float64(v), 0):
+	case v != v:
+		switch {
+		case w.Strict:
+			panic(fmt.Errorf("%v can not be encoded as a JSON element", v))
+		case w.SEN:
+			n = &node{
+				buf:  []byte("NaN"),
+				kind: numNode,
+			}
+		default:
+			n = &node{
+				buf:  fmt.Appendf(nil, `"%v"`, v),
+				kind: numNode,
+			}
+		}
+	case math.IsInf(float64(v), 0):
 		if w.Strict {
 			panic(fmt.Errorf("%v can not be encoded as a JSON element", v))
-		} else {
-			w.buf = fmt.Appendf(w.buf, `"%v"`, v)
+		}
+		n = &node{
+			buf:  fmt.Appendf(nil, `"%v"`, v),
+			kind: numNode,
 		}
 	case 0 < len(w.FloatFormat):
 		n = &node{
@@ -167,11 +184,28 @@ func (w *Writer) buildFloat32(v float32) (n *node) {
 
 func (w *Writer) buildFloat64(v float64) (n *node) {
 	switch {
-	case v != v || math.IsInf(v, 0):
+	case v != v:
+		switch {
+		case w.Strict:
+			panic(fmt.Errorf("%v can not be encoded as a JSON element", v))
+		case w.SEN:
+			n = &node{
+				buf:  []byte("NaN"),
+				kind: numNode,
+			}
+		default:
+			n = &node{
+				buf:  fmt.Appendf(nil, `"%v"`, v),
+				kind: numNode,
+			}
+		}
+	case math.IsInf(v, 0):
 		if w.Strict {
 			panic(fmt.Errorf("%v can not be encoded as a JSON element", v))
-		} else {
-			w.buf = fmt.Appendf(w.buf, `"%v"`, v)
+		}
+		n = &node{
+			buf:  fmt.Appendf(nil, `"%v"`, v),
+			kind: numNode,
 		}
 	case 0 < len(w.FloatFormat):
 		n = &node{

@@ -4,6 +4,7 @@ package sen_test
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"testing"
 
@@ -468,4 +469,19 @@ func TestBytesStructGenericer(t *testing.T) {
 	tw = GennyWrap{Bed: Genny{val: 1}, Ptr: nil, Nptr: nil}
 	out = sen.Bytes(&tw, &opt)
 	tt.Equal(t, `{bed:{val:1} nptr:null}`, string(out))
+}
+
+func TestSENaNBasic(t *testing.T) {
+	type Sample struct {
+		F32 float32 `json:"f32"`
+		F64 float64 `json:"f64"`
+	}
+	sample := Sample{
+		F32: float32(math.NaN()),
+		F64: math.NaN(),
+	}
+	wr := sen.Writer{Options: ojg.Options{UseTags: true}}
+
+	out := wr.MustSEN(&sample)
+	tt.Equal(t, `{f32:NaN f64:NaN}`, string(out))
 }
