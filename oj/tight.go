@@ -30,7 +30,7 @@ func tightDefault(wr *Writer, data any, _ int) {
 		case reflect.Map:
 			wr.tightMap(rv, nil)
 		case reflect.Chan, reflect.Func, reflect.UnsafePointer:
-			if wr.strict {
+			if wr.Strict {
 				panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
 			}
 			wr.buf = append(wr.buf, "null"...)
@@ -38,7 +38,7 @@ func tightDefault(wr *Writer, data any, _ int) {
 			dec := alt.Decompose(data, &wr.Options)
 			wr.appendJSON(dec, 0)
 		}
-	case wr.strict:
+	case wr.Strict:
 		panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
 	default:
 		wr.buf = ojg.AppendJSONString(wr.buf, fmt.Sprintf("%v", data), !wr.HTMLUnsafe)

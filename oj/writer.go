@@ -32,7 +32,6 @@ type Writer struct {
 	buf           []byte
 	w             io.Writer
 	findex        byte
-	strict        bool
 	appendArray   func(wr *Writer, data []any, depth int)
 	appendObject  func(wr *Writer, data map[string]any, depth int)
 	appendDefault func(wr *Writer, data any, depth int)
@@ -233,7 +232,7 @@ func (wr *Writer) appendJSON(data any, depth int) {
 	case []any:
 		// go marshal treats a nil slice as a special case different from an
 		// empty slice. Seems kind of odd but here is the check.
-		if wr.strict && td == nil {
+		if wr.Strict && td == nil {
 			wr.buf = append(wr.buf, "null"...)
 			break
 		}
@@ -290,7 +289,7 @@ func appendDefault(wr *Writer, data any, depth int) {
 		case reflect.Map:
 			wr.appendMap(rv, depth, nil)
 		case reflect.Chan, reflect.Func, reflect.UnsafePointer:
-			if wr.strict {
+			if wr.Strict {
 				panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
 			}
 			wr.buf = append(wr.buf, "null"...)
@@ -298,7 +297,7 @@ func appendDefault(wr *Writer, data any, depth int) {
 			dec := alt.Decompose(data, &wr.Options)
 			wr.appendJSON(dec, depth)
 		}
-	case wr.strict:
+	case wr.Strict:
 		panic(fmt.Errorf("%T can not be encoded as a JSON element", data))
 	default:
 		wr.buf = wr.appendString(wr.buf, fmt.Sprintf("%v", data), !wr.HTMLUnsafe)
