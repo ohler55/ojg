@@ -3,6 +3,7 @@
 package ojg_test
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/ohler55/ojg"
@@ -53,4 +54,9 @@ func TestStringSEN(t *testing.T) {
 		buf = ojg.AppendSENString(buf, td.src, td.htmlSafe)
 		tt.Equal(t, td.expect, string(buf), i, ": ", td.src)
 	}
+}
+
+func TestKeyString(t *testing.T) {
+	tt.Equal(t, "quux", ojg.KeyString(reflect.ValueOf("quux")))
+	tt.Equal(t, "123", ojg.KeyString(reflect.ValueOf(123)))
 }

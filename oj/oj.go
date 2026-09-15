@@ -233,7 +233,7 @@ func pickWriter(arg any, strict bool) (wr *Writer) {
 			Options: *ta,
 			buf:     make([]byte, 0, 1024),
 		}
-		wr.Strict = strict
+		wr.Strict = strict || wr.Strict
 	case *Writer:
 		wr = ta
 	}

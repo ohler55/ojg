@@ -3,7 +3,9 @@
 package oj_test
 
 import (
+	"bytes"
 	"fmt"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -111,6 +113,12 @@ func TestString(t *testing.T) {
 		{value: []any{uint(1), 'A', uint8(2), uint16(3), uint32(4), uint64(5)}, expect: "[1,65,2,3,4,5]"},
 		{value: gen.Array{gen.Int(1), gen.Float(1.2)}, expect: "[1,1.2]"},
 		{value: []any{float32(1.2), float64(2.1)}, expect: "[1.2,2.1]"},
+		{value: []any{math.NaN()}, expect: `["NaN"]`, options: &oj.Options{Strict: false}},
+		{value: []any{math.Inf(1)}, expect: `["+Inf"]`, options: &oj.Options{Strict: false}},
+		{value: []any{math.Inf(-1)}, expect: `["-Inf"]`, options: &oj.Options{Strict: false}},
+		{value: []any{float32(math.NaN())}, expect: `["NaN"]`, options: &oj.Options{Strict: false}},
+		{value: []any{float32(math.Inf(1))}, expect: `["+Inf"]`, options: &oj.Options{Strict: false}},
+		{value: []any{float32(math.Inf(-1))}, expect: `["-Inf"]`, options: &oj.Options{Strict: false}},
 		{value: []any{tm}, expect: "[1588879759123456789]"},
 		{value: []any{tm}, expect: `[{"^":"Time","value":"2020-05-07T19:29:19.123456789Z"}]`,
 			options: &oj.Options{TimeMap: true, CreateKey: "^", TimeFormat: time.RFC3339Nano}},
@@ -998,6 +1006,19 @@ func TestWriteFloatFormat(t *testing.T) {
 
 	j = wr.MustJSON(float32(1.234))
 	tt.Equal(t, `01.23`, string(j))
+}
+
+func TestWriteNaN(t *testing.T) {
+	var (
+		wr oj.Writer
+		bb bytes.Buffer
+	)
+	wr.Strict = true
+	err := wr.Write(&bb, math.NaN())
+	tt.NotNil(t, err)
+
+	err = wr.Write(&bb, float32(math.NaN()))
+	tt.NotNil(t, err)
 }
 
 func BenchmarkMarshalFlat(b *testing.B) {
