@@ -4,6 +4,7 @@ package oj_test
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"testing"
 
@@ -483,4 +484,40 @@ func TestMarshalStructGenericer(t *testing.T) {
 	out, err = oj.Marshal(&tw)
 	tt.Nil(t, err)
 	tt.Equal(t, `{"bed":{"val":1},"nptr":null}`, string(out))
+}
+
+func TestJSONNaNBasic(t *testing.T) {
+	type Sample struct {
+		F32 float32 `json:"f32"`
+		F64 float64 `json:"f64"`
+	}
+	sample := Sample{
+		F32: float32(math.NaN()),
+		F64: math.NaN(),
+	}
+	wr := oj.Writer{Options: ojg.Options{UseTags: true}}
+
+	out := wr.MustJSON(&sample)
+	tt.Equal(t, `{"f32":"NaN","f64":"NaN"}`, string(out))
+
+	out = wr.MustJSON(sample)
+	tt.Equal(t, `{"f32":"NaN","f64":"NaN"}`, string(out))
+}
+
+func TestJSONNaNEmpty(t *testing.T) {
+	type Sample struct {
+		F32 float32 `json:"f32,omitempty"`
+		F64 float64 `json:"f64,omitempty"`
+	}
+	sample := Sample{
+		F32: float32(math.NaN()),
+		F64: math.NaN(),
+	}
+	wr := oj.Writer{Options: ojg.Options{UseTags: true}}
+
+	out := wr.MustJSON(&sample)
+	tt.Equal(t, `{"f32":"NaN","f64":"NaN"}`, string(out))
+
+	out = wr.MustJSON(sample)
+	tt.Equal(t, `{"f32":"NaN","f64":"NaN"}`, string(out))
 }
