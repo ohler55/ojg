@@ -79,7 +79,11 @@ func (p *Parser) AddTokenFunc(name string, tf TokenFunc) {
 func (p *Parser) Unmarshal(data []byte, vp any, recomposer ...alt.Recomposer) (err error) {
 	var v any
 	if v, err = p.Parse(data); err == nil {
-		_, err = alt.Recompose(v, vp)
+		if 0 < len(recomposer) {
+			_, err = recomposer[0].Recompose(v, vp)
+		} else {
+			_, err = alt.Recompose(v, vp)
+		}
 	}
 	return
 }

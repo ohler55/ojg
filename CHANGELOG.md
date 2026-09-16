@@ -8,6 +8,7 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
 ### Fixed
 - Fixed handling of NaN and Inf writing.
 - Moved strict option to Options to match documentation.
+- oj.Unmarshal and sen.Unmarshal correctly use a provided alternative recomposer.
 
 ## [1.28.6] - 2026-09-10
 ### Fixed
