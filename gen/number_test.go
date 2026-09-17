@@ -87,3 +87,20 @@ func TestNumberNumConv(t *testing.T) {
 	v = n.AsNum()
 	tt.Equal(t, "0.12345678901234567890123", v)
 }
+
+func TestNumberOverBigLimit(t *testing.T) {
+	var n gen.Number
+	n.Reset()
+	n.Frac = gen.BigLimit + 1
+	n.AddFrac('1')
+	v := n.AsNum()
+	tt.Equal(t, "0.223372036854775821", v)
+}
+
+func TestNumberDivLimit(t *testing.T) {
+	var n gen.Number
+	n.Reset()
+	n.Frac = gen.DivLimit + 1
+	n.Div = 1000
+	n.FillBig() // no panic
+}
