@@ -221,6 +221,8 @@ func TestExprLocateReflect(t *testing.T) {
 		{path: "$..", max: 2, data: []int{1, 2, 3}, expect: []string{"$", "$[0]"}},
 		{path: "[0][1]", data: []any{[]int{1, 2, 3}}, expect: []string{"[0][1]"}},
 		{path: "[0:2][1]", data: []any{[]int{1, 2, 3}}, expect: []string{"[0][1]"}},
+		{path: "[?(@.x > 1)]", data: nil, expect: []string{}},
+		{path: "$..[?(@.x)]", data: nil, expect: []string{}},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.path)
