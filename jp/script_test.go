@@ -495,3 +495,26 @@ func TestScriptExistEval(t *testing.T) {
 
 	tt.Equal(t, "[{a:1 b:2 z:4}]", sen.String(result, &ojg.Options{Sort: true}))
 }
+
+func TestScriptNilDataEval(t *testing.T) {
+	for _, src := range []string{
+		"[?(@.x > 1)]",
+		"[?(@.x)]",
+		"[?(@ > 1)]",
+		"[?(@.a == 'x')]",
+		"[?(!@.x)]",
+		"$..[?(@.x)]",
+	} {
+		x, err := jp.ParseString(src)
+		tt.Nil(t, err)
+
+		tt.Equal(t, 0, len(x.Get(nil)), src)
+		tt.Equal(t, 0, len(x.Locate(nil, 0)), src)
+		tt.Equal(t, nil, x.First(nil), src)
+		tt.Equal(t, false, x.Has(nil), src)
+
+		got, found := x.FirstFound(nil)
+		tt.Equal(t, nil, got, src)
+		tt.Equal(t, false, found, src)
+	}
+}
