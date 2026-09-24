@@ -289,6 +289,28 @@ func TestExprWalkStruct(t *testing.T) {
 	}
 }
 
+func TestExprWalkNilPointer(t *testing.T) {
+	type top struct {
+		A *[]int
+	}
+	var inner *top
+	for _, path := range []string{"*", ".."} {
+		x := jp.MustParseString(path)
+		for i, wd := range []struct {
+			data  any
+			xpath string
+		}{
+			{data: (*top)(nil), xpath: ""},
+			{data: &inner, xpath: ""},
+			{data: &top{}, xpath: "A"},
+		} {
+			var ps []string
+			x.Walk(wd.data, func(p jp.Expr, nodes []any) { ps = append(ps, p.String()) })
+			tt.Equal(t, wd.xpath, strings.Join(ps, " "), "%d: path mismatch for %s", i, path)
+		}
+	}
+}
+
 func TestExprWalkMap(t *testing.T) {
 	opt := ojg.Options{Sort: true, Indent: 0}
 	type name string
