@@ -4,6 +4,7 @@ package gen_test
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 	"testing/iotest"
@@ -347,4 +348,15 @@ func TestParserParseReaderChan(t *testing.T) {
 		results = append(results, n.String()...)
 	}
 	tt.Equal(t, `1 [2] {"x":3} true false 123`, string(results))
+}
+
+func TestParseExponentPastExactPow10(t *testing.T) {
+	for _, src := range []string{"1.5e22", "1.5e-22", "1.5e23", "1.5e-23"} {
+		var p gen.Parser
+		v, err := p.Parse([]byte(src))
+		tt.Nil(t, err, src)
+		want, werr := strconv.ParseFloat(src, 64)
+		tt.Nil(t, werr, src)
+		tt.Equal(t, want, v, src)
+	}
 }

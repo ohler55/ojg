@@ -143,7 +143,15 @@ func (n *Number) AsNum() (num any) {
 			num = i
 		}
 	default:
-		if runtime.GOARCH == "arm64" {
+		x := 0
+		if 0 < n.Exp {
+			x = int(n.Exp)
+			if n.NegExp {
+				x = -x
+			}
+		}
+		// math.Pow10 is exact through exponent 22. Past that, scale with ParseFloat.
+		if runtime.GOARCH == "arm64" && -22 <= x && x <= 22 {
 			f := float64(n.I)
 			if 0 < n.Frac {
 				// Remove trailing zeros as they can cause precision loss due to
@@ -160,11 +168,7 @@ func (n *Number) AsNum() (num any) {
 			if n.Neg {
 				f = -f
 			}
-			if 0 < n.Exp {
-				x := int(n.Exp)
-				if n.NegExp {
-					x = -x
-				}
+			if x != 0 {
 				f *= math.Pow10(x)
 			}
 			num = f
@@ -188,21 +192,31 @@ func (n *Number) AsNode() (num Node) {
 		}
 		num = Int(i)
 	default:
-		f := float64(n.I)
-		if 0 < n.Frac {
-			f += float64(n.Frac) / float64(n.Div)
-		}
-		if n.Neg {
-			f = -f
-		}
+		x := 0
 		if 0 < n.Exp {
-			x := int(n.Exp)
+			x = int(n.Exp)
 			if n.NegExp {
 				x = -x
 			}
-			f *= math.Pow10(x)
 		}
-		num = Float(f)
+		// math.Pow10 is exact through exponent 22. Past that, scale with ParseFloat.
+		if x < -22 || 22 < x {
+			n.FillBig()
+			f, _ := strconv.ParseFloat(string(n.BigBuf), 64)
+			num = Float(f)
+		} else {
+			f := float64(n.I)
+			if 0 < n.Frac {
+				f += float64(n.Frac) / float64(n.Div)
+			}
+			if n.Neg {
+				f = -f
+			}
+			if x != 0 {
+				f *= math.Pow10(x)
+			}
+			num = Float(f)
+		}
 	}
 	return
 }

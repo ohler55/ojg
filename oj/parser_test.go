@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 	"testing/iotest"
@@ -409,4 +410,14 @@ func TestParserDecimalSplit(t *testing.T) {
 	num, ok := v.(json.Number)
 	tt.Equal(t, true, ok)
 	tt.Equal(t, numStr, num.String())
+}
+
+func TestParseExponentPastExactPow10(t *testing.T) {
+	for _, src := range []string{"1.5e22", "1e-22", "1.5e23", "1.5e-23", "1e-23", "123e23"} {
+		v, err := oj.Parse([]byte(src))
+		tt.Nil(t, err, src)
+		want, werr := strconv.ParseFloat(src, 64)
+		tt.Nil(t, werr, src)
+		tt.Equal(t, want, v, src)
+	}
 }
