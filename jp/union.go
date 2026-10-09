@@ -25,9 +25,7 @@ func (f Union) Append(buf []byte, _, _ bool) []byte {
 		}
 		switch tx := x.(type) {
 		case string:
-			buf = append(buf, '\'')
-			buf = append(buf, tx...)
-			buf = append(buf, '\'')
+			buf = AppendString(buf, tx, '\'')
 		case int64:
 			buf = append(buf, strconv.FormatInt(tx, 10)...)
 		}
