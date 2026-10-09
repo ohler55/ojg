@@ -87,6 +87,51 @@ func TestExprBuild(t *testing.T) {
 	tt.Equal(t, `$['a::b']`, x.String())
 }
 
+func TestExprUnionEscaping(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		key  string
+		want string
+	}{
+		{"plain", "plain", `['plain','other']`},
+		{"empty", "", `['','other']`},
+		{"quote", "a'b", `['a\'b','other']`},
+		{"double quote", `a"b`, `['a\"b','other']`},
+		{"backslash", `a\b`, `['a\\b','other']`},
+		{"trailing backslash", `a\`, `['a\\','other']`},
+		{"backslash quote", `a\'b`, `['a\\\'b','other']`},
+		{"newline", "a\nb", `['a\nb','other']`},
+		{"tab", "a\tb", `['a\tb','other']`},
+		{"carriage return", "a\rb", `['a\rb','other']`},
+		{"backspace", "a\bb", `['a\bb','other']`},
+		{"form feed", "a\fb", `['a\fb','other']`},
+		{"null", "a\x00b", `['a\u0000b','other']`},
+		{"control", "a\x1fb", `['a\u001fb','other']`},
+		{"line separator", "a\u2028b", `['a\u2028b','other']`},
+		{"paragraph separator", "a\u2029b", `['a\u2029b','other']`},
+		{"unicode", "東京🎾", `['東京🎾','other']`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			data := map[string]any{tc.key: "hit", "other": "second", "ab": "wrong"}
+			for _, rooted := range []bool{false, true} {
+				x := jp.U(tc.key, "other")
+				want := tc.want
+				if rooted {
+					x = jp.R().U(tc.key, "other")
+					want = "$" + want
+				}
+				tt.Equal(t, want, x.String())
+				tt.Equal(t, want, x.BracketString())
+				parsed, err := jp.ParseString(x.String())
+				tt.Nil(t, err)
+				tt.Equal(t, x, parsed)
+				tt.Equal(t, x.Get(data), parsed.Get(data))
+			}
+			tt.Equal(t, "prefix"+tc.want, string(jp.NewUnion(tc.key, "other").Append([]byte("prefix"), false, false)))
+		})
+	}
+}
+
 func TestExprFilter(t *testing.T) {
 	f, err := jp.NewFilter("[?(@.x == 3)]")
 	tt.Nil(t, err)
