@@ -518,3 +518,31 @@ func TestScriptNilDataEval(t *testing.T) {
 		tt.Equal(t, false, found, src)
 	}
 }
+
+func TestScriptDeepEquality(t *testing.T) {
+	data := oj.MustParseString(`[
+  {"a": [1, 2.0, {"x": "y"}], "b": [1, 2, {"x": "y"}]},
+  {"a": [1, 2], "b": [1, 3]},
+  {"a": {"k": [1]}, "b": {"k": [1.0]}},
+  {"a": {"k": 1}, "b": {"k": 1, "m": 2}},
+  {"a": [], "b": {}}
+]`)
+	eq := jp.MustParseString("$[?@.a==@.b]").Get(data)
+	tt.Equal(t, 2, len(eq))
+	tt.Equal(t, data.([]any)[0], eq[0])
+	tt.Equal(t, data.([]any)[2], eq[1])
+
+	neq := jp.MustParseString("$[?@.a!=@.b]").Get(data)
+	tt.Equal(t, 3, len(neq))
+
+	// An array or object compared with itself is equal.
+	tt.Equal(t, 5, len(jp.MustParseString("$[?@==@]").Get(data)))
+	tt.Equal(t, 5, len(jp.MustParseString("$[?$==$]").Get(data)))
+
+	// Go slices that are not []any are compared with reflect.DeepEqual.
+	godata := []any{
+		map[string]any{"a": []int{1, 2}, "b": []int{1, 2}},
+		map[string]any{"a": []int{1, 2}, "b": []int{2, 1}},
+	}
+	tt.Equal(t, 1, len(jp.MustParseString("$[?@.a==@.b]").Get(godata)))
+}
