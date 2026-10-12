@@ -479,6 +479,59 @@ func expandStack(stack []any, mi int) []any {
 	return nstack
 }
 
+// scriptEqual compares two filter operands. Numbers compare by value across
+// int64 and float64, and arrays and objects compare element by element as
+// RFC 9535 section 2.3.5.2.2 requires. Values of other types that Go cannot
+// compare with == (slices or maps of other types) fall back to
+// reflect.DeepEqual instead of panicking.
+func scriptEqual(left, right any) bool {
+	switch tl := left.(type) {
+	case int64:
+		switch tr := right.(type) {
+		case int64:
+			return tl == tr
+		case float64:
+			return float64(tl) == tr
+		}
+		return false
+	case float64:
+		switch tr := right.(type) {
+		case float64:
+			return tl == tr
+		case int64:
+			return tl == float64(tr)
+		}
+		return false
+	case []any:
+		tr, ok := right.([]any)
+		if !ok || len(tl) != len(tr) {
+			return false
+		}
+		for i, v := range tl {
+			if !scriptEqual(v, tr[i]) {
+				return false
+			}
+		}
+		return true
+	case map[string]any:
+		tr, ok := right.(map[string]any)
+		if !ok || len(tl) != len(tr) {
+			return false
+		}
+		for k, v := range tl {
+			if rv, has := tr[k]; !has || !scriptEqual(v, rv) {
+				return false
+			}
+		}
+		return true
+	}
+	if left != nil && !reflect.TypeOf(left).Comparable() ||
+		right != nil && !reflect.TypeOf(right).Comparable() {
+		return reflect.DeepEqual(left, right)
+	}
+	return left == right
+}
+
 func evalStack(sstack []any) []any {
 	for i := len(sstack) - 1; 0 <= i; i-- {
 		o, _ := sstack[i].(*op)
@@ -510,35 +563,9 @@ func evalStack(sstack []any) []any {
 		case group.code:
 			sstack[i] = left
 		case eq.code:
-			if left == right {
-				sstack[i] = true
-			} else {
-				sstack[i] = false
-				switch tl := left.(type) {
-				case int64:
-					if tr, ok := right.(float64); ok {
-						sstack[i] = ok && float64(tl) == tr
-					}
-				case float64:
-					tr, ok := right.(int64)
-					sstack[i] = ok && tl == float64(tr)
-				}
-			}
+			sstack[i] = scriptEqual(left, right)
 		case neq.code:
-			if left == right {
-				sstack[i] = false
-			} else {
-				sstack[i] = true
-				switch tl := left.(type) {
-				case int64:
-					if tr, ok := right.(float64); ok {
-						sstack[i] = ok && float64(tl) != tr
-					}
-				case float64:
-					tr, ok := right.(int64)
-					sstack[i] = ok && tl != float64(tr)
-				}
-			}
+			sstack[i] = !scriptEqual(left, right)
 		case lt.code:
 			sstack[i] = false
 			switch tl := left.(type) {
