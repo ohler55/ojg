@@ -25,7 +25,7 @@ var (
 	gt     = &op{prec: 3, code: '>', name: ">", cnt: 2}
 	lte    = &op{prec: 3, code: 'l', name: "<=", cnt: 2}
 	gte    = &op{prec: 3, code: 'g', name: ">=", cnt: 2}
-	or     = &op{prec: 4, code: '|', name: "||", cnt: 2}
+	or     = &op{prec: 5, code: '|', name: "||", cnt: 2}
 	and    = &op{prec: 4, code: '&', name: "&&", cnt: 2}
 	not    = &op{prec: 0, code: '!', name: "!", cnt: 1}
 	add    = &op{prec: 2, code: '+', name: "+", cnt: 2}

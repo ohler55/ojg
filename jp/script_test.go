@@ -84,7 +84,8 @@ func TestScriptParse(t *testing.T) {
 		{src: "(@.x[?(@.a == 5)] == 11)", expect: "(@.x[?(@.a == 5)] == 11)"},
 		{src: "((@.x == 3) || (@.y > 5))", expect: "(@.x == 3 || @.y > 5)"},
 		{src: "@.x == 3 || @.y > 5", expect: "(@.x == 3 || @.y > 5)"},
-		{src: "((@.x == 3) || (@.y > 5 && @.z))", expect: "(@.x == 3 || (@.y > 5 && @.z))"},
+		{src: "((@.x == 3) || (@.y > 5 && @.z))", expect: "(@.x == 3 || @.y > 5 && @.z)"},
+		{src: "(@.x == 3 || @.y > 5) && @.z", expect: "((@.x == 3 || @.y > 5) && @.z)"},
 		{src: "(@.x < 3 && @.x > 1 || @.z == 3)", expect: "(@.x < 3 && @.x > 1 || @.z == 3)"},
 		{src: "@.x < 3 && @.x > 1 || @.z == 3", expect: "(@.x < 3 && @.x > 1 || @.z == 3)"},
 		{src: "@.x + 3 > @.y - 3", expect: "(@.x + 3 > @.y - 3)"},
@@ -320,6 +321,13 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@.x && @.y)", value: map[string]any{"a": true, "y": false}, noMatch: true},
 		{src: "(@.y && @.x)", value: map[string]any{"a": true, "y": false}, noMatch: true},
 		{src: "(@.x && @.y)", value: map[string]any{"x": true, "y": true}},
+
+		// && binds more tightly than ||.
+		{src: "(@.x || @.y && @.z)", value: map[string]any{"x": true}},
+		{src: "(@.x && @.y || @.z)", value: map[string]any{"z": true}},
+		{src: "(@.x == 1 || @.y == 2 && @.z == 3)", value: map[string]any{"x": 1}},
+		{src: "(@.x == 1 || @.y == 2 && @.z == 3)", value: map[string]any{"y": 2}, noMatch: true},
+		{src: "((@.x || @.y) && @.z)", value: map[string]any{"x": true}, noMatch: true},
 
 		{src: "(!@.x)", value: map[string]any{"x": true}, noMatch: true},
 		{src: "(!@.x)", value: map[string]any{"y": true}},
