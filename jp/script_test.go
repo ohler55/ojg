@@ -338,6 +338,13 @@ func TestScriptEval(t *testing.T) {
 		{src: "(!@.x)", value: map[string]any{"x": true}, noMatch: true},
 		{src: "(!@.x)", value: map[string]any{"y": true}},
 
+		// A parenthesized @.x is still an existence check.
+		{src: "((@.x) && (@.y))", value: map[string]any{"x": 1, "y": 2}},
+		{src: "((@.x) || (@.y && @.z))", value: map[string]any{"x": 1}},
+		{src: "(!(@.x))", value: map[string]any{"x": 1}, noMatch: true},
+		{src: "(!(@.x))", value: map[string]any{"x": false}, noMatch: true},
+		{src: "(!(@.x))", value: map[string]any{"y": 1}},
+
 		{src: "(@.x + @.y == 0)", value: map[string]any{"x": 1, "y": 2}, noMatch: true},
 		{src: "(@.x + @.y == 3)", value: map[string]any{"x": 1, "y": 2}},
 		{src: "(@.x + @.y == 3.1)", value: map[string]any{"x": 1.1, "y": 2}},

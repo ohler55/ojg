@@ -562,6 +562,10 @@ func evalStack(sstack []any) []any {
 		switch o.code {
 		case group.code:
 			sstack[i] = left
+			if gleft {
+				// Keep the got so (@.x) stays an existence check, as @.x is.
+				sstack[i] = &got{value: left}
+			}
 		case eq.code:
 			sstack[i] = scriptEqual(left, right)
 		case neq.code:
