@@ -118,6 +118,25 @@ func TestExprHas(t *testing.T) {
 	}
 }
 
+func TestExprHasTypedMap(t *testing.T) {
+	child := map[string]int{"x": 1}
+	for _, d := range []struct {
+		data  any
+		paths []string
+	}{
+		{map[string]any{"a": child}, []string{"$.a.x", "$.*.x", "$..x", "$['a','b'].x"}},
+		{[]any{child}, []string{"$[0].x", "$[*].x", "$..x", "$[0,1].x", "$[:].x", "$[?(@.x == 1)].x"}},
+	} {
+		for _, path := range d.paths {
+			t.Run(path, func(t *testing.T) {
+				x := jp.MustParseString(path)
+				tt.Equal(t, []any{1}, x.Get(d.data))
+				tt.Equal(t, true, x.Has(d.data))
+			})
+		}
+	}
+}
+
 func TestExprHasNode(t *testing.T) {
 	data := buildNodeTree(4, 3, 0)
 	for i, d := range hasTestData {
