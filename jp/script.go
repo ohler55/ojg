@@ -766,7 +766,7 @@ func evalStack(sstack []any) []any {
 			sstack[i] = false
 			if list, ok := right.([]any); ok {
 				for _, ev := range list {
-					if left == ev {
+					if scriptEqual(left, ev) {
 						sstack[i] = true
 						break
 					}
