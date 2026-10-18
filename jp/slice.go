@@ -298,6 +298,9 @@ func (f Slice) startEndStep(size int) (start, end, step int) {
 		start = size + start
 		if start < 0 {
 			start = 0
+			if step < 0 {
+				step = 0
+			}
 		}
 	case size <= start:
 		if 0 <= step {
@@ -333,6 +336,9 @@ func (f Slice) startEndStep(size int) (start, end, step int) {
 		}
 	case size <= end:
 		end = size - 1
+		if step < 0 {
+			step = 0
+		}
 	default:
 		if 0 < step {
 			end--
