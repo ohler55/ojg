@@ -710,6 +710,19 @@ func TestExprGetSlice(t *testing.T) {
 	tt.Equal(t, "2", oj.JSON(y))
 }
 
+func TestExprReverseSliceOutOfBounds(t *testing.T) {
+	for _, path := range []string{"$[-4::-1]", "$[:3:-1]", "$[:10:-1]"} {
+		t.Run(path, func(t *testing.T) {
+			x := jp.MustParseString(path)
+			for _, data := range []any{[]any{0, 1, 2}, gen.Array{gen.Int(0), gen.Int(1), gen.Int(2)}, []any{}, gen.Array{}} {
+				tt.Equal(t, []any{}, x.Get(data))
+				tt.Equal(t, false, x.Has(data))
+				tt.Equal(t, []jp.Expr(nil), x.Locate(data, 0))
+			}
+		})
+	}
+}
+
 func TestExprGetGenSlice(t *testing.T) {
 	p := gen.Parser{}
 	obj, err := p.Parse([]byte(`{
