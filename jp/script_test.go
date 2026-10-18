@@ -292,6 +292,12 @@ func TestScriptEval(t *testing.T) {
 		{src: "(@ in [1,2,3])", value: int64(2)},
 		{src: "(@ in ['a','b','c'])", value: "b"},
 		{src: "(2 in @)", value: []any{int64(1), int64(2), int64(3)}},
+		{src: "(@.a in @.b)", value: map[string]any{"a": []any{int64(1)}, "b": []any{[]any{1.0}}}},
+		{src: "(@.a in @.b)", value: map[string]any{"a": []any{int64(1)}, "b": []any{[]any{int64(2)}}}, noMatch: true},
+		{src: "(@.a in @.b)", value: map[string]any{"a": map[string]any{"x": int64(1)}, "b": []any{map[string]any{"x": 1.0}}}},
+		{src: "(@.a in @.b)", value: map[string]any{"a": map[string]any{"x": int64(1)}, "b": []any{map[string]any{"x": int64(2)}}}, noMatch: true},
+		{src: "(@ in [1])", value: 1.0},
+		{src: "(@ in [1.0])", value: int64(1)},
 
 		{src: "(@ empty false)", value: []any{int64(1)}},
 		{src: "(@ empty true)", value: []any{}},
