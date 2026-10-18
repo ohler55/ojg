@@ -671,11 +671,7 @@ func (x Expr) Has(data any) bool {
 					}
 				}
 			default:
-				start := tf[0]
-				if start == SliceNotSet {
-					start = 0
-				}
-				if v, has = reflectGetNth(tv, start); has {
+				for _, v = range reflectGetSlice(tv, tf) {
 					if int(fi) == len(x)-1 { // last one
 						return true
 					}
