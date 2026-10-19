@@ -829,12 +829,7 @@ func evalStack(sstack []any) []any {
 			sstack[i] = Nothing
 			if ls, ok := left.(string); ok {
 				if rs, _ := right.(string); 0 < len(rs) {
-					if rs[0] != '^' {
-						rs = "^" + rs
-					}
-					if rs[len(rs)-1] != '$' {
-						rs += "$"
-					}
+					rs = "^(?:" + rs + ")$"
 					if rx, err := regexp.Compile(rs); err == nil {
 						sstack[i] = rx.MatchString(ls)
 					}
