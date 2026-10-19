@@ -702,6 +702,9 @@ func (p *parser) readEqOp() (o *op) {
 			if len(token) == 0 || !partialOp(token, b) {
 				break
 			}
+		} else if b == '-' && opMap[string(token)] != nil && p.pos+1 < len(p.buf) && '0' <= p.buf[p.pos+1] && p.buf[p.pos+1] <= '9' {
+			// A minus directly after an operator and before a digit starts a negative number.
+			break
 		}
 		token = append(token, b)
 		if b == '-' && 1 < len(token) {
