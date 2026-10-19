@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
@@ -811,7 +812,7 @@ func evalStack(sstack []any) []any {
 			sstack[i] = Nothing
 			switch tl := left.(type) {
 			case string:
-				sstack[i] = int64(len(tl))
+				sstack[i] = int64(utf8.RuneCountInString(tl))
 			case []any:
 				sstack[i] = int64(len(tl))
 			case map[string]any:
