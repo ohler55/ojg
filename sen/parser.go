@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"unicode/utf16"
 	"unicode/utf8"
 
 	"github.com/ohler55/ojg"
@@ -47,6 +48,8 @@ type Parser struct {
 	mi         int
 	num        gen.Number
 	rn         rune
+	hi         rune // high half of the last \u escape
+	hiEnd      int  // len(tmp) just after that escape
 	result     any
 	mode       string
 	lastKey    gen.Key
@@ -131,6 +134,7 @@ func (p *Parser) Parse(buf []byte, args ...any) (any, error) {
 		p.tmp = p.tmp[:0]
 		p.starts = p.starts[:0]
 	}
+	p.hi = 0
 	p.result = nil
 	p.noff = -1
 	p.line = 1
@@ -200,6 +204,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...any) (data any, err error) {
 		p.tmp = p.tmp[:0]
 		p.starts = p.starts[:0]
 	}
+	p.hi = 0
 	p.result = nil
 	p.noff = -1
 	p.line = 1
@@ -546,6 +551,7 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 			p.lastStrKey = p.lastKey
 		case strQuote:
 			if b == p.quoteDelim {
+				p.hi = 0
 				p.addString(string(p.tmp), off)
 			} else {
 				p.tmp = append(p.tmp, b)
@@ -593,8 +599,18 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 				if len(p.runeBytes) < 6 {
 					p.runeBytes = make([]byte, 6)
 				}
+				// A low surrogate escape right after a high one is the second
+				// half of a pair. Replace the U+FFFD written for the high half.
+				if p.hiEnd == len(p.tmp) {
+					if r := utf16.DecodeRune(p.hi, p.rn); r != utf8.RuneError {
+						p.tmp = p.tmp[:len(p.tmp)-3]
+						p.rn = r
+					}
+				}
 				n := utf8.EncodeRune(p.runeBytes, p.rn)
 				p.tmp = append(p.tmp, p.runeBytes[:n]...)
+				p.hi = p.rn
+				p.hiEnd = len(p.tmp)
 				p.mode = stringMap
 			}
 			continue

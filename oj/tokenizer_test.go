@@ -207,6 +207,18 @@ func TestTokenizerMany(t *testing.T) {
 		{src: "[[true]]", expect: "[ [ true ] ]"},
 		{src: `"x\t\n\"\b\f\r\u0041\\\/y"`, expect: "x\t\n\"\b\f\r\u0041\\/y"},
 		{src: `"x\u004a\u004Ay"`, expect: "xJJy"},
+		{src: `"x\uD83D\uDE00y"`, expect: "x\U0001F600y"},
+		{src: `"\ud83d\ude00\ud834\udd1e"`, expect: "\U0001F600\U0001D11E"},
+		{src: `{"\ud83d\ude00":1}`, expect: "{ \U0001F600: 1 }"},
+		{src: `"\ud83d\ud83d\ude00"`, expect: "\uFFFD\U0001F600"},
+		{src: `"\ud83d\ude00\ude00"`, expect: "\U0001F600\uFFFD"},
+		{src: `"\ud83d"`, expect: "\uFFFD"},
+		{src: `"\ude00"`, expect: "\uFFFD"},
+		{src: `"\ud83dA\ude00"`, expect: "\uFFFDA\uFFFD"},
+		{src: `"\ud83d\n\ude00"`, expect: "\uFFFD\n\uFFFD"},
+		{src: `"\ud83d\u0041"`, expect: "\uFFFDA"},
+		{src: `"\ude00\ud83d"`, expect: "\uFFFD\uFFFD"},
+		{src: `["\ud83d","abc\ude00"]`, expect: "[ \uFFFD abc\uFFFD ]"},
 		{src: `[1,"a\tb"]`, expect: "[ 1 a\tb ]"},
 		{src: `{"a\tb":1}`, expect: "{ a\tb: 1 }"},
 		{src: `{"x":1,"a\tb":2}`, expect: "{ x: 1 a\tb: 2 }"},
@@ -262,6 +274,7 @@ func TestTokenizerMany(t *testing.T) {
 		{src: "\"x\ty\"", err: "invalid JSON character 0x09 at 1:3"},
 		{src: `"x\zy"`, err: "invalid JSON escape character '\\z' at 1:4"},
 		{src: `"x\u004z"`, err: "invalid JSON unicode character 'z' at 1:8"},
+		{src: `"\ud83d\uzzzz"`, err: "invalid JSON unicode character 'z' at 1:10"},
 		{src: "\xef\xbb[]", err: "expected BOM at 1:3"},
 		{src: "[ // a comment\n  true\n]", err: "unexpected character '/' at 1:3"},
 	} {
@@ -285,4 +298,35 @@ func TestTokenizerNesting(t *testing.T) {
 	err := oj.TokenizeString(`[{"a":[1, 2]}]`, &h)
 	tt.Nil(t, err)
 	tt.Equal(t, "[ { a: [ 1 2 ] } ] ", string(h.buf))
+}
+
+func TestTokenizerSurrogatePairSplit(t *testing.T) {
+	// The read buffer is 4096 so force a buffer read between the two escapes
+	// and inside the second one.
+	for _, pad := range []int{4089, 4086} {
+		h := testHandler{}
+		err := oj.TokenizeLoad(strings.NewReader(strings.Repeat(" ", pad)+`"\ud83d\ude00"`), &h)
+		tt.Nil(t, err, pad)
+		tt.Equal(t, "\U0001F600", strings.TrimSpace(string(h.buf)), pad)
+	}
+}
+
+func TestTokenizerSurrogateReuse(t *testing.T) {
+	// A high half left pending by an aborted tokenize must not pair with a
+	// low half in the next one.
+	toker := oj.Tokenizer{}
+	h := testHandler{}
+	err := toker.Parse([]byte(`"\ud83d`), &h)
+	tt.NotNil(t, err)
+	h = testHandler{}
+	err = toker.Parse([]byte(`"abc\ude00"`), &h)
+	tt.Nil(t, err)
+	tt.Equal(t, "abc\uFFFD", strings.TrimSpace(string(h.buf)))
+
+	err = toker.Load(strings.NewReader(`"\ud83d`), &h)
+	tt.NotNil(t, err)
+	h = testHandler{}
+	err = toker.Load(strings.NewReader(`"abc\ude00"`), &h)
+	tt.Nil(t, err)
+	tt.Equal(t, "abc\uFFFD", strings.TrimSpace(string(h.buf)))
 }

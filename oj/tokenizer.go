@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"unicode/utf16"
 	"unicode/utf8"
 
 	"github.com/ohler55/ojg/gen"
@@ -30,6 +31,8 @@ type Tokenizer struct {
 	mi        int
 	num       gen.Number
 	rn        rune
+	hi        rune // high half of the last \u escape
+	hiEnd     int  // len(tmp) just after that escape
 	mode      string
 	nextMode  string
 }
@@ -65,6 +68,7 @@ func (t *Tokenizer) Parse(buf []byte, handler TokenHandler) (err error) {
 		t.tmp = t.tmp[:0]
 		t.starts = t.starts[:0]
 	}
+	t.hi = 0
 	t.noff = -1
 	t.line = 1
 	t.mode = valueMap
@@ -93,6 +97,7 @@ func (t *Tokenizer) Load(r io.Reader, handler TokenHandler) (err error) {
 		t.tmp = t.tmp[:0]
 		t.starts = t.starts[:0]
 	}
+	t.hi = 0
 	t.noff = -1
 	t.line = 1
 	t.mi = 0
@@ -361,6 +366,7 @@ func (t *Tokenizer) tokenizeBuffer(buf []byte, last bool) error {
 			t.mode = expSignMap
 			continue
 		case strQuote:
+			t.hi = 0
 			t.mode = t.nextMode
 			if t.nextMode == colonMap {
 				t.handler.Key(string(t.tmp))
@@ -411,8 +417,18 @@ func (t *Tokenizer) tokenizeBuffer(buf []byte, last bool) error {
 				if len(t.runeBytes) < 6 {
 					t.runeBytes = make([]byte, 6)
 				}
+				// A low surrogate escape right after a high one is the second
+				// half of a pair. Replace the U+FFFD written for the high half.
+				if t.hiEnd == len(t.tmp) {
+					if r := utf16.DecodeRune(t.hi, t.rn); r != utf8.RuneError {
+						t.tmp = t.tmp[:len(t.tmp)-3]
+						t.rn = r
+					}
+				}
 				n := utf8.EncodeRune(t.runeBytes, t.rn)
 				t.tmp = append(t.tmp, t.runeBytes[:n]...)
+				t.hi = t.rn
+				t.hiEnd = len(t.tmp)
 				t.mode = stringMap
 			}
 			continue
