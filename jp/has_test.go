@@ -155,6 +155,18 @@ func TestExprHasNode(t *testing.T) {
 	}
 }
 
+func TestExprHasReflectedWildcard(t *testing.T) {
+	for _, data := range []any{
+		[]map[string]int{{"y": 1}, {"x": 2}},
+		[2]map[string]int{{"y": 1}, {"x": 2}},
+		struct{ A, B map[string]int }{map[string]int{"x": 2}, map[string]int{"y": 1}},
+	} {
+		x := jp.MustParseString("$.*.x")
+		tt.Equal(t, []any{2}, x.Get(data))
+		tt.Equal(t, true, x.Has(data))
+	}
+}
+
 func TestHasKeyedIndexed(t *testing.T) {
 	data := &keydex{
 		keyed: keyed{

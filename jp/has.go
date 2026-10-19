@@ -251,7 +251,7 @@ func (x Expr) Has(data any) bool {
 					}
 				}
 			default:
-				if v, has = reflectGetWildOne(tv); has {
+				for _, v = range reflectGetWild(tv) {
 					if int(fi) == len(x)-1 { // last one
 						return true
 					}
