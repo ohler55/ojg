@@ -829,7 +829,7 @@ func evalStack(sstack []any) []any {
 		case match.code:
 			sstack[i] = Nothing
 			if ls, ok := left.(string); ok {
-				if rs, _ := right.(string); 0 < len(rs) {
+				if rs, ok := right.(string); ok {
 					// Parse the pattern alone first, since a pattern such as
 					// "a)(b" is only valid once wrapped in the group.
 					if _, err := syntax.Parse(rs, syntax.Perl); err == nil {
@@ -842,7 +842,7 @@ func evalStack(sstack []any) []any {
 		case search.code:
 			sstack[i] = Nothing
 			if ls, ok := left.(string); ok {
-				if rs, _ := right.(string); 0 < len(rs) {
+				if rs, ok := right.(string); ok {
 					if rx, err := regexp.Compile(rs); err == nil {
 						sstack[i] = rx.MatchString(ls)
 					}

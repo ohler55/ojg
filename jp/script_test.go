@@ -434,9 +434,15 @@ func TestScriptEval(t *testing.T) {
 		{src: "(match(@.x, '^ab|cd$'))", value: map[string]any{"x": "cd"}},
 		{src: "(match(@.x, '^ab|cd$'))", value: map[string]any{"x": "abx"}, noMatch: true},
 		{src: "(match(@.x, 'a)(b'))", value: map[string]any{"x": "ab"}, noMatch: true},
+		{src: "(match(@.x, ''))", value: map[string]any{"x": ""}},
+		{src: "(match(@.x, ''))", value: map[string]any{"x": "a"}, noMatch: true},
+		{src: "(match(@.x, 5))", value: map[string]any{"x": ""}, noMatch: true},
 
 		{src: "(search(@.x, 'ab'))", value: map[string]any{"x": "abc"}},
 		{src: "(search(@.x, 'abx'))", value: map[string]any{"x": "abc"}, noMatch: true},
+		{src: "(search(@.x, ''))", value: map[string]any{"x": ""}},
+		{src: "(search(@.x, ''))", value: map[string]any{"x": "abc"}},
+		{src: "(search(@.x, @.y))", value: map[string]any{"x": "abc"}, noMatch: true},
 	} {
 		if testing.Verbose() {
 			if d.value == nil {
