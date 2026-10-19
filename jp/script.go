@@ -548,22 +548,22 @@ func dotNotCR(pattern, value string) string {
 			return pattern
 		}
 	}
-	var sb strings.Builder
+	buf := make([]byte, 0, len(pattern)+16)
 	class := false
 	for i := 0; i < len(pattern); i++ {
 		switch c := pattern[i]; {
 		case c == '.' && !class:
-			sb.WriteString(`[^\n\r]`)
+			buf = append(buf, `[^\n\r]`...)
 			continue
 		case c == '\\' && i+1 < len(pattern):
-			sb.WriteByte(c)
+			buf = append(buf, c)
 			i++
 		case c == '[' || c == ']':
 			class = c == '['
 		}
-		sb.WriteByte(pattern[i])
+		buf = append(buf, pattern[i])
 	}
-	return sb.String()
+	return string(buf)
 }
 
 func evalStack(sstack []any) []any {
