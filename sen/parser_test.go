@@ -83,6 +83,18 @@ func TestParserParseString(t *testing.T) {
 		{src: "[[true]]", value: []any{[]any{true}}},
 		{src: `"x\t\n\"\b\f\r\u0041\\\/y"`, value: "x\t\n\"\b\f\r\u0041\\/y"},
 		{src: `"x\u004a\u004Ay"`, value: "xJJy"},
+		{src: `"x\uD83D\uDE00y"`, value: "x\U0001F600y"},
+		{src: `"\ud83d\ude00\ud834\udd1e"`, value: "\U0001F600\U0001D11E"},
+		{src: `{"\ud83d\ude00":1}`, value: map[string]any{"\U0001F600": 1}},
+		{src: `"\ud83d\ud83d\ude00"`, value: "\uFFFD\U0001F600"},
+		{src: `"\ud83d\ude00\ude00"`, value: "\U0001F600\uFFFD"},
+		{src: `"\ud83d"`, value: "\uFFFD"},
+		{src: `"\ude00"`, value: "\uFFFD"},
+		{src: `"\ud83dA\ude00"`, value: "\uFFFDA\uFFFD"},
+		{src: `"\ud83d\n\ude00"`, value: "\uFFFD\n\uFFFD"},
+		{src: `"\ud83d\u0041"`, value: "\uFFFDA"},
+		{src: `"\ude00\ud83d"`, value: "\uFFFD\uFFFD"},
+		{src: `["\ud83d","abc\ude00"]`, value: []any{"\uFFFD", "abc\uFFFD"}},
 		{src: `"x\ry"`, value: "x\ry"},
 
 		{src: "{}", value: map[string]any{}},
@@ -144,6 +156,7 @@ func TestParserParseString(t *testing.T) {
 		{src: "\"x\fy\"", expect: "invalid JSON character 0x0c at 1:3"},
 		{src: `"x\zy"`, expect: "invalid JSON escape character '\\z' at 1:4"},
 		{src: `"x\u004z"`, expect: "invalid JSON unicode character 'z' at 1:8"},
+		{src: `"\ud83d\uzzzz"`, expect: "invalid JSON unicode character 'z' at 1:10"},
 		{src: "\xef\xbb[]", expect: "expected BOM at 1:3"},
 		{src: "#x", expect: "unexpected character '#' at 1:1"},
 		{src: "x]", expect: "extra characters after close, ']' at 1:2"},
@@ -220,6 +233,8 @@ func TestParserParseReader(t *testing.T) {
 		{src: strings.Repeat(" ", 4094) + "hello]", expect: "unexpected array close at 1:4"},
 		{src: strings.Repeat(" ", 4094) + "hello}", expect: "unexpected object close at 1:4"},
 		{src: strings.Repeat(" ", 4095) + `"x"`, value: "x"},
+		{src: strings.Repeat(" ", 4089) + `"\ud83d\ude00"`, value: "\U0001F600"},
+		{src: strings.Repeat(" ", 4086) + `"\ud83d\ude00"`, value: "\U0001F600"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %q\n", i, d.src)
@@ -599,4 +614,21 @@ func TestParserParseConcatReuse(t *testing.T) {
 	v, err := p.Parse([]byte(`""`))
 	tt.Nil(t, err)
 	tt.Equal(t, "", v)
+}
+
+func TestParserSurrogateReuse(t *testing.T) {
+	// A high half left pending by an aborted parse must not pair with a low
+	// half in the next one.
+	var p sen.Parser
+	_, err := p.Parse([]byte(`"\ud83d`))
+	tt.NotNil(t, err)
+	v, err := p.Parse([]byte(`"abc\ude00"`))
+	tt.Nil(t, err)
+	tt.Equal(t, "abc\uFFFD", v)
+
+	_, err = p.ParseReader(strings.NewReader(`"\ud83d`))
+	tt.NotNil(t, err)
+	v, err = p.ParseReader(strings.NewReader(`"abc\ude00"`))
+	tt.Nil(t, err)
+	tt.Equal(t, "abc\uFFFD", v)
 }
