@@ -534,6 +534,38 @@ func scriptEqual(left, right any) bool {
 	return left == right
 }
 
+// dotNotCR returns pattern with every dot outside a bracket class changed to
+// [^\n\r]. RFC 9485 sections 5.3 and 5.4 map an I-Regexp dot that way for Go,
+// where a dot leaves out only a line feed. Only a value with a carriage return
+// can tell the two apart, so any other value keeps the pattern as written, as
+// does a pattern holding a form that the scan below does not follow.
+func dotNotCR(pattern, value string) string {
+	if strings.IndexByte(value, '\r') < 0 {
+		return pattern
+	}
+	for _, form := range []string{"(?", `\Q`, "[:", "[]", "[^]"} {
+		if strings.Contains(pattern, form) {
+			return pattern
+		}
+	}
+	buf := make([]byte, 0, len(pattern)+16)
+	class := false
+	for i := 0; i < len(pattern); i++ {
+		switch c := pattern[i]; {
+		case c == '.' && !class:
+			buf = append(buf, `[^\n\r]`...)
+			continue
+		case c == '\\' && i+1 < len(pattern):
+			buf = append(buf, c)
+			i++
+		case c == '[' || c == ']':
+			class = c == '['
+		}
+		buf = append(buf, pattern[i])
+	}
+	return string(buf)
+}
+
 func evalStack(sstack []any) []any {
 	for i := len(sstack) - 1; 0 <= i; i-- {
 		o, _ := sstack[i].(*op)
@@ -830,6 +862,7 @@ func evalStack(sstack []any) []any {
 			sstack[i] = Nothing
 			if ls, ok := left.(string); ok {
 				if rs, ok := right.(string); ok {
+					rs = dotNotCR(rs, ls)
 					// Parse the pattern alone first, since a pattern such as
 					// "a)(b" is only valid once wrapped in the group.
 					if _, err := syntax.Parse(rs, syntax.Perl); err == nil {
@@ -843,7 +876,7 @@ func evalStack(sstack []any) []any {
 			sstack[i] = Nothing
 			if ls, ok := left.(string); ok {
 				if rs, ok := right.(string); ok {
-					if rx, err := regexp.Compile(rs); err == nil {
+					if rx, err := regexp.Compile(dotNotCR(rs, ls)); err == nil {
 						sstack[i] = rx.MatchString(ls)
 					}
 				}
