@@ -31,7 +31,7 @@ var (
 		`........bxx.fr..................` + // 0x00
 		`xx"xoxhxxxooxoox0000000000xxhxho` + // 0x20
 		`ooooooooooooooooooooooooooox\xoo` + // 0x40
-		"oooooooooooooooooooooooooooxoxo." + // 0x60
+		"xooooooooooooooooooooooooooxoxo." + // 0x60
 		`88888888888888888888888888888888` + // 0x80
 		`88888888888888888888888888888888` + // 0xa0
 		`88888888888888888888888888888888` + // 0xc0
@@ -121,6 +121,11 @@ func AppendSENString(buf []byte, s string, htmlSafe bool) []byte {
 	b0 := len(buf)
 	m := senMap[s[0]]
 	quote := maxTokenLen < len(s) || (m != 'o' && m != '8' && !(!htmlSafe && m == 'h'))
+	if 1 < len(s) && (s[0] == '+' || s[0] == '-') {
+		// A lone sign stays bare as an operator. More than that reads as a
+		// number or a concatenation.
+		quote = true
+	}
 	buf = append(buf, '"')
 	start := 0
 	skip := 0
