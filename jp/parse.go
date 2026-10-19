@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"unicode/utf16"
 	"unicode/utf8"
 
 	"github.com/ohler55/ojg"
@@ -455,6 +456,8 @@ top:
 				buf = append(buf, '\'')
 			case '\\':
 				buf = append(buf, '\\')
+			case '/':
+				buf = append(buf, '/')
 			case 'x':
 				if len(p.buf) <= p.pos {
 					goto fail
@@ -478,6 +481,17 @@ top:
 					b = p.buf[p.pos]
 					p.pos++
 					r = (r << 4) | rune(p.readHex(b))
+				}
+				// A high surrogate escape followed by a low surrogate escape is one rune.
+				if utf16.IsSurrogate(r) && p.pos+6 <= len(p.buf) && p.buf[p.pos] == '\\' && (p.buf[p.pos+1] == 'u' || p.buf[p.pos+1] == 'U') {
+					var r2 rune
+					for _, c := range p.buf[p.pos+2 : p.pos+6] {
+						r2 = (r2 << 4) | rune(p.readHex(c))
+					}
+					if d := utf16.DecodeRune(r, r2); d != utf8.RuneError {
+						r = d
+						p.pos += 6
+					}
 				}
 				buf = utf8.AppendRune(buf, r)
 			default:
