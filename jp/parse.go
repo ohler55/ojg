@@ -37,6 +37,18 @@ const (
 		"................................" + // 0xa0
 		"................................" + // 0xc0
 		"................................" //   0xe0
+
+	// s for a blank space character: space, tab, line feed, or carriage return
+	//   0123456789abcdef0123456789abcdef
+	spaceMap = "" +
+		".........ss..s.................." + // 0x00
+		"s..............................." + // 0x20
+		"................................" + // 0x40
+		"................................" + // 0x60
+		"................................" + // 0x80
+		"................................" + // 0xa0
+		"................................" + // 0xc0
+		"................................" //   0xe0
 )
 
 // Performance is less a concern with Expr parsing as it is usually done just
@@ -211,7 +223,7 @@ func (p *parser) afterBracket() Frag {
 		i, b = p.readInt(b)
 	Next:
 		switch b {
-		case ' ':
+		case ' ', '\t', '\n', '\r':
 			b = p.skipSpace()
 			goto Next
 		case ']':
@@ -403,7 +415,7 @@ func (p *parser) readUnion(v any, b byte) Frag {
 			var i int
 			i, b = p.readInt(b)
 			f = append(f, int64(i))
-			if b == ' ' {
+			if spaceMap[b] == 's' {
 				b = p.skipSpace()
 			}
 		default:
@@ -742,7 +754,7 @@ func (p *parser) skipSpace() (b byte) {
 	for p.pos < len(p.buf) {
 		b = p.buf[p.pos]
 		p.pos++
-		if b != ' ' {
+		if spaceMap[b] != 's' {
 			break
 		}
 	}
@@ -752,7 +764,7 @@ func (p *parser) skipSpace() (b byte) {
 func (p *parser) nextNonSpace() (b byte) {
 	for p.pos < len(p.buf) {
 		b2 := p.buf[p.pos]
-		if b2 != ' ' {
+		if spaceMap[b2] != 's' {
 			b = b2
 			break
 		}
