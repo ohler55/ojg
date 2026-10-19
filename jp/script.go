@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"regexp/syntax"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -829,9 +830,12 @@ func evalStack(sstack []any) []any {
 			sstack[i] = Nothing
 			if ls, ok := left.(string); ok {
 				if rs, _ := right.(string); 0 < len(rs) {
-					rs = "^(?:" + rs + ")$"
-					if rx, err := regexp.Compile(rs); err == nil {
-						sstack[i] = rx.MatchString(ls)
+					// Parse the pattern alone first, since a pattern such as
+					// "a)(b" is only valid once wrapped in the group.
+					if _, err := syntax.Parse(rs, syntax.Perl); err == nil {
+						if rx, err := regexp.Compile("^(?:" + rs + ")$"); err == nil {
+							sstack[i] = rx.MatchString(ls)
+						}
 					}
 				}
 			}
