@@ -93,6 +93,7 @@ func TestScriptParse(t *testing.T) {
 		{src: "(!(3 == @.x))", expect: "(!(3 == @.x))"},
 		{src: "!(3 == @.x)", expect: "(!(3 == @.x))"},
 		{src: " !(3 == @.x) ", expect: "(!(3 == @.x))"},
+		{src: "!@.x && @.y", expect: "(!@.x && @.y)"},
 		{src: "(@.x in [1,2,3])", expect: "(@.x in [1,2,3])"},
 		{src: "(@.x in ['a' , 'b', 'c'])", expect: "(@.x in ['a','b','c'])"},
 		{src: "(@ empty true)", expect: "(@ empty true)"},
@@ -337,6 +338,13 @@ func TestScriptEval(t *testing.T) {
 
 		{src: "(!@.x)", value: map[string]any{"x": true}, noMatch: true},
 		{src: "(!@.x)", value: map[string]any{"y": true}},
+
+		// A not applies to one term, up to the next && or ||.
+		{src: "(!@.x && @.y)", value: map[string]any{"x": 1}, noMatch: true},
+		{src: "(!@.x || @.y)", value: map[string]any{"x": 1, "y": 2}},
+		{src: "(!@.x && @.y || @.z)", value: map[string]any{"x": 1}, noMatch: true},
+		{src: "(!@.x == 1 && @.y)", value: map[string]any{"x": 2, "y": 3}},
+		{src: "(!@.x == 1 && @.y)", value: map[string]any{"x": 2}, noMatch: true},
 
 		// A parenthesized @.x is still an existence check.
 		{src: "((@.x) && (@.y))", value: map[string]any{"x": 1, "y": 2}},

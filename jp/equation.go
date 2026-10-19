@@ -375,6 +375,14 @@ func precedentCorrect(e *Equation) *Equation {
 	if e.left != nil {
 		e.left = precedentCorrect(e.left)
 	}
+	// The operand of a not is read up to the end of the expression. A not
+	// applies only to the term before the first && or || that follows it.
+	if e.o.code == not.code && e.left.o != nil && and.prec <= e.left.o.prec {
+		l := e.left
+		e.left = l.left
+		l.left = precedentCorrect(e)
+		return l
+	}
 	if e.right == nil || e.right.o == nil {
 		return e
 	}
