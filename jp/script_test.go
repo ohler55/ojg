@@ -395,6 +395,7 @@ func TestScriptEval(t *testing.T) {
 		{src: "(length(@.x) == 3)", value: map[string]any{"x": []any{1, 2, 3}}},
 		{src: "(length(@.x) == 2)", value: map[string]any{"x": []any{1, 2, 3}}, noMatch: true},
 		{src: "(length(@.x) == 3)", value: map[string]any{"x": "abc"}},
+		{src: "(length(@.x) == 4)", value: map[string]any{"x": "aж☺😀"}},
 		{src: "(length(@.x) == 3)", value: map[string]any{"x": map[string]any{"a": 1, "b": 2, "c": 3}}},
 		{src: "(length(@.x) == Nothing)", value: map[string]any{"y": "abc"}},
 
