@@ -614,7 +614,8 @@ func evalStack(sstack []any) []any {
 				sstack[i] = ok && tl > tr
 			}
 		case lte.code:
-			sstack[i] = false
+			// Equal operands of any type satisfy <=; numbers and strings can also be less.
+			sstack[i] = scriptEqual(left, right)
 			switch tl := left.(type) {
 			case int64:
 				switch tr := right.(type) {
@@ -635,7 +636,8 @@ func evalStack(sstack []any) []any {
 				sstack[i] = ok && tl <= tr
 			}
 		case gte.code:
-			sstack[i] = false
+			// Equal operands of any type satisfy >=; numbers and strings can also be greater.
+			sstack[i] = scriptEqual(left, right)
 			switch tl := left.(type) {
 			case int64:
 				switch tr := right.(type) {
