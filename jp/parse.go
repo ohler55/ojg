@@ -114,6 +114,13 @@ func (p *parser) readExpr() (x Expr) {
 
 func (p *parser) nextFrag(first, lastDescent bool) (f Frag) {
 	if p.pos < len(p.buf) {
+		if !first && !lastDescent && spaceMap[p.buf[p.pos]] == 's' {
+			// Blank space can come before a segment but not after the last one.
+			start := p.pos
+			if b := p.nextNonSpace(); b != '.' && b != '[' {
+				p.pos = start
+			}
+		}
 		b := p.buf[p.pos]
 		p.pos++
 		switch b {
@@ -366,23 +373,27 @@ func (p *parser) readSlice(i int) Frag {
 		if len(p.buf) <= p.pos {
 			p.raise("not terminated")
 		}
-		b = p.buf[p.pos]
-		p.pos++
+		b = p.skipSpace()
 		if b != ']' {
 			f[2], b = p.readInt(b)
 		}
-	} else {
+	} else if b != ']' {
 		f[1], b = p.readInt(b)
+		if spaceMap[b] == 's' {
+			b = p.skipSpace()
+		}
 		if b == ':' {
 			if len(p.buf) <= p.pos {
 				p.raise("not terminated")
 			}
-			b = p.buf[p.pos]
-			p.pos++
+			b = p.skipSpace()
 			if b != ']' {
 				f[2], b = p.readInt(b)
 			}
 		}
+	}
+	if spaceMap[b] == 's' {
+		b = p.skipSpace()
 	}
 	if b != ']' {
 		p.raise("invalid slice syntax")
