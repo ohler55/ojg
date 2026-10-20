@@ -52,6 +52,7 @@ func TestParseString(t *testing.T) {
 		{src: `-1.2e-1025`, value: gen.Big("-1.2e-1025")},
 		{src: `12345678901234567890.321e66`, value: gen.Big("12345678901234567890.321e66")},
 		{src: `321.12345678901234567890e66`, value: gen.Big("321.12345678901234567890e66")},
+		{src: `321.12345678901234567890E-66`, value: gen.Big("321.12345678901234567890E-66")},
 		{src: `321.123e2345`, value: gen.Big("321.123e2345")},
 
 		{src: "\xef\xbb\xbf\"xyz\"", value: "xyz"},
