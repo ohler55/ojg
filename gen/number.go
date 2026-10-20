@@ -54,7 +54,8 @@ func (n *Number) AddDigit(b byte) {
 		n.BigBuf = append(n.BigBuf, b)
 	case n.I <= BigLimit:
 		n.I = n.I*10 + uint64(b-'0')
-		if math.MaxInt64 < n.I {
+		// A negative number reaches one more than math.MaxInt64.
+		if math.MaxInt64 < n.I && (!n.Neg || n.I != math.MaxInt64+1) {
 			n.FillBig()
 		}
 	default:
