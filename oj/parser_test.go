@@ -59,6 +59,9 @@ func TestParserParseString(t *testing.T) {
 		{src: `-1.2e-1025`, value: "-1.2e-1025"},
 		{src: `12345678901234567890.321e66`, value: "12345678901234567890.321e66"},
 		{src: `321.12345678901234567890e66`, value: "321.12345678901234567890e66"},
+		{src: `12345678901234567890e-5`, value: "12345678901234567890e-5"},
+		{src: `321.12345678901234567890E-66`, value: "321.12345678901234567890E-66"},
+		{src: `12345678901234567890e-0`, value: "12345678901234567890e-0"},
 		{src: `321.123e2345`, value: "321.123e2345"},
 		{src: "8.26e-05", value: 8.26e-5},
 
@@ -397,6 +400,9 @@ func TestParserNumConv(t *testing.T) {
 
 	v = oj.MustParseString("0.1234567890123456789", ojg.NumConvString)
 	tt.Equal(t, "0.1234567890123456789", v)
+
+	v = oj.MustParseString("12345678901234567890e-1", ojg.NumConvFloat64)
+	tt.Equal(t, 1234567890123456789.0, v)
 
 	v = oj.MustLoad(strings.NewReader("0.1234567890123456789"), ojg.NumConvFloat64)
 	tt.Equal(t, 0.123456789012345678, v)

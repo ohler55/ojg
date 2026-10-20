@@ -85,6 +85,10 @@ func (n *Number) AddFrac(b byte) {
 func (n *Number) AddExp(b byte) {
 	switch {
 	case 0 < len(n.BigBuf):
+		// A '-' after the e only set NegExp, so add it before the first digit.
+		if last := n.BigBuf[len(n.BigBuf)-1]; n.NegExp && (last == 'e' || last == 'E') {
+			n.BigBuf = append(n.BigBuf, '-')
+		}
 		n.BigBuf = append(n.BigBuf, b)
 	case n.Exp <= 102:
 		n.Exp = n.Exp*10 + uint64(b-'0')
