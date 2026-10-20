@@ -7,6 +7,7 @@ import (
 	"io"
 	"strings"
 	"testing"
+	"testing/iotest"
 
 	"github.com/ohler55/ojg/oj"
 	"github.com/ohler55/ojg/sen"
@@ -185,6 +186,14 @@ func TestTokenizerMany(t *testing.T) {
 		{src: `9223372036854775808`, expect: "9223372036854775808"},
 		{src: `-9223372036854775807`, expect: "-9223372036854775807"},
 		{src: `-9223372036854775808`, expect: "-9223372036854775808"},
+		{src: `18446744073709551615`, expect: "18446744073709551615"},
+		{src: `18446744073709551616`, expect: "18446744073709551616"},
+		{src: `19000000000000000000`, expect: "19000000000000000000"},
+		{src: `1844674407370955161600000`, expect: "1844674407370955161600000"},
+		{src: `[19000000000000000000,7]`, expect: "[ 19000000000000000000 7 ]"},
+		{src: `{"a":19000000000000000000}`, expect: "{ a: 19000000000000000000 }"},
+		{src: `19000000000000000000e9`, expect: "19000000000000000000e9"},
+		{src: `18446744073709551616.5`, expect: "18446744073709551616.5"},
 		{src: `0.9223372036854775808`, expect: "0.9223372036854775808"},
 		{src: `-0.9223372036854775808`, expect: "-0.9223372036854775808"},
 		{src: `1.2e1025`, expect: "1.2e1025"},
@@ -322,6 +331,40 @@ func TestTokenizerMany(t *testing.T) {
 			tt.NotNil(t, err, d.src)
 			tt.Equal(t, d.err, err.Error(), i, ": ", d.src)
 		}
+	}
+}
+
+// kindHandler shows whether a number was an int or a number.
+type kindHandler struct {
+	testHandler
+}
+
+func (h *kindHandler) Int(v int64) {
+	h.buf = append(h.buf, fmt.Sprintf("int %d ", v)...)
+}
+
+func (h *kindHandler) Number(v string) {
+	h.buf = append(h.buf, fmt.Sprintf("number %s ", v)...)
+}
+
+func TestTokenizerIntLimit(t *testing.T) {
+	for _, d := range []tokeTest{
+		{src: `9223372036854775807`, expect: "int 9223372036854775807"},
+		{src: `9223372036854775808`, expect: "number 9223372036854775808"},
+		{src: `-9223372036854775808`, expect: "int -9223372036854775808"},
+		{src: `18446744073709551616`, expect: "number 18446744073709551616"},
+		{src: `19000000000000000000`, expect: "number 19000000000000000000"},
+		{src: `[9223372036854775807,19000000000000000000]`, expect: "[ int 9223372036854775807 number 19000000000000000000 ]"},
+	} {
+		h := kindHandler{}
+		err := sen.TokenizeString(d.src, &h)
+		tt.Nil(t, err, d.src)
+		tt.Equal(t, d.expect, strings.TrimSpace(string(h.buf)), d.src)
+
+		h = kindHandler{}
+		err = sen.TokenizeLoad(iotest.OneByteReader(strings.NewReader(d.src)), &h)
+		tt.Nil(t, err, d.src)
+		tt.Equal(t, d.expect, strings.TrimSpace(string(h.buf)), d.src)
 	}
 }
 
