@@ -268,11 +268,11 @@ func (t *Tokenizer) tokenizeBuffer(buf []byte, last bool) error {
 				if digitMap[b] != numDigit {
 					break
 				}
-				t.num.I = t.num.I*10 + uint64(b-'0')
-				if math.MaxInt64 < t.num.I {
-					t.num.FillBig()
+				if gen.BigLimit <= t.num.I {
+					t.num.AddDigit(b)
 					break
 				}
+				t.num.I = t.num.I*10 + uint64(b-'0')
 			}
 			if digitMap[b] == numDigit {
 				off++
