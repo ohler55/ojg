@@ -50,6 +50,7 @@ var (
 		{path: "@.b[1].c", expect: []any{223}},
 		{path: "..[1].b", expect: []any{122, 222, 322, 422}},
 		{path: "[-1]", expect: []any{3}, data: []any{0, 1, 2, 3}},
+		{path: "[-9223372036854775808]", expect: []any{}, data: []any{1, 2, 3}},
 		{path: "[1,'a']['b',2]['c',3]", expect: []any{133}},
 		{path: "a[1::2].a", expect: []any{121, 141}},
 		{path: "a[?(@.a > 135)].b", expect: []any{142}},

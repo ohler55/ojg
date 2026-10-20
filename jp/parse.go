@@ -5,6 +5,7 @@ package jp
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"unicode/utf16"
@@ -269,10 +270,18 @@ func (p *parser) readInt(b byte) (int, byte) {
 		b = p.buf[p.pos]
 		p.pos++
 	}
+	limit := uint(math.MaxInt)
+	if neg {
+		limit++
+	}
 	start := p.pos
-	var i int
+	var u uint
 	for '0' <= b && b <= '9' {
-		i = i*10 + int(b-'0')
+		d := uint(b - '0')
+		if (limit-d)/10 < u {
+			p.raise("number out of range")
+		}
+		u = u*10 + d
 		if len(p.buf) <= p.pos {
 			break
 		}
@@ -282,6 +291,7 @@ func (p *parser) readInt(b byte) (int, byte) {
 	if p.pos == start {
 		p.raise("expected a number")
 	}
+	i := int(u)
 	if neg {
 		i = -i
 	}
