@@ -49,6 +49,15 @@ func TestStringSEN(t *testing.T) {
 		{src: "a\u001ec", expect: `"a\u001ec"`},
 		{src: "a\u2028b\u2029c", expect: `"a\u2028b\u2029c"`},
 		{src: "abc\ufffd", expect: `"abc\ufffd"`},
+		{src: "-1", expect: `"-1"`},
+		{src: "-abc", expect: `"-abc"`},
+		{src: "+abc", expect: `"+abc"`},
+		{src: "-", expect: `-`},
+		{src: "+", expect: `+`},
+		{src: "a-b", expect: `a-b`},
+		{src: "a+b", expect: `a+b`},
+		{src: "a`b", expect: "\"a`b\""},
+		{src: "`abc", expect: "\"`abc\""},
 	} {
 		var buf []byte
 		buf = ojg.AppendSENString(buf, td.src, td.htmlSafe)
