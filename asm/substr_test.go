@@ -36,11 +36,20 @@ func TestSubstr(t *testing.T) {
 }
 
 func TestSubstrArgCount(t *testing.T) {
-	p := asm.NewPlan([]any{
-		[]any{"substr", "x", 1, 1, 1},
-	})
-	err := p.Execute(map[string]any{})
-	tt.NotNil(t, err)
+	for _, d := range []struct {
+		args   []any
+		expect string
+	}{
+		{args: []any{"substr", "x"}, expect: "substr expects two or three arguments. 1 given"},
+		{args: []any{"substr", "x", 1, 1, 1}, expect: "substr expects two or three arguments. 4 given"},
+	} {
+		p := asm.NewPlan(d.args)
+		err := p.Execute(map[string]any{})
+		tt.NotNil(t, err, d.args)
+		if err != nil {
+			tt.Equal(t, d.expect, err.Error(), d.args)
+		}
+	}
 }
 
 func TestSubstrArgType(t *testing.T) {

@@ -19,7 +19,7 @@ the substring is the end of the input string.`,
 }
 
 func substr(root map[string]any, at any, args ...any) any {
-	if len(args) < 1 || 3 < len(args) {
+	if len(args) < 2 || 3 < len(args) {
 		panic(fmt.Errorf("substr expects two or three arguments. %d given", len(args)))
 	}
 	v := evalArg(root, at, args[0])
