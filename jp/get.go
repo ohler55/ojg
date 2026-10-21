@@ -1485,6 +1485,17 @@ func (x Expr) FirstFound(data any) (any, bool) {
 				}
 			default:
 				start := tf[0]
+				if int(fi) == len(x)-1 { // last one
+					rv := reflect.Indirect(reflect.ValueOf(tv))
+					switch rv.Kind() {
+					case reflect.Slice, reflect.Array:
+						var step int
+						start, _, step = tf.startEndStep(rv.Len())
+						if step == 0 {
+							continue
+						}
+					}
+				}
 				if start == SliceNotSet {
 					start = 0
 				}
