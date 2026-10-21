@@ -4,6 +4,7 @@ package jp
 
 import (
 	"reflect"
+	"strconv"
 
 	"github.com/ohler55/ojg/gen"
 )
@@ -16,25 +17,7 @@ type Nth int
 // then returning the expanded buffer.
 func (f Nth) Append(buf []byte, bracket, first bool) []byte {
 	buf = append(buf, '[')
-	i := int(f)
-	if i < 0 {
-		buf = append(buf, '-')
-		i = -i
-	}
-	num := [20]byte{}
-	cnt := 0
-	for ; i != 0; cnt++ {
-		num[cnt] = byte(i%10) + '0'
-		i /= 10
-	}
-	if 0 < cnt {
-		cnt--
-		for ; 0 <= cnt; cnt-- {
-			buf = append(buf, num[cnt])
-		}
-	} else {
-		buf = append(buf, '0')
-	}
+	buf = strconv.AppendInt(buf, int64(f), 10)
 	buf = append(buf, ']')
 	return buf
 }
