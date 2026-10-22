@@ -47,6 +47,7 @@ func TestString(t *testing.T) {
 		{value: 3.2, expect: "3.2", defaults: []string{"d1"}},
 		{value: float32(3.2), expect: "3.2"},
 		{value: gen.Float(3.1), expect: "3.1"},
+		{value: gen.Float(3.141592653589793), expect: "3.141592653589793"},
 		{value: gen.Float(3.2), expect: "d2", defaults: []string{"d1", "d2"}},
 		{value: gen.Float(3.2), expect: "3.2", defaults: []string{"d1"}},
 
