@@ -48,7 +48,7 @@ func String(v any, defaults ...string) (s string) {
 			case int32:
 				s = strconv.FormatInt(int64(tv), 10)
 			case uint:
-				s = strconv.FormatInt(int64(tv), 10)
+				s = strconv.FormatUint(uint64(tv), 10)
 			case uint8:
 				s = strconv.FormatInt(int64(tv), 10)
 			case uint16:
@@ -56,7 +56,7 @@ func String(v any, defaults ...string) (s string) {
 			case uint32:
 				s = strconv.FormatInt(int64(tv), 10)
 			case uint64:
-				s = strconv.FormatInt(int64(tv), 10)
+				s = strconv.FormatUint(tv, 10)
 			case float32:
 				s = strconv.FormatFloat(float64(tv), 'g', -1, 32)
 			case float64:
