@@ -73,7 +73,7 @@ func String(v any, defaults ...string) (s string) {
 			case gen.Int:
 				s = strconv.FormatInt(int64(tv), 10)
 			case gen.Float:
-				s = strconv.FormatFloat(float64(tv), 'g', -1, 32)
+				s = strconv.FormatFloat(float64(tv), 'g', -1, 64)
 			case gen.Time:
 				s = time.Time(tv).Format(time.RFC3339Nano)
 			case gen.Big:
