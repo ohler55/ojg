@@ -4,6 +4,7 @@ package oj_test
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -46,6 +47,8 @@ func TestColor(t *testing.T) {
 			expect: "s[x0-1xs,x02xs,x0-3xs,x04xs,x0-5xs]x"},
 		{value: []any{uint(1), 'A', uint8(2), uint16(3), uint32(4), uint64(5)},
 			expect: "s[x01xs,x065xs,x02xs,x03xs,x04xs,x05xs]x"},
+		{value: uint(math.MaxUint), expect: "0" + fmt.Sprint(uint(math.MaxUint)) + "x"},
+		{value: uint64(math.MaxUint64), expect: "018446744073709551615x"},
 		{value: gen.Array{gen.Int(1), gen.Float(1.2)}, expect: "s[x01xs,x01.2xs]x"},
 		{value: []any{float32(1.2), float64(2.1)}, expect: "s[x01.2xs,x02.1xs]x"},
 		{value: []any{tm}, expect: "s[xt1588879759123456789xs]x"},
