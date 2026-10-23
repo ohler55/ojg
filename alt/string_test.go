@@ -3,6 +3,8 @@
 package alt_test
 
 import (
+	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -26,10 +28,12 @@ func TestString(t *testing.T) {
 		{value: int32(3), expect: "3"},
 		{value: int64(3), expect: "3"},
 		{value: uint(3), expect: "3"},
+		{value: uint(math.MaxUint), expect: fmt.Sprint(uint(math.MaxUint))},
 		{value: uint8(3), expect: "3"},
 		{value: uint16(3), expect: "3"},
 		{value: uint32(3), expect: "3"},
 		{value: uint64(3), expect: "3"},
+		{value: uint64(math.MaxUint64), expect: "18446744073709551615"},
 		{value: gen.Int(3), expect: "3"},
 
 		{value: nil, expect: ""},
