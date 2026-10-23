@@ -34,7 +34,7 @@ func (w *Writer) build(data any) (n *node) {
 	case int64:
 		n = w.buildInt(td)
 	case uint:
-		n = w.buildInt(int64(td))
+		n = w.buildUint(uint64(td))
 	case uint8:
 		n = w.buildInt(int64(td))
 	case uint16:
@@ -42,7 +42,7 @@ func (w *Writer) build(data any) (n *node) {
 	case uint32:
 		n = w.buildInt(int64(td))
 	case uint64:
-		n = w.buildInt(int64(td))
+		n = w.buildUint(td)
 	case gen.Int:
 		n = w.buildInt(int64(td))
 	case float32:
@@ -130,6 +130,18 @@ func (w *Writer) buildBool(v bool) (n *node) {
 func (w *Writer) buildInt(v int64) (n *node) {
 	n = &node{
 		buf:  []byte(strconv.FormatInt(v, 10)),
+		kind: numNode,
+	}
+	n.size = len(n.buf)
+	if w.Color {
+		n.buf = append(append([]byte(w.NumberColor), n.buf...), w.NoColor...)
+	}
+	return
+}
+
+func (w *Writer) buildUint(v uint64) (n *node) {
+	n = &node{
+		buf:  []byte(strconv.FormatUint(v, 10)),
 		kind: numNode,
 	}
 	n.size = len(n.buf)
