@@ -4,6 +4,41 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.28.8] - 2026-10-24
+### Fixed
+- Large unsigned integers are no longer printed with a minus sign in oj, pretty, and alt.String.
+- alt.String keeps every digit of a gen.Float.
+- jp.First normalizes a reflected slice.
+- asm substr rejects calls with too few arguments.
+- JSONPath renders the minimum array index correctly.
+- JSONPath rejects an array index that does not fit an int.
+- oj and sen read integers of 20 or more digits as numbers.
+- gen, oj, and sen accept an exponent right after the integer digits.
+- gen keeps the minus sign of a negative exponent on a big number.
+- gen reads -9223372036854775808 as an int64.
+- sen quotes strings that start with a sign or contain a backtick.
+- JSONPath match() and search() no longer match a carriage return with a dot.
+- JSONPath accepts blank space between segments and inside slices.
+- JSONPath match() and search() accept an empty pattern.
+- JSONPath match() matches the whole string when the pattern has alternation.
+- JSONPath accepts a tab, line feed, or carriage return as blank space.
+- oj, gen, and sen decode escaped UTF-16 surrogate pairs in strings.
+- JSONPath quoted strings accept `\/` and escaped surrogate pairs.
+- JSONPath filters accept a negative number right after an operator.
+- JSONPath filter `<=` and `>=` are satisfied by equal operands.
+- JSONPath length() counts characters, not bytes.
+- jp.Has checks every reflected wildcard child.
+- JSONPath filter `!` binds more tightly than `&&` and `||`.
+- jp.Has traverses typed maps.
+- JSONPath filters treat a parenthesized `@.x` as an existence check.
+- jp.Has respects reflected slice bounds.
+- JSONPath rejects empty reverse slice bounds.
+- JSONPath `in` filter operator uses value equality.
+- JSONPath filter `==` and `!=` compare arrays and objects by value.
+- JSONPath filter `&&` binds more tightly than `||`.
+- JSONPath escapes string members when rendering unions.
+- gen uses ParseFloat for exponents past 22.
+
 ## [1.28.7] - 2026-09-28
 ### Fixed
 - Fixed handling of NaN and Inf writing.
