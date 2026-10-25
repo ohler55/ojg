@@ -28,6 +28,9 @@ func decompose(v any, opt *Options) any {
 		v = int64(tv)
 	case uint:
 		v = int64(tv)
+		if math.MaxInt64 < uint64(tv) {
+			v = uint64(tv)
+		}
 	case uint8:
 		v = int64(tv)
 	case uint16:
@@ -36,6 +39,9 @@ func decompose(v any, opt *Options) any {
 		v = int64(tv)
 	case uint64:
 		v = int64(tv)
+		if math.MaxInt64 < tv {
+			v = tv
+		}
 	case float32:
 		// This small rounding makes the conversion from 32 bit to 64 bit
 		// display nicer.
@@ -91,6 +97,9 @@ func alter(v any, opt *Options) any {
 		v = int64(tv)
 	case uint:
 		v = int64(tv)
+		if math.MaxInt64 < uint64(tv) {
+			v = uint64(tv)
+		}
 	case uint8:
 		v = int64(tv)
 	case uint16:
@@ -99,6 +108,9 @@ func alter(v any, opt *Options) any {
 		v = int64(tv)
 	case uint64:
 		v = int64(tv)
+		if math.MaxInt64 < tv {
+			v = tv
+		}
 	case float32:
 		// This small rounding makes the conversion from 32 bit to 64 bit
 		// display nicer.

@@ -4,6 +4,7 @@ package alt_test
 
 import (
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -53,6 +54,17 @@ func TestDecomposeNumbers(t *testing.T) {
 	a := []any{int8(-8), int16(-16), int32(-32), uint(0), uint8(8), uint16(16), uint32(32), uint64(64), float32(3.2)}
 	v := alt.Dup(a)
 	tt.Equal(t, []any{-8, -16, -32, 0, 8, 16, 32, 64, 3.2}, v)
+
+	// Only a value above math.MaxInt64 stays unsigned.
+	tt.Equal(t, fmt.Sprint(uint(math.MaxUint)), fmt.Sprint(alt.Decompose(uint(math.MaxUint))))
+	for i, tc := range [][]any{
+		{uint64(math.MaxUint64), "uint64 18446744073709551615"},
+		{uint64(math.MaxInt64), "int64 9223372036854775807"},
+		{uint(math.MaxInt), fmt.Sprintf("int64 %d", math.MaxInt)},
+	} {
+		dec := alt.Decompose(tc[0])
+		tt.Equal(t, tc[1], fmt.Sprintf("%T %v", dec, dec), fmt.Sprintf("case %d failed", i))
+	}
 }
 
 func TestDecomposeStruct(t *testing.T) {
@@ -272,6 +284,17 @@ func TestAlterNumbers(t *testing.T) {
 	a := []any{int8(-8), int16(-16), int32(-32), uint(0), uint8(8), uint16(16), uint32(32), uint64(64), float32(3.2)}
 	v := alt.Alter(a)
 	tt.Equal(t, []any{-8, -16, -32, 0, 8, 16, 32, 64, 3.2}, v)
+
+	// Only a value above math.MaxInt64 stays unsigned.
+	tt.Equal(t, fmt.Sprint(uint(math.MaxUint)), fmt.Sprint(alt.Alter(uint(math.MaxUint))))
+	for i, tc := range [][]any{
+		{uint64(math.MaxUint64), "uint64 18446744073709551615"},
+		{uint64(math.MaxInt64), "int64 9223372036854775807"},
+		{uint(math.MaxInt), fmt.Sprintf("int64 %d", math.MaxInt)},
+	} {
+		dec := alt.Alter(tc[0])
+		tt.Equal(t, tc[1], fmt.Sprintf("%T %v", dec, dec), fmt.Sprintf("case %d failed", i))
+	}
 }
 
 func TestAlterStruct(t *testing.T) {

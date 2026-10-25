@@ -257,6 +257,7 @@ func TestIntTypes(t *testing.T) {
 ]`, s)
 
 	tt.Equal(t, fmt.Sprint(uint(math.MaxUint)), pretty.JSON(uint(math.MaxUint)))
+	tt.Equal(t, "[18446744073709551615]", pretty.JSON([]uint64{math.MaxUint64}))
 	opt := testColor
 	tt.Equal(t, "s[x\n  018446744073709551615xs,x\n  018446744073709551615x\ns]x",
 		pretty.JSON([]any{uint64(math.MaxUint64), uint64(math.MaxUint64)}, &opt, 40.4))

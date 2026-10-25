@@ -60,7 +60,8 @@ to follow a path.
 The alt package contains functions and types for altering values. It includes functions for:
 
 	Decompose() a value into simple types of bool, int64, float64, string,
-		time.Time, []any and map[string]any.
+		time.Time, []any and map[string]any. A uint or uint64 above
+		math.MaxInt64 is returned as a uint64.
 
 	Recompose() takes simple data type and converts it back into a complex type.
 
