@@ -4,6 +4,7 @@ package alt_test
 
 import (
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -53,6 +54,14 @@ func TestDecomposeNumbers(t *testing.T) {
 	a := []any{int8(-8), int16(-16), int32(-32), uint(0), uint8(8), uint16(16), uint32(32), uint64(64), float32(3.2)}
 	v := alt.Dup(a)
 	tt.Equal(t, []any{-8, -16, -32, 0, 8, 16, 32, 64, 3.2}, v)
+
+	a = []any{uint(math.MaxInt64) + 1, uint64(math.MaxInt64) + 2}
+	a2 := alt.Dup(a).([]any)
+	tt.Equal(t, float64(uint(math.MaxInt64)+1), a2[0])
+	tt.Equal(t, float64(uint(math.MaxInt64)+2), a2[1])
+
+	a2 = alt.Dup(a, &alt.Options{LargeUintAsString: true}).([]any)
+	tt.Equal(t, []any{"9223372036854775808", "9223372036854775809"}, a2)
 }
 
 func TestDecomposeStruct(t *testing.T) {
@@ -251,12 +260,15 @@ func TestDecomposeAliasedTypes(t *testing.T) {
 	type Stringy string
 	type Inty int
 	type Uinty uint
+	type Uinty32 uint32
 	type Floaty float64
 	type Booly bool
 	tcs := [][]any{
 		{Stringy("stringy"), "stringy"},
 		{Inty(1), 1},
 		{Uinty(1), uint(1)},
+		{Uinty(uint(math.MaxInt64) + 1), float64(uint(math.MaxInt64) + 1)},
+		{Uinty32(2), uint(2)},
 		{Floaty(1.3), 1.3},
 		{Booly(true), true},
 	}
@@ -272,6 +284,15 @@ func TestAlterNumbers(t *testing.T) {
 	a := []any{int8(-8), int16(-16), int32(-32), uint(0), uint8(8), uint16(16), uint32(32), uint64(64), float32(3.2)}
 	v := alt.Alter(a)
 	tt.Equal(t, []any{-8, -16, -32, 0, 8, 16, 32, 64, 3.2}, v)
+
+	a = []any{uint(math.MaxInt64) + 1, uint64(math.MaxInt64) + 2}
+	_ = alt.Alter(a).([]any)
+	tt.Equal(t, float64(uint(math.MaxInt64)+1), a[0])
+	tt.Equal(t, float64(uint(math.MaxInt64)+2), a[1])
+
+	a = []any{uint(math.MaxInt64) + 1, uint64(math.MaxInt64) + 2}
+	_ = alt.Alter(a, &alt.Options{LargeUintAsString: true}).([]any)
+	tt.Equal(t, []any{"9223372036854775808", "9223372036854775809"}, a)
 }
 
 func TestAlterStruct(t *testing.T) {

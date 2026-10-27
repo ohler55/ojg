@@ -79,7 +79,7 @@ func (p *Parser) AddTokenFunc(name string, tf TokenFunc) {
 
 // Unmarshal parses the provided JSON and stores the result in the value
 // pointed to by vp.
-func (p *Parser) Unmarshal(data []byte, vp any, recomposer ...alt.Recomposer) (err error) {
+func (p *Parser) Unmarshal(data []byte, vp any, recomposer ...*alt.Recomposer) (err error) {
 	var v any
 	if v, err = p.Parse(data); err == nil {
 		if 0 < len(recomposer) {

@@ -27,7 +27,7 @@ func TestUnmarshal(t *testing.T) {
 	tt.Equal(t, src, oj.JSON(obj))
 
 	obj = nil
-	err = oj.Unmarshal([]byte(src), &obj, &alt.Recomposer{})
+	err = p.Unmarshal([]byte(src), &obj, &alt.Recomposer{})
 	tt.Nil(t, err)
 	tt.Equal(t, src, oj.JSON(obj))
 }

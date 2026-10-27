@@ -7,7 +7,7 @@ package alt
 type Simplifier interface {
 
 	// Simplify should return one of the simple types which are: nil, bool,
-	// int64, float64, string, time.Time, []any, or
-	// map[string]any.
+	// int64, float64, string, time.Time, []any, or map[string]any. Unsigned
+	// numbers if over math.MaxInt64 are converted to float64 values.
 	Simplify() any
 }

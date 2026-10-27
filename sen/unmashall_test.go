@@ -5,6 +5,7 @@ package sen_test
 import (
 	"testing"
 
+	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/sen"
 	"github.com/ohler55/ojg/tt"
 )
@@ -19,6 +20,11 @@ func TestUnmarshal(t *testing.T) {
 	obj = nil
 	p := sen.Parser{}
 	err = p.Unmarshal([]byte(src), &obj)
+	tt.Nil(t, err)
+	tt.Equal(t, src, sen.String(obj))
+
+	obj = nil
+	err = p.Unmarshal([]byte(src), &obj, &alt.Recomposer{})
 	tt.Nil(t, err)
 	tt.Equal(t, src, sen.String(obj))
 }
