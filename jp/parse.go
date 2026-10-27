@@ -753,6 +753,10 @@ func (p *parser) readEqOp() (o *op) {
 			// A minus directly after an operator and before a digit starts a negative number.
 			break
 		}
+		if b == '!' && (string(token) == and.name || string(token) == or.name) {
+			// A '!' directly after && or || negates the right side.
+			break
+		}
 		token = append(token, b)
 		if b == '-' && 1 < len(token) {
 			p.raise("'%s' is not a valid operation", token)

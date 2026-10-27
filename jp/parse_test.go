@@ -122,6 +122,12 @@ func TestParse(t *testing.T) {
 		{src: "$[?!@.a||@.b]", expect: "$[?(!@.a || @.b)]"},
 		{src: "$[?@.a||(@.b)]", expect: "$[?(@.a || @.b)]"},
 		{src: "$['a|b']", expect: "$['a|b']"},
+		{src: "$[?@.a&&!@.b]", expect: "$[?(@.a && !@.b)]"},
+		{src: "$[?@.a||!@.b]", expect: "$[?(@.a || !@.b)]"},
+		{src: "$[?@.a &&!@.b]", expect: "$[?(@.a && !@.b)]"},
+		{src: "$[?!@.a&&!@.b]", expect: "$[?(!@.a && !@.b)]"},
+		{src: "$[?@.a==1&&!@.b]", expect: "$[?(@.a == 1 && !@.b)]"},
+		{src: "$[?@.a&&!(@.b)]", expect: "$[?(@.a && !@.b)]"},
 
 		{src: "$[1,'a']  ", err: "parse error at 9 in $[1,'a']  "},
 		{src: "$.cognito:username", err: "parse error at 10 in $.cognito:username"},
