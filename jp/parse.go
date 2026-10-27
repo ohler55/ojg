@@ -20,7 +20,7 @@ const (
 		"................................" + // 0x00
 		"...o.o..........oooooooooo.o...o" + // 0x20
 		".oooooooooooooooooooooooooo...oo" + // 0x40
-		".oooooooooooooooooooooooooooooo." + // 0x60
+		".ooooooooooooooooooooooooooo.oo." + // 0x60
 		"oooooooooooooooooooooooooooooooo" + // 0x80
 		"oooooooooooooooooooooooooooooooo" + // 0xa0
 		"oooooooooooooooooooooooooooooooo" + // 0xc0

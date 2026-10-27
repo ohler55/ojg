@@ -89,6 +89,9 @@ func TestExprBuild(t *testing.T) {
 
 	x = jp.R().Child("a::b")
 	tt.Equal(t, `$['a::b']`, x.String())
+
+	x = jp.R().Child("a|b")
+	tt.Equal(t, `$['a|b']`, x.String())
 }
 
 func TestExprUnionEscaping(t *testing.T) {
