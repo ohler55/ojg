@@ -10,6 +10,8 @@ The structure and content of this file follows [Keep a Changelog](https://keepac
   math.MaxInt64 are represented when converting to simplified data.
 ### Fixed
 - Assured consistency when simplifying unsigned integers.
+- jp parse of a `||` that directly follows a dot-notation name is now correct.
+- jp parsing of `&&!` and `||!` is now correct.
 
 ## [1.28.8] - 2026-10-24
 ### Fixed
