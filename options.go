@@ -257,6 +257,12 @@ type Options struct {
 	// FloatFormat is the fmt.Printf formatting verb and options. The default
 	// is "%g".
 	FloatFormat string
+
+	// LargeUintAsString if true uint and uint64 values over math.MaxInt64
+	// will be converted to a string when converting to simplified data. The
+	// default, false, converts unsigned values greater than math.MaxInt64 to
+	// a float64.
+	LargeUintAsString bool
 }
 
 // AppendTime appends a time string to the buffer.

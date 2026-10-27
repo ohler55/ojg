@@ -4,6 +4,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.28.9] - 2026-10-27
+### Added
+- Added option to ojg.Options to specify how unsigned integers over
+  math.MaxInt64 are represented when converting to simplified data.
+### Fixed
+- Assured consistency when simplifying unsigned integers.
+
 ## [1.28.8] - 2026-10-24
 ### Fixed
 - Large unsigned integers are no longer printed with a minus sign in oj, pretty, and alt.String.

@@ -60,7 +60,7 @@ func init() {
 
 // Unmarshal parses the provided JSON and stores the result in the value
 // pointed to by vp.
-func (p *Parser) Unmarshal(data []byte, vp any, recomposer ...alt.Recomposer) (err error) {
+func (p *Parser) Unmarshal(data []byte, vp any, recomposer ...*alt.Recomposer) (err error) {
 	var v any
 	orig := p.num.ForceFloat
 	p.num.ForceFloat = true

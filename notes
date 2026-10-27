@@ -1,4 +1,8 @@
 
+- make simplify uint consistent
+ - option for large uint to either float64 or string
+ - update parsers
+
 - pretty
  - align maps as well as arrays
 

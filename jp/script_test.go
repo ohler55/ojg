@@ -253,6 +253,8 @@ func TestScriptEval(t *testing.T) {
 	for i, d := range []edata{
 		{src: "(@ == 3)", value: int64(3)},
 		{src: "(@ == 3)", value: 3.0},
+		{src: "(@ == 3.0)", value: "abc", noMatch: true},
+		{src: "(3.0 == @)", value: "abc", noMatch: true},
 		{src: "(@ == 3.0)", value: int64(3)},
 		{src: "(@ == 'abc')", value: "abc"},
 

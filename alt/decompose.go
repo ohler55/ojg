@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"math"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/ohler55/ojg"
@@ -14,6 +15,19 @@ import (
 // 23 for fraction in IEEE 754 which amounts to 7 significant digits. Use base
 // 10 so that numbers look correct when displayed in base 10.
 const fracMax = 10000000.0
+
+func convertUint(u uint64, opt *Options) (v any) {
+	if uint64(math.MaxInt64) < u {
+		if opt.LargeUintAsString {
+			v = strconv.FormatUint(u, 10)
+		} else {
+			v = float64(u)
+		}
+	} else {
+		v = int64(u)
+	}
+	return
+}
 
 func decompose(v any, opt *Options) any {
 	switch tv := v.(type) {
@@ -27,7 +41,7 @@ func decompose(v any, opt *Options) any {
 	case int32:
 		v = int64(tv)
 	case uint:
-		v = int64(tv)
+		v = convertUint(uint64(tv), opt)
 	case uint8:
 		v = int64(tv)
 	case uint16:
@@ -35,7 +49,7 @@ func decompose(v any, opt *Options) any {
 	case uint32:
 		v = int64(tv)
 	case uint64:
-		v = int64(tv)
+		v = convertUint(tv, opt)
 	case float32:
 		// This small rounding makes the conversion from 32 bit to 64 bit
 		// display nicer.
@@ -90,7 +104,7 @@ func alter(v any, opt *Options) any {
 	case int32:
 		v = int64(tv)
 	case uint:
-		v = int64(tv)
+		v = convertUint(uint64(tv), opt)
 	case uint8:
 		v = int64(tv)
 	case uint16:
@@ -98,7 +112,7 @@ func alter(v any, opt *Options) any {
 	case uint32:
 		v = int64(tv)
 	case uint64:
-		v = int64(tv)
+		v = convertUint(tv, opt)
 	case float32:
 		// This small rounding makes the conversion from 32 bit to 64 bit
 		// display nicer.
@@ -195,8 +209,10 @@ func reflectValue(rv reflect.Value, val any, opt *Options) (v any) {
 		v = rv.Float()
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		v = rv.Int()
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		v = rv.Uint()
+	case reflect.Uint64, reflect.Uint:
+		v = convertUint(rv.Uint(), opt)
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32:
+		v = int64(rv.Uint())
 	}
 	return
 }
