@@ -315,6 +315,7 @@ func (p *parser) readNum(b byte) any {
 	case '.':
 		num = append(num, b)
 		p.pos++
+		start := len(num)
 		for p.pos < len(p.buf) {
 			b = p.buf[p.pos]
 			if b < '0' || '9' < b {
@@ -322,6 +323,9 @@ func (p *parser) readNum(b byte) any {
 			}
 			num = append(num, b)
 			p.pos++
+		}
+		if len(num) == start {
+			p.raise("expected a number")
 		}
 		if b == 'e' || b == 'E' {
 			p.pos++
@@ -355,6 +359,7 @@ func (p *parser) readNum(b byte) any {
 			p.raise("expected a number")
 		}
 	}
+	start := len(num)
 	for p.pos < len(p.buf) {
 		b = p.buf[p.pos]
 		if b < '0' || '9' < b {
@@ -362,6 +367,9 @@ func (p *parser) readNum(b byte) any {
 		}
 		num = append(num, b)
 		p.pos++
+	}
+	if len(num) == start {
+		p.raise("expected a number")
 	}
 	f, _ := strconv.ParseFloat(string(num), 64)
 	return f
