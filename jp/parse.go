@@ -311,6 +311,13 @@ func (p *parser) readNum(b byte) any {
 		num = append(num, b)
 		p.pos++
 	}
+	digits := num
+	if digits[0] == '-' {
+		digits = digits[1:]
+	}
+	if 1 < len(digits) && digits[0] == '0' {
+		p.raise("a number can not have a leading zero")
+	}
 	switch b {
 	case '.':
 		num = append(num, b)
