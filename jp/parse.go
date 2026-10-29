@@ -548,6 +548,9 @@ top:
 		case term:
 			break top
 		default:
+			if b < 0x20 {
+				p.raise("control character 0x%02x must be escaped", b)
+			}
 			buf = append(buf, b)
 		}
 	}
@@ -566,6 +569,9 @@ func (p *parser) readStr(term byte) string {
 		}
 		if b == '\\' {
 			return p.readEscStr(start, term)
+		}
+		if b < 0x20 {
+			p.raise("control character 0x%02x must be escaped", b)
 		}
 	}
 	return string(p.buf[start : p.pos-1])
