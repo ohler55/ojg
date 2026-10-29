@@ -234,6 +234,10 @@ func TestParse(t *testing.T) {
 		{src: "[?(@.x in [1 2])]", err: "'' is not a valid operation at 14 in [?(@.x in [1 2])]"},
 		{src: "$[?(@.x == North)]", err: "expected Nothing at 14 in $[?(@.x == North)]"},
 		{src: "[?length]", err: "expected a length function at 9 in [?length]"},
+		{src: "$[?count(@.a,@.b)==1]", err: "too many arguments to count at 13 in $[?count(@.a,@.b)==1]"},
+		{src: "$[?length(@.a,@.b)==1]", err: "too many arguments to length at 14 in $[?length(@.a,@.b)==1]"},
+		{src: "$[?match(@.a)==1]", err: "not enough arguments to match at 13 in $[?match(@.a)==1]"},
+		{src: "$[?search(@.a)]", err: "not enough arguments to search at 14 in $[?search(@.a)]"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)

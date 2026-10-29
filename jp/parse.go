@@ -709,9 +709,14 @@ func (p *parser) readOpArgs(o *op) (eq *Equation) {
 	eq.left = p.readEq()
 	b := p.nextNonSpace()
 	if b == ',' {
+		if o.cnt < 2 {
+			p.raise("too many arguments to %s", o.name)
+		}
 		p.pos++
 		eq.right = p.readEq()
 		b = p.nextNonSpace()
+	} else if 1 < o.cnt {
+		p.raise("not enough arguments to %s", o.name)
 	}
 	if b != ')' {
 		p.raise("not terminated")
