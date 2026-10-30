@@ -122,8 +122,8 @@ func TestScriptParse(t *testing.T) {
 		{src: "(count(@.xyz))", expect: "(count(@.xyz))"},
 		{src: "(3 == count(@.xyz))", expect: "(3 == count(@.xyz))"},
 		{src: "(count(@.xyz) == 3)", expect: "(count(@.xyz) == 3)"},
-		{src: "(count(7) == 3)", expect: "(count(7) == 3)"},
-		{src: "(count(@.xyz == 3)", err: "not terminated at 19 in (count(@.xyz == 3)"},
+		{src: "(count(7) == 3)", err: "expected a query argument to count at 9 in (count(7) == 3)"},
+		{src: "(count(@.xyz == 3)", err: "expected a query argument to count at 18 in (count(@.xyz == 3)"},
 		{src: "(coun(@.xyz) == 3)", err: "'coun' is not a value or function at 2 in (coun(@.xyz) == 3)"},
 
 		{src: "(match(@.x, 'xy.'))", expect: "(match(@.x, 'xy.'))"},
@@ -421,7 +421,7 @@ func TestScriptEval(t *testing.T) {
 		{src: "(length(@.x) == Nothing)", value: map[string]any{"y": "abc"}},
 
 		{src: "(count(@.x[*]) == 3)", value: map[string]any{"x": []any{1, 2, 3}}},
-		{src: "(count(7) == 3)", value: map[string]any{"x": []any{1, 2, 3}}, noMatch: true},
+		{src: "(count(@.y[*]) == 0)", value: map[string]any{"x": []any{1, 2, 3}}},
 		{src: "(count(@.x[*]) == 2)", value: map[string]any{"x": []any{1, 2, 3}}, noMatch: true},
 		{src: "(count(@.x) == 1)", value: map[string]any{"x": "abc"}},
 		{src: "(count(@.x.*) == 3)", value: map[string]any{"x": map[string]any{"a": 1, "b": 2, "c": 3}}},

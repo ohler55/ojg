@@ -715,6 +715,11 @@ func (p *parser) readOpArgs(o *op) (eq *Equation) {
 	eq = &Equation{o: o}
 	p.pos++
 	eq.left = p.readEq()
+	if o == count {
+		if _, ok := eq.left.result.(Expr); !ok {
+			p.raise("expected a query argument to count")
+		}
+	}
 	b := p.nextNonSpace()
 	if b == ',' {
 		if o.cnt < 2 {
