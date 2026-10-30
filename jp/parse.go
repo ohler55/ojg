@@ -541,6 +541,9 @@ top:
 						p.pos += 6
 					}
 				}
+				if utf16.IsSurrogate(r) {
+					p.raise("unpaired surrogate 0x%04x", r)
+				}
 				buf = utf8.AppendRune(buf, r)
 			default:
 				goto fail

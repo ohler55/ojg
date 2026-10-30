@@ -79,11 +79,6 @@ var (
 		{path: `$['\ud83d\ude00']`, expect: []any{3}, data: map[string]any{"😀": 3, "\ufffd\ufffd": 4}},
 		{path: `$['\uD83D\UDE00']`, expect: []any{3}, data: map[string]any{"😀": 3}},
 		{path: `$["\/",'\ud83d\ude00']`, expect: []any{3, 4}, data: map[string]any{"/": 3, "😀": 4}},
-		{path: `$["\ud83d\u0041"]`, expect: []any{3}, data: map[string]any{"\ufffdA": 3}},
-		{path: `$["\ud83d\ud83d\ude00"]`, expect: []any{3}, data: map[string]any{"\ufffd😀": 3}},
-		{path: `$["\ud83dxuDE00"]`, expect: []any{3}, data: map[string]any{"\ufffdxuDE00": 3}},
-		{path: `$["\ud83d\nDE00"]`, expect: []any{3}, data: map[string]any{"\ufffd\nDE00": 3}},
-		{path: `$["\ude00\ud83d"]`, expect: []any{3}, data: map[string]any{"\ufffd\ufffd": 3}},
 
 		{path: "$.a[*].y",
 			expect: []any{2, 4},
