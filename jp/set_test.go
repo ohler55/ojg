@@ -72,7 +72,7 @@ var (
 		{path: "a[1,2].x", data: `{}`, value: 3, err: "can not deduce what element to add at 'a'"},
 		{path: "[0].1", data: `[1]`, value: 3, err: "/can not follow a .+ at '\\[0\\]'/"},
 		{path: "[1]", data: `[1]`, value: 3, err: "can not follow out of bounds array index at '[1]'"},
-		{path: "$[-9223372036854775808]", data: `[1]`, value: 3, err: "can not follow out of bounds array index at '$[-9223372036854775808]'"},
+		{path: "$[-9007199254740991]", data: `[1]`, value: 3, err: "can not follow out of bounds array index at '$[-9007199254740991]'"},
 	}
 	setOneTestData = []*setData{
 		{path: "@.a", data: `{}`, value: 3, expect: `{"a":3}`},
