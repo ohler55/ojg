@@ -3,6 +3,7 @@
 package jp_test
 
 import (
+	"math"
 	"testing"
 
 	"github.com/ohler55/ojg/jp"
@@ -44,8 +45,7 @@ func TestExprBuild(t *testing.T) {
 	x = jp.N(3)
 	tt.Equal(t, "[3]", x.String())
 
-	x, err := jp.ParseString("$[-9223372036854775808]")
-	tt.Nil(t, err)
+	x = jp.R().N(math.MinInt)
 	tt.Equal(t, "$[-9223372036854775808]", x.String())
 
 	x = jp.S(3, 4)

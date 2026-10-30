@@ -270,10 +270,9 @@ func (p *parser) readInt(b byte) (int, byte) {
 		b = p.buf[p.pos]
 		p.pos++
 	}
-	limit := uint(math.MaxInt)
-	if neg {
-		limit++
-	}
+	// RFC 9535 limits an index to the I-JSON range of -(2^53)+1 to (2^53)-1.
+	// The mask keeps the limit within an int on 32 bit platforms.
+	const limit = (1<<53 - 1) & math.MaxInt
 	start := p.pos
 	var u uint
 	for '0' <= b && b <= '9' {

@@ -38,7 +38,7 @@ var (
 		{path: "a.b", data: `{"a":4}`, err: "/can not follow a .+ at 'a'/"},
 		{path: "[0].1", data: `[1]`, err: "/can not follow a .+ at '\\[0\\]'/"},
 		{path: "[1]", data: `[1]`, err: "can not follow out of bounds array index at '[1]'"},
-		{path: "$[-9223372036854775808]", data: `[1]`, err: "can not follow out of bounds array index at '$[-9223372036854775808]'"},
+		{path: "$[-9007199254740991]", data: `[1]`, err: "can not follow out of bounds array index at '$[-9007199254740991]'"},
 	}
 	delOneTestData = []*delData{
 		{path: "@.a", data: `{}`, expect: `{}`},
