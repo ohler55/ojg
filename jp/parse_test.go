@@ -256,6 +256,10 @@ func TestParse(t *testing.T) {
 		{src: "$[?length(@.a,@.b)==1]", err: "too many arguments to length at 14 in $[?length(@.a,@.b)==1]"},
 		{src: "$[?match(@.a)==1]", err: "not enough arguments to match at 13 in $[?match(@.a)==1]"},
 		{src: "$[?search(@.a)]", err: "not enough arguments to search at 14 in $[?search(@.a)]"},
+		{src: "$[?count(1)>2]", err: "expected a query argument to count at 11 in $[?count(1)>2]"},
+		{src: "$[?count('a')>2]", err: "expected a query argument to count at 13 in $[?count('a')>2]"},
+		{src: "$[?count(true)>2]", err: "expected a query argument to count at 14 in $[?count(true)>2]"},
+		{src: "$[?count(null)>2]", err: "expected a query argument to count at 14 in $[?count(null)>2]"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
