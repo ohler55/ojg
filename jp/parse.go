@@ -715,9 +715,14 @@ func (p *parser) readOpArgs(o *op) (eq *Equation) {
 	eq = &Equation{o: o}
 	p.pos++
 	eq.left = p.readEq()
-	if o == count {
+	switch o {
+	case count:
 		if _, ok := eq.left.result.(Expr); !ok {
 			p.raise("expected a query argument to count")
+		}
+	case length, match, search:
+		if x, ok := eq.left.result.(Expr); ok && !x.Normal() {
+			p.raise("expected a singular query argument to %s", o.name)
 		}
 	}
 	b := p.nextNonSpace()
@@ -727,6 +732,9 @@ func (p *parser) readOpArgs(o *op) (eq *Equation) {
 		}
 		p.pos++
 		eq.right = p.readEq()
+		if x, ok := eq.right.result.(Expr); ok && (o == match || o == search) && !x.Normal() {
+			p.raise("expected a singular query argument to %s", o.name)
+		}
 		b = p.nextNonSpace()
 	} else if 1 < o.cnt {
 		p.raise("not enough arguments to %s", o.name)

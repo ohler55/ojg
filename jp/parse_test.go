@@ -260,6 +260,12 @@ func TestParse(t *testing.T) {
 		{src: "$[?count('a')>2]", err: "expected a query argument to count at 13 in $[?count('a')>2]"},
 		{src: "$[?count(true)>2]", err: "expected a query argument to count at 14 in $[?count(true)>2]"},
 		{src: "$[?count(null)>2]", err: "expected a query argument to count at 14 in $[?count(null)>2]"},
+		{src: "$[?length(@.*)<3]", err: "expected a singular query argument to length at 14 in $[?length(@.*)<3]"},
+		{src: "$[?length(@[1, 2])<3]", err: "expected a singular query argument to length at 18 in $[?length(@[1, 2])<3]"},
+		{src: "$[?length(@['a', 'b'])<3]", err: "expected a singular query argument to length at 22 in $[?length(@['a', 'b'])<3]"},
+		{src: "$[?length($..a)<3]", err: "expected a singular query argument to length at 15 in $[?length($..a)<3]"},
+		{src: "$[?match(@[0:2], 'a.*')]", err: "expected a singular query argument to match at 16 in $[?match(@[0:2], 'a.*')]"},
+		{src: "$[?search(@.a, $[?@.b])]", err: "expected a singular query argument to search at 23 in $[?search(@.a, $[?@.b])]"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
