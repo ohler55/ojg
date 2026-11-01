@@ -106,6 +106,7 @@ func TestParse(t *testing.T) {
 		{src: "$[?@.x [0]\t==\t1]", expect: "$[?(@.x[0] == 1)]"},
 		{src: "$[?length(@ .a .b) == 3]", expect: "$[?(length(@.a.b) == 3)]"},
 		{src: "$[?length(@)==length($ [0] .a)]", expect: "$[?(length(@) == length($[0].a))]"},
+		{src: "$[?!match(@.a, 'a.*') && count(@.*) > 1]", expect: "$[?(!match(@.a, 'a.*') && count(@.*) > 1)]"},
 		{src: `['a\\b']`, expect: `['a\\b']`},
 		{src: `$["\/"]`, expect: `$['/']`},
 		{src: `$['\ud83d\ude00']`, expect: "$.😀"},
@@ -266,6 +267,12 @@ func TestParse(t *testing.T) {
 		{src: "$[?length($..a)<3]", err: "expected a singular query argument to length at 15 in $[?length($..a)<3]"},
 		{src: "$[?match(@[0:2], 'a.*')]", err: "expected a singular query argument to match at 16 in $[?match(@[0:2], 'a.*')]"},
 		{src: "$[?search(@.a, $[?@.b])]", err: "expected a singular query argument to search at 23 in $[?search(@.a, $[?@.b])]"},
+		{src: "$[?length(@.a)]", err: "length must be used in a comparison at 15 in $[?length(@.a)]"},
+		{src: "$[?count(@..*)]", err: "count must be used in a comparison at 15 in $[?count(@..*)]"},
+		{src: "$[?@.b && !length(@.a)]", err: "length must be used in a comparison at 23 in $[?@.b && !length(@.a)]"},
+		{src: "$[?match(@.a, 'a.*')==true]", err: "match can not be used in a comparison at 27 in $[?match(@.a, 'a.*')==true]"},
+		{src: "$[?search(@.a, 'a.*')==true]", err: "search can not be used in a comparison at 28 in $[?search(@.a, 'a.*')==true]"},
+		{src: "$[?false!=match(@.a, 'a.*')]", err: "match can not be used in a comparison at 28 in $[?false!=match(@.a, 'a.*')]"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)
