@@ -609,9 +609,31 @@ func (p *parser) readFilter() *Filter {
 	if len(p.buf) <= p.pos || b != ']' {
 		p.raise("not terminated")
 	}
+	p.checkTest(eq)
 	p.pos++
 
 	return eq.Filter()
+}
+
+// checkTest raises an error if length or count, which return a value, is used
+// as a test instead of in a comparison, or if match or search, which return a
+// logical result, is compared (RFC 9535 section 2.4.3).
+func (p *parser) checkTest(e *Equation) {
+	switch e.o {
+	case and, or:
+		p.checkTest(e.left)
+		p.checkTest(e.right)
+	case not, group:
+		p.checkTest(e.left)
+	case length, count:
+		p.raise("%s must be used in a comparison", e.o.name)
+	case eq, neq, lt, gt, lte, gte:
+		for _, side := range [2]*Equation{e.left, e.right} {
+			if side.o == match || side.o == search {
+				p.raise("%s can not be used in a comparison", side.o.name)
+			}
+		}
+	}
 }
 
 func (p *parser) readProc() *Proc {
