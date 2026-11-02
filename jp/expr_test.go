@@ -166,6 +166,19 @@ func TestExprFilter(t *testing.T) {
 	f, err = jp.NewFilter("[?length(@.x) == 3]")
 	tt.Nil(t, err)
 	tt.Equal(t, "[?(length(@.x) == 3)]", f.String())
+
+	_, err = jp.NewFilter("[?@.a,?@.b]")
+	tt.NotNil(t, err)
+
+	_, err = jp.NewFilter("[?@.x == 3)]")
+	tt.NotNil(t, err)
+
+	_, err = jp.NewFilter("[?@.x]]")
+	tt.NotNil(t, err)
+
+	f, err = jp.NewFilter("[?@.x == ']' ]")
+	tt.Nil(t, err)
+	tt.Equal(t, "[?(@.x == ']')]", f.String())
 }
 
 func TestExprBracket(t *testing.T) {
