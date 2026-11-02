@@ -153,6 +153,19 @@ func TestExprFilter(t *testing.T) {
 
 	_, err = jp.NewFilter("[?(@.x ++ 3)]")
 	tt.NotNil(t, err)
+
+	_, err = jp.NewFilter("[?true]")
+	tt.NotNil(t, err)
+
+	_, err = jp.NewFilter("[?length(@.x)]")
+	tt.NotNil(t, err)
+
+	_, err = jp.NewFilter("[?match(@.x, 'a') == true]")
+	tt.NotNil(t, err)
+
+	f, err = jp.NewFilter("[?length(@.x) == 3]")
+	tt.Nil(t, err)
+	tt.Equal(t, "[?(length(@.x) == 3)]", f.String())
 }
 
 func TestExprBracket(t *testing.T) {
