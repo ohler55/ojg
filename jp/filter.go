@@ -38,6 +38,7 @@ func MustNewFilter(str string) (f *Filter) {
 	p.buf = p.buf[2 : len(p.buf)-1]
 	eq := precedentCorrect(p.readEq())
 	eq = reduceGroups(eq, nil)
+	p.checkTest(eq)
 
 	return eq.Filter()
 }
