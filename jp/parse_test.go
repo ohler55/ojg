@@ -107,6 +107,7 @@ func TestParse(t *testing.T) {
 		{src: "$[?length(@ .a .b) == 3]", expect: "$[?(length(@.a.b) == 3)]"},
 		{src: "$[?length(@)==length($ [0] .a)]", expect: "$[?(length(@) == length($[0].a))]"},
 		{src: "$[?!match(@.a, 'a.*') && count(@.*) > 1]", expect: "$[?(!match(@.a, 'a.*') && count(@.*) > 1)]"},
+		{src: "$[?true == @.a || @.b]", expect: "$[?(true == @.a || @.b)]"},
 		{src: `['a\\b']`, expect: `['a\\b']`},
 		{src: `$["\/"]`, expect: `$['/']`},
 		{src: `$['\ud83d\ude00']`, expect: "$.😀"},
@@ -273,6 +274,12 @@ func TestParse(t *testing.T) {
 		{src: "$[?match(@.a, 'a.*')==true]", err: "match can not be used in a comparison at 27 in $[?match(@.a, 'a.*')==true]"},
 		{src: "$[?search(@.a, 'a.*')==true]", err: "search can not be used in a comparison at 28 in $[?search(@.a, 'a.*')==true]"},
 		{src: "$[?false!=match(@.a, 'a.*')]", err: "match can not be used in a comparison at 28 in $[?false!=match(@.a, 'a.*')]"},
+		{src: "$[?true]", err: "a literal must be used in a comparison at 8 in $[?true]"},
+		{src: "$[?'abc']", err: "a literal must be used in a comparison at 9 in $[?'abc']"},
+		{src: "$[?2]", err: "a literal must be used in a comparison at 5 in $[?2]"},
+		{src: "$[?null]", err: "a literal must be used in a comparison at 8 in $[?null]"},
+		{src: "$[?@.a && false]", err: "a literal must be used in a comparison at 16 in $[?@.a && false]"},
+		{src: "$[?!(1)]", err: "a literal must be used in a comparison at 8 in $[?!(1)]"},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %s\n", d.src)

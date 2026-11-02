@@ -615,11 +615,16 @@ func (p *parser) readFilter() *Filter {
 	return eq.Filter()
 }
 
-// checkTest raises an error if length or count, which return a value, is used
-// as a test instead of in a comparison, or if match or search, which return a
-// logical result, is compared (RFC 9535 section 2.4.3).
+// checkTest raises an error if a literal, or length or count which return a
+// value, is used as a test instead of in a comparison, or if match or search,
+// which return a logical result, is compared (RFC 9535 sections 2.3.5.1 and
+// 2.4.3).
 func (p *parser) checkTest(e *Equation) {
 	switch e.o {
+	case nil:
+		if _, ok := e.result.(Expr); !ok {
+			p.raise("a literal must be used in a comparison")
+		}
 	case and, or:
 		p.checkTest(e.left)
 		p.checkTest(e.right)
