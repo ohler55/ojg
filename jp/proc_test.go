@@ -159,3 +159,13 @@ func TestProcNotLastReflect(t *testing.T) {
 	got := x.Get(data)
 	tt.Equal(t, []any{2, 3, 4}, got)
 }
+
+func TestProcAfterBracket(t *testing.T) {
+	jp.CompileScript = compileMapProc
+
+	x := jp.MustParseString("$.a[(quux)].b[(quux)]")
+	tt.Equal(t, "$.a[(quux)].b[(quux)]", x.String())
+
+	x = jp.MustParseString("$[?(@.a)][(quux)].v")
+	tt.Equal(t, "$[?(@.a)][(quux)].v", x.String())
+}

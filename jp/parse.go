@@ -642,11 +642,11 @@ func (p *parser) checkTest(e *Equation) {
 }
 
 func (p *parser) readProc() *Proc {
-	end := bytes.Index(p.buf, []byte{')', ']'})
+	end := bytes.Index(p.buf[p.pos:], []byte{')', ']'})
 	if end < 0 {
 		p.raise("not terminated")
 	}
-	end++
+	end += p.pos + 1
 	code := p.buf[p.pos-1 : end]
 	p.pos = end + 1
 
