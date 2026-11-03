@@ -479,11 +479,17 @@ func (p *parser) readEscStr(start int, term byte) string {
 	buf = append(buf, p.buf[start:p.pos]...)
 	var b byte
 top:
-	for p.pos < len(p.buf) {
+	for {
+		if len(p.buf) <= p.pos {
+			p.raise("not terminated")
+		}
 		b = p.buf[p.pos]
 		p.pos++
 		switch b {
 		case '\\':
+			if len(p.buf) <= p.pos {
+				p.raise("not terminated")
+			}
 			b = p.buf[p.pos]
 			p.pos++
 			switch b {
@@ -563,7 +569,10 @@ fail:
 
 func (p *parser) readStr(term byte) string {
 	start := p.pos
-	for p.pos < len(p.buf) {
+	for {
+		if len(p.buf) <= p.pos {
+			p.raise("not terminated")
+		}
 		b := p.buf[p.pos]
 		p.pos++
 		if b == term {
@@ -582,7 +591,10 @@ func (p *parser) readStr(term byte) string {
 func (p *parser) readRegex() *regexp.Regexp {
 	start := p.pos
 out:
-	for p.pos < len(p.buf) {
+	for {
+		if len(p.buf) <= p.pos {
+			p.raise("not terminated")
+		}
 		b := p.buf[p.pos]
 		p.pos++
 		switch b {
@@ -736,7 +748,7 @@ func (p *parser) readToken() []byte {
 }
 
 func (p *parser) readOpArgs(o *op) (eq *Equation) {
-	if p.buf[p.pos] != '(' {
+	if len(p.buf) <= p.pos || p.buf[p.pos] != '(' {
 		p.raise("expected a %s function", o.name)
 	}
 	eq = &Equation{o: o}
