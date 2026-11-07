@@ -341,7 +341,10 @@ func (p *parser) readNum(b byte) any {
 			}
 			b = p.buf[p.pos]
 		} else {
-			f, _ := strconv.ParseFloat(string(num), 64)
+			f, err := strconv.ParseFloat(string(num), 64)
+			if err != nil {
+				p.raise("%s", err)
+			}
 			return f
 		}
 	case 'e', 'E':
@@ -377,7 +380,10 @@ func (p *parser) readNum(b byte) any {
 	if len(num) == start {
 		p.raise("expected a number")
 	}
-	f, _ := strconv.ParseFloat(string(num), 64)
+	f, err := strconv.ParseFloat(string(num), 64)
+	if err != nil {
+		p.raise("%s", err)
+	}
 	return f
 }
 

@@ -4,6 +4,8 @@ package jp_test
 
 import (
 	"fmt"
+	"math"
+	"strings"
 	"testing"
 
 	"github.com/ohler55/ojg/jp"
@@ -314,5 +316,56 @@ func BenchmarkParse(b *testing.B) {
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
 		_ = jp.MustParse([]byte("@.abc.*[2,3]..xyz[2]"))
+	}
+}
+
+func TestParseFloatOverflow(t *testing.T) {
+	for _, literal := range []string{
+		"1e309", "-1e309", "1.5e309", "-1.5e309",
+		"1.7976931348623159e308", "-1.7976931348623159e308",
+		strings.Repeat("9", 310) + ".0", "-" + strings.Repeat("9", 310) + ".0",
+	} {
+		t.Run(literal, func(t *testing.T) {
+			expr := "@.a == " + literal
+			for _, api := range []struct {
+				name  string
+				parse func() error
+			}{
+				{"ParseString", func() error { _, err := jp.ParseString("$[?" + expr + "]"); return err }},
+				{"NewFilter", func() error { _, err := jp.NewFilter("[?" + expr + "]"); return err }},
+				{"NewScript", func() error { _, err := jp.NewScript(expr); return err }},
+			} {
+				t.Run(api.name, func(t *testing.T) {
+					err := api.parse()
+					if err == nil || !strings.Contains(err.Error(), "value out of range") {
+						t.Errorf("expected floating-point range error, got %v", err)
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestParseFloatFinite(t *testing.T) {
+	for _, tc := range []struct {
+		literal string
+		value   float64
+	}{
+		{"1.5", 1.5}, {"-1.5", -1.5},
+		{"1e308", 1e308}, {"-1e308", -1e308},
+		{"1.7976931348623157e308", math.MaxFloat64},
+		{"-1.7976931348623157e308", -math.MaxFloat64},
+		{"5e-324", math.SmallestNonzeroFloat64}, {"1e-400", 0},
+	} {
+		t.Run(tc.literal, func(t *testing.T) {
+			x, err := jp.ParseString("$[?@.a == " + tc.literal + "]")
+			tt.Nil(t, err)
+			doc := []any{map[string]any{"a": tc.value}}
+			tt.Equal(t, doc, x.Get(doc))
+			parsed, err := jp.ParseString(x.String())
+			tt.Nil(t, err)
+			tt.Equal(t, x.String(), parsed.String())
+			tt.Equal(t, x.Get(doc), parsed.Get(doc))
+		})
 	}
 }
