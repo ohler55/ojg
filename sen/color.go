@@ -212,7 +212,7 @@ func (wr *Writer) colorObject(n map[string]any, depth int) {
 			}
 			wr.buf = append(wr.buf, []byte(cs)...)
 			wr.buf = append(wr.buf, wr.KeyColor...)
-			wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
+			wr.buf = ojg.AppendSENKey(wr.buf, k, !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, wr.NoColor...)
 			wr.buf = append(wr.buf, wr.SyntaxColor...)
 			wr.buf = append(wr.buf, ':')
@@ -249,7 +249,7 @@ func (wr *Writer) colorObject(n map[string]any, depth int) {
 			}
 			wr.buf = append(wr.buf, []byte(cs)...)
 			wr.buf = append(wr.buf, wr.KeyColor...)
-			wr.buf = ojg.AppendSENString(wr.buf, k, !wr.HTMLUnsafe)
+			wr.buf = ojg.AppendSENKey(wr.buf, k, !wr.HTMLUnsafe)
 			wr.buf = append(wr.buf, wr.NoColor...)
 			wr.buf = append(wr.buf, wr.SyntaxColor...)
 			wr.buf = append(wr.buf, ':')

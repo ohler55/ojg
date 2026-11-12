@@ -56,7 +56,7 @@ func TestStringConv(t *testing.T) {
   d: "2.200000e+00"
   e: "2021-02-09T01:02:03.123456789Z"
   f: "09 Feb 2021"
-  g: true
+  g: "true"
   h: "[1 2]"
   i: "{a:1}"
   j: abc

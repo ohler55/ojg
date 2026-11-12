@@ -270,7 +270,7 @@ func (o *Options) AppendTime(buf []byte, t time.Time, sen bool) []byte {
 	if o.TimeMap {
 		buf = append(buf, '{')
 		if sen {
-			buf = AppendSENString(buf, o.CreateKey, o.HTMLUnsafe)
+			buf = AppendSENKey(buf, o.CreateKey, o.HTMLUnsafe)
 		} else {
 			buf = AppendJSONString(buf, o.CreateKey, o.HTMLUnsafe)
 		}
@@ -291,7 +291,7 @@ func (o *Options) AppendTime(buf []byte, t time.Time, sen bool) []byte {
 	} else if 0 < len(o.TimeWrap) {
 		buf = append(buf, '{')
 		if sen {
-			buf = AppendSENString(buf, o.TimeWrap, o.HTMLUnsafe)
+			buf = AppendSENKey(buf, o.TimeWrap, o.HTMLUnsafe)
 		} else {
 			buf = AppendJSONString(buf, o.TimeWrap, o.HTMLUnsafe)
 		}

@@ -253,7 +253,7 @@ func newFinfo(f *reflect.StructField, key string, omitEmpty, asString, pretty, e
 		}
 	}
 Key:
-	fi.jkey = ojg.AppendSENString(fi.jkey, fi.key, false)
+	fi.jkey = ojg.AppendSENKey(fi.jkey, fi.key, false)
 	fi.jkey = append(fi.jkey, ':')
 	if pretty {
 		fi.jkey = append(fi.jkey, ' ')
