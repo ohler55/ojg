@@ -195,6 +195,38 @@ func TestParserParseString(t *testing.T) {
 	}
 }
 
+func TestParserTruncatedLiteral(t *testing.T) {
+	// A truncated null, true or false is an error. It used to be dropped
+	// silently, and a truncated literal followed by a comma in an object
+	// crashed the parser.
+	for _, src := range []string{
+		"nul,1",
+		"[nul,1]",
+		"[n,1]",
+		"[tru,2]",
+		"[fals,3]",
+		`{"k":nul,"a":1}`,
+		`{"k":tru,"a":1}`,
+		`{"k":fals,"a":1}`,
+		`{"k":n, "a":1}`,
+		`{"a":{"k":nul,"b":1}}`,
+	} {
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("ParseString(%q): panic %v", src, r)
+				}
+			}()
+			if _, err := oj.ParseString(src); err == nil {
+				t.Errorf("ParseString(%q) did not return an error", src)
+			}
+		}()
+		if err := oj.ValidateString(src); err == nil {
+			t.Errorf("ValidateString(%q) did not return an error", src)
+		}
+	}
+}
+
 func TestParserParseCallback(t *testing.T) {
 	var results []byte
 	cb := func(n any) {
