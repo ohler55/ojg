@@ -54,6 +54,11 @@ func TestStringSEN(t *testing.T) {
 		{src: "+abc", expect: `"+abc"`},
 		{src: "-", expect: `-`},
 		{src: "+", expect: `+`},
+		{src: "null", expect: `"null"`},
+		{src: "true", expect: `"true"`},
+		{src: "false", expect: `"false"`},
+		{src: "\ufeffx", expect: "\"\ufeffx\""},
+		{src: "\uf8ffx", expect: "\"\uf8ffx\""},
 		{src: "a-b", expect: `a-b`},
 		{src: "a+b", expect: `a+b`},
 		{src: "a`b", expect: "\"a`b\""},
@@ -68,4 +73,24 @@ func TestStringSEN(t *testing.T) {
 func TestKeyString(t *testing.T) {
 	tt.Equal(t, "quux", ojg.KeyString(reflect.ValueOf("quux")))
 	tt.Equal(t, "123", ojg.KeyString(reflect.ValueOf(123)))
+}
+
+func TestStringSENKey(t *testing.T) {
+	type Data struct {
+		src      string
+		expect   string
+		htmlSafe bool
+	}
+	for i, td := range []*Data{
+		{src: "abc", expect: `abc`},
+		{src: "null", expect: `null`},
+		{src: "true", expect: `true`},
+		{src: "false", expect: `false`},
+		{src: "-1", expect: `"-1"`},
+		{src: "\ufeffx", expect: "\ufeffx"},
+	} {
+		var buf []byte
+		buf = ojg.AppendSENKey(buf, td.src, td.htmlSafe)
+		tt.Equal(t, td.expect, string(buf), i, ": ", td.src)
+	}
 }

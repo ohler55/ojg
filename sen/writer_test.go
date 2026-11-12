@@ -801,3 +801,23 @@ func TestWriteNumber(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Equal(t, "123", bb.String())
 }
+
+// A string that is written has to be read back as the same string. The
+// literals and a leading byte order mark are read back as something else
+// when they are not quoted.
+func TestWriteStringRoundTrip(t *testing.T) {
+	for _, s := range []string{
+		"null",
+		"true",
+		"false",
+		"\ufeffx",
+		"\uf8ffx",
+		"a-b",
+		"abc",
+	} {
+		out := sen.String(s)
+		v, err := sen.Parse([]byte(out))
+		tt.Nil(t, err)
+		tt.Equal(t, s, v)
+	}
+}

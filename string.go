@@ -115,6 +115,17 @@ func AppendJSONString(buf []byte, s string, htmlSafe bool) []byte {
 // AppendSENString appends a SEN encoding of a string to the provided byte
 // slice.
 func AppendSENString(buf []byte, s string, htmlSafe bool) []byte {
+	return appendSENString(buf, s, htmlSafe, false)
+}
+
+// AppendSENKey appends a SEN encoding of a map key to the provided byte
+// slice. A key is read back as a string even when it is written bare so the
+// literals are left bare.
+func AppendSENKey(buf []byte, s string, htmlSafe bool) []byte {
+	return appendSENString(buf, s, htmlSafe, true)
+}
+
+func appendSENString(buf []byte, s string, htmlSafe bool, key bool) []byte {
 	if len(s) == 0 {
 		return append(buf, `""`...)
 	}
@@ -124,6 +135,18 @@ func AppendSENString(buf []byte, s string, htmlSafe bool) []byte {
 	if 1 < len(s) && (s[0] == '+' || s[0] == '-') {
 		// A lone sign stays bare as an operator. More than that reads as a
 		// number or a concatenation.
+		quote = true
+	}
+	if !key && (s == "null" || s == "true" || s == "false") {
+		// These are the literals and are read back as the literal and not as
+		// the string. A key is read back as a string even when it is bare.
+		quote = true
+	}
+	if !key && s[0] == 0xEF {
+		// A leading byte order mark is taken for a mark by the tokenizer and
+		// dropped, and any other character with the same lead byte is taken
+		// for a broken mark. Only the first element of a document can be at
+		// the start of it so a key is never affected.
 		quote = true
 	}
 	buf = append(buf, '"')

@@ -411,7 +411,7 @@ func appendObject(wr *Writer, n map[string]any, depth int) {
 			}
 		}
 		wr.buf = append(wr.buf, cs...)
-		wr.buf = wr.appendString(wr.buf, k, !wr.HTMLUnsafe)
+		wr.buf = ojg.AppendSENKey(wr.buf, k, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, ": "...)
 		wr.appendSEN(m, d2)
 	}
@@ -473,7 +473,7 @@ func appendSortObject(wr *Writer, n map[string]any, depth int) {
 			}
 		}
 		wr.buf = append(wr.buf, cs...)
-		wr.buf = wr.appendString(wr.buf, k, !wr.HTMLUnsafe)
+		wr.buf = ojg.AppendSENKey(wr.buf, k, !wr.HTMLUnsafe)
 		wr.buf = append(wr.buf, ": "...)
 		wr.appendSEN(m, d2)
 	}

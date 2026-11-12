@@ -337,7 +337,7 @@ func (w *Writer) buildMapNode(v map[string]any) (n *node) {
 		// build key
 		w.buf = w.buf[:0]
 		if w.SEN {
-			w.buf = ojg.AppendSENString(w.buf, k, !w.HTMLUnsafe)
+			w.buf = ojg.AppendSENKey(w.buf, k, !w.HTMLUnsafe)
 		} else {
 			w.buf = ojg.AppendJSONString(w.buf, k, !w.HTMLUnsafe)
 		}
@@ -382,7 +382,7 @@ func (w *Writer) buildGenMapNode(v gen.Object) (n *node) {
 		// build key
 		w.buf = w.buf[:0]
 		if w.SEN {
-			w.buf = ojg.AppendSENString(w.buf, k, !w.HTMLUnsafe)
+			w.buf = ojg.AppendSENKey(w.buf, k, !w.HTMLUnsafe)
 		} else {
 			w.buf = ojg.AppendJSONString(w.buf, k, !w.HTMLUnsafe)
 		}
