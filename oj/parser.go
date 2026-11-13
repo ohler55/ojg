@@ -449,6 +449,18 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 				p.mode = dotMap
 				continue
 			}
+			// A decimal point must be followed by at least one digit (the JSON
+			// grammar requires a fraction). "1." and "1.e5" are rejected by
+			// Validate and by encoding/json, so Parse must reject them too.
+			if off+1 >= len(buf) {
+				return p.newError(off+1, "incomplete JSON")
+			}
+			if buf[off+1] == 'e' || buf[off+1] == 'E' {
+				return p.newError(off+1, "invalid number")
+			}
+			if digitMap[buf[off+1]] != numDigit {
+				return p.newError(off+1, "invalid number")
+			}
 			for i, b = range buf[off+1:] {
 				if digitMap[b] != numDigit {
 					break
