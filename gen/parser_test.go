@@ -394,6 +394,19 @@ func TestParseExponentPastExactPow10(t *testing.T) {
 	}
 }
 
+func TestParseExponentRounding(t *testing.T) {
+	// A fraction scaled by a power of ten must round the same as
+	// strconv.ParseFloat.
+	for _, src := range []string{"1.1e5", "8.977e-4", "73.674e18", "-23.275e-16", "93664e-11", "310.859e5"} {
+		var p gen.Parser
+		v, err := p.Parse([]byte(src))
+		tt.Nil(t, err, src)
+		want, werr := strconv.ParseFloat(src, 64)
+		tt.Nil(t, werr, src)
+		tt.Equal(t, gen.Float(want), v, src)
+	}
+}
+
 func TestParserSurrogateReuse(t *testing.T) {
 	// A high half left pending by an aborted parse must not pair with a low
 	// half in the next one.
