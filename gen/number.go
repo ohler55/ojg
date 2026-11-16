@@ -5,7 +5,6 @@ package gen
 import (
 	"encoding/json"
 	"math"
-	"runtime"
 	"strconv"
 
 	"github.com/ohler55/ojg"
@@ -148,34 +147,7 @@ func (n *Number) AsNum() (num any) {
 			num = i
 		}
 	default:
-		x := 0
-		if 0 < n.Exp {
-			x = int(n.Exp)
-			if n.NegExp {
-				x = -x
-			}
-		}
-		// math.Pow10 is exact through exponent 22. Past that, scale with ParseFloat.
-		if runtime.GOARCH == "arm64" && -22 <= x && x <= 22 {
-			f := float64(n.I)
-			if 0 < n.Frac {
-				// Remove trailing zeros as they can cause precision loss due to
-				// the way go or the hardware handles multiplication and division.
-				for 1 < n.Div && n.Frac%10 == 0 {
-					n.Frac /= 10
-					n.Div /= 10
-				}
-				// A simple division loses precision yet dividing 1.0 by the
-				// divisor and then multiplying the fraction seems to solve the
-				// issue on arm64 anyway.
-				f += float64(n.Frac) * (1.0 / float64(n.Div))
-			}
-			if n.Neg {
-				f = -f
-			}
-			if x != 0 {
-				f *= math.Pow10(x)
-			}
+		if f, ok := n.exactFloat(); ok {
 			num = f
 		} else {
 			n.FillBig()
@@ -197,31 +169,46 @@ func (n *Number) AsNode() (num Node) {
 		}
 		num = Int(i)
 	default:
-		x := 0
-		if 0 < n.Exp {
-			x = int(n.Exp)
-			if n.NegExp {
-				x = -x
-			}
-		}
-		// math.Pow10 is exact through exponent 22. Past that, scale with ParseFloat.
-		if x < -22 || 22 < x {
-			n.FillBig()
-			f, _ := strconv.ParseFloat(string(n.BigBuf), 64)
+		if f, ok := n.exactFloat(); ok {
 			num = Float(f)
 		} else {
-			f := float64(n.I)
-			if 0 < n.Frac {
-				f += float64(n.Frac) / float64(n.Div)
-			}
-			if n.Neg {
-				f = -f
-			}
-			if x != 0 {
-				f *= math.Pow10(x)
-			}
+			n.FillBig()
+			f, _ := strconv.ParseFloat(string(n.BigBuf), 64)
 			num = Float(f)
 		}
 	}
 	return
+}
+
+// exactFloat returns the number as a float64 when a single multiplication or
+// division gives the correctly rounded result. That is the case when all the
+// digits fit in 53 bits and the power of ten is at most 22, since both are
+// then exact as float64 values. Other numbers need strconv.ParseFloat.
+func (n *Number) exactFloat() (float64, bool) {
+	x := int(n.Exp)
+	if n.NegExp {
+		x = -x
+	}
+	m := n.I
+	for d := n.Div; 1 < d; d /= 10 {
+		if 1<<53 < m {
+			return 0, false
+		}
+		m *= 10
+		x--
+	}
+	m += n.Frac
+	if 1<<53 < m || x < -22 || 22 < x {
+		return 0, false
+	}
+	f := float64(m)
+	if x < 0 {
+		f /= math.Pow10(-x)
+	} else {
+		f *= math.Pow10(x)
+	}
+	if n.Neg {
+		f = -f
+	}
+	return f, true
 }

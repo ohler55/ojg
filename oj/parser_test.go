@@ -195,6 +195,18 @@ func TestParserParseString(t *testing.T) {
 	}
 }
 
+func TestParserExponentRounding(t *testing.T) {
+	// A fraction scaled by a power of ten must round the same as
+	// strconv.ParseFloat on every architecture.
+	for _, src := range []string{"1.1e5", "8.977e-4", "73.674e18", "-23.275e-16", "93664e-11", "310.859e5"} {
+		v, err := oj.ParseString(src)
+		tt.Nil(t, err, src)
+		want, werr := strconv.ParseFloat(src, 64)
+		tt.Nil(t, werr, src)
+		tt.Equal(t, want, v, src)
+	}
+}
+
 func TestParserTruncatedLiteral(t *testing.T) {
 	// A truncated null, true or false is an error. It used to be dropped
 	// silently, and a truncated literal followed by a comma in an object
