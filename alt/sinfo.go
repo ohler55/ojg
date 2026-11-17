@@ -100,11 +100,12 @@ func buildTagFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 			continue
 		}
 		var fx byte
-		if f.Anonymous && nested && f.Type.Kind() != reflect.Interface {
+		if f.Anonymous && nested && isEmbeddedStruct(f.Type) {
 			if f.Type.Kind() == reflect.Pointer {
 				for _, fi := range buildTagFields(f.Type.Elem(), nested, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
-					fi.value = fi.ivalue
+					fi.value = skipNilEmbed(fi.ivalue)
+					fi.ivalue = fi.value
 					fa = append(fa, fi)
 				}
 			} else {
@@ -153,11 +154,12 @@ func buildExactFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 			continue
 		}
 		switch {
-		case f.Anonymous && nested && f.Type.Kind() != reflect.Interface:
+		case f.Anonymous && nested && isEmbeddedStruct(f.Type):
 			if f.Type.Kind() == reflect.Pointer {
 				for _, fi := range buildExactFields(f.Type.Elem(), nested, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
-					fi.value = fi.ivalue
+					fi.value = skipNilEmbed(fi.ivalue)
+					fi.ivalue = fi.value
 					fa = append(fa, fi)
 				}
 			} else {
@@ -183,11 +185,12 @@ func buildLowFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
 			continue
 		}
-		if f.Anonymous && nested && f.Type.Kind() != reflect.Interface {
+		if f.Anonymous && nested && isEmbeddedStruct(f.Type) {
 			if f.Type.Kind() == reflect.Pointer {
 				for _, fi := range buildLowFields(f.Type.Elem(), nested, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
-					fi.value = fi.ivalue
+					fi.value = skipNilEmbed(fi.ivalue)
+					fi.ivalue = fi.value
 					fa = append(fa, fi)
 				}
 			} else {
@@ -213,4 +216,28 @@ func buildLowFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 		}
 	}
 	return
+}
+
+// isEmbeddedStruct returns true if the fields of an embedded field of type rt
+// are decomposed in place of the field itself. That is only the case for a
+// struct or a pointer to a struct. Any other embedded type, such as
+// `type Count int`, is decomposed as a field named after the type, the same
+// as encoding/json does.
+func isEmbeddedStruct(rt reflect.Type) bool {
+	if rt.Kind() == reflect.Pointer {
+		rt = rt.Elem()
+	}
+	return rt.Kind() == reflect.Struct
+}
+
+// skipNilEmbed wraps the value function of a field reached through an
+// embedded pointer so that the field is omitted when that pointer is nil
+// instead of panicking, the same as encoding/json does.
+func skipNilEmbed(vf valFunc) valFunc {
+	return func(fi *finfo, rv reflect.Value, addr uintptr) (any, reflect.Value, bool) {
+		if _, err := rv.FieldByIndexErr(fi.index); err != nil {
+			return nil, nilValue, true
+		}
+		return vf(fi, rv, addr)
+	}
 }

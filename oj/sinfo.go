@@ -91,11 +91,12 @@ func buildTagFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (fa 
 		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
 			continue
 		}
-		if f.Anonymous && !out && f.Type.Kind() != reflect.Interface {
+		if f.Anonymous && !out && isEmbeddedStruct(f.Type) {
 			if f.Type.Kind() == reflect.Pointer {
 				for _, fi := range buildTagFields(f.Type.Elem(), out, pretty, embedded, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
-					fi.Append = fi.iAppend
+					fi.Append = skipNilEmbed(fi.iAppend)
+					fi.iAppend = fi.Append
 					fa = append(fa, fi)
 				}
 			} else {
@@ -145,11 +146,12 @@ func buildExactFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (f
 		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
 			continue
 		}
-		if f.Anonymous && !out && f.Type.Kind() != reflect.Interface {
+		if f.Anonymous && !out && isEmbeddedStruct(f.Type) {
 			if f.Type.Kind() == reflect.Pointer {
 				for _, fi := range buildExactFields(f.Type.Elem(), out, pretty, embedded, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
-					fi.Append = fi.iAppend
+					fi.Append = skipNilEmbed(fi.iAppend)
+					fi.iAppend = fi.Append
 					fa = append(fa, fi)
 				}
 			} else {
@@ -173,11 +175,12 @@ func buildLowFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (fa 
 		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
 			continue
 		}
-		if f.Anonymous && !out && f.Type.Kind() != reflect.Interface {
+		if f.Anonymous && !out && isEmbeddedStruct(f.Type) {
 			if f.Type.Kind() == reflect.Pointer {
 				for _, fi := range buildLowFields(f.Type.Elem(), out, pretty, embedded, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
-					fi.Append = fi.iAppend
+					fi.Append = skipNilEmbed(fi.iAppend)
+					fi.iAppend = fi.Append
 					fa = append(fa, fi)
 				}
 			} else {
@@ -199,4 +202,28 @@ func buildLowFields(rt reflect.Type, out, pretty, embedded, omitEmpty bool) (fa 
 		}
 	}
 	return
+}
+
+// isEmbeddedStruct returns true if the fields of an embedded field of type rt
+// are written in place of the field itself. That is only the case for a
+// struct or a pointer to a struct. Any other embedded type, such as
+// `type Count int`, is written as a field named after the type, the same as
+// encoding/json does.
+func isEmbeddedStruct(rt reflect.Type) bool {
+	if rt.Kind() == reflect.Pointer {
+		rt = rt.Elem()
+	}
+	return rt.Kind() == reflect.Struct
+}
+
+// skipNilEmbed wraps the append function of a field reached through an
+// embedded pointer so that the field is skipped when that pointer is nil
+// instead of panicking, the same as encoding/json does.
+func skipNilEmbed(af appendFunc) appendFunc {
+	return func(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
+		if _, err := rv.FieldByIndexErr(fi.index); err != nil {
+			return buf, nil, aSkip
+		}
+		return af(fi, buf, rv, addr, safe)
+	}
 }

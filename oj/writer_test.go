@@ -1209,3 +1209,53 @@ func TestWriteNamedTypeFieldNoAddr(t *testing.T) {
 		}
 	}
 }
+
+func TestWriteStructEmbedNonStruct(t *testing.T) {
+	type Count int
+	type Out struct {
+		Count
+		Y int
+	}
+	// An embedded type that is not a struct has no fields to flatten so
+	// it is written as a field named after the type, like encoding/json.
+	o := Out{Count: 4, Y: 5}
+	tt.Equal(t, `{"Count":4,"Y":5}`, oj.JSON(&o, &ojg.Options{Sort: true, UseTags: true}))
+	tt.Equal(t, `{"Count":4,"Y":5}`, oj.JSON(&o, &ojg.Options{Sort: true, KeyExact: true}))
+	tt.Equal(t, `{"count":4,"y":5}`, oj.JSON(&o, &ojg.Options{Sort: true}))
+	tt.Equal(t, `{"count":4,"y":5}`, oj.JSON(&o, &ojg.Options{Sort: true, OmitEmpty: true}))
+
+	type PtrOut struct {
+		*Count
+		Y int
+	}
+	c := Count(4)
+	tt.Equal(t, `{"Count":4,"Y":5}`, oj.JSON(&PtrOut{Count: &c, Y: 5}, &ojg.Options{Sort: true, UseTags: true}))
+}
+
+func TestWriteStructEmbedNilPtr(t *testing.T) {
+	type In struct {
+		A int
+	}
+	type Out struct {
+		*In
+		Y int
+	}
+	// The fields of a nil embedded pointer are skipped, like encoding/json.
+	o := Out{Y: 1}
+	for _, opt := range []*ojg.Options{
+		{Sort: true, UseTags: true},
+		{Sort: true, KeyExact: true},
+		{Sort: true, UseTags: true, OmitEmpty: true},
+	} {
+		tt.Equal(t, `{"Y":1}`, oj.JSON(o, opt), "%+v", *opt)
+		tt.Equal(t, `{"Y":1}`, oj.JSON(&o, opt), "%+v", *opt)
+	}
+	tt.Equal(t, `{"y":1}`, oj.JSON(o, &ojg.Options{Sort: true}))
+	out, err := oj.Marshal(o)
+	tt.Nil(t, err)
+	tt.Equal(t, `{"Y":1}`, string(out))
+
+	o.In = &In{A: 2}
+	tt.Equal(t, `{"A":2,"Y":1}`, oj.JSON(o, &ojg.Options{Sort: true, UseTags: true}))
+	tt.Equal(t, `{"A":2,"Y":1}`, oj.JSON(&o, &ojg.Options{Sort: true, UseTags: true}))
+}

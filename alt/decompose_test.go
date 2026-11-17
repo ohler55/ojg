@@ -394,3 +394,40 @@ func BenchmarkDecompose(b *testing.B) {
 		_ = alt.Decompose(&a, &alt.Options{UseTags: true})
 	}
 }
+
+type EmbCount int
+
+type embNonStruct struct {
+	EmbCount
+	Y int
+}
+
+type EmbIn struct {
+	A int
+}
+
+type embNilPtr struct {
+	*EmbIn
+	Y int
+}
+
+func TestDecomposeEmbedNonStruct(t *testing.T) {
+	// An embedded type that is not a struct is a field named after the
+	// type, like encoding/json.
+	v := embNonStruct{EmbCount: 4, Y: 5}
+	tt.Equal(t, map[string]any{"EmbCount": 4, "Y": 5}, alt.Decompose(v, &ojg.Options{UseTags: true}))
+	tt.Equal(t, map[string]any{"EmbCount": 4, "Y": 5}, alt.Decompose(&v, &ojg.Options{KeyExact: true}))
+	tt.Equal(t, map[string]any{"embCount": 4, "y": 5}, alt.Decompose(v, &ojg.Options{}))
+}
+
+func TestDecomposeEmbedNilPtr(t *testing.T) {
+	// The fields of a nil embedded pointer are skipped, like encoding/json.
+	v := embNilPtr{Y: 1}
+	for _, opt := range []*ojg.Options{{UseTags: true}, {KeyExact: true}, {UseTags: true, OmitEmpty: true}} {
+		tt.Equal(t, map[string]any{"Y": 1}, alt.Decompose(v, opt), "%+v", *opt)
+		tt.Equal(t, map[string]any{"Y": 1}, alt.Decompose(&v, opt), "%+v", *opt)
+	}
+	tt.Equal(t, map[string]any{"y": 1}, alt.Decompose(v, &ojg.Options{}))
+	v.EmbIn = &EmbIn{A: 2}
+	tt.Equal(t, map[string]any{"A": 2, "Y": 1}, alt.Decompose(v, &ojg.Options{UseTags: true}))
+}
