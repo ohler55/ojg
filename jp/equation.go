@@ -386,6 +386,12 @@ func precedentCorrect(e *Equation) *Equation {
 	if e.right == nil || e.right.o == nil {
 		return e
 	}
+	// The second argument of a function such as match or search ends at
+	// the closing parenthesis so it is corrected in place, not rotated out.
+	if e.o.prec == 0 {
+		e.right = precedentCorrect(e.right)
+		return e
+	}
 	if e.o.prec <= e.right.o.prec {
 		r := e.right
 		e.right = r.left
