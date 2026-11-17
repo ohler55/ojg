@@ -61,7 +61,7 @@ func appendInt8NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr ui
 
 func iappendInt8(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	buf = append(buf, fi.jkey...)
-	buf = strconv.AppendInt(buf, int64(rv.FieldByIndex(fi.index).Interface().(int8)), 10)
+	buf = strconv.AppendInt(buf, rv.FieldByIndex(fi.index).Int(), 10)
 
 	return buf, nil, aWrote
 }
@@ -69,14 +69,14 @@ func iappendInt8(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe boo
 func iappendInt8AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = append(buf, '"')
-	buf = strconv.AppendInt(buf, int64(rv.FieldByIndex(fi.index).Interface().(int8)), 10)
+	buf = strconv.AppendInt(buf, rv.FieldByIndex(fi.index).Int(), 10)
 	buf = append(buf, '"')
 
 	return buf, nil, aWrote
 }
 
 func iappendInt8NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
-	v := rv.FieldByIndex(fi.index).Interface().(int8)
+	v := int8(rv.FieldByIndex(fi.index).Int())
 	if v == 0 {
 		return buf, nil, aSkip
 	}
@@ -87,7 +87,7 @@ func iappendInt8NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, 
 }
 
 func iappendInt8NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
-	v := rv.FieldByIndex(fi.index).Interface().(int8)
+	v := int8(rv.FieldByIndex(fi.index).Int())
 	if v == 0 {
 		return buf, nil, aSkip
 	}
