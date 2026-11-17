@@ -190,7 +190,8 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			continue
 		case closeObject:
 			depth--
-			if depth < 0 || p.stack[depth] != '{' {
+			// A value is expected after a colon, so a close there is an error.
+			if depth < 0 || p.stack[depth] != '{' || (256 < len(p.mode) && p.mode[256] == 'v') {
 				return p.newError(off, "unexpected object close")
 			}
 			p.stack = p.stack[0:depth]

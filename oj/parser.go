@@ -349,7 +349,8 @@ func (p *Parser) parseBuffer(buf []byte, last bool) error {
 			continue
 		case closeObject:
 			depth--
-			if depth < 0 || 0 <= p.starts[depth] {
+			// A value is expected after a colon, so a close there is an error.
+			if depth < 0 || 0 <= p.starts[depth] || (256 < len(p.mode) && p.mode[256] == 'v') {
 				return p.newError(off, "unexpected object close")
 			}
 			if 256 < len(p.mode) && p.mode[256] == 'n' {

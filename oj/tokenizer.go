@@ -248,7 +248,8 @@ func (t *Tokenizer) tokenizeBuffer(buf []byte, last bool) error {
 			continue
 		case closeObject:
 			depth--
-			if depth < 0 || t.starts[depth] != objectStart {
+			// A value is expected after a colon, so a close there is an error.
+			if depth < 0 || t.starts[depth] != objectStart || (256 < len(t.mode) && t.mode[256] == 'v') {
 				return t.newError(off, "unexpected object close")
 			}
 			if 256 < len(t.mode) && t.mode[256] == 'n' {

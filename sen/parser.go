@@ -375,6 +375,10 @@ func (p *Parser) parseBuffer(buf []byte, last bool) (err error) {
 					p.addToken(off)
 				}
 			}
+			// A key still on the stack has no value.
+			if _, ok := p.stack[len(p.stack)-1].(gen.Key); ok {
+				return p.newError(off, "unexpected object close")
+			}
 			p.starts = p.starts[0:depth]
 			n := p.stack[len(p.stack)-1]
 			p.stack = p.stack[:len(p.stack)-1]
