@@ -975,6 +975,22 @@ type recompShadowTagWins struct {
 	RecompShadowTag
 }
 
+type RecompShadowTag2 struct {
+	Y int `json:"A"`
+}
+
+type recompShadowOuterFirst struct {
+	A int
+	RecompShadowIn
+}
+
+type recompShadowTwoTags struct {
+	RecompShadowTag
+	*RecompShadowTag2
+}
+
+type recompEmpty struct{}
+
 func TestRecomposeEmbedShadow(t *testing.T) {
 	// A key goes to the least nested field, the same as encoding/json.
 	src := []byte(`{"A":5,"B":6,"C":7}`)
@@ -983,6 +999,9 @@ func TestRecomposeEmbedShadow(t *testing.T) {
 		func() any { return &recompShadowDeep{} },
 		func() any { return &recompShadowSameDepth{} },
 		func() any { return &recompShadowTagWins{} },
+		func() any { return &recompShadowOuterFirst{} },
+		func() any { return &recompShadowTwoTags{} },
+		func() any { return &recompEmpty{} },
 	} {
 		expect := target()
 		tt.Nil(t, json.Unmarshal(src, expect))

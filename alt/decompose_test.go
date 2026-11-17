@@ -461,6 +461,20 @@ type decShadowTagWins struct {
 	DecShadowTag
 }
 
+type DecShadowTag2 struct {
+	Y int `json:"A"`
+}
+
+type decShadowOuterFirst struct {
+	A int
+	DecShadowIn
+}
+
+type decShadowTwoTags struct {
+	DecShadowTag
+	*DecShadowTag2
+}
+
 func TestDecomposeEmbedShadow(t *testing.T) {
 	// A field of an embedded struct is hidden by a less nested field with
 	// the same key, the same as encoding/json.
@@ -473,4 +487,8 @@ func TestDecomposeEmbedShadow(t *testing.T) {
 		alt.Decompose(decShadowTagWins{DecShadowIn{A: 1, B: 2}, DecShadowTag{X: 3}}, opt))
 	tt.Equal(t, map[string]any{"A": 1, "B": 2, "X": 3},
 		alt.Decompose(decShadowTagWins{DecShadowIn{A: 1, B: 2}, DecShadowTag{X: 3}}, &ojg.Options{KeyExact: true}))
+	tt.Equal(t, map[string]any{"A": 9, "B": 2},
+		alt.Decompose(decShadowOuterFirst{A: 9, DecShadowIn: DecShadowIn{A: 1, B: 2}}, opt))
+	tt.Equal(t, map[string]any{},
+		alt.Decompose(decShadowTwoTags{DecShadowTag{X: 3}, &DecShadowTag2{Y: 4}}, opt))
 }

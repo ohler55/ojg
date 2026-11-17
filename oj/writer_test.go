@@ -1294,6 +1294,20 @@ type shadowTagWins struct {
 	ShadowTag
 }
 
+type ShadowTag2 struct {
+	Y int `json:"A"`
+}
+
+type shadowOuterFirst struct {
+	A int
+	ShadowIn
+}
+
+type shadowTwoTags struct {
+	ShadowTag
+	*ShadowTag2
+}
+
 func TestWriteStructEmbedShadow(t *testing.T) {
 	// A field of an embedded struct is hidden by a less nested field with
 	// the same key. Fields with the same key at the same depth are dropped
@@ -1327,6 +1341,18 @@ func TestWriteStructEmbedShadow(t *testing.T) {
 			tag:   `{"A":3,"B":2}`,
 			exact: `{"A":1,"B":2,"X":3}`,
 			low:   `{"a":1,"b":2,"x":3}`,
+		},
+		{
+			v:     shadowOuterFirst{A: 9, ShadowIn: ShadowIn{A: 1, B: 2}},
+			tag:   `{"A":9,"B":2}`,
+			exact: `{"A":9,"B":2}`,
+			low:   `{"a":9,"b":2}`,
+		},
+		{
+			v:     shadowTwoTags{ShadowTag{X: 3}, &ShadowTag2{Y: 4}},
+			tag:   `{}`,
+			exact: `{"X":3,"Y":4}`,
+			low:   `{"x":3,"y":4}`,
 		},
 	} {
 		// Same as encoding/json.

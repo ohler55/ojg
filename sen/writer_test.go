@@ -989,6 +989,20 @@ type senShadowTagWins struct {
 	SenShadowTag
 }
 
+type SenShadowTag2 struct {
+	Y int `json:"A"`
+}
+
+type senShadowOuterFirst struct {
+	A int
+	SenShadowIn
+}
+
+type senShadowTwoTags struct {
+	SenShadowTag
+	*SenShadowTag2
+}
+
 func TestWriteStructEmbedShadow(t *testing.T) {
 	// A field of an embedded struct is hidden by a less nested field with
 	// the same key, the same as encoding/json.
@@ -1001,6 +1015,8 @@ func TestWriteStructEmbedShadow(t *testing.T) {
 		{v: senShadowDeep{SenShadowOuter{SenShadowIn: SenShadowIn{A: 1, B: 2}, A: 9}}, tag: `{A:9 B:2}`, exact: `{A:9 B:2}`},
 		{v: senShadowSameDepth{SenShadowIn{A: 1, B: 2}, SenShadowOther{A: 3, C: 4}}, tag: `{B:2 C:4}`, exact: `{B:2 C:4}`},
 		{v: senShadowTagWins{SenShadowIn{A: 1, B: 2}, SenShadowTag{X: 3}}, tag: `{A:3 B:2}`, exact: `{A:1 B:2 X:3}`},
+		{v: senShadowOuterFirst{A: 9, SenShadowIn: SenShadowIn{A: 1, B: 2}}, tag: `{A:9 B:2}`, exact: `{A:9 B:2}`},
+		{v: senShadowTwoTags{SenShadowTag{X: 3}, &SenShadowTag2{Y: 4}}, tag: `{}`, exact: `{X:3 Y:4}`},
 	} {
 		tt.Equal(t, d.tag, sen.String(d.v, &ojg.Options{Sort: true, UseTags: true}), "%T", d.v)
 		tt.Equal(t, d.tag, sen.String(d.v, &ojg.Options{Sort: true, UseTags: true, OmitEmpty: true}), "%T", d.v)
