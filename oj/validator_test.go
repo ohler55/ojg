@@ -77,6 +77,14 @@ func TestValidatorValidateString(t *testing.T) {
 
 		{src: "{}}", expect: "unexpected object close at 1:3"},
 		{src: "{ \n", expect: "incomplete JSON at 2:1"},
+		// Unclosed containers are incomplete even when the scanner is in a
+		// state that can finish a value: the stack has to be empty too.
+		{src: "[", expect: "incomplete JSON at 1:2"},
+		{src: "[1,2", expect: "incomplete JSON at 1:5"},
+		{src: `{"a":1`, expect: "incomplete JSON at 1:7"},
+		{src: `["a"`, expect: "incomplete JSON at 1:5"},
+		{src: "[[", expect: "incomplete JSON at 1:3"},
+		{src: "{} [", expect: "incomplete JSON at 1:5"},
 		{src: "{]}", expect: "expected a string start or object close, not ']' at 1:2"},
 		{src: "[}]", expect: "unexpected object close at 1:2"},
 		{src: `{"a":}`, expect: "unexpected object close at 1:6"},

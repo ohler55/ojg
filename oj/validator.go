@@ -324,7 +324,7 @@ func (p *Validator) validateBuffer(buf []byte, last bool) error {
 			}
 		}
 	}
-	if last && len(p.mode) == 256 { // valid finishing maps are one byte longer
+	if last && (0 < len(p.stack) || len(p.mode) == 256) { // valid finishing maps are one byte longer
 		return p.newError(off, "incomplete JSON")
 	}
 	return nil
