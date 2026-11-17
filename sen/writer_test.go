@@ -955,3 +955,60 @@ func TestWriteStructEmbedNilPtr(t *testing.T) {
 	tt.Equal(t, `{A:2 Y:1}`, sen.String(o, &ojg.Options{Sort: true, UseTags: true}))
 	tt.Equal(t, `{A:2 Y:1}`, sen.String(&o, &ojg.Options{Sort: true, UseTags: true}))
 }
+
+type SenShadowIn struct {
+	A int
+	B int
+}
+
+type SenShadowOther struct {
+	A int
+	C int
+}
+
+type SenShadowTag struct {
+	X int `json:"A"`
+}
+
+type SenShadowOuter struct {
+	SenShadowIn
+	A int
+}
+
+type senShadowDeep struct {
+	SenShadowOuter
+}
+
+type senShadowSameDepth struct {
+	SenShadowIn
+	SenShadowOther
+}
+
+type senShadowTagWins struct {
+	SenShadowIn
+	SenShadowTag
+}
+
+func TestWriteStructEmbedShadow(t *testing.T) {
+	// A field of an embedded struct is hidden by a less nested field with
+	// the same key, the same as encoding/json.
+	for _, d := range []struct {
+		v     any
+		tag   string
+		exact string
+	}{
+		{v: SenShadowOuter{SenShadowIn: SenShadowIn{A: 1, B: 2}, A: 9}, tag: `{A:9 B:2}`, exact: `{A:9 B:2}`},
+		{v: senShadowDeep{SenShadowOuter{SenShadowIn: SenShadowIn{A: 1, B: 2}, A: 9}}, tag: `{A:9 B:2}`, exact: `{A:9 B:2}`},
+		{v: senShadowSameDepth{SenShadowIn{A: 1, B: 2}, SenShadowOther{A: 3, C: 4}}, tag: `{B:2 C:4}`, exact: `{B:2 C:4}`},
+		{v: senShadowTagWins{SenShadowIn{A: 1, B: 2}, SenShadowTag{X: 3}}, tag: `{A:3 B:2}`, exact: `{A:1 B:2 X:3}`},
+	} {
+		tt.Equal(t, d.tag, sen.String(d.v, &ojg.Options{Sort: true, UseTags: true}), "%T", d.v)
+		tt.Equal(t, d.tag, sen.String(d.v, &ojg.Options{Sort: true, UseTags: true, OmitEmpty: true}), "%T", d.v)
+		tt.Equal(t, d.exact, sen.String(d.v, &ojg.Options{Sort: true, KeyExact: true}), "%T", d.v)
+		tt.Equal(t, d.tag, sen.String(sen.MustParse([]byte(sen.String(d.v, &ojg.Options{UseTags: true, Indent: 2}))), &ojg.Options{Sort: true}), "%T", d.v)
+
+		out, err := json.Marshal(d.v)
+		tt.Nil(t, err)
+		tt.Equal(t, d.tag, sen.String(sen.MustParse(out), &ojg.Options{Sort: true}), "encoding/json %T", d.v)
+	}
+}
