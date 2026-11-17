@@ -492,3 +492,39 @@ func TestDecomposeEmbedShadow(t *testing.T) {
 	tt.Equal(t, map[string]any{},
 		alt.Decompose(decShadowTwoTags{DecShadowTag{X: 3}, &DecShadowTag2{Y: 4}}, opt))
 }
+
+type decPromoIn struct {
+	A int
+	B string
+}
+
+type decPromoOuter struct {
+	decPromoIn
+	X int
+}
+
+type decPromoPtr struct {
+	*decPromoIn
+	X int
+}
+
+type DecPromoUnicode struct {
+	Ä      int    //nolint:asciicheck // a non-ASCII field name is what is tested
+	Énorme string //nolint:asciicheck
+	X      int
+}
+
+func TestDecomposeUnexportedEmbedAndUnicode(t *testing.T) {
+	// Exported fields of an unexported embedded struct and exported fields
+	// with a non-ASCII name are used, the same as encoding/json.
+	opt := &ojg.Options{UseTags: true}
+	tt.Equal(t, map[string]any{"A": 1, "B": "b", "X": 2},
+		alt.Decompose(decPromoOuter{decPromoIn{A: 1, B: "b"}, 2}, opt))
+	tt.Equal(t, map[string]any{"A": 1, "B": "b", "X": 2},
+		alt.Decompose(&decPromoPtr{&decPromoIn{A: 1, B: "b"}, 2}, opt))
+	tt.Equal(t, map[string]any{"X": 2}, alt.Decompose(&decPromoPtr{X: 2}, opt))
+	tt.Equal(t, map[string]any{"Ä": 1, "Énorme": "e", "X": 2},
+		alt.Decompose(DecPromoUnicode{Ä: 1, Énorme: "e", X: 2}, opt))
+	tt.Equal(t, map[string]any{"Ä": 1, "Énorme": "e", "X": 2},
+		alt.Decompose(DecPromoUnicode{Ä: 1, Énorme: "e", X: 2}, &ojg.Options{KeyExact: true}))
+}

@@ -1028,3 +1028,46 @@ func TestWriteStructEmbedShadow(t *testing.T) {
 		tt.Equal(t, d.tag, sen.String(sen.MustParse(out), &ojg.Options{Sort: true}), "encoding/json %T", d.v)
 	}
 }
+
+type senPromoIn struct {
+	A int
+	B string
+}
+
+type senPromoOuter struct {
+	senPromoIn
+	X int
+}
+
+type senPromoPtr struct {
+	*senPromoIn
+	X int
+}
+
+type SenPromoUnicode struct {
+	Ä      int    //nolint:asciicheck // a non-ASCII field name is what is tested
+	Énorme string //nolint:asciicheck
+	X      int
+}
+
+func TestWriteStructUnexportedEmbedAndUnicode(t *testing.T) {
+	// Exported fields of an unexported embedded struct and exported fields
+	// with a non-ASCII name are written, the same as encoding/json.
+	for _, d := range []struct {
+		v   any
+		tag string
+	}{
+		{v: senPromoOuter{senPromoIn{A: 1, B: "b"}, 2}, tag: `{A:1 B:b X:2}`},
+		{v: senPromoPtr{&senPromoIn{A: 1, B: "b"}, 2}, tag: `{A:1 B:b X:2}`},
+		{v: senPromoPtr{X: 2}, tag: `{X:2}`},
+		{v: SenPromoUnicode{Ä: 1, Énorme: "e", X: 2}, tag: `{X:2 Ä:1 Énorme:e}`},
+	} {
+		tt.Equal(t, d.tag, sen.String(d.v, &ojg.Options{Sort: true, UseTags: true}), "%T", d.v)
+		tt.Equal(t, d.tag, sen.String(d.v, &ojg.Options{Sort: true, KeyExact: true}), "%T", d.v)
+		tt.Equal(t, d.tag, sen.String(sen.MustParse([]byte(sen.String(d.v, &ojg.Options{UseTags: true, Indent: 2}))), &ojg.Options{Sort: true}), "%T", d.v)
+
+		out, err := json.Marshal(d.v)
+		tt.Nil(t, err)
+		tt.Equal(t, d.tag, sen.String(sen.MustParse(out), &ojg.Options{Sort: true}), "encoding/json %T", d.v)
+	}
+}
