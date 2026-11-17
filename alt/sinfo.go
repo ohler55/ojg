@@ -88,6 +88,7 @@ func buildFields(rt reflect.Type, u byte, omitEmpty bool) (fa []*finfo) {
 	default:
 		fa = buildLowFields(rt, (maskNested&u) == 0, omitEmpty)
 	}
+	fa = dominantFields(rt, fa, (maskByTag&u) != 0)
 	sort.Slice(fa, func(i, j int) bool { return 0 > strings.Compare(fa[i].key, fa[j].key) })
 	return
 }
@@ -240,4 +241,60 @@ func skipNilEmbed(vf valFunc) valFunc {
 		}
 		return vf(fi, rv, addr)
 	}
+}
+
+// dominantFields removes the fields that are hidden by another field with the
+// same key. That happens when a field of an embedded struct has the same key
+// as a field of the outer struct or of another embedded struct. The rules are
+// the same as for encoding/json. The field with the shortest index (the least
+// nested) wins. If more than one field has that depth then a field with a
+// json tag name wins when byTag is true and it is the only one. Otherwise all
+// the fields with that key are dropped.
+func dominantFields(rt reflect.Type, fa []*finfo, byTag bool) []*finfo {
+	groups := make(map[string][]*finfo, len(fa))
+	for _, fi := range fa {
+		groups[fi.key] = append(groups[fi.key], fi)
+	}
+	if len(groups) == len(fa) {
+		return fa
+	}
+	keep := fa[:0]
+	for _, fi := range fa {
+		if dominantField(rt, groups[fi.key], byTag) == fi {
+			keep = append(keep, fi)
+		}
+	}
+	return keep
+}
+
+func dominantField(rt reflect.Type, group []*finfo, byTag bool) (dom *finfo) {
+	if len(group) == 1 {
+		return group[0]
+	}
+	depth := len(group[0].index)
+	for _, fi := range group[1:] {
+		if len(fi.index) < depth {
+			depth = len(fi.index)
+		}
+	}
+	var top []*finfo
+	for _, fi := range group {
+		if len(fi.index) == depth {
+			top = append(top, fi)
+		}
+	}
+	if len(top) == 1 {
+		return top[0]
+	}
+	if byTag {
+		for _, fi := range top {
+			if tag, _, _ := strings.Cut(rt.FieldByIndex(fi.index).Tag.Get("json"), ","); 0 < len(tag) {
+				if dom != nil {
+					return nil
+				}
+				dom = fi
+			}
+		}
+	}
+	return dom
 }

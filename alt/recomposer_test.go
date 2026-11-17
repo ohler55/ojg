@@ -941,3 +941,82 @@ func TestRecomposeEmbedPtr(t *testing.T) {
 	tt.Equal(t, true, in == out3.RecompIn)
 	tt.Equal(t, 7, in.A)
 }
+
+type RecompShadowIn struct {
+	A int
+	B int
+}
+
+type RecompShadowOther struct {
+	A int
+	C int
+}
+
+type RecompShadowTag struct {
+	X int `json:"A"`
+}
+
+type RecompShadowOuter struct {
+	RecompShadowIn
+	A int
+}
+
+type recompShadowDeep struct {
+	RecompShadowOuter
+}
+
+type recompShadowSameDepth struct {
+	RecompShadowIn
+	RecompShadowOther
+}
+
+type recompShadowTagWins struct {
+	RecompShadowIn
+	RecompShadowTag
+}
+
+type RecompShadowTag2 struct {
+	Y int `json:"A"`
+}
+
+type recompShadowOuterFirst struct {
+	A int
+	RecompShadowIn
+}
+
+type recompShadowTwoTags struct {
+	RecompShadowTag
+	*RecompShadowTag2
+}
+
+type recompEmpty struct{}
+
+func TestRecomposeEmbedShadow(t *testing.T) {
+	// A key goes to the least nested field, the same as encoding/json.
+	src := []byte(`{"A":5,"B":6,"C":7}`)
+	for _, target := range []func() any{
+		func() any { return &RecompShadowOuter{} },
+		func() any { return &recompShadowDeep{} },
+		func() any { return &recompShadowSameDepth{} },
+		func() any { return &recompShadowTagWins{} },
+		func() any { return &recompShadowOuterFirst{} },
+		func() any { return &recompShadowTwoTags{} },
+		func() any { return &recompEmpty{} },
+	} {
+		expect := target()
+		tt.Nil(t, json.Unmarshal(src, expect))
+
+		out := target()
+		tt.Nil(t, oj.Unmarshal(src, out))
+		tt.Equal(t, expect, out, "oj.Unmarshal %T", out)
+
+		out = target()
+		_, err := alt.Recompose(oj.MustParse(src), out)
+		tt.Nil(t, err)
+		tt.Equal(t, expect, out, "alt.Recompose %T", out)
+	}
+	var out RecompShadowOuter
+	tt.Nil(t, oj.Unmarshal(src, &out))
+	tt.Equal(t, 5, out.A)
+	tt.Equal(t, 0, out.RecompShadowIn.A)
+}

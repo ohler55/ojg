@@ -4,6 +4,7 @@ package oj_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"math"
 	"strings"
@@ -1258,4 +1259,116 @@ func TestWriteStructEmbedNilPtr(t *testing.T) {
 	o.In = &In{A: 2}
 	tt.Equal(t, `{"A":2,"Y":1}`, oj.JSON(o, &ojg.Options{Sort: true, UseTags: true}))
 	tt.Equal(t, `{"A":2,"Y":1}`, oj.JSON(&o, &ojg.Options{Sort: true, UseTags: true}))
+}
+
+type ShadowIn struct {
+	A int
+	B int
+}
+
+type ShadowOther struct {
+	A int
+	C int
+}
+
+type ShadowTag struct {
+	X int `json:"A"`
+}
+
+type ShadowOuter struct {
+	ShadowIn
+	A int
+}
+
+type shadowDeep struct {
+	ShadowOuter
+}
+
+type shadowSameDepth struct {
+	ShadowIn
+	ShadowOther
+}
+
+type shadowTagWins struct {
+	ShadowIn
+	ShadowTag
+}
+
+type ShadowTag2 struct {
+	Y int `json:"A"`
+}
+
+type shadowOuterFirst struct {
+	A int
+	ShadowIn
+}
+
+type shadowTwoTags struct {
+	ShadowTag
+	*ShadowTag2
+}
+
+func TestWriteStructEmbedShadow(t *testing.T) {
+	// A field of an embedded struct is hidden by a less nested field with
+	// the same key. Fields with the same key at the same depth are dropped
+	// unless only one of them is tagged. The same rules as encoding/json.
+	for _, d := range []struct {
+		v     any
+		tag   string
+		exact string
+		low   string
+	}{
+		{
+			v:     ShadowOuter{ShadowIn: ShadowIn{A: 1, B: 2}, A: 9},
+			tag:   `{"A":9,"B":2}`,
+			exact: `{"A":9,"B":2}`,
+			low:   `{"a":9,"b":2}`,
+		},
+		{
+			v:     shadowDeep{ShadowOuter{ShadowIn: ShadowIn{A: 1, B: 2}, A: 9}},
+			tag:   `{"A":9,"B":2}`,
+			exact: `{"A":9,"B":2}`,
+			low:   `{"a":9,"b":2}`,
+		},
+		{
+			v:     shadowSameDepth{ShadowIn{A: 1, B: 2}, ShadowOther{A: 3, C: 4}},
+			tag:   `{"B":2,"C":4}`,
+			exact: `{"B":2,"C":4}`,
+			low:   `{"b":2,"c":4}`,
+		},
+		{
+			v:     shadowTagWins{ShadowIn{A: 1, B: 2}, ShadowTag{X: 3}},
+			tag:   `{"A":3,"B":2}`,
+			exact: `{"A":1,"B":2,"X":3}`,
+			low:   `{"a":1,"b":2,"x":3}`,
+		},
+		{
+			v:     shadowOuterFirst{A: 9, ShadowIn: ShadowIn{A: 1, B: 2}},
+			tag:   `{"A":9,"B":2}`,
+			exact: `{"A":9,"B":2}`,
+			low:   `{"a":9,"b":2}`,
+		},
+		{
+			v:     shadowTwoTags{ShadowTag{X: 3}, &ShadowTag2{Y: 4}},
+			tag:   `{}`,
+			exact: `{"X":3,"Y":4}`,
+			low:   `{"x":3,"y":4}`,
+		},
+	} {
+		// Same as encoding/json.
+		out, err := json.Marshal(d.v)
+		tt.Nil(t, err)
+		tt.Equal(t, d.tag, oj.JSON(oj.MustParse(out), &ojg.Options{Sort: true}), "encoding/json %T", d.v)
+
+		tt.Equal(t, d.tag, oj.JSON(d.v, &ojg.Options{Sort: true, UseTags: true}), "%T", d.v)
+		tt.Equal(t, d.tag, oj.JSON(d.v, &ojg.Options{Sort: true, UseTags: true, OmitEmpty: true}), "%T", d.v)
+		tt.Equal(t, d.exact, oj.JSON(d.v, &ojg.Options{Sort: true, KeyExact: true}), "%T", d.v)
+		tt.Equal(t, d.low, oj.JSON(d.v, &ojg.Options{Sort: true}), "%T", d.v)
+		tt.Equal(t, d.tag, oj.JSON(oj.MustParseString(oj.JSON(d.v, &ojg.Options{UseTags: true, Indent: 2})), &ojg.Options{Sort: true}), "%T", d.v)
+
+		b, err := oj.Marshal(d.v)
+		tt.Nil(t, err)
+		tt.Equal(t, d.tag, oj.JSON(oj.MustParse(b), &ojg.Options{Sort: true}), "%T", d.v)
+		tt.Equal(t, strings.Count(d.tag, ":"), strings.Count(string(b), ":"), "duplicate key %T %s", d.v, b)
+	}
 }
