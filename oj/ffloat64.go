@@ -72,7 +72,7 @@ func appendFloat64NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr
 }
 
 func iappendFloat64(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
-	v := rv.FieldByIndex(fi.index).Interface().(float64)
+	v := rv.FieldByIndex(fi.index).Float()
 	buf = append(buf, fi.jkey...)
 	if v != v || math.IsInf(v, 0) {
 		buf = append(buf, '"')
@@ -87,14 +87,14 @@ func iappendFloat64(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe 
 func iappendFloat64AsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
 	buf = append(buf, fi.jkey...)
 	buf = append(buf, '"')
-	buf = strconv.AppendFloat(buf, rv.FieldByIndex(fi.index).Interface().(float64), 'g', -1, 64)
+	buf = strconv.AppendFloat(buf, rv.FieldByIndex(fi.index).Float(), 'g', -1, 64)
 	buf = append(buf, '"')
 
 	return buf, nil, aWrote
 }
 
 func iappendFloat64NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
-	v := rv.FieldByIndex(fi.index).Interface().(float64)
+	v := rv.FieldByIndex(fi.index).Float()
 	if v == 0.0 {
 		return buf, nil, aSkip
 	}
@@ -110,7 +110,7 @@ func iappendFloat64NotEmpty(fi *finfo, buf []byte, rv reflect.Value, addr uintpt
 }
 
 func iappendFloat64NotEmptyAsString(fi *finfo, buf []byte, rv reflect.Value, addr uintptr, safe bool) ([]byte, any, appendStatus) {
-	v := rv.FieldByIndex(fi.index).Interface().(float64)
+	v := rv.FieldByIndex(fi.index).Float()
 	if v == 0.0 {
 		return buf, nil, aSkip
 	}

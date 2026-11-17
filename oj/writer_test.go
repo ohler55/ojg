@@ -1118,3 +1118,94 @@ func TestWriteAnonInterface(t *testing.T) {
 
 // 	fmt.Printf("%s - %s\n", err, j)
 // }
+
+type (
+	namedInt     int
+	namedInt8    int8
+	namedInt16   int16
+	namedInt32   int32
+	namedInt64   int64
+	namedUint    uint
+	namedUint8   uint8
+	namedUint16  uint16
+	namedUint32  uint32
+	namedUint64  uint64
+	namedFloat32 float32
+	namedFloat64 float64
+	namedBool    bool
+)
+
+type namedFields struct {
+	I   namedInt
+	I8  namedInt8
+	I16 namedInt16
+	I32 namedInt32
+	I64 namedInt64
+	U   namedUint
+	U8  namedUint8
+	U16 namedUint16
+	U32 namedUint32
+	U64 namedUint64
+	F32 namedFloat32
+	F64 namedFloat64
+	B   namedBool
+	D   time.Duration
+}
+
+type namedStringFields struct {
+	I   namedInt     `json:"i,string"`
+	I8  namedInt8    `json:"i8,string"`
+	I16 namedInt16   `json:"i16,string"`
+	I32 namedInt32   `json:"i32,string"`
+	I64 namedInt64   `json:"i64,string"`
+	U   namedUint    `json:"u,string"`
+	U8  namedUint8   `json:"u8,string"`
+	U16 namedUint16  `json:"u16,string"`
+	U32 namedUint32  `json:"u32,string"`
+	U64 namedUint64  `json:"u64,string"`
+	F32 namedFloat32 `json:"f32,string"`
+	F64 namedFloat64 `json:"f64,string"`
+	B   namedBool    `json:"b,string"`
+}
+
+func TestWriteNamedTypeFieldNoAddr(t *testing.T) {
+	full := namedFields{
+		I: -1, I8: -8, I16: -16, I32: -32, I64: -64,
+		U: 1, U8: 8, U16: 16, U32: 32, U64: 64,
+		F32: 1.5, F64: 2.5, B: true, D: time.Second,
+	}
+	// A struct passed by value can not be addressed so each field is read
+	// with reflect. A field of a named type such as time.Duration used to
+	// panic on a type assertion to the underlying type.
+	tt.Equal(t,
+		`{"b":true,"d":1000000000,"f32":1.5,"f64":2.5,"i":-1,"i16":-16,"i32":-32,"i64":-64,"i8":-8,"u":1,"u16":16,"u32":32,"u64":64,"u8":8}`,
+		oj.JSON(full, &ojg.Options{Sort: true}))
+
+	out, err := oj.Marshal(struct{ Timeout time.Duration }{Timeout: time.Second})
+	tt.Nil(t, err)
+	tt.Equal(t, `{"Timeout":1000000000}`, string(out))
+
+	fullStr := namedStringFields{
+		I: -1, I8: -8, I16: -16, I32: -32, I64: -64,
+		U: 1, U8: 8, U16: 16, U32: 32, U64: 64,
+		F32: 1.5, F64: 2.5, B: true,
+	}
+	for _, v := range []any{full, namedFields{}, fullStr, namedStringFields{}} {
+		for _, opt := range []*ojg.Options{
+			{Sort: true},
+			{Sort: true, OmitEmpty: true},
+			{Sort: true, UseTags: true},
+			{Sort: true, UseTags: true, OmitEmpty: true},
+			{Sort: true, UseTags: true, Indent: 2},
+		} {
+			var expect string
+			switch tv := v.(type) {
+			case namedFields:
+				expect = oj.JSON(&tv, opt)
+			case namedStringFields:
+				expect = oj.JSON(&tv, opt)
+			}
+			tt.Equal(t, expect, oj.JSON(v, opt), "%T %+v", v, *opt)
+		}
+	}
+}
