@@ -109,6 +109,8 @@ func TestParse(t *testing.T) {
 		{src: "$[?length(@ .a .b) == 3]", expect: "$[?(length(@.a.b) == 3)]"},
 		{src: "$[?length(@)==length($ [0] .a)]", expect: "$[?(length(@) == length($[0].a))]"},
 		{src: "$[?!match(@.a, 'a.*') && count(@.*) > 1]", expect: "$[?(!match(@.a, 'a.*') && count(@.*) > 1)]"},
+		{src: "$[?match(@.a, 'a' + 'b')]", expect: "$[?(match(@.a, ('a' + 'b')))]"},
+		{src: "$[?search(@.a, @.b + '.*') && @.c]", expect: "$[?(search(@.a, (@.b + '.*')) && @.c)]"},
 		{src: "$[?true == @.a || @.b]", expect: "$[?(true == @.a || @.b)]"},
 		{src: `['a\\b']`, expect: `['a\\b']`},
 		{src: `$["\/"]`, expect: `$['/']`},

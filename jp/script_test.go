@@ -456,6 +456,8 @@ func TestScriptEval(t *testing.T) {
 		{src: "(match(@.x, '(?s)a.c'))", value: map[string]any{"x": "a\rc"}},
 		{src: `(match(@.x, '\\Q.\\E\\r'))`, value: map[string]any{"x": ".\r"}},
 		{src: `(match(@.x, '.\\'))`, value: map[string]any{"x": "\r"}, noMatch: true},
+		{src: "(match(@.x, 'a' + 'b'))", value: map[string]any{"x": "ab"}},
+		{src: "(match(@.x, @.y + '.'))", value: map[string]any{"x": "ab", "y": "a"}},
 
 		{src: "(search(@.x, 'ab'))", value: map[string]any{"x": "abc"}},
 		{src: "(search(@.x, 'abx'))", value: map[string]any{"x": "abc"}, noMatch: true},
@@ -468,6 +470,7 @@ func TestScriptEval(t *testing.T) {
 		{src: "(search(@.x, '[[:alpha:].]'))", value: map[string]any{"x": ".\r"}},
 		{src: "(search(@.x, '[]a.]'))", value: map[string]any{"x": ".\r"}},
 		{src: "(search(@.x, '[^]a.]'))", value: map[string]any{"x": "b\r"}},
+		{src: "(search(@.x, @.y + 'c') && @.z)", value: map[string]any{"x": "abc", "y": "b", "z": true}},
 	} {
 		if testing.Verbose() {
 			if d.value == nil {
