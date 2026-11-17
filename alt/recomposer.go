@@ -484,7 +484,6 @@ func (r *Recomposer) recomp(v any, rv reflect.Value, typeName string) {
 		}
 		for k := range im {
 			sf := im[k]
-			f := rv.FieldByIndex(sf.Index)
 			var m any
 			var has bool
 			if m, has = vm[k]; !has {
@@ -497,7 +496,7 @@ func (r *Recomposer) recomp(v any, rv reflect.Value, typeName string) {
 				}
 			}
 			if has && m != nil {
-				r.setValue(m, f, &sf, typeName)
+				r.setValue(m, fieldByIndexAlloc(rv, sf.Index), &sf, typeName)
 			}
 		}
 	case reflect.Interface:
@@ -587,4 +586,20 @@ func (r *Recomposer) setValue(v any, rv reflect.Value, sf *reflect.StructField, 
 		}
 		r.recomp(v, rv, parent)
 	}
+}
+
+// fieldByIndexAlloc is the same as reflect.Value.FieldByIndex except that a
+// nil pointer to an embedded struct along the way is set to a new struct
+// instead of panicking, the same as encoding/json does.
+func fieldByIndexAlloc(rv reflect.Value, index []int) reflect.Value {
+	for i, x := range index {
+		if 0 < i && rv.Kind() == reflect.Pointer {
+			if rv.IsNil() {
+				rv.Set(reflect.New(rv.Type().Elem()))
+			}
+			rv = rv.Elem()
+		}
+		rv = rv.Field(x)
+	}
+	return rv
 }

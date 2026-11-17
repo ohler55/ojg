@@ -891,3 +891,53 @@ func TestRecomposeAnonymousEmbeddedStructs(t *testing.T) {
   f3: 3
 }`, pretty.SEN(ab))
 }
+
+type RecompCount int
+
+type recompEmbNonStruct struct {
+	RecompCount
+	Y int
+}
+
+type RecompIn struct {
+	A int
+}
+
+type recompEmbPtr struct {
+	*RecompIn
+	Y int
+}
+
+func TestRecomposeEmbedNonStruct(t *testing.T) {
+	var out recompEmbNonStruct
+	_, err := alt.Recompose(map[string]any{"RecompCount": 4, "Y": 5}, &out)
+	tt.Nil(t, err)
+	tt.Equal(t, recompEmbNonStruct{RecompCount: 4, Y: 5}, out)
+
+	var out2 recompEmbNonStruct
+	tt.Nil(t, oj.Unmarshal([]byte(`{"RecompCount":4,"Y":5}`), &out2))
+	tt.Equal(t, recompEmbNonStruct{RecompCount: 4, Y: 5}, out2)
+}
+
+func TestRecomposeEmbedPtr(t *testing.T) {
+	// A nil embedded pointer is set to a new struct when one of its fields
+	// is in the data, like encoding/json.
+	var out recompEmbPtr
+	tt.Nil(t, oj.Unmarshal([]byte(`{"A":4,"Y":5}`), &out))
+	tt.NotNil(t, out.RecompIn)
+	tt.Equal(t, 4, out.A)
+	tt.Equal(t, 5, out.Y)
+
+	// It stays nil when none of its fields are.
+	var out2 recompEmbPtr
+	tt.Nil(t, oj.Unmarshal([]byte(`{"Y":5}`), &out2))
+	tt.Nil(t, out2.RecompIn)
+	tt.Equal(t, 5, out2.Y)
+
+	// An existing struct is filled in, not replaced.
+	in := &RecompIn{A: 1}
+	out3 := recompEmbPtr{RecompIn: in}
+	tt.Nil(t, oj.Unmarshal([]byte(`{"A":7}`), &out3))
+	tt.Equal(t, true, in == out3.RecompIn)
+	tt.Equal(t, 7, in.A)
+}

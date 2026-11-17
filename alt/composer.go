@@ -25,8 +25,12 @@ func indexType(rt reflect.Type) (im map[string]reflect.StructField) {
 			if 0 < len(f.PkgPath) {
 				continue
 			}
-			if f.Anonymous {
-				fim := indexType(f.Type)
+			if f.Anonymous && isEmbeddedStruct(f.Type) {
+				ft := f.Type
+				if ft.Kind() == reflect.Pointer {
+					ft = ft.Elem()
+				}
+				fim := indexType(ft)
 				// prepend index and add to im
 				for k := range fim {
 					ff := fim[k]
