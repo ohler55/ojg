@@ -50,10 +50,17 @@ func NewUnion(keys ...any) (u Union) {
 	return
 }
 
-func (f Union) hasN(n int64) bool {
+// hasN returns true if the union includes index i of an array of the given
+// size. A negative union index counts from the end of the array.
+func (f Union) hasN(i, size int) bool {
 	for _, x := range f {
-		if ix, ok := x.(int64); ok && ix == n {
-			return true
+		if ix, ok := x.(int64); ok {
+			if ix < 0 {
+				ix += int64(size)
+			}
+			if ix == int64(i) {
+				return true
+			}
 		}
 	}
 	return false
@@ -74,7 +81,7 @@ func (f Union) removeOne(value any) (out any, changed bool) {
 	case []any:
 		ns := make([]any, 0, len(tv))
 		for i, v := range tv {
-			if !changed && f.hasN(int64(i)) {
+			if !changed && f.hasN(i, len(tv)) {
 				changed = true
 			} else {
 				ns = append(ns, v)
@@ -101,7 +108,7 @@ func (f Union) removeOne(value any) (out any, changed bool) {
 	case gen.Array:
 		ns := make(gen.Array, 0, len(tv))
 		for i, v := range tv {
-			if !changed && f.hasN(int64(i)) {
+			if !changed && f.hasN(i, len(tv)) {
 				changed = true
 			} else {
 				ns = append(ns, v)
@@ -128,7 +135,7 @@ func (f Union) removeOne(value any) (out any, changed bool) {
 	case RemovableIndexed:
 		size := tv.Size()
 		for i := 0; i < size; i++ {
-			if f.hasN(int64(i)) {
+			if f.hasN(i, size) {
 				tv.RemoveValueAtIndex(i)
 				changed = true
 				break
@@ -155,7 +162,7 @@ func (f Union) removeOne(value any) (out any, changed bool) {
 			cnt := rv.Len()
 			nc := 0
 			for i := 0; i < cnt; i++ {
-				if !changed && f.hasN(int64(i)) {
+				if !changed && f.hasN(i, cnt) {
 					changed = true
 				} else {
 					nc++
@@ -166,7 +173,7 @@ func (f Union) removeOne(value any) (out any, changed bool) {
 				ni := 0
 				ns := reflect.MakeSlice(rv.Type(), nc, nc)
 				for i := 0; i < cnt; i++ {
-					if !changed && f.hasN(int64(i)) {
+					if !changed && f.hasN(i, cnt) {
 						changed = true
 					} else {
 						ns.Index(ni).Set(rv.Index(i))
@@ -198,7 +205,7 @@ func (f Union) remove(value any) (out any, changed bool) {
 	case []any:
 		ns := make([]any, 0, len(tv))
 		for i, v := range tv {
-			if f.hasN(int64(i)) {
+			if f.hasN(i, len(tv)) {
 				changed = true
 			} else {
 				ns = append(ns, v)
@@ -217,7 +224,7 @@ func (f Union) remove(value any) (out any, changed bool) {
 	case gen.Array:
 		ns := make(gen.Array, 0, len(tv))
 		for i, v := range tv {
-			if f.hasN(int64(i)) {
+			if f.hasN(i, len(tv)) {
 				changed = true
 			} else {
 				ns = append(ns, v)
@@ -236,7 +243,7 @@ func (f Union) remove(value any) (out any, changed bool) {
 	case RemovableIndexed:
 		size := tv.Size()
 		for i := (size - 1); i >= 0; i-- {
-			if f.hasN(int64(i)) {
+			if f.hasN(i, size) {
 				tv.RemoveValueAtIndex(i)
 				changed = true
 			}
@@ -260,7 +267,7 @@ func (f Union) remove(value any) (out any, changed bool) {
 			cnt := rv.Len()
 			nc := 0
 			for i := 0; i < cnt; i++ {
-				if f.hasN(int64(i)) {
+				if f.hasN(i, cnt) {
 					changed = true
 				} else {
 					nc++
@@ -271,7 +278,7 @@ func (f Union) remove(value any) (out any, changed bool) {
 				ni := 0
 				ns := reflect.MakeSlice(rv.Type(), nc, nc)
 				for i := 0; i < cnt; i++ {
-					if f.hasN(int64(i)) {
+					if f.hasN(i, cnt) {
 						changed = true
 					} else {
 						ns.Index(ni).Set(rv.Index(i))
