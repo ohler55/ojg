@@ -528,3 +528,38 @@ func TestDecomposeUnexportedEmbedAndUnicode(t *testing.T) {
 	tt.Equal(t, map[string]any{"Ä": 1, "Énorme": "e", "X": 2},
 		alt.Decompose(DecPromoUnicode{Ä: 1, Énorme: "e", X: 2}, &ojg.Options{KeyExact: true}))
 }
+
+type DecTagEmbedIn struct {
+	C int
+}
+
+type decTagEmbedValue struct {
+	DecTagEmbedIn `json:"in"`
+	X             int
+}
+
+type decTagEmbedPtr struct {
+	*DecTagEmbedIn `json:"in"`
+	X              int
+}
+
+type decTagEmbedSkip struct {
+	DecTagEmbedIn `json:"-"`
+	X             int
+}
+
+func TestDecomposeTaggedEmbed(t *testing.T) {
+	// With UseTags an embedded struct with a name in its json tag is used as
+	// a field with that name and one tagged "-" is left out, the same as
+	// encoding/json.
+	opt := &ojg.Options{UseTags: true}
+	tt.Equal(t, map[string]any{"in": map[string]any{"C": 3}, "X": 2},
+		alt.Decompose(decTagEmbedValue{DecTagEmbedIn{C: 3}, 2}, opt))
+	tt.Equal(t, map[string]any{"in": map[string]any{"C": 3}, "X": 2},
+		alt.Decompose(&decTagEmbedPtr{&DecTagEmbedIn{C: 3}, 2}, opt))
+	tt.Equal(t, map[string]any{"in": nil, "X": 2}, alt.Decompose(&decTagEmbedPtr{X: 2}, opt))
+	tt.Equal(t, map[string]any{"X": 2}, alt.Decompose(decTagEmbedSkip{DecTagEmbedIn{C: 3}, 2}, opt))
+	// Tags are not used so the embedded struct is still flattened.
+	tt.Equal(t, map[string]any{"C": 3, "X": 2},
+		alt.Decompose(decTagEmbedValue{DecTagEmbedIn{C: 3}, 2}, &ojg.Options{KeyExact: true}))
+}

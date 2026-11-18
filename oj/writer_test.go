@@ -1427,3 +1427,60 @@ func TestWriteStructUnexportedEmbedAndUnicode(t *testing.T) {
 	// An unexported embedded struct is not written as a nested object.
 	tt.Equal(t, `{"X":2}`, oj.JSON(promoOuter{promoIn{A: 1, B: "b"}, 2}, &ojg.Options{Sort: true, UseTags: true, NestEmbed: true}))
 }
+
+type TagEmbedIn struct {
+	C int
+}
+
+type tagEmbedValue struct {
+	TagEmbedIn `json:"in"`
+	X          int
+}
+
+type tagEmbedPtr struct {
+	*TagEmbedIn `json:"in"`
+	X           int
+}
+
+type tagEmbedOmit struct {
+	*TagEmbedIn `json:"in,omitempty"`
+	X           int
+}
+
+type tagEmbedSkip struct {
+	TagEmbedIn `json:"-"`
+	X          int
+}
+
+type tagEmbedNoName struct {
+	TagEmbedIn `json:",omitempty"`
+	X          int
+}
+
+func TestWriteStructTaggedEmbed(t *testing.T) {
+	// With UseTags an embedded struct with a name in its json tag is written
+	// as a field with that name and one tagged "-" is left out, the same as
+	// encoding/json.
+	for _, d := range []struct {
+		v     any
+		tag   string
+		exact string
+	}{
+		{v: tagEmbedValue{TagEmbedIn{C: 3}, 2}, tag: `{"X":2,"in":{"C":3}}`, exact: `{"C":3,"X":2}`},
+		{v: &tagEmbedPtr{&TagEmbedIn{C: 3}, 2}, tag: `{"X":2,"in":{"C":3}}`, exact: `{"C":3,"X":2}`},
+		{v: tagEmbedPtr{X: 2}, tag: `{"X":2,"in":null}`, exact: `{"X":2}`},
+		{v: tagEmbedOmit{X: 2}, tag: `{"X":2}`, exact: `{"X":2}`},
+		{v: tagEmbedSkip{TagEmbedIn{C: 3}, 2}, tag: `{"X":2}`, exact: `{"C":3,"X":2}`},
+		{v: tagEmbedNoName{TagEmbedIn{C: 3}, 2}, tag: `{"C":3,"X":2}`, exact: `{"C":3,"X":2}`},
+	} {
+		out, err := json.Marshal(d.v)
+		tt.Nil(t, err)
+		tt.Equal(t, d.tag, oj.JSON(oj.MustParse(out), &ojg.Options{Sort: true}), "encoding/json %T", d.v)
+
+		tt.Equal(t, d.tag, oj.JSON(d.v, &ojg.Options{Sort: true, UseTags: true}), "%T", d.v)
+		tt.Equal(t, d.tag, oj.JSON(oj.MustParseString(oj.JSON(d.v, &ojg.Options{UseTags: true})), &ojg.Options{Sort: true}), "%T", d.v)
+		tt.Equal(t, d.tag, oj.JSON(oj.MustParseString(oj.JSON(d.v, &ojg.Options{UseTags: true, Indent: 2})), &ojg.Options{Sort: true}), "%T", d.v)
+		// Tags are not used so the embedded struct is still flattened.
+		tt.Equal(t, d.exact, oj.JSON(d.v, &ojg.Options{Sort: true, KeyExact: true}), "%T", d.v)
+	}
+}

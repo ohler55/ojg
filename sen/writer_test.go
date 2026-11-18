@@ -1071,3 +1071,44 @@ func TestWriteStructUnexportedEmbedAndUnicode(t *testing.T) {
 		tt.Equal(t, d.tag, sen.String(sen.MustParse(out), &ojg.Options{Sort: true}), "encoding/json %T", d.v)
 	}
 }
+
+type SenTagEmbedIn struct {
+	C int
+}
+
+type senTagEmbedValue struct {
+	SenTagEmbedIn `json:"in"`
+	X             int
+}
+
+type senTagEmbedPtr struct {
+	*SenTagEmbedIn `json:"in"`
+	X              int
+}
+
+type senTagEmbedSkip struct {
+	SenTagEmbedIn `json:"-"`
+	X             int
+}
+
+func TestWriteStructTaggedEmbed(t *testing.T) {
+	// With UseTags an embedded struct with a name in its json tag is written
+	// as a field with that name and one tagged "-" is left out, the same as
+	// encoding/json.
+	for _, d := range []struct {
+		v   any
+		tag string
+	}{
+		{v: senTagEmbedValue{SenTagEmbedIn{C: 3}, 2}, tag: `{X:2 in:{C:3}}`},
+		{v: &senTagEmbedPtr{&SenTagEmbedIn{C: 3}, 2}, tag: `{X:2 in:{C:3}}`},
+		{v: senTagEmbedPtr{X: 2}, tag: `{X:2 in:null}`},
+		{v: senTagEmbedSkip{SenTagEmbedIn{C: 3}, 2}, tag: `{X:2}`},
+	} {
+		tt.Equal(t, d.tag, sen.String(d.v, &ojg.Options{Sort: true, UseTags: true}), "%T", d.v)
+		tt.Equal(t, d.tag, sen.String(sen.MustParse([]byte(sen.String(d.v, &ojg.Options{UseTags: true, Indent: 2}))), &ojg.Options{Sort: true}), "%T", d.v)
+
+		out, err := json.Marshal(d.v)
+		tt.Nil(t, err)
+		tt.Equal(t, d.tag, sen.String(sen.MustParse(out), &ojg.Options{Sort: true}), "encoding/json %T", d.v)
+	}
+}

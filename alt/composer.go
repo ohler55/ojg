@@ -36,11 +36,16 @@ func indexType(rt reflect.Type) (im map[string]reflect.StructField) {
 func collectIndexes(rt reflect.Type, index []int, cands map[string][]reflect.StructField) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
-		if skipField(&f, true) {
+		tag := f.Tag.Get("json")
+		if tag == "-" {
+			continue
+		}
+		flatten := !hasTagName(tag) || !f.IsExported()
+		if skipField(&f, flatten) {
 			continue
 		}
 		f.Index = append(append([]int{}, index...), i)
-		if f.Anonymous && isEmbeddedStruct(f.Type) {
+		if f.Anonymous && flatten && isEmbeddedStruct(f.Type) {
 			ft := f.Type
 			if ft.Kind() == reflect.Pointer {
 				ft = ft.Elem()
@@ -54,12 +59,6 @@ func collectIndexes(rt reflect.Type, index []int, cands map[string][]reflect.Str
 			switch parts[0] {
 			case "":
 				k = strings.ToLower(f.Name)
-			case "-":
-				if 1 < len(parts) {
-					k = "-"
-				} else {
-					continue
-				}
 			default:
 				k = parts[0]
 			}
