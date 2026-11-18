@@ -377,6 +377,9 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			if len(rest) == 0 { // last one
 				for i := start; i <= end; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
+					if 0 < max && max <= len(locs) {
+						break
+					}
 				}
 			} else {
 				cp := append(pp, nil) // place holder
@@ -392,6 +395,9 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			if len(rest) == 0 { // last one
 				for i := start; end <= i; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
+					if 0 < max && max <= len(locs) {
+						break
+					}
 				}
 			} else {
 				cp := append(pp, nil) // place holder
@@ -413,6 +419,9 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			if len(rest) == 0 { // last one
 				for i := start; i <= end; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
+					if 0 < max && max <= len(locs) {
+						break
+					}
 				}
 			} else {
 				cp := append(pp, nil) // place holder
@@ -428,6 +437,9 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			if len(rest) == 0 { // last one
 				for i := start; end <= i; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
+					if 0 < max && max <= len(locs) {
+						break
+					}
 				}
 			} else {
 				cp := append(pp, nil) // place holder
@@ -449,6 +461,9 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			if len(rest) == 0 { // last one
 				for i := start; i <= end; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
+					if 0 < max && max <= len(locs) {
+						break
+					}
 				}
 			} else {
 				cp := append(pp, nil) // place holder
@@ -464,6 +479,9 @@ func (f Slice) locate(pp Expr, data any, rest Expr, max int) (locs []Expr) {
 			if len(rest) == 0 { // last one
 				for i := start; end <= i; i += step {
 					locs = locateAppendFrag(locs, pp, Nth(i))
+					if 0 < max && max <= len(locs) {
+						break
+					}
 				}
 			} else {
 				cp := append(pp, nil) // place holder
