@@ -283,6 +283,12 @@ func (x Expr) Get(data any) (results []any) {
 			top := (di & descentChildFlag) == 0
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
+				if (di & descentChildFlag) == 0 {
+					// Every value matched by the fragment before the descent shares
+					// this index. Leave a copy for the values still on the stack so
+					// they get a first pass too.
+					stack = append(stack, di)
+				}
 				switch tv := prev.(type) {
 				case map[string]any:
 					// Put prev back and slide fi.
@@ -1067,6 +1073,12 @@ func (x Expr) FirstFound(data any) (any, bool) {
 			di, _ := stack[len(stack)-1].(fragIndex)
 			// first pass expands, second continues evaluation
 			if (di & descentFlag) == 0 {
+				if (di & descentChildFlag) == 0 {
+					// Every value matched by the fragment before the descent shares
+					// this index. Leave a copy for the values still on the stack so
+					// they get a first pass too.
+					stack = append(stack, di)
+				}
 				switch tv := prev.(type) {
 				case map[string]any:
 					// Put prev back and slide fi.
