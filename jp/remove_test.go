@@ -62,6 +62,9 @@ var (
 		{path: "[0]['a','b']", data: `[{a:1 b:2 c:3}]`, expect: `[{c: 3}]`},
 		{path: "[1,2]", data: `[1,2,3]`, expect: `[1]`},
 		{path: "[0][1,2]", data: `[[1,2,3]]`, expect: `[[1]]`},
+		{path: "[0,-1]", data: `[1,2,3,4]`, expect: `[2 3]`},
+		{path: "[0][-1,-3]", data: `[[1,2,3,4]]`, expect: `[[1 3]]`},
+		{path: "[-5,1]", data: `[1,2,3,4]`, expect: `[1 3 4]`},
 		{path: "[1:4:2]", data: `[0,1,2,3,4,5]`, expect: "[0 2 4 5]"},
 		{path: "[0][1:4:2]", data: `[[0,1,2,3,4,5]]`, expect: "[[0 2 4 5]]"},
 		{path: "[-3:-6:-2]", data: `[0,1,2,3,4,5]`, expect: "[0 2 4 5]"},
@@ -99,6 +102,9 @@ var (
 		{path: "[0]['a','b']", data: `[{a:1 b:2 c:3}]`, expect: `[{b: 2 c: 3}]`},
 		{path: "[1,2]", data: `[1,2,3]`, expect: `[1 3]`},
 		{path: "[0][1,2]", data: `[[1,2,3]]`, expect: `[[1 3]]`},
+		{path: "[-1]", data: `[1,2,3]`, expect: `[1 2]`},
+		{path: "[-1,-2]", data: `[1,2,3,4]`, expect: `[1 2 4]`},
+		{path: "[0][-1,-5]", data: `[[1,2,3,4]]`, expect: `[[1 2 3]]`},
 		{path: "[1:3:2]", data: `[0,1,2,3,4,5]`, expect: "[0 2 3 4 5]"},
 		{path: "[-3:-5:-2]", data: `[0,1,2,3,4,5]`, expect: "[0 1 2 4 5]"},
 		{path: "[0][1:3:2]", data: `[[0,1,2,3,4,5]]`, expect: "[[0 2 3 4 5]]"},
@@ -542,6 +548,18 @@ func TestExprRemoveUnionReflectSlice(t *testing.T) {
 	result = x.MustRemoveOne(data4)
 	tt.Equal(t, "[[2] [3]]", string(pw.Encode(result)))
 	tt.Equal(t, "[[1] [2] [3]]", string(pw.Encode(data4))) // should be unchanged
+
+	x, err = jp.ParseString("[0,-1]")
+	tt.Nil(t, err)
+	data4 = [][]any{{1}, {2}, {3}}
+	result = x.MustRemove(data4)
+	tt.Equal(t, "[[2]]", string(pw.Encode(result)))
+
+	x, err = jp.ParseString("[-1,-2]")
+	tt.Nil(t, err)
+	data4 = [][]any{{1}, {2}, {3}}
+	result = x.MustRemoveOne(data4)
+	tt.Equal(t, "[[1] [3]]", string(pw.Encode(result)))
 }
 
 func TestExprRemoveSliceReflect(t *testing.T) {
@@ -749,6 +767,19 @@ func TestExprRemoveIndexedUnion(t *testing.T) {
 	data = indexedData()
 	result = x.MustRemoveOne(data)
 	tt.Equal(t, 12, jp.N(2).N(0).First(result))
+	tt.Equal(t, 13, jp.N(2).N(1).First(result))
+	tt.Equal(t, false, jp.N(2).N(2).Has(result))
+
+	x = jp.MustParseString("$[2][0,-1]")
+	data = indexedData()
+	result = x.MustRemove(data)
+	tt.Equal(t, 12, jp.N(2).N(0).First(result))
+	tt.Equal(t, false, jp.N(2).N(1).Has(result))
+
+	x = jp.MustParseString("$[2][-1,-2]")
+	data = indexedData()
+	result = x.MustRemoveOne(data)
+	tt.Equal(t, 11, jp.N(2).N(0).First(result))
 	tt.Equal(t, 13, jp.N(2).N(1).First(result))
 	tt.Equal(t, false, jp.N(2).N(2).Has(result))
 }
