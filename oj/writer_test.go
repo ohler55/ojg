@@ -1372,3 +1372,58 @@ func TestWriteStructEmbedShadow(t *testing.T) {
 		tt.Equal(t, strings.Count(d.tag, ":"), strings.Count(string(b), ":"), "duplicate key %T %s", d.v, b)
 	}
 }
+
+type promoIn struct {
+	A int
+	B string
+}
+
+type promoOuter struct {
+	promoIn
+	X int
+}
+
+type promoPtr struct {
+	*promoIn
+	X int
+}
+
+type promoUnicode struct {
+	Ä      int    //nolint:asciicheck // a non-ASCII field name is what is tested
+	Énorme string //nolint:asciicheck
+	X      int
+}
+
+type promoInt int
+
+type promoNonStruct struct {
+	promoInt
+	X int
+}
+
+func TestWriteStructUnexportedEmbedAndUnicode(t *testing.T) {
+	// Exported fields of an unexported embedded struct and exported fields
+	// with a non-ASCII name are written, the same as encoding/json.
+	for _, d := range []struct {
+		v   any
+		tag string
+		low string
+	}{
+		{v: promoOuter{promoIn{A: 1, B: "b"}, 2}, tag: `{"A":1,"B":"b","X":2}`, low: `{"a":1,"b":"b","x":2}`},
+		{v: promoPtr{&promoIn{A: 1, B: "b"}, 2}, tag: `{"A":1,"B":"b","X":2}`, low: `{"a":1,"b":"b","x":2}`},
+		{v: promoPtr{X: 2}, tag: `{"X":2}`, low: `{"x":2}`},
+		{v: promoUnicode{Ä: 1, Énorme: "e", X: 2}, tag: `{"X":2,"Ä":1,"Énorme":"e"}`, low: `{"x":2,"Énorme":"e","ä":1}`},
+		{v: promoNonStruct{3, 2}, tag: `{"X":2}`, low: `{"x":2}`},
+	} {
+		out, err := json.Marshal(d.v)
+		tt.Nil(t, err)
+		tt.Equal(t, d.tag, oj.JSON(oj.MustParse(out), &ojg.Options{Sort: true}), "encoding/json %T", d.v)
+
+		tt.Equal(t, d.tag, oj.JSON(d.v, &ojg.Options{Sort: true, UseTags: true}), "%T", d.v)
+		tt.Equal(t, d.tag, oj.JSON(d.v, &ojg.Options{Sort: true, KeyExact: true}), "%T", d.v)
+		tt.Equal(t, d.low, oj.JSON(d.v, &ojg.Options{Sort: true}), "%T", d.v)
+		tt.Equal(t, d.tag, oj.JSON(oj.MustParseString(oj.JSON(d.v, &ojg.Options{UseTags: true, Indent: 2})), &ojg.Options{Sort: true}), "%T", d.v)
+	}
+	// An unexported embedded struct is not written as a nested object.
+	tt.Equal(t, `{"X":2}`, oj.JSON(promoOuter{promoIn{A: 1, B: "b"}, 2}, &ojg.Options{Sort: true, UseTags: true, NestEmbed: true}))
+}

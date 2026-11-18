@@ -96,8 +96,7 @@ func buildFields(rt reflect.Type, u byte, omitEmpty bool) (fa []*finfo) {
 func buildTagFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
-		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
+		if skipField(&f, nested) {
 			continue
 		}
 		var fx byte
@@ -150,8 +149,7 @@ func buildTagFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 func buildExactFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
-		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
+		if skipField(&f, nested) {
 			continue
 		}
 		switch {
@@ -182,10 +180,10 @@ func buildExactFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 func buildLowFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
-		name := []byte(f.Name)
-		if len(name) == 0 || 'a' <= name[0] || name[0] == '_' {
+		if skipField(&f, nested) {
 			continue
 		}
+		name := []byte(f.Name)
 		if f.Anonymous && nested && isEmbeddedStruct(f.Type) {
 			if f.Type.Kind() == reflect.Pointer {
 				for _, fi := range buildLowFields(f.Type.Elem(), nested, omitEmpty) {
@@ -224,6 +222,14 @@ func buildLowFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 // struct or a pointer to a struct. Any other embedded type, such as
 // `type Count int`, is decomposed as a field named after the type, the same
 // as encoding/json does.
+// skipField reports whether a struct field is left out, the same as for
+// encoding/json. An unexported field is left out unless it is an embedded
+// struct, or a pointer to one, that is flattened. The exported fields of
+// that struct are then used in its place.
+func skipField(f *reflect.StructField, flatten bool) bool {
+	return !f.IsExported() && !(flatten && f.Anonymous && isEmbeddedStruct(f.Type))
+}
+
 func isEmbeddedStruct(rt reflect.Type) bool {
 	if rt.Kind() == reflect.Pointer {
 		rt = rt.Elem()

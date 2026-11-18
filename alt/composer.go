@@ -36,7 +36,7 @@ func indexType(rt reflect.Type) (im map[string]reflect.StructField) {
 func collectIndexes(rt reflect.Type, index []int, cands map[string][]reflect.StructField) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
-		if 0 < len(f.PkgPath) {
+		if skipField(&f, true) {
 			continue
 		}
 		f.Index = append(append([]int{}, index...), i)

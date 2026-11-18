@@ -1020,3 +1020,56 @@ func TestRecomposeEmbedShadow(t *testing.T) {
 	tt.Equal(t, 5, out.A)
 	tt.Equal(t, 0, out.RecompShadowIn.A)
 }
+
+type recompPromoIn struct {
+	A int
+	B string
+}
+
+type recompPromoOuter struct {
+	recompPromoIn
+	X int
+}
+
+type recompPromoPtr struct {
+	*recompPromoIn
+	X int
+}
+
+type RecompPromoUnicode struct {
+	Ä      int    //nolint:asciicheck // a non-ASCII field name is what is tested
+	Énorme string //nolint:asciicheck
+	X      int
+}
+
+func TestRecomposeUnexportedEmbedAndUnicode(t *testing.T) {
+	// Exported fields of an unexported embedded struct are set, the same as
+	// encoding/json. A nil pointer to an unexported embedded struct can not
+	// be set so its fields are skipped.
+	src := map[string]any{"A": 1, "B": "b", "X": 2}
+
+	var out recompPromoOuter
+	alt.MustRecompose(src, &out)
+	tt.Equal(t, recompPromoOuter{recompPromoIn{A: 1, B: "b"}, 2}, out)
+
+	in := &recompPromoIn{}
+	ptr := recompPromoPtr{recompPromoIn: in}
+	alt.MustRecompose(src, &ptr)
+	tt.Equal(t, true, in == ptr.recompPromoIn)
+	tt.Equal(t, recompPromoIn{A: 1, B: "b"}, *in)
+	tt.Equal(t, 2, ptr.X)
+
+	var nilPtr recompPromoPtr
+	alt.MustRecompose(src, &nilPtr)
+	tt.Nil(t, nilPtr.recompPromoIn)
+	tt.Equal(t, 2, nilPtr.X)
+
+	var uni RecompPromoUnicode
+	alt.MustRecompose(map[string]any{"Ä": 1, "Énorme": "e", "X": 2}, &uni)
+	tt.Equal(t, RecompPromoUnicode{Ä: 1, Énorme: "e", X: 2}, uni)
+
+	// Same as encoding/json.
+	var jout recompPromoOuter
+	tt.Nil(t, json.Unmarshal([]byte(`{"A":1,"B":"b","X":2}`), &jout))
+	tt.Equal(t, out, jout)
+}
