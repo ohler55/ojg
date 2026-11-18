@@ -271,7 +271,11 @@ func (s *Script) evalWithRoot(stack, data, root any) (any, Expr) {
 				if o, ok := sstack[i-1].(*op); ok && o.getLeft {
 					var x Expr
 					if x, ok = ev.(Expr); ok {
-						ev = x.Get(v)
+						if _, ok = x[0].(Root); ok {
+							ev = x.Get(root)
+						} else {
+							ev = x.Get(v)
+						}
 					} else {
 						ev = nil
 					}

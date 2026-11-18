@@ -56,6 +56,10 @@ var (
 		{path: "a[?(@.a > 135)].b", expect: []any{142}},
 		{path: "[?(@[1].a > 230)][1].b", expect: []any{322, 422}},
 		{path: "[?(@ > 1)]", expect: []any{2, 3}, data: []any{1, 2, 3}},
+		{path: "$.items[?count($.a[*]) == 2].b", expect: []any{1, 2},
+			data: map[string]any{"a": []any{1, 2}, "items": []any{map[string]any{"b": 1}, map[string]any{"b": 2}}}},
+		{path: "$.items[?count($.a[*]) == 1].b", expect: []any{},
+			data: map[string]any{"a": []any{1, 2}, "items": []any{map[string]any{"a": []any{9}, "b": 1}}}},
 		{path: "$[?(1==1)]", expect: []any{1, 2, 3}, data: []any{1, 2, 3}},
 		{
 			path:   "$.*[*].a",
