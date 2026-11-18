@@ -1073,3 +1073,55 @@ func TestRecomposeUnexportedEmbedAndUnicode(t *testing.T) {
 	tt.Nil(t, json.Unmarshal([]byte(`{"A":1,"B":"b","X":2}`), &jout))
 	tt.Equal(t, out, jout)
 }
+
+type RecompTagEmbedIn struct {
+	C int
+}
+
+type recompTagEmbedValue struct {
+	RecompTagEmbedIn `json:"in"`
+	X                int
+}
+
+type recompTagEmbedPtr struct {
+	*RecompTagEmbedIn `json:"in"`
+	X                 int
+}
+
+type recompTagEmbedSkip struct {
+	RecompTagEmbedIn `json:"-"`
+	X                int
+}
+
+func TestRecomposeTaggedEmbed(t *testing.T) {
+	// An embedded struct with a name in its json tag is set from the value
+	// with that name and one tagged "-" is left alone, the same as
+	// encoding/json.
+	src := map[string]any{"in": map[string]any{"C": 3}, "C": 4, "X": 2}
+
+	var val recompTagEmbedValue
+	alt.MustRecompose(src, &val)
+	tt.Equal(t, recompTagEmbedValue{RecompTagEmbedIn{C: 3}, 2}, val)
+
+	var ptr recompTagEmbedPtr
+	alt.MustRecompose(src, &ptr)
+	tt.NotNil(t, ptr.RecompTagEmbedIn)
+	tt.Equal(t, 3, ptr.C)
+	tt.Equal(t, 2, ptr.X)
+
+	var skip recompTagEmbedSkip
+	alt.MustRecompose(src, &skip)
+	tt.Equal(t, recompTagEmbedSkip{X: 2}, skip)
+
+	var uval recompTagEmbedValue
+	tt.Nil(t, oj.Unmarshal([]byte(`{"in":{"C":3},"C":4,"X":2}`), &uval))
+	tt.Equal(t, val, uval)
+
+	// Same as encoding/json.
+	var jval recompTagEmbedValue
+	tt.Nil(t, json.Unmarshal([]byte(`{"in":{"C":3},"C":4,"X":2}`), &jval))
+	tt.Equal(t, val, jval)
+	var jskip recompTagEmbedSkip
+	tt.Nil(t, json.Unmarshal([]byte(`{"in":{"C":3},"C":4,"X":2}`), &jskip))
+	tt.Equal(t, skip, jskip)
+}

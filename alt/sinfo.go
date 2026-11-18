@@ -96,11 +96,16 @@ func buildFields(rt reflect.Type, u byte, omitEmpty bool) (fa []*finfo) {
 func buildTagFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 	for i := rt.NumField() - 1; 0 <= i; i-- {
 		f := rt.Field(i)
-		if skipField(&f, nested) {
+		tag := f.Tag.Get("json")
+		if tag == "-" {
+			continue
+		}
+		flatten := nested && (!hasTagName(tag) || !f.IsExported())
+		if skipField(&f, flatten) {
 			continue
 		}
 		var fx byte
-		if f.Anonymous && nested && isEmbeddedStruct(f.Type) {
+		if f.Anonymous && flatten && isEmbeddedStruct(f.Type) {
 			if f.Type.Kind() == reflect.Pointer {
 				for _, fi := range buildTagFields(f.Type.Elem(), nested, omitEmpty) {
 					fi.index = append([]int{i}, fi.index...)
@@ -122,12 +127,6 @@ func buildTagFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 				switch parts[0] {
 				case "":
 					key = f.Name
-				case "-":
-					if 1 < len(parts) {
-						key = "-"
-					} else {
-						continue
-					}
 				default:
 					key = parts[0]
 				}
@@ -228,6 +227,15 @@ func buildLowFields(rt reflect.Type, nested, omitEmpty bool) (fa []*finfo) {
 // that struct are then used in its place.
 func skipField(f *reflect.StructField, flatten bool) bool {
 	return !f.IsExported() && !(flatten && f.Anonymous && isEmbeddedStruct(f.Type))
+}
+
+// hasTagName returns true if a json tag gives a field name. As with
+// encoding/json, an exported embedded struct with a name in its json tag is
+// not flattened but used as a field with that name. An unexported one can
+// not be read or set as a value so its fields are still flattened.
+func hasTagName(tag string) bool {
+	name, _, _ := strings.Cut(tag, ",")
+	return 0 < len(name)
 }
 
 func isEmbeddedStruct(rt reflect.Type) bool {
