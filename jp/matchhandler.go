@@ -4,6 +4,7 @@ package jp
 
 import (
 	"encoding/json"
+	"sort"
 )
 
 // TargetRest is used by the MatchHandler to associate a Target and Rest of a
@@ -138,9 +139,7 @@ func (h *MatchHandler) objArrayEnd() {
 	h.Path = h.Path[:len(h.Path)-1]
 	if 0 < len(h.Stack) {
 		if len(h.Stack) == 1 {
-			if v, p, ok := h.checkRest(h.Stack[0]); ok {
-				h.OnData(p, v)
-			}
+			h.checkRest(h.Stack[0])
 		}
 		v := h.Stack[len(h.Stack)-1]
 		h.Stack = h.Stack[:len(h.Stack)-1]
@@ -164,7 +163,7 @@ func (h *MatchHandler) incNth() {
 	}
 }
 
-func (h *MatchHandler) checkRest(v any) (any, Expr, bool) {
+func (h *MatchHandler) checkRest(v any) {
 	var tr *TargetRest
 	for _, t := range h.Targets {
 		if PathMatch(t.Target, h.Path) {
@@ -172,16 +171,39 @@ func (h *MatchHandler) checkRest(v any) (any, Expr, bool) {
 			break
 		}
 	}
-	p := h.Path
-	if tr != nil && tr.Rest != nil {
-		locs := tr.Rest.Locate(v, 1)
-		if len(locs) == 0 {
-			return nil, p, false
-		}
-		p = append(p, locs[0]...)
-		v = tr.Rest.First(v)
+	if tr == nil {
+		return
 	}
-	return v, p, true
+	if tr.Rest == nil {
+		h.OnData(h.Path, v)
+		return
+	}
+	locs := tr.Rest.Locate(v, 0)
+	// Filters walk their candidates from the top of a stack, so Locate can
+	// return them in reverse order. Callbacks follow document order.
+	sort.Slice(locs, func(i, j int) bool {
+		for k := 0; k < len(locs[i]) && k < len(locs[j]); k++ {
+			switch a := locs[i][k].(type) {
+			case Nth:
+				if b, ok := locs[j][k].(Nth); ok && a != b {
+					return int64(a) < int64(b)
+				}
+			case Child:
+				if b, ok := locs[j][k].(Child); ok && a != b {
+					return string(a) < string(b)
+				}
+			}
+		}
+		return len(locs[i]) < len(locs[j])
+	})
+	for _, loc := range locs {
+		// Copy the path: h.Path is reused by the tokenizer and appending in
+		// place would overwrite the path of an earlier callback.
+		p := make(Expr, 0, len(h.Path)+len(loc))
+		p = append(p, h.Path...)
+		p = append(p, loc...)
+		h.OnData(p, loc.First(v))
+	}
 }
 
 func (h *MatchHandler) pathMatch(leaf bool) bool {
