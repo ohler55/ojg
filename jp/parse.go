@@ -212,6 +212,17 @@ func (p *parser) afterBracket() Frag {
 			return p.readUnion(Wildcard('#'), b)
 		}
 		p.raise("not terminated")
+	case '.':
+		// [..] is the bracket form of a descent, emitted by
+		// Expr.BracketString. Without it the expression cannot be read back.
+		if len(p.buf) <= p.pos || p.buf[p.pos] != '.' {
+			p.raise("invalid bracket fragment")
+		}
+		p.pos++
+		if b = p.skipSpace(); b != ']' {
+			p.raise("not terminated")
+		}
+		return Descent('.')
 	case '\'', '"':
 		s := p.readStr(b)
 		b = p.skipSpace()

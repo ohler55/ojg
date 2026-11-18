@@ -192,6 +192,18 @@ func TestExprBracket(t *testing.T) {
 	tt.Equal(t, 0, len(br.Append([]byte{}, true, true)))
 }
 
+func TestExprBracketStringWithDescentReparses(t *testing.T) {
+	// A descent has no bracket form of its own, but the bracket notation
+	// emitted by BracketString must still be readable.
+	for _, s := range []string{"$..a", "$..*", "$[0]..b", "$.."} {
+		x := jp.MustParseString(s)
+		b := x.BracketString()
+		if _, err := jp.ParseString(b); err != nil {
+			t.Errorf("ParseString(%s).BracketString() = %q does not parse: %v", s, b, err)
+		}
+	}
+}
+
 func TestExprBracketString(t *testing.T) {
 	x := jp.R().C("abc").N(1).C("def")
 	tt.Equal(t, "$['abc'][1]['def']", x.BracketString())
