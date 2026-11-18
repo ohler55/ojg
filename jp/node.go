@@ -142,6 +142,12 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 			top := (di & descentChildFlag) == 0
 			// first pass expands, second continues evaluation
 			if (int64(di) & descentFlag) == 0 {
+				if (int64(di) & descentChildFlag) == 0 {
+					// Every value matched by the fragment before the descent shares
+					// this index. Leave a copy for the values still on the stack so
+					// they get a first pass too.
+					stack = append(stack, di)
+				}
 				switch tv := prev.(type) {
 				case gen.Object:
 					// Put prev back and slide fi.
@@ -413,6 +419,12 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 			di, _ := stack[len(stack)-1].(index)
 			// first pass expands, second continues evaluation
 			if (int64(di) & descentFlag) == 0 {
+				if (int64(di) & descentChildFlag) == 0 {
+					// Every value matched by the fragment before the descent shares
+					// this index. Leave a copy for the values still on the stack so
+					// they get a first pass too.
+					stack = append(stack, di)
+				}
 				switch tv := prev.(type) {
 				case gen.Object:
 					// Put prev back and slide fi.

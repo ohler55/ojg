@@ -22,6 +22,8 @@ var (
 	hasTestData = []*hasData{
 		{path: "", expect: false},
 		{path: "$.a.*.b", expect: true},
+		{path: "$[*]..[0]", expect: true, data: []any{map[string]any{}, map[string]any{"x": []any{5}}}},
+		{path: "$[*]..[0]", expect: true, data: []any{map[string]any{"x": []any{5}}, map[string]any{}}},
 		{path: "$", expect: true, data: map[string]any{"x": 1}},
 		{path: "@", expect: true, data: map[string]any{"x": 1}},
 		{path: "$.a.*.b", expect: true, data: firstData1},

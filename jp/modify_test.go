@@ -26,6 +26,17 @@ func TestExprModify(t *testing.T) {
 	tt.Equal(t, "[[1 2 3 4] [1 2 3 4]]", string(pw.Encode(result)))
 }
 
+func TestExprModifyDescentAfterWildcard(t *testing.T) {
+	x := jp.MustParseString("[*]..a")
+
+	data := []any{map[string]any{"b": map[string]any{"a": 1}}, map[string]any{"b": map[string]any{"a": 2}}}
+	result, err := x.Modify(data, func(element any) (any, bool) {
+		return element.(int) * 10, true
+	})
+	tt.Nil(t, err)
+	tt.Equal(t, `[{b: {a: 10}} {b: {a: 20}}]`, string(pw.Encode(result)))
+}
+
 func TestExprMustModify(t *testing.T) {
 	x := jp.MustParseString("[*]")
 
