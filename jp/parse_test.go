@@ -38,6 +38,13 @@ func TestParse(t *testing.T) {
 		{src: "[?@['@type'] == 'something']", expect: "[?(@['@type'] == 'something')]"},
 		{src: "[1,2]", expect: "[1,2]"},
 		{src: "abc..def", expect: "abc..def"},
+		{src: "$..[1]", expect: "$..[1]"},
+		{src: "$..[-1].x", expect: "$..[-1].x"},
+		{src: "$..['x y']", expect: "$..['x y']"},
+		{src: "@..[*]", expect: "@..[*]"},
+		{src: "..[1:3]", expect: "..[1:3]"},
+		{src: "$.a..['b','c']", expect: "$.a..['b','c']"},
+		{src: "$..[?(@.x)]", expect: "$..[?(@.x)]"},
 		{src: "abc[*].def", expect: "abc[*].def"},
 		{src: "abc[0].def", expect: "abc[0].def"},
 		{src: "abc[-1].def", expect: "abc[-1].def"},
@@ -310,6 +317,9 @@ func TestParse(t *testing.T) {
 			tt.Nil(t, err, d.src)
 			tt.NotNil(t, x)
 			tt.Equal(t, d.expect, x.String(), i, ": ", d.src)
+			y, err := jp.ParseString(x.String())
+			tt.Nil(t, err, "reparse ", d.src)
+			tt.Equal(t, d.expect, y.String(), "reparse ", d.src)
 		}
 	}
 }

@@ -32,7 +32,17 @@ func (x Expr) Append(buf []byte, brackets ...bool) []byte {
 			bracket = true
 			continue
 		}
+		start := len(buf)
 		buf = frag.Append(buf, bracket, i == 0)
+		// A descent only writes one '.', so a fragment in brackets right
+		// after it needs the second one to read back as a descent.
+		if !bracket && 0 < i && start < len(buf) && buf[start] == '[' {
+			if _, ok := x[i-1].(Descent); ok {
+				buf = append(buf, 0)
+				copy(buf[start+1:], buf[start:])
+				buf[start] = '.'
+			}
+		}
 	}
 	if 0 < len(x) {
 		if _, ok := x[len(x)-1].(Descent); ok {
