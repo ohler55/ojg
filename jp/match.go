@@ -66,6 +66,25 @@ func PathMatch(target, path Expr) bool {
 				return false
 			}
 			path = path[1:]
+		case MixedUnion:
+			var ok bool
+			for _, m := range tf {
+				switch tm := m.(type) {
+				case Child, Nth:
+					ok = tm == path[0]
+				case Slice:
+					_, ok = path[0].(Nth)
+				case Wildcard, *Filter:
+					ok = true
+				}
+				if ok {
+					break
+				}
+			}
+			if !ok {
+				return false
+			}
+			path = path[1:]
 		case *Filter:
 			// Assume a match since there is no data for comparison.
 			path = path[1:]

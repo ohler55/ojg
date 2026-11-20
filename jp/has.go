@@ -696,6 +696,17 @@ func (x Expr) Has(data any) bool {
 					}
 				}
 			}
+		case MixedUnion:
+			got := tf.get(prev, data)
+			if int(fi) == len(x)-1 { // last one
+				if 0 < len(got) {
+					return true
+				}
+			} else {
+				for i := len(got) - 1; 0 <= i; i-- {
+					stack = stackAddValue(stack, got[i])
+				}
+			}
 		case *Filter:
 			before := len(stack)
 			ns, _ := tf.evalWithRoot(stack, prev, data)

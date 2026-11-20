@@ -73,7 +73,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 		return fmt.Errorf("can not %s with an empty expression", fun)
 	}
 	switch x[len(x)-1].(type) {
-	case Root, At, Bracket, Descent, Slice, *Filter:
+	case Root, At, Bracket, Descent, Slice, *Filter, MixedUnion:
 		ta := strings.Split(fmt.Sprintf("%T", x[len(x)-1]), ".")
 		return fmt.Errorf("can not %s with an expression ending with a %s", fun, ta[len(ta)-1])
 	}
@@ -1152,6 +1152,11 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 						}
 					}
 				}
+			}
+		case MixedUnion:
+			got := tf.get(prev, data)
+			for i := len(got) - 1; 0 <= i; i-- {
+				stack = stackAddValue(stack, got[i])
 			}
 		case *Filter:
 			ns, _ := tf.evalWithRoot(stack, prev, data)

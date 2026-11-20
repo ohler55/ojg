@@ -232,7 +232,7 @@ func TestParse(t *testing.T) {
 		{src: "[1::-x", err: "expected a number at 7 in [1::-x"},
 		{src: "[1:2:", err: "not terminated at 6 in [1:2:"},
 		{src: "[1:2:-x", err: "expected a number at 8 in [1:2:-x"},
-		{src: "[2,3:", err: "invalid union syntax at 6 in [2,3:"},
+		{src: "[2,3:", err: "not terminated at 6 in [2,3:"},
 		{src: "[2,3x", err: "invalid union syntax at 6 in [2,3x"},
 		{src: "[2,-", err: "expected a number at 5 in [2,-"},
 		{src: "[2,x", err: "invalid union syntax at 5 in [2,x"},
