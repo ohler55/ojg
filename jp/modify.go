@@ -82,7 +82,8 @@ func (x Expr) modify(data any, modifier func(element any) (altered any, changed 
 	if len(x) == 0 {
 		panic("can not modify with an empty expression")
 	}
-	if _, ok := x[len(x)-1].(Descent); ok {
+	switch x[len(x)-1].(type) {
+	case Descent, MixedUnion:
 		ta := strings.Split(fmt.Sprintf("%T", x[len(x)-1]), ".")
 		panic(fmt.Sprintf("can not modify with an expression where the last fragment is a %s",
 			ta[len(ta)-1]))
@@ -686,6 +687,12 @@ done:
 						stack = stackAddValue(stack, v)
 					}
 				}
+			}
+		case MixedUnion:
+			// A MixedUnion can not be the last fragment so only follow on.
+			got := tf.get(prev, data)
+			for i := len(got) - 1; 0 <= i; i-- {
+				stack = stackAddValue(stack, got[i])
 			}
 		case *Filter:
 			if int(fi) == len(wx)-1 { // last one

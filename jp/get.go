@@ -771,6 +771,15 @@ func (x Expr) Get(data any) (results []any) {
 					stack = stack[:before]
 				}
 			}
+		case MixedUnion:
+			got := tf.get(prev, data)
+			if int(fi) == len(x)-1 { // last one
+				results = append(results, got...)
+			} else {
+				for i := len(got) - 1; 0 <= i; i-- {
+					stack = stackAddValue(stack, got[i])
+				}
+			}
 		case *Proc:
 			got := tf.Procedure.Get(prev)
 			if int(fi) == len(x)-1 { // last one
@@ -1539,6 +1548,17 @@ func (x Expr) FirstFound(data any) (any, bool) {
 					result := stack[len(stack)-1]
 					stack = stack[:before]
 					return result, true
+				}
+			}
+		case MixedUnion:
+			got := tf.get(prev, data)
+			if int(fi) == len(x)-1 { // last one
+				if 0 < len(got) {
+					return got[0], true
+				}
+			} else {
+				for i := len(got) - 1; 0 <= i; i-- {
+					stack = stackAddValue(stack, got[i])
 				}
 			}
 		case *Proc:

@@ -203,12 +203,15 @@ func (p *parser) afterBracket() Frag {
 	b := p.skipSpace()
 	switch b {
 	case '*':
-		// expect ]
+		// expect ] or a list
 		b := p.skipSpace()
-		if b != ']' {
-			p.raise("not terminated")
+		switch b {
+		case ']':
+			return Wildcard('#')
+		case ',':
+			return p.readUnion(Wildcard('#'), b)
 		}
-		return Wildcard('#')
+		p.raise("not terminated")
 	case '\'', '"':
 		s := p.readStr(b)
 		b = p.skipSpace()
@@ -216,14 +219,18 @@ func (p *parser) afterBracket() Frag {
 		case ']':
 			return Child(s)
 		case ',':
-			return p.readUnion(s, b)
+			return p.readUnion(Child(s), b)
 		default:
 			p.raise("invalid bracket fragment")
 		}
 	case ':':
 		return p.readSlice(SliceNotSet)
 	case '?':
-		return p.readFilter()
+		f, b := p.readFilter()
+		if b == ',' {
+			return p.readUnion(f, b)
+		}
+		return f
 	case '(':
 		return p.readProc()
 	case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
@@ -237,7 +244,7 @@ func (p *parser) afterBracket() Frag {
 		case ']':
 			return Nth(i)
 		case ',':
-			return p.readUnion(int64(i), b)
+			return p.readUnion(Nth(i), b)
 		case ':':
 			return p.readSlice(i)
 		default:
@@ -388,14 +395,24 @@ func (p *parser) readNum(b byte) any {
 }
 
 func (p *parser) readSlice(i int) Frag {
+	f, b := p.readSliceMember(i)
+	if b == ',' {
+		return p.readUnion(f, b)
+	}
+	return f
+}
+
+// readSliceMember reads the rest of a slice after the start and returns the
+// slice along with the ']' or ',' that ends it.
+func (p *parser) readSliceMember(i int) (Slice, byte) {
 	if len(p.buf) <= p.pos {
 		p.raise("not terminated")
 	}
 	f := Slice{i, SliceNotSet, SliceNotSet}
 	b := p.buf[p.pos]
-	if b == ']' {
+	if b == ']' || b == ',' {
 		p.pos++
-		return f
+		return f, b
 	}
 	b = p.skipSpace()
 	// read the end
@@ -404,10 +421,10 @@ func (p *parser) readSlice(i int) Frag {
 			p.raise("not terminated")
 		}
 		b = p.skipSpace()
-		if b != ']' {
+		if b != ']' && b != ',' {
 			f[2], b = p.readInt(b)
 		}
-	} else if b != ']' {
+	} else if b != ']' && b != ',' {
 		f[1], b = p.readInt(b)
 		if spaceMap[b] == 's' {
 			b = p.skipSpace()
@@ -417,7 +434,7 @@ func (p *parser) readSlice(i int) Frag {
 				p.raise("not terminated")
 			}
 			b = p.skipSpace()
-			if b != ']' {
+			if b != ']' && b != ',' {
 				f[2], b = p.readInt(b)
 			}
 		}
@@ -425,44 +442,80 @@ func (p *parser) readSlice(i int) Frag {
 	if spaceMap[b] == 's' {
 		b = p.skipSpace()
 	}
-	if b != ']' {
+	if b != ']' && b != ',' {
 		p.raise("invalid slice syntax")
 	}
-	return f
+	return f, b
 }
 
-func (p *parser) readUnion(v any, b byte) Frag {
+// readUnion reads the members of a bracketed list after the first member. A
+// list of only names and indexes is returned as a Union. A list that also has
+// a slice, a wildcard, or a filter is returned as a MixedUnion (RFC 9535
+// section 2.5.1).
+func (p *parser) readUnion(first Frag, b byte) Frag {
 	if len(p.buf) <= p.pos {
 		p.raise("not terminated")
 	}
-	f := Union{v}
+	list := []Frag{first}
 	for {
 		switch b {
 		case ',':
 			// next union member
 		case ']':
-			return f
+			return unionOf(list)
 		default:
 			p.raise("invalid union syntax")
 		}
 		b = p.skipSpace()
 		switch b {
 		case '\'', '"':
-			var s string
-			s = p.readStr(b)
+			list = append(list, Child(p.readStr(b)))
 			b = p.skipSpace()
-			f = append(f, s)
 		case '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
 			var i int
 			i, b = p.readInt(b)
-			f = append(f, int64(i))
 			if spaceMap[b] == 's' {
 				b = p.skipSpace()
 			}
+			if b == ':' {
+				var s Slice
+				s, b = p.readSliceMember(i)
+				list = append(list, s)
+			} else {
+				list = append(list, Nth(i))
+			}
+		case ':':
+			var s Slice
+			s, b = p.readSliceMember(SliceNotSet)
+			list = append(list, s)
+		case '*':
+			list = append(list, Wildcard('#'))
+			b = p.skipSpace()
+		case '?':
+			var f *Filter
+			f, b = p.readFilter()
+			list = append(list, f)
 		default:
 			p.raise("invalid union syntax")
 		}
 	}
+}
+
+// unionOf returns a Union if all the members of the list are a Child or an
+// Nth and a MixedUnion otherwise.
+func unionOf(list []Frag) Frag {
+	u := make(Union, 0, len(list))
+	for _, f := range list {
+		switch tf := f.(type) {
+		case Child:
+			u = append(u, string(tf))
+		case Nth:
+			u = append(u, int64(tf))
+		default:
+			return MixedUnion(list)
+		}
+	}
+	return u
 }
 
 func (p *parser) readHex(b byte) (i byte) {
@@ -617,20 +670,22 @@ out:
 	return rx
 }
 
-func (p *parser) readFilter() *Filter {
+// readFilter reads a filter and returns it along with the ']' or ',' that
+// ends it.
+func (p *parser) readFilter() (*Filter, byte) {
 	if len(p.buf) <= p.pos {
 		p.raise("not terminated")
 	}
 	eq := precedentCorrect(p.readEq())
 	eq = reduceGroups(eq, nil)
 	b := p.nextNonSpace()
-	if len(p.buf) <= p.pos || b != ']' {
+	if len(p.buf) <= p.pos || (b != ']' && b != ',') {
 		p.raise("not terminated")
 	}
 	p.checkTest(eq)
 	p.pos++
 
-	return eq.Filter()
+	return eq.Filter(), b
 }
 
 // checkTest raises an error if a literal, or length or count which return a

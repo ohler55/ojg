@@ -295,6 +295,18 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 					}
 				}
 			}
+		case MixedUnion:
+			got := tf.getNodes(prev, n)
+			if int(fi) == len(x)-1 { // last one
+				results = append(results, got...)
+			} else {
+				for i := len(got) - 1; 0 <= i; i-- {
+					switch got[i].(type) {
+					case gen.Object, gen.Array:
+						stack = append(stack, got[i])
+					}
+				}
+			}
 		case *Filter:
 			before := len(stack)
 			ns, _ := tf.evalWithRoot(stack, prev, n)
@@ -537,6 +549,20 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 						case gen.Object, gen.Array:
 							stack = append(stack, v)
 						}
+					}
+				}
+			}
+		case MixedUnion:
+			got := tf.getNodes(prev, n)
+			if int(fi) == len(x)-1 { // last one
+				if 0 < len(got) {
+					return got[0]
+				}
+			} else {
+				for i := len(got) - 1; 0 <= i; i-- {
+					switch got[i].(type) {
+					case gen.Object, gen.Array:
+						stack = append(stack, got[i])
 					}
 				}
 			}
