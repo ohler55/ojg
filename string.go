@@ -132,9 +132,10 @@ func appendSENString(buf []byte, s string, htmlSafe bool, key bool) []byte {
 	b0 := len(buf)
 	m := senMap[s[0]]
 	quote := maxTokenLen < len(s) || (m != 'o' && m != '8' && !(!htmlSafe && m == 'h'))
-	if 1 < len(s) && (s[0] == '+' || s[0] == '-') {
-		// A lone sign stays bare as an operator. More than that reads as a
-		// number or a concatenation.
+	if s[0] == '+' || s[0] == '-' {
+		// A sign reads as a number or a concatenation, and a lone one written
+		// bare is an operator that the parser rejects as a value. Quote it
+		// just like a multi-character sign, for keys and values alike.
 		quote = true
 	}
 	if !key && (s == "null" || s == "true" || s == "false") {
