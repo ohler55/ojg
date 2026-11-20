@@ -37,8 +37,8 @@ var (
 		{path: "@", data: `{}`, err: "can not delete with an expression ending with a At"},
 		{path: "a.b", data: `{"a":4}`, err: "/can not follow a .+ at 'a'/"},
 		{path: "[0].1", data: `[1]`, err: "/can not follow a .+ at '\\[0\\]'/"},
-		{path: "[1]", data: `[1]`, err: "can not follow out of bounds array index at '[1]'"},
-		{path: "$[-9007199254740991]", data: `[1]`, err: "can not follow out of bounds array index at '$[-9007199254740991]'"},
+		{path: "[1]", data: `[1]`, expect: `[1]`},
+		{path: "$[-9007199254740991]", data: `[1]`, expect: `[1]`},
 	}
 	delOneTestData = []*delData{
 		{path: "@.a", data: `{}`, expect: `{}`},
@@ -56,7 +56,8 @@ var (
 		{path: "@", data: `{}`, err: "can not delete with an expression ending with a At"},
 		{path: "a.b", data: `{"a":4}`, err: "/can not follow a .+ at 'a'/"},
 		{path: "[0].1", data: `[1]`, err: "/can not follow a .+ at '\\[0\\]'/"},
-		{path: "[1]", data: `[1]`, err: "can not follow out of bounds array index at '[1]'"},
+		{path: "[1]", data: `[1]`, expect: `[1]`},
+		{path: "$[-5]", data: `[1]`, expect: `[1]`},
 	}
 )
 
@@ -131,6 +132,31 @@ func TestExprDelOne(t *testing.T) {
 				tt.Equal(t, d.expect, result, i, " : ", x)
 			}
 		}
+	}
+}
+
+func TestExprDelOutOfRangeIsNoOp(t *testing.T) {
+	// An out-of-range index matches nothing, so Del and DelOne leave the data
+	// untouched instead of returning an error, just like a missing map key.
+	// Set still reports an error for the same index.
+	for _, tc := range []struct{ path, raw string }{
+		{"$[1]", `[1]`},
+		{"$[5]", `[1]`},
+		{"$[5]", `[1,2]`},
+		{"$[-5]", `[1]`},
+		{"$[-5]", `[1,2]`},
+		{"$[-9007199254740991]", `[1]`},
+	} {
+		path, raw := tc.path, tc.raw
+		x := jp.MustParseString(path)
+		data, err := oj.ParseString(raw)
+		tt.Nil(t, err, path, " : ", raw)
+		tt.Nil(t, x.Del(data), path, " : ", raw)
+		tt.Equal(t, raw, oj.JSON(data, &oj.Options{Sort: true}), path, " : ", raw)
+		data, err = oj.ParseString(raw)
+		tt.Nil(t, err, path, " : ", raw)
+		tt.Nil(t, x.DelOne(data), path, " : ", raw)
+		tt.Equal(t, raw, oj.JSON(data, &oj.Options{Sort: true}), path, " : ", raw)
 	}
 }
 

@@ -319,7 +319,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 							}
 						}
 					}
-				} else {
+				} else if value != delFlag {
 					return fmt.Errorf("can not follow out of bounds array index at '%s'", x[:fi+1])
 				}
 			case Indexed:
@@ -359,7 +359,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 							}
 						}
 					}
-				} else {
+				} else if value != delFlag {
 					return fmt.Errorf("can not follow out of bounds array index at '%s'", x[:fi+1])
 				}
 			case gen.Array:
@@ -385,7 +385,7 @@ func (x Expr) set(data, value any, fun string, one bool) error {
 							return fmt.Errorf("can not follow a %T at '%s'", v, x[:fi+1])
 						}
 					}
-				} else {
+				} else if value != delFlag {
 					return fmt.Errorf("can not follow out of bounds array index at '%s'", x[:fi+1])
 				}
 			default:
