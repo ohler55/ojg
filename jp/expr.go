@@ -45,7 +45,7 @@ func (x Expr) Append(buf []byte, brackets ...bool) []byte {
 		}
 	}
 	if 0 < len(x) {
-		if _, ok := x[len(x)-1].(Descent); ok {
+		if _, ok := x[len(x)-1].(Descent); ok && !bracket {
 			buf = append(buf, '.')
 		}
 	}
