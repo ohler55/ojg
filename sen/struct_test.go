@@ -321,13 +321,13 @@ func TestSENTagOther(t *testing.T) {
 
 	out := wr.MustSEN(&sample)
 	tt.Equal(t, `{
-  -: 2
+  "-": 2
   AsIs: 1
 }`, string(out))
 
 	wr.Indent = 0
 	out = wr.MustSEN(&sample)
-	tt.Equal(t, `{-:2 AsIs:1}`, string(out))
+	tt.Equal(t, `{"-":2 AsIs:1}`, string(out))
 }
 
 type Decimal struct {

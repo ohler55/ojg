@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/ohler55/ojg"
+	"github.com/ohler55/ojg/sen"
 	"github.com/ohler55/ojg/tt"
 )
 
@@ -52,8 +53,8 @@ func TestStringSEN(t *testing.T) {
 		{src: "-1", expect: `"-1"`},
 		{src: "-abc", expect: `"-abc"`},
 		{src: "+abc", expect: `"+abc"`},
-		{src: "-", expect: `-`},
-		{src: "+", expect: `+`},
+		{src: "-", expect: `"-"`},
+		{src: "+", expect: `"+"`},
 		{src: "null", expect: `"null"`},
 		{src: "true", expect: `"true"`},
 		{src: "false", expect: `"false"`},
@@ -67,6 +68,18 @@ func TestStringSEN(t *testing.T) {
 		var buf []byte
 		buf = ojg.AppendSENString(buf, td.src, td.htmlSafe)
 		tt.Equal(t, td.expect, string(buf), i, ": ", td.src)
+	}
+}
+
+func TestStringSENLoneSignRoundTrip(t *testing.T) {
+	// A lone sign written as a value must be quoted, otherwise SEN writes an
+	// operator where a value belongs and the document does not parse back.
+	for _, want := range []string{"-", "+"} {
+		out := sen.String(want)
+		tt.Equal(t, `"`+want+`"`, out, want)
+		got, err := sen.Parse([]byte(out))
+		tt.Nil(t, err, out)
+		tt.Equal(t, want, got, out)
 	}
 }
 
