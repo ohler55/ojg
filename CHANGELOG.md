@@ -4,6 +4,47 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 The structure and content of this file follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.28.10] - 2026-11-24
+### Added
+- JSONPath bracket lists accept slices, wildcards, and filters as members.
+### Fixed
+- JSONPath rejects a number with no digits after the decimal point or exponent.
+- JSONPath filters reject a number with a leading zero.
+- JSONPath rejects the wrong number of arguments to a filter function.
+- JSONPath quoted strings reject an unescaped control character.
+- JSONPath quoted strings reject an unpaired surrogate escape.
+- JSONPath rejects an array index outside the I-JSON range.
+- JSONPath count() rejects a non-query argument.
+- JSONPath length(), match(), and search() reject a non-singular query argument.
+- JSONPath rejects length() or count() as a test and match() or search() in a comparison.
+- JSONPath filters reject a literal used as a test.
+- jp.NewFilter applies the same filter test checks as the parser.
+- jp.NewFilter rejects text left after the equation.
+- JSONPath parses a script that follows an earlier `)]` in the path.
+- JSONPath returns an error instead of panicking when a path ends early.
+- JSONPath rejects overflowing float literals.
+- oj rejects a truncated null, true, or false.
+- sen quotes a string that would be read back as something else.
+- oj and sen reject a number with a decimal point and no fraction digits.
+- gen rounds a float with an exponent the same as strconv.ParseFloat.
+- JSONPath match() and search() keep an operation in the second argument.
+- oj and sen reject an object that closes right after a colon.
+- oj rejects a truncated document with an unclosed container.
+- oj and sen write a named number or bool field of a struct passed by value.
+- oj, sen, and alt handle an embedded non-struct type and a nil embedded pointer.
+- oj, sen, and alt drop a field hidden by a less nested field with the same key.
+- oj, sen, and alt keep unexported embedded struct fields and non-ASCII field names.
+- oj, sen, and alt nest an embedded struct that has a json tag name.
+- JSONPath writes both dots of a descent before a bracket fragment.
+- jp.Remove and jp.RemoveOne count a negative union index from the end.
+- JSONPath count() evaluates a `$` query argument against the root.
+- JSONPath runs a descent for every value matched before it.
+- jp.MatchHandler reports every match of a filter.
+- jp.Locate honors max when a slice is the last fragment.
+- jp.Del and jp.DelOne are a no-op for out-of-range array indices.
+- JSONPath parses the `[..]` descent emitted by BracketString.
+- sen quotes a lone sign written as a string.
+
 ## [1.28.9] - 2026-10-27
 ### Added
 - Added option to ojg.Options to specify how unsigned integers over
