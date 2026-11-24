@@ -94,6 +94,14 @@ func TestTokenizerLoad(t *testing.T) {
 	tt.Equal(t, "[ true null 123 12.3 ] { x: 3 } ", string(h.buf))
 }
 
+func TestTokenizerLoadSplitBOM(t *testing.T) {
+	toker := oj.Tokenizer{}
+	h := testHandler{}
+	err := toker.Load(iotest.OneByteReader(strings.NewReader("\xef\xbb\xbf[true]")), &h)
+	tt.Nil(t, err)
+	tt.Equal(t, "[ true ] ", string(h.buf))
+}
+
 func TestZeroHandler(t *testing.T) {
 	h := oj.ZeroHandler{}
 	src := `[true,null,123,12.3]{"x":12345678901234567890}`

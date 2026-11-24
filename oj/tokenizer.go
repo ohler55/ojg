@@ -104,7 +104,7 @@ func (t *Tokenizer) Load(r io.Reader, handler TokenHandler) (err error) {
 	buf := make([]byte, readBufSize)
 	eof := false
 	var cnt int
-	cnt, err = r.Read(buf)
+	cnt, err = readBOMStart(r, buf)
 	buf = buf[:cnt]
 	t.mode = valueMap
 	if err != nil {
@@ -115,7 +115,7 @@ func (t *Tokenizer) Load(r io.Reader, handler TokenHandler) (err error) {
 	}
 	var skip int
 	// Skip BOM if present.
-	if 3 < len(buf) && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF {
+	if 3 <= len(buf) && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF {
 		skip = 3
 	}
 	for {

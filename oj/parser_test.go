@@ -365,6 +365,13 @@ func TestParserParseReaderEOF(t *testing.T) {
 	tt.Nil(t, err)
 }
 
+func TestParserParseReaderSplitBOM(t *testing.T) {
+	var p oj.Parser
+	v, err := p.ParseReader(iotest.OneByteReader(strings.NewReader("\xef\xbb\xbf[true]")))
+	tt.Nil(t, err)
+	tt.Equal(t, []any{true}, v)
+}
+
 func TestParserParseReaderErr(t *testing.T) {
 	var p oj.Parser
 	_, err := p.ParseReader(iotest.DataErrReader(strings.NewReader("[1,2}")))

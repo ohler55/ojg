@@ -207,6 +207,12 @@ func TestValidatorValidateReaderBOM(t *testing.T) {
 	tt.Nil(t, err)
 }
 
+func TestValidatorValidateReaderSplitBOM(t *testing.T) {
+	var v oj.Validator
+	err := v.ValidateReader(iotest.OneByteReader(strings.NewReader("\xef\xbb\xbf[true]")))
+	tt.Nil(t, err)
+}
+
 func TestValidatorValidateReaderErrRead(t *testing.T) {
 	var v oj.Validator
 	r := tt.ShortReader{Max: 20, Content: []byte(callbackJSON)}
