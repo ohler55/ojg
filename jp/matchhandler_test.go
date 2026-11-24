@@ -84,3 +84,30 @@ func TestMatchHandlerFilter(t *testing.T) {
 		md.runTest(t, i)
 	}
 }
+
+func TestMatchHandlerFilterOrder(t *testing.T) {
+	for i, md := range []*matchHandlerData{
+		// Object members found by a filter are reported in key order.
+		{target: "$[?(@ > 0)]", src: "{c:3 a:1 b:2}", expect: "$.a: 1\n$.b: 2\n$.c: 3\n"},
+		// A shorter path sorts before a longer one with the same prefix.
+		{target: "$[?(@.a)]..b", src: "[{a:1 b:{b:2}}]", expect: "$[0].b: {b: 2}\n$[0].b.b: 2\n"},
+	} {
+		md.runTest(t, i)
+	}
+}
+
+func TestMatchHandlerTargetsChanged(t *testing.T) {
+	// The fields are public so a derived handler can change the targets
+	// while tokenizing. A collected value that no longer matches a target is
+	// dropped instead of being reported.
+	var called bool
+	h := jp.NewMatchHandler(func(path jp.Expr, data any) {
+		called = true
+	}, jp.MustParseString("$[?(@ > 0)]"))
+	h.ArrayStart()
+	h.Int(1)
+	h.Targets = nil
+	h.ArrayEnd()
+	tt.Equal(t, false, called)
+	tt.Equal(t, 0, len(h.Stack))
+}

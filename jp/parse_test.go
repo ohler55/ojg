@@ -199,6 +199,8 @@ func TestParse(t *testing.T) {
 		{src: "[]", err: "parse error at 2 in []"},
 		{src: "[**", err: "not terminated at 4 in [**"},
 		{src: "['x'z]", err: "invalid bracket fragment at 6 in ['x'z]"},
+		{src: "[.x]", err: "invalid bracket fragment at 3 in [.x]"},
+		{src: "[..x]", err: "not terminated at 5 in [..x]"},
 		{src: "[(x)]", err: "jp.CompileScript has not been set"},
 		{src: "[(x)", err: "not terminated at 3 in [(x)"},
 		{src: "$[?(@.a)][(x)]", err: "jp.CompileScript has not been set"},

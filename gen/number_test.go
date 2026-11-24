@@ -26,6 +26,10 @@ func TestNumber(t *testing.T) {
 		{src: "-9223372036854775808", value: -9223372036854775808},
 		{src: "0.12345678901234567890", value: "0.12345678901234567890"},
 		{src: "0.9223372036854775808", value: "0.9223372036854775808"},
+		// Power of ten beyond 22 is not exact so strconv.ParseFloat is used.
+		{src: "1.5e30", value: 1.5e30},
+		// Integer digits above 2^53 with a fraction are not exact either.
+		{src: "9007199254740993.5", value: 9007199254740993.5},
 	} {
 		if testing.Verbose() {
 			fmt.Printf("... %d: %s\n", i, d.src)

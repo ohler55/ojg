@@ -551,6 +551,22 @@ func TestScriptRegisterUnaryFunction(t *testing.T) {
 	tt.Panic(t, func() { jp.RegisterUnaryFunction("length", false, func(arg any) any { return nil }) })
 }
 
+func TestScriptRegisterUnaryFunctionGet(t *testing.T) {
+	jp.RegisterUnaryFunction("isnil", true, func(arg any) any {
+		return arg == nil
+	})
+	data := []any{map[string]any{"x": 1}}
+	// With get set a query argument is evaluated as a get and the function
+	// receives the list of matches.
+	s := jp.MustNewScript("(isnil(@.x))")
+	tt.Equal(t, 0, len(s.Eval([]any{}, data).([]any)))
+
+	// An argument that is not a query has nothing to get so the function
+	// receives nil.
+	s = jp.MustNewScript(`(isnil("abc"))`)
+	tt.Equal(t, 1, len(s.Eval([]any{}, data).([]any)))
+}
+
 func TestScriptRegisterBinaryFunction(t *testing.T) {
 	jp.RegisterBinaryFunction("equalfold", false, false, func(left, right any) any {
 		if s0, ok := left.(string); ok {
