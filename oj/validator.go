@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+
+	"github.com/ohler55/ojg"
 )
 
 const stackMinSize = 32 // for container stack { or [
@@ -67,7 +69,7 @@ func (p *Validator) ValidateReader(r io.Reader) error {
 	p.mode = valueMap
 	buf := make([]byte, readBufSize)
 	eof := false
-	cnt, err := r.Read(buf)
+	cnt, err := ojg.ReadBOMStart(r, buf)
 	buf = buf[:cnt]
 	if err != nil {
 		if !errors.Is(err, io.EOF) {
@@ -77,7 +79,7 @@ func (p *Validator) ValidateReader(r io.Reader) error {
 	}
 	var skip int
 	// Skip BOM if present.
-	if 3 < len(buf) && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF {
+	if 3 <= len(buf) && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF {
 		skip = 3
 	}
 	for {

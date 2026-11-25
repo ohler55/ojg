@@ -398,3 +398,11 @@ func TestTokenizerSurrogateReuse(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Equal(t, "abc\uFFFD", strings.TrimSpace(string(h.buf)))
 }
+
+func TestTokenizerLoadSplitBOM(t *testing.T) {
+	toker := sen.Tokenizer{}
+	h := testHandler{}
+	err := toker.Load(iotest.OneByteReader(strings.NewReader("\xef\xbb\xbf[true]")), &h)
+	tt.Nil(t, err)
+	tt.Equal(t, "[ true ] ", string(h.buf))
+}

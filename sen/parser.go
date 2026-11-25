@@ -213,7 +213,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...any) (data any, err error) {
 	buf := make([]byte, readBufSize)
 	eof := false
 	var cnt int
-	cnt, err = r.Read(buf)
+	cnt, err = ojg.ReadBOMStart(r, buf)
 	buf = buf[:cnt]
 	p.mode = valueMap
 	if err != nil {
@@ -224,7 +224,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...any) (data any, err error) {
 	}
 	var skip int
 	// Skip BOM if present.
-	if 3 < len(buf) && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF {
+	if 3 <= len(buf) && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF {
 		skip = 3
 	}
 	for {
