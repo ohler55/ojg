@@ -312,7 +312,7 @@ func (x Expr) GetNodes(n gen.Node) (results []gen.Node) {
 			ns, _ := tf.evalWithRoot(stack, prev, n)
 			stack, _ = ns.([]gen.Node)
 			if int(fi) == len(x)-1 { // last one
-				for i := before; i < len(stack); i++ {
+				for i := len(stack) - 1; before <= i; i-- {
 					results = append(results, stack[i])
 				}
 				if before < len(stack) {
@@ -572,7 +572,7 @@ func (x Expr) FirstNode(n gen.Node) (result gen.Node) {
 			stack, _ = ns.([]gen.Node)
 			if int(fi) == len(x)-1 { // last one
 				if before < len(stack) {
-					result := stack[before]
+					result := stack[len(stack)-1]
 					stack = stack[:before]
 					return result
 				}

@@ -35,6 +35,9 @@ var (
 		{path: "*", max: 1, data: map[string]any{"a": 1}, expect: []string{"a"}},
 		{path: "@.a[?(@.b == 122)].c", max: 1, expect: []string{"@.a[1].c"}},
 		{path: "@.a[?(@.b == 122)]", max: 1, expect: []string{"@.a[1]"}},
+		{path: "$[?(@ > 1)]", data: []any{1, 2, 3}, noSort: true, expect: []string{"$[1]", "$[2]"}},
+		{path: "$[?(@ > 1)]", max: 1, data: []any{1, 2, 3}, expect: []string{"$[1]"}},
+		{path: "$[?(@.a > 1)].a", max: 1, data: []any{map[string]any{"a": 1}, map[string]any{"a": 2}, map[string]any{"a": 3}}, expect: []string{"$[1].a"}},
 		{path: "a[1:3].a", noSort: true, expect: []string{"a[1].a", "a[2].a"}},
 		// A slice as the final fragment must honor max too.
 		{path: "$[::-1]", max: 1, data: []any{"a", "b", "c"}, noSort: true, expect: []string{"$[2]"}},
