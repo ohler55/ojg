@@ -13,7 +13,6 @@ import (
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/alt"
 	"github.com/ohler55/ojg/gen"
-	"github.com/ohler55/ojg/internal/bom"
 	"github.com/ohler55/ojg/oj"
 )
 
@@ -214,10 +213,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...any) (data any, err error) {
 	buf := make([]byte, readBufSize)
 	eof := false
 	var cnt int
-	cnt, err = r.Read(buf)
-	if err == nil && 0 < cnt && cnt < 3 && buf[0] == 0xEF {
-		cnt, err = bom.ReadRest(r, buf, cnt)
-	}
+	cnt, err = ojg.ReadBOMStart(r, buf)
 	buf = buf[:cnt]
 	p.mode = valueMap
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 	"unicode/utf16"
 	"unicode/utf8"
 
-	"github.com/ohler55/ojg/internal/bom"
+	"github.com/ohler55/ojg"
 )
 
 const (
@@ -146,10 +146,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...any) (data Node, err error) {
 	buf := make([]byte, readBufSize)
 	eof := false
 	var cnt int
-	cnt, err = r.Read(buf)
-	if err == nil && 0 < cnt && cnt < 3 && buf[0] == 0xEF {
-		cnt, err = bom.ReadRest(r, buf, cnt)
-	}
+	cnt, err = ojg.ReadBOMStart(r, buf)
 	buf = buf[:cnt]
 	p.mode = valueMap
 	if err != nil {

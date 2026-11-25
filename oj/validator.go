@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ohler55/ojg/internal/bom"
+	"github.com/ohler55/ojg"
 )
 
 const stackMinSize = 32 // for container stack { or [
@@ -69,10 +69,7 @@ func (p *Validator) ValidateReader(r io.Reader) error {
 	p.mode = valueMap
 	buf := make([]byte, readBufSize)
 	eof := false
-	cnt, err := r.Read(buf)
-	if err == nil && 0 < cnt && cnt < 3 && buf[0] == 0xEF {
-		cnt, err = bom.ReadRest(r, buf, cnt)
-	}
+	cnt, err := ojg.ReadBOMStart(r, buf)
 	buf = buf[:cnt]
 	if err != nil {
 		if !errors.Is(err, io.EOF) {
