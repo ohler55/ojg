@@ -13,6 +13,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/ohler55/ojg/gen"
+	"github.com/ohler55/ojg/internal/bom"
 )
 
 const (
@@ -104,7 +105,10 @@ func (t *Tokenizer) Load(r io.Reader, handler TokenHandler) (err error) {
 	buf := make([]byte, readBufSize)
 	eof := false
 	var cnt int
-	cnt, err = readBOMStart(r, buf)
+	cnt, err = r.Read(buf)
+	if err == nil && 0 < cnt && cnt < 3 && buf[0] == 0xEF {
+		cnt, err = bom.ReadRest(r, buf, cnt)
+	}
 	buf = buf[:cnt]
 	t.mode = valueMap
 	if err != nil {

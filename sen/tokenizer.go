@@ -13,6 +13,7 @@ import (
 
 	"github.com/ohler55/ojg"
 	"github.com/ohler55/ojg/gen"
+	"github.com/ohler55/ojg/internal/bom"
 	"github.com/ohler55/ojg/oj"
 )
 
@@ -118,6 +119,9 @@ func (t *Tokenizer) Load(r io.Reader, handler oj.TokenHandler) (err error) {
 	}()
 	var cnt int
 	cnt, err = r.Read(buf)
+	if err == nil && 0 < cnt && cnt < 3 && buf[0] == 0xEF {
+		cnt, err = bom.ReadRest(r, buf, cnt)
+	}
 	buf = buf[:cnt]
 	t.mode = valueMap
 	if err != nil {
@@ -129,7 +133,7 @@ func (t *Tokenizer) Load(r io.Reader, handler oj.TokenHandler) (err error) {
 	}
 	var skip int
 	// Skip BOM if present.
-	if 3 < len(buf) && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF {
+	if 3 <= len(buf) && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF {
 		skip = 3
 	}
 	for {

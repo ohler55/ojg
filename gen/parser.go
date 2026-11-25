@@ -9,6 +9,8 @@ import (
 	"io"
 	"unicode/utf16"
 	"unicode/utf8"
+
+	"github.com/ohler55/ojg/internal/bom"
 )
 
 const (
@@ -145,6 +147,9 @@ func (p *Parser) ParseReader(r io.Reader, args ...any) (data Node, err error) {
 	eof := false
 	var cnt int
 	cnt, err = r.Read(buf)
+	if err == nil && 0 < cnt && cnt < 3 && buf[0] == 0xEF {
+		cnt, err = bom.ReadRest(r, buf, cnt)
+	}
 	buf = buf[:cnt]
 	p.mode = valueMap
 	if err != nil {
@@ -155,7 +160,7 @@ func (p *Parser) ParseReader(r io.Reader, args ...any) (data Node, err error) {
 	}
 	var skip int
 	// Skip BOM if present.
-	if 3 < len(buf) && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF {
+	if 3 <= len(buf) && buf[0] == 0xEF && buf[1] == 0xBB && buf[2] == 0xBF {
 		skip = 3
 	}
 	for {

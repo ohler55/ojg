@@ -423,3 +423,10 @@ func TestParserSurrogateReuse(t *testing.T) {
 	tt.Nil(t, err)
 	tt.Equal(t, gen.String("abc\uFFFD"), v)
 }
+
+func TestParserParseReaderSplitBOM(t *testing.T) {
+	var p gen.Parser
+	v, err := p.ParseReader(iotest.OneByteReader(strings.NewReader("\xef\xbb\xbf[true]")))
+	tt.Nil(t, err)
+	tt.Equal(t, gen.Array{gen.True}, v)
+}
